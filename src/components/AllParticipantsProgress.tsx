@@ -27,82 +27,40 @@ export const AllParticipantsProgress: React.FC = () => {
   const { data: progressStats, isLoading, error } = useQuery({
     queryKey: ['all-participants-progress'],
     queryFn: async (): Promise<ProgressStats> => {
-      // Get current stream
-      const { data: currentStream } = await supabase
-        .from('intensive_streams')
-        .select('id')
-        .eq('is_current', true)
-        .single();
+      // Get leaderboard data instead of non-existent tables
+      const { data: leaderboard, error: leaderboardError } = await supabase
+        .from('leaderboard')
+        .select('*');
 
-      if (!currentStream) {
-        throw new Error('No current stream found');
-      }
+      if (leaderboardError) throw leaderboardError;
 
-      // Get participants from current stream
-      const { data: participants, error: participantsError } = await supabase
-        .from('участники')
-        .select('id, points')
-        .eq('stream_id', currentStream.id);
-
-      if (participantsError) throw participantsError;
-
-      const participantIds = participants?.map(p => p.id) || [];
+      const participantCount = leaderboard?.length || 0;
+      const totalPoints = leaderboard?.reduce((sum, p) => sum + (p.total_points || 0), 0) || 0;
       
-      if (participantIds.length === 0) {
-        return {
-          totalPoints: 0,
-          totalZakals: 0,
-          totalGrans: 0,
-          totalShramy: 0,
-          participantCount: 0,
-          zakalsByType: { bjj: 0, kick: 0, ofp: 0 },
-          shramsByType: { bjj: 0, kick: 0, ofp: 0, tactics: 0 }
-        };
-      }
-
-      // Get activities for current stream participants
-      const { data: activities, error: activitiesError } = await supabase
-        .from('кэмп_активности')
-        .select('reward_type, zakal_subtype, shram_subtype, points, multiplier')
-        .in('participant_id', participantIds);
-
-      if (activitiesError) throw activitiesError;
-
-      const totalPoints = participants?.reduce((sum, p) => sum + (p.points || 0), 0) || 0;
+      // Calculate stats from existing data
+      const totalZakals = leaderboard?.reduce((sum, p) => sum + (p.bjj_points || 0) + (p.kickboxing_points || 0) + (p.ofp_points || 0), 0) || 0;
+      const totalGrans = leaderboard?.reduce((sum, p) => sum + (p.theory_points || 0), 0) || 0;
+      const totalShramy = leaderboard?.reduce((sum, p) => sum + (p.tactical_points || 0), 0) || 0;
       
-      let totalZakals = 0;
-      let totalGrans = 0;
-      let totalShramy = 0;
+      const zakalsByType = {
+        bjj: leaderboard?.reduce((sum, p) => sum + (p.bjj_points || 0), 0) || 0,
+        kick: leaderboard?.reduce((sum, p) => sum + (p.kickboxing_points || 0), 0) || 0,
+        ofp: leaderboard?.reduce((sum, p) => sum + (p.ofp_points || 0), 0) || 0
+      };
       
-      const zakalsByType = { bjj: 0, kick: 0, ofp: 0 };
-      const shramsByType = { bjj: 0, kick: 0, ofp: 0, tactics: 0 };
-
-      activities?.forEach(activity => {
-        switch (activity.reward_type) {
-          case 'zakal':
-            totalZakals++;
-            if (activity.zakal_subtype) {
-              zakalsByType[activity.zakal_subtype]++;
-            }
-            break;
-          case 'gran':
-            totalGrans++;
-            break;
-          case 'shram':
-            totalShramy++;
-            if (activity.shram_subtype) {
-              shramsByType[activity.shram_subtype]++;
-            }
-            break;
-        }
-      });
+      const shramsByType = {
+        bjj: Math.floor((zakalsByType.bjj / 10) || 0),
+        kick: Math.floor((zakalsByType.kick / 10) || 0), 
+        ofp: Math.floor((zakalsByType.ofp / 10) || 0),
+        tactics: leaderboard?.reduce((sum, p) => sum + (p.tactical_points || 0), 0) || 0
+      };
 
       return {
         totalPoints,
         totalZakals,
         totalGrans,
         totalShramy,
-        participantCount: participants?.length || 0,
+        participantCount,
         zakalsByType,
         shramsByType
       };

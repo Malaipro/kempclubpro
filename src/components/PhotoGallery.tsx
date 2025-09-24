@@ -13,23 +13,23 @@ export const PhotoGallery: React.FC = () => {
   const [startX, setStartX] = useState(0);
   const isMobile = useIsMobile();
 
-  // Загружаем изображения из базы данных
-  const { data: photos = [], isLoading } = useQuery({
-    queryKey: ['gallery-images'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('gallery_images')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return data.map(img => ({
-        id: img.id,
-        src: img.image_url,
-        alt: img.title || img.description || 'Момент КЭМП'
-      }));
-    },
-  });
+  // Используем статические изображения до создания таблицы gallery_images
+  const photos = [
+    { id: '1', src: '/src/assets/gallery/kamp-1.jpg', alt: 'КЭМП тренировка 1' },
+    { id: '2', src: '/src/assets/gallery/kamp-2.jpg', alt: 'КЭМП тренировка 2' },
+    { id: '3', src: '/src/assets/gallery/kamp-3.jpg', alt: 'КЭМП тренировка 3' },
+    { id: '4', src: '/src/assets/gallery/kamp-4.jpg', alt: 'КЭМП тренировка 4' },
+    { id: '5', src: '/src/assets/gallery/kamp-5.jpg', alt: 'КЭМП тренировка 5' },
+    { id: '6', src: '/src/assets/gallery/kamp-6.jpg', alt: 'КЭМП тренировка 6' },
+    { id: '7', src: '/src/assets/gallery/kamp-7.jpg', alt: 'КЭМП тренировка 7' },
+    { id: '8', src: '/src/assets/gallery/kamp-8.jpg', alt: 'КЭМП тренировка 8' },
+    { id: '9', src: '/src/assets/gallery/kamp-9.jpg', alt: 'КЭМП тренировка 9' },
+    { id: '10', src: '/src/assets/gallery/kamp-10.jpg', alt: 'КЭМП тренировка 10' },
+    { id: '11', src: '/src/assets/gallery/kamp-11.jpg', alt: 'КЭМП тренировка 11' },
+    { id: '12', src: '/src/assets/gallery/kamp-12.jpg', alt: 'КЭМП тренировка 12' }
+  ];
+  
+  const isLoading = false;
   
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;

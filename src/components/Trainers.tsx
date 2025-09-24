@@ -40,7 +40,10 @@ export const Trainers: React.FC = () => {
         .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
-      return data as Trainer[];
+      return data.map(trainer => ({
+        ...trainer,
+        experience: trainer.experience.toString() // Convert number to string to match interface
+      })) as Trainer[];
     },
   });
 

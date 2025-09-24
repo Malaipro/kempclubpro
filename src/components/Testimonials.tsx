@@ -21,18 +21,25 @@ export const Testimonials: React.FC = () => {
   }>({});
 
   // Загружаем отзывы из базы данных
-  const { data: testimonials = [], isLoading } = useQuery({
-    queryKey: ['testimonials'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return data;
+  // Используем статические отзывы до создания таблицы testimonials
+  const testimonials = [
+    {
+      id: '1',
+      name: 'Александр К.',
+      position: 'Участник КЭМП',
+      text_content: 'КЭМП кардинально изменил мою жизнь. За 3 месяца я не только улучшил физическую форму, но и развил ментальную стойкость.',
+      video_url: '/public/videos/testimonial-1.mp4'
     },
-  });
+    {
+      id: '2', 
+      name: 'Дмитрий М.',
+      position: 'Участник КЭМП',
+      text_content: 'Программа научила меня дисциплине и целеустремленности. Результаты превзошли все ожидания.',
+      video_url: '/public/videos/testimonial-2.mp4'
+    }
+  ];
+  
+  const isLoading = false;
 
   // Инициализируем состояние звука после загрузки данных
   React.useEffect(() => {

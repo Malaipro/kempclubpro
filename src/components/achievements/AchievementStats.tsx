@@ -15,27 +15,15 @@ export const AchievementStats: React.FC = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['achievement-stats'],
     queryFn: async (): Promise<AchievementCounts> => {
-      // Get total achievements
+      // Get total achievements from existing table
       const { count: totalAchievements } = await supabase
         .from('user_achievements')
         .select('*', { count: 'exact', head: true });
 
-      // Get special badges
-      const { count: specialBadges } = await supabase
-        .from('user_special_badges')
-        .select('*', { count: 'exact', head: true });
-
-      // Get completed directions (100% progress)
-      const { count: completedDirections } = await supabase
-        .from('direction_progress')
-        .select('*', { count: 'exact', head: true })
-        .gte('progress_percentage', 100);
-
-      // Get totems earned
-      const { count: totemsEarned } = await supabase
-        .from('direction_progress')
-        .select('*', { count: 'exact', head: true })
-        .eq('totem_earned', true);
+      // Use placeholder data for non-existent tables
+      const specialBadges = 0;
+      const completedDirections = 0;
+      const totemsEarned = 0;
 
       return {
         totalAchievements: totalAchievements || 0,
