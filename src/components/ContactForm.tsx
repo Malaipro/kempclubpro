@@ -15,40 +15,90 @@ declare global {
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
   useEffect(() => {
+    const ALLOWED_BITRIX_DOMAIN = 'cdn-ru.bitrix24.ru';
+    const BITRIX_FORM_ID = 'inline/134/km4hms';
+    const BITRIX_PROJECT_ID = 'b23536290';
+    
     const loadBitrixForm = () => {
       // Проверяем, что форма еще не загружена
-      if (document.querySelector('[data-b24-form="inline/134/km4hms"]')) {
+      if (document.querySelector(`[data-b24-form="${BITRIX_FORM_ID}"]`)) {
         return;
       }
 
-      // Создаем и добавляем скрипт Битрикс24
-      const script = document.createElement('script');
-      script.setAttribute('data-b24-form', 'inline/134/km4hms');
-      script.setAttribute('data-skip-moving', 'true');
-      script.innerHTML = `
-        (function(w,d,u){
-          var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
-          var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
-        })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js');
-      `;
-      
-      const container = document.getElementById('bitrix-form-container');
-      if (container) {
-        container.innerHTML = '';
-        container.appendChild(script);
+      try {
+        // Безопасное создание скрипта с валидацией домена
+        const scriptUrl = `https://${ALLOWED_BITRIX_DOMAIN}/${BITRIX_PROJECT_ID}/crm/form/loader_134.js`;
+        
+        // Проверяем валидность URL
+        const url = new URL(scriptUrl);
+        if (url.hostname !== ALLOWED_BITRIX_DOMAIN) {
+          console.error('Invalid Bitrix24 domain detected');
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.setAttribute('data-b24-form', BITRIX_FORM_ID);
+        script.setAttribute('data-skip-moving', 'true');
+        script.setAttribute('crossorigin', 'anonymous');
+        script.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        
+        // Безопасная загрузка скрипта без innerHTML
+        script.src = scriptUrl + '?' + Math.floor(Date.now() / 180000);
+        script.async = true;
+        
+        // Обработка ошибок загрузки
+        script.onerror = () => {
+          console.error('Failed to load Bitrix24 form script');
+          const container = document.getElementById('bitrix-form-container');
+          if (container) {
+            container.innerHTML = `
+              <div class="text-center text-gray-400 p-8">
+                <p class="mb-4">Форма временно недоступна</p>
+                <p class="text-sm">Попробуйте связаться с нами напрямую:</p>
+                <div class="mt-4 space-y-2">
+                  <p>WhatsApp: <a href="https://wa.me/79673785151" class="text-kamp-primary hover:underline">+7 967 378 51 51</a></p>
+                  <p>Telegram: <a href="https://t.me/Dmitriy116" class="text-kamp-primary hover:underline">@Dmitriy116</a></p>
+                </div>
+              </div>
+            `;
+          }
+        };
+        
+        script.onload = () => {
+          console.log('Bitrix24 form loaded successfully');
+        };
+        
+        const container = document.getElementById('bitrix-form-container');
+        if (container) {
+          container.innerHTML = '';
+          container.appendChild(script);
+        }
+      } catch (error) {
+        console.error('Error creating Bitrix24 form script:', error);
       }
     };
 
-    loadBitrixForm();
+    // Задержка для предотвращения спам-загрузок
+    const timeoutId = setTimeout(loadBitrixForm, 100);
 
     // Очистка при размонтировании компонента
     return () => {
-      const scripts = document.querySelectorAll('[data-b24-form="inline/134/km4hms"]');
+      clearTimeout(timeoutId);
+      const scripts = document.querySelectorAll(`[data-b24-form="${BITRIX_FORM_ID}"]`);
       scripts.forEach(script => {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
         }
       });
+      
+      // Очистка глобальных переменных Bitrix24
+      if (window.B24Form) {
+        try {
+          delete window.B24Form;
+        } catch (e) {
+          // Игнорируем ошибки при очистке
+        }
+      }
     };
   }, []);
   const scrollToContactForm = () => {
