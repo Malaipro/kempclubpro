@@ -1,18 +1,1 @@
-
-project_id = "jbotyvommxeoyhrmdfic"
-
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[functions.zapier-webhook]
-verify_jwt = false
-
-[functions.nodul-webhook]
-verify_jwt = false
-
-[functions.send-welcome-email]
-verify_jwt = false
+project_id = "wfjvjvbjjxcgkaolkgdq"
