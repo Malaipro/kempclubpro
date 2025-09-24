@@ -18,15 +18,16 @@ export const useRole = () => {
       }
 
       try {
-        // Check user roles from database
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
+        // Use security definer functions for secure role checking
+        const { data: isAdminResult, error: adminError } = await supabase
+          .rpc('is_admin', { _user_id: user.id });
+        
+        const { data: isSuperAdminResult, error: superAdminError } = await supabase
+          .rpc('is_super_admin', { _user_id: user.id });
 
-        if (error) {
-          console.error('Error checking roles:', error);
-          // Fallback to email check if database query fails
+        if (adminError || superAdminError) {
+          console.error('Error checking roles:', adminError || superAdminError);
+          // Fallback to email check if RPC calls fail
           const isSuperAdminUser = user.email === 'dishka.da@yandex.ru';
           setIsAdmin(isSuperAdminUser);
           setIsSuperAdmin(isSuperAdminUser);
@@ -34,12 +35,8 @@ export const useRole = () => {
           return;
         }
 
-        const userRoles = roles?.map(r => r.role) || [];
-        const hasAdminRole = userRoles.includes('admin') || userRoles.includes('super_admin');
-        const hasSuperAdminRole = userRoles.includes('super_admin');
-
-        setIsAdmin(hasAdminRole);
-        setIsSuperAdmin(hasSuperAdminRole);
+        setIsAdmin(isAdminResult || false);
+        setIsSuperAdmin(isSuperAdminResult || false);
       } catch (error) {
         console.error('Error in checkRole:', error);
         // Fallback to email check

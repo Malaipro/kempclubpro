@@ -12,11 +12,12 @@ import { ActivityFormAdmin } from '@/components/kamp/ActivityFormAdmin';
 import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
 import { DetailedScheduleManagement } from '@/components/schedule/DetailedScheduleManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
+import { ContentManager } from '@/components/cms/ContentManager';
+import { SecurityAuditLog } from '@/components/admin/SecurityAuditLog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { ContentManager } from '@/components/cms/ContentManager';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -143,40 +144,48 @@ export const Dashboard: React.FC = () => {
                       <Shield className="w-4 h-4" />
                       <span className="whitespace-nowrap">Расписание</span>
                     </TabsTrigger>
-                    <TabsTrigger value="cms" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <Shield className="w-4 h-4" />
-                      <span className="whitespace-nowrap">CMS</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <TabsContent value="kamp">
-                  <KampSystem />
-                </TabsContent>
-                
-                <TabsContent value="activities">
-                  <ActivityFormAdmin />
-                </TabsContent>
-                
-                <TabsContent value="participants">
-                  <ParticipantManagement />
-                </TabsContent>
-                
-                <TabsContent value="streams">
-                  <StreamManagement />
-                </TabsContent>
-                
-                <TabsContent value="cooper">
-                  <CooperTestManagement />
-                </TabsContent>
-                
-                <TabsContent value="schedule">
-                  <DetailedScheduleManagement />
-                </TabsContent>
-                
-                <TabsContent value="cms">
-                  <ContentManager />
-                </TabsContent>
+                     <TabsTrigger value="cms" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
+                       <Shield className="w-4 h-4" />
+                       <span className="whitespace-nowrap">CMS</span>
+                     </TabsTrigger>
+                     <TabsTrigger value="security" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
+                       <Shield className="w-4 h-4" />
+                       <span className="whitespace-nowrap">Безопасность</span>
+                     </TabsTrigger>
+                   </TabsList>
+                 </div>
+                 
+                 <TabsContent value="kamp">
+                   <KampSystem />
+                 </TabsContent>
+                 
+                 <TabsContent value="activities">
+                   <ActivityFormAdmin />
+                 </TabsContent>
+                 
+                 <TabsContent value="participants">
+                   <ParticipantManagement />
+                 </TabsContent>
+                 
+                 <TabsContent value="streams">
+                   <StreamManagement />
+                 </TabsContent>
+                 
+                 <TabsContent value="cooper">
+                   <CooperTestManagement />
+                 </TabsContent>
+                 
+                 <TabsContent value="schedule">
+                   <DetailedScheduleManagement />
+                 </TabsContent>
+                 
+                 <TabsContent value="cms">
+                   <ContentManager />
+                 </TabsContent>
+                 
+                 <TabsContent value="security">
+                   <SecurityAuditLog />
+                 </TabsContent>
               </Tabs>
             ) : (
               <Tabs defaultValue="kamp" className="w-full">

@@ -402,6 +402,36 @@ export type Database = {
         }
         Relationships: []
       }
+      role_audit_log: {
+        Row: {
+          action: string
+          assigned_at: string
+          assigned_by: string
+          id: string
+          notes: string | null
+          role_assigned: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          action: string
+          assigned_at?: string
+          assigned_by: string
+          id?: string
+          notes?: string | null
+          role_assigned: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          action?: string
+          assigned_at?: string
+          assigned_by?: string
+          id?: string
+          notes?: string | null
+          role_assigned?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       schedule_participants: {
         Row: {
           attended: boolean | null
@@ -857,7 +887,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "user" | "admin" | "super_admin" | "trainer"
