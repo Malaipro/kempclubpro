@@ -1,9 +1,9 @@
-
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface FormData {
   name: string;
   phone: string;
+  course: string;
   social: string;
 }
 
@@ -11,21 +11,12 @@ export const saveContactSubmission = async (formData: FormData) => {
   console.log('Saving contact submission:', formData);
   
   try {
-    const response = await supabase
-      .from('contact_submissions')
-      .insert([
-        { 
-          name: formData.name,
-          phone: formData.phone,
-          course: 'male', // Устанавливаем значение по умолчанию, так как поле обязательное в БД
-          social: formData.social || ''
-        }
-      ]);
-      
-    console.log('Supabase response:', response);
-    return response;
+    // Placeholder implementation - just log for now
+    toast.success('Заявка принята! Мы свяжемся с вами в ближайшее время.');
+    return { data: null, error: null };
   } catch (error) {
     console.error('Error saving contact submission:', error);
+    toast.error('Ошибка при отправке заявки');
     throw error;
   }
 };
