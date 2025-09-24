@@ -65,21 +65,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      // Create participant record for the new user
+      // Create profile record for the new user
       if (data.user) {
-        const { error: participantError } = await supabase
-          .from('участники')
+        const { error: profileError } = await supabase
+          .from('profiles')
           .insert([
             {
               user_id: data.user.id,
-              name: name,
+              first_name: name,
               last_name: lastName,
-              points: 0
+              display_name: `${name} ${lastName}`
             }
           ]);
 
-        if (participantError) {
-          console.error('Error creating participant:', participantError);
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
         }
         setTimeout(() => {
           // Отправляем приветственное письмо новому пользователю

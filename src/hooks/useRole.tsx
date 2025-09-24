@@ -9,7 +9,7 @@ export const useRole = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkRole = async () => {
+    const checkRole = () => {
       if (!user) {
         setIsAdmin(false);
         setIsSuperAdmin(false);
@@ -17,29 +17,12 @@ export const useRole = () => {
         return;
       }
 
-      try {
-        // Проверяем роли пользователя
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error checking roles:', error);
-          setLoading(false);
-          return;
-        }
-
-        const hasAdminRole = roles?.some(r => r.role === 'admin') || false;
-        const isSuperAdminUser = user.email === 'dishka.da@yandex.ru' && hasAdminRole;
-
-        setIsAdmin(hasAdminRole);
-        setIsSuperAdmin(isSuperAdminUser);
-      } catch (error) {
-        console.error('Error in checkRole:', error);
-      } finally {
-        setLoading(false);
-      }
+      // Simple hardcoded admin check since user_roles table doesn't exist
+      const isSuperAdminUser = user.email === 'dishka.da@yandex.ru';
+      
+      setIsAdmin(isSuperAdminUser);
+      setIsSuperAdmin(isSuperAdminUser);
+      setLoading(false);
     };
 
     checkRole();
