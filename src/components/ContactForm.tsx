@@ -15,45 +15,36 @@ declare global {
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
   useEffect(() => {
-    // Безопасная загрузка Битрикс скрипта без dangerouslySetInnerHTML
+    // Безопасная загрузка Битрикс формы через iframe
     const loadBitrixForm = () => {
-      // Проверяем, что скрипт еще не загружен
+      // Проверяем, что форма еще не загружена
       if (document.querySelector('[data-bitrix-form-loaded]')) {
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = 'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js?' + (Date.now() / 180000 | 0);
-      script.async = true;
-      script.setAttribute('data-bitrix-form-loaded', 'true');
+      // Используем iframe для безопасной загрузки формы
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://b24-3egl9l.bitrix24site.ru/crm_form_iz8zr/';
+      iframe.style.width = '100%';
+      iframe.style.height = '600px';
+      iframe.style.border = 'none';
+      iframe.style.borderRadius = '8px';
+      iframe.setAttribute('data-bitrix-form-loaded', 'true');
       
-      script.onload = () => {
-        console.log('Битрикс скрипт загружен безопасно');
-        
-        // Инициализируем форму после загрузки скрипта
-        if (window.B24Form) {
-          window.B24Form.init({
-            id: 134,
-            type: 'inline',
-            container: 'bitrix-form-container'
-          });
-        }
-      };
-      
-      script.onerror = () => {
-        console.error('Ошибка загрузки Битрикс формы');
-      };
-      
-      document.head.appendChild(script);
+      const container = document.getElementById('bitrix-form-container');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(iframe);
+      }
     };
 
     loadBitrixForm();
 
     // Очистка при размонтировании компонента
     return () => {
-      const script = document.querySelector('[data-bitrix-form-loaded]');
-      if (script && document.head.contains(script)) {
-        document.head.removeChild(script);
+      const iframe = document.querySelector('[data-bitrix-form-loaded]');
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
       }
     };
   }, []);
@@ -85,7 +76,7 @@ export const ContactForm: React.FC = () => {
               {/* Безопасный контейнер для Битрикс формы */}
               <div 
                 id="bitrix-form-container" 
-                className="bitrix-form-container min-h-[300px] flex items-center justify-center"
+                className="bitrix-form-container min-h-[600px] flex items-center justify-center"
               >
                 <div className="text-gray-400 text-center">
                   <div className="animate-spin w-6 h-6 border-2 border-kamp-primary border-t-transparent rounded-full mx-auto mb-2"></div>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Instagram, Facebook, Phone, MapPin } from 'lucide-react';
+import { Phone, MapPin, MessageCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const Footer: React.FC = () => {
@@ -54,7 +54,7 @@ export const Footer: React.FC = () => {
               </p>
               <div className="flex space-x-2 mt-2">
                 <a 
-                  href="https://t.me/kemp_club" 
+                  href="https://t.me/Dmitriy116" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-white/10 hover:bg-white/20 p-1 rounded-full transition-colors flex items-center justify-center"
@@ -66,13 +66,13 @@ export const Footer: React.FC = () => {
                   </svg>
                 </a>
                 <a 
-                  href="https://www.instagram.com/cemp_kazan" 
+                  href="https://wa.me/79673785151" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-white/10 hover:bg-white/20 p-1 rounded-full transition-colors flex items-center justify-center"
-                  aria-label="Instagram"
+                  aria-label="WhatsApp"
                 >
-                  <Instagram size={12} />
+                  <MessageCircle size={12} />
                 </a>
                 <a 
                   href="https://vk.com/kemp_ryx" 
@@ -158,7 +158,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex space-x-3 mt-3">
               <a 
-                href="https://t.me/kemp_club" 
+                href="https://t.me/Dmitriy116" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center"
@@ -170,13 +170,13 @@ export const Footer: React.FC = () => {
                 </svg>
               </a>
               <a 
-                href="https://www.instagram.com/cemp_kazan" 
+                href="https://wa.me/79673785151" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center"
-                aria-label="Instagram"
+                aria-label="WhatsApp"
               >
-                <Instagram size={16} />
+                <MessageCircle size={16} />
               </a>
               <a 
                 href="https://vk.com/kemp_ryx" 
