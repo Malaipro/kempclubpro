@@ -56,6 +56,84 @@ export type Database = {
         }
         Relationships: []
       }
+      activities: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          difficulty_level: number | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          points: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          points?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          points?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ascetic_activities: {
+        Row: {
+          activity_type: string
+          completed_at: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          points_earned: number | null
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          activity_type: string
+          completed_at?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          activity_type?: string
+          completed_at?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           challenge_type: string
@@ -95,6 +173,90 @@ export type Database = {
           points_reward?: number | null
           requirements?: Json | null
           start_date?: string | null
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          course: string
+          created_at: string
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          processed: boolean | null
+          processed_at: string | null
+          processed_by: string | null
+          social: string | null
+        }
+        Insert: {
+          course: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          processed?: boolean | null
+          processed_at?: string | null
+          processed_by?: string | null
+          social?: string | null
+        }
+        Update: {
+          course?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          processed?: boolean | null
+          processed_at?: string | null
+          processed_by?: string | null
+          social?: string | null
+        }
+        Relationships: []
+      }
+      cooper_test_results: {
+        Row: {
+          age: number | null
+          created_at: string
+          distance: number
+          fitness_level: string | null
+          gender: string | null
+          id: string
+          notes: string | null
+          test_date: string
+          time_minutes: number
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          distance: number
+          fitness_level?: string | null
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          test_date?: string
+          time_minutes: number
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          distance?: number
+          fitness_level?: string | null
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          test_date?: string
+          time_minutes?: number
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -237,6 +399,130 @@ export type Database = {
           total_points?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      schedule_participants: {
+        Row: {
+          attended: boolean | null
+          id: string
+          registered_at: string
+          schedule_id: string
+          user_id: string
+        }
+        Insert: {
+          attended?: boolean | null
+          id?: string
+          registered_at?: string
+          schedule_id: string
+          user_id: string
+        }
+        Update: {
+          attended?: boolean | null
+          id?: string
+          registered_at?: string
+          schedule_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_participants_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          end_time: string
+          id: string
+          instructor_id: string | null
+          is_active: boolean | null
+          location: string | null
+          max_participants: number | null
+          start_time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          end_time: string
+          id?: string
+          instructor_id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          start_time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          instructor_id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streams: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          max_participants: number | null
+          name: string
+          start_date: string
+          stream_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          name: string
+          start_date: string
+          stream_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          name?: string
+          start_date?: string
+          stream_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -447,6 +733,50 @@ export type Database = {
           },
         ]
       }
+      user_activities: {
+        Row: {
+          activity_id: string
+          completed_at: string
+          created_at: string
+          id: string
+          notes: string | null
+          points_earned: number | null
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          activity_id: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          activity_id?: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activities_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_challenges: {
         Row: {
           challenge_id: string
@@ -498,6 +828,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -506,7 +860,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "user" | "admin" | "super_admin" | "trainer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -633,6 +987,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["user", "admin", "super_admin", "trainer"],
+    },
   },
 } as const
