@@ -15,26 +15,27 @@ declare global {
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
   useEffect(() => {
-    // Безопасная загрузка Битрикс формы через iframe
     const loadBitrixForm = () => {
       // Проверяем, что форма еще не загружена
-      if (document.querySelector('[data-bitrix-form-loaded]')) {
+      if (document.querySelector('[data-b24-form="inline/134/km4hms"]')) {
         return;
       }
 
-      // Используем iframe для безопасной загрузки формы
-      const iframe = document.createElement('iframe');
-      iframe.src = 'https://b24-3egl9l.bitrix24site.ru/crm_form_iz8zr/';
-      iframe.style.width = '100%';
-      iframe.style.height = '600px';
-      iframe.style.border = 'none';
-      iframe.style.borderRadius = '8px';
-      iframe.setAttribute('data-bitrix-form-loaded', 'true');
+      // Создаем и добавляем скрипт Битрикс24
+      const script = document.createElement('script');
+      script.setAttribute('data-b24-form', 'inline/134/km4hms');
+      script.setAttribute('data-skip-moving', 'true');
+      script.innerHTML = `
+        (function(w,d,u){
+          var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
+          var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
+        })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js');
+      `;
       
       const container = document.getElementById('bitrix-form-container');
       if (container) {
         container.innerHTML = '';
-        container.appendChild(iframe);
+        container.appendChild(script);
       }
     };
 
@@ -42,10 +43,12 @@ export const ContactForm: React.FC = () => {
 
     // Очистка при размонтировании компонента
     return () => {
-      const iframe = document.querySelector('[data-bitrix-form-loaded]');
-      if (iframe && iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
+      const scripts = document.querySelectorAll('[data-b24-form="inline/134/km4hms"]');
+      scripts.forEach(script => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
     };
   }, []);
   const scrollToContactForm = () => {
