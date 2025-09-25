@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layout } from '@/components/Layout';
 import { validateEmail, validatePassword, validateName, sanitizeInput, rateLimiter } from '@/lib/validation';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 export const Auth: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ export const Auth: React.FC = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const { toast } = useToast();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,6 +35,30 @@ export const Auth: React.FC = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  // One-time super admin setup trigger via URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('setupSuperAdmin') === '1') {
+      (async () => {
+        const { data, error } = await supabase.functions.invoke('setup-super-admin', {
+          body: {}
+        });
+        if (error) {
+          toast({
+            variant: 'destructive',
+            title: 'Ошибка создания супер-админа',
+            description: error.message || 'Попробуйте ещё раз'
+          });
+        } else {
+          toast({
+            title: 'Супер-админ создан',
+            description: 'Теперь можете войти: kemp.club@yandex.com'
+          });
+        }
+      })();
+    }
+  }, [toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
