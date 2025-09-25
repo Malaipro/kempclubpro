@@ -98,7 +98,10 @@ export type Database = {
       ascetic_activities: {
         Row: {
           activity_type: string
+          challenge_duration: number | null
+          challenge_name: string | null
           completed_at: string
+          completion_percentage: number | null
           created_at: string
           duration_minutes: number | null
           id: string
@@ -110,7 +113,10 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          challenge_duration?: number | null
+          challenge_name?: string | null
           completed_at?: string
+          completion_percentage?: number | null
           created_at?: string
           duration_minutes?: number | null
           id?: string
@@ -122,7 +128,10 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          challenge_duration?: number | null
+          challenge_name?: string | null
           completed_at?: string
+          completion_percentage?: number | null
           created_at?: string
           duration_minutes?: number | null
           id?: string
@@ -260,6 +269,123 @@ export type Database = {
         }
         Relationships: []
       }
+      crash_tests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          passed: boolean | null
+          points_earned: number
+          test_date: string
+          test_type: string
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          points_earned?: number
+          test_date?: string
+          test_type: string
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passed?: boolean | null
+          points_earned?: number
+          test_date?: string
+          test_type?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      hero_races: {
+        Row: {
+          created_at: string
+          finished: boolean | null
+          id: string
+          notes: string | null
+          points_earned: number
+          race_date: string
+          time_minutes: number | null
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          finished?: boolean | null
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          race_date?: string
+          time_minutes?: number | null
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          finished?: boolean | null
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          race_date?: string
+          time_minutes?: number | null
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      homework_submissions: {
+        Row: {
+          content: string | null
+          created_at: string
+          homework_type: string
+          id: string
+          notes: string | null
+          points_earned: number
+          submitted_at: string
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          homework_type: string
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          submitted_at?: string
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          homework_type?: string
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          submitted_at?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           bjj_points: number | null
@@ -312,6 +438,45 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      lectures: {
+        Row: {
+          attendance_type: string
+          created_at: string
+          id: string
+          lecture_date: string
+          lecture_type: string
+          notes: string | null
+          points_earned: number
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          attendance_type?: string
+          created_at?: string
+          id?: string
+          lecture_date?: string
+          lecture_type: string
+          notes?: string | null
+          points_earned?: number
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          attendance_type?: string
+          created_at?: string
+          id?: string
+          lecture_date?: string
+          lecture_type?: string
+          notes?: string | null
+          points_earned?: number
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -556,6 +721,90 @@ export type Database = {
         }
         Relationships: []
       }
+      tactical_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          notes: string | null
+          passed: boolean | null
+          points_earned: number
+          session_date: string
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          points_earned?: number
+          session_date?: string
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          passed?: boolean | null
+          points_earned?: number
+          session_date?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      totems: {
+        Row: {
+          created_at: string
+          description: string | null
+          discipline: string
+          icon_color: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          required_attendance_percentage: number | null
+          required_points: number | null
+          special_requirements: Json | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discipline: string
+          icon_color?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          required_attendance_percentage?: number | null
+          required_points?: number | null
+          special_requirements?: Json | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discipline?: string
+          icon_color?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          required_attendance_percentage?: number | null
+          required_points?: number | null
+          special_requirements?: Json | null
+          totem_type?: Database["public"]["Enums"]["totem_type"]
+        }
+        Relationships: []
+      }
       trainers: {
         Row: {
           bio: string | null
@@ -639,8 +888,10 @@ export type Database = {
       }
       training_sessions: {
         Row: {
+          activity_type: string | null
           created_at: string
           id: string
+          multiplier: number | null
           notes: string | null
           points_earned: number | null
           program_id: string | null
@@ -652,8 +903,10 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          activity_type?: string | null
           created_at?: string
           id?: string
+          multiplier?: number | null
           notes?: string | null
           points_earned?: number | null
           program_id?: string | null
@@ -665,8 +918,10 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          activity_type?: string | null
           created_at?: string
           id?: string
+          multiplier?: number | null
           notes?: string | null
           points_earned?: number | null
           program_id?: string | null
@@ -858,6 +1113,66 @@ export type Database = {
           },
         ]
       }
+      user_points: {
+        Row: {
+          bjj_points: number | null
+          bjj_sessions_attended: number | null
+          bjj_sessions_total: number | null
+          created_at: string
+          id: string
+          kick_points: number | null
+          kick_sessions_attended: number | null
+          kick_sessions_total: number | null
+          last_updated: string | null
+          nutrition_points: number | null
+          ofp_points: number | null
+          ofp_sessions_attended: number | null
+          ofp_sessions_total: number | null
+          pyramid_kemp_points: number | null
+          tactics_points: number | null
+          total_points: number | null
+          user_id: string
+        }
+        Insert: {
+          bjj_points?: number | null
+          bjj_sessions_attended?: number | null
+          bjj_sessions_total?: number | null
+          created_at?: string
+          id?: string
+          kick_points?: number | null
+          kick_sessions_attended?: number | null
+          kick_sessions_total?: number | null
+          last_updated?: string | null
+          nutrition_points?: number | null
+          ofp_points?: number | null
+          ofp_sessions_attended?: number | null
+          ofp_sessions_total?: number | null
+          pyramid_kemp_points?: number | null
+          tactics_points?: number | null
+          total_points?: number | null
+          user_id: string
+        }
+        Update: {
+          bjj_points?: number | null
+          bjj_sessions_attended?: number | null
+          bjj_sessions_total?: number | null
+          created_at?: string
+          id?: string
+          kick_points?: number | null
+          kick_sessions_attended?: number | null
+          kick_sessions_total?: number | null
+          last_updated?: string | null
+          nutrition_points?: number | null
+          ofp_points?: number | null
+          ofp_sessions_attended?: number | null
+          ofp_sessions_total?: number | null
+          pyramid_kemp_points?: number | null
+          tactics_points?: number | null
+          total_points?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -879,6 +1194,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_totems: {
+        Row: {
+          created_at: string
+          earned_at: string
+          id: string
+          notes: string | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+          user_id: string
+          verified: boolean | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          earned_at?: string
+          id?: string
+          notes?: string | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+          user_id: string
+          verified?: boolean | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          earned_at?: string
+          id?: string
+          notes?: string | null
+          totem_type?: Database["public"]["Enums"]["totem_type"]
+          user_id?: string
+          verified?: boolean | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -904,6 +1252,28 @@ export type Database = {
       }
     }
     Enums: {
+      activity_type:
+        | "training_bjj"
+        | "training_kick"
+        | "training_ofp"
+        | "lecture"
+        | "homework"
+        | "crash_test_bjj"
+        | "crash_test_kick"
+        | "hero_race"
+        | "tactics"
+        | "ascetic_challenge"
+      totem_type:
+        | "snake"
+        | "paw"
+        | "hammer"
+        | "star"
+        | "sprout"
+        | "compass"
+        | "monk"
+        | "blade"
+        | "lighthouse"
+        | "bear"
       user_role: "user" | "admin" | "super_admin" | "trainer"
     }
     CompositeTypes: {
@@ -1032,6 +1402,30 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "training_bjj",
+        "training_kick",
+        "training_ofp",
+        "lecture",
+        "homework",
+        "crash_test_bjj",
+        "crash_test_kick",
+        "hero_race",
+        "tactics",
+        "ascetic_challenge",
+      ],
+      totem_type: [
+        "snake",
+        "paw",
+        "hammer",
+        "star",
+        "sprout",
+        "compass",
+        "monk",
+        "blade",
+        "lighthouse",
+        "bear",
+      ],
       user_role: ["user", "admin", "super_admin", "trainer"],
     },
   },
