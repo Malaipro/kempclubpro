@@ -556,8 +556,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           first_name: string | null
+          height_cm: number | null
           id: string
           join_date: string | null
           last_name: string | null
@@ -567,12 +569,15 @@ export type Database = {
           total_points: number | null
           updated_at: string
           user_id: string
+          weight_kg: number | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           first_name?: string | null
+          height_cm?: number | null
           id?: string
           join_date?: string | null
           last_name?: string | null
@@ -582,12 +587,15 @@ export type Database = {
           total_points?: number | null
           updated_at?: string
           user_id: string
+          weight_kg?: number | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           first_name?: string | null
+          height_cm?: number | null
           id?: string
           join_date?: string | null
           last_name?: string | null
@@ -597,6 +605,7 @@ export type Database = {
           total_points?: number | null
           updated_at?: string
           user_id?: string
+          weight_kg?: number | null
         }
         Relationships: []
       }

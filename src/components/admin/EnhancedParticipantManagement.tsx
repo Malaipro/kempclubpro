@@ -3,9 +3,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Users, Plus, Edit, Trash2, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Participant {
   id: string;
@@ -17,11 +25,26 @@ interface Participant {
   total_points: number;
   stream?: string;
   status: 'registered' | 'active' | 'completed';
+  height_cm?: number;
+  weight_kg?: number;
+  date_of_birth?: string;
 }
 
 export const EnhancedParticipantManagement: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    stream: '',
+    password: '',
+    height_cm: '',
+    weight_kg: '',
+    date_of_birth: undefined as Date | undefined,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,7 +55,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, first_name, last_name, total_points')
+        .select('id, user_id, display_name, first_name, last_name, total_points, height_cm, weight_kg, date_of_birth')
         .order('display_name');
 
       if (error) throw error;
@@ -43,7 +66,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         total_points: item.total_points || 0,
         stream: '2-й поток',
         status: 'registered' as const,
-        email: 'Garaev2195@mail.ru' // Mock email, would come from auth.users in real implementation
+        email: 'participant@mail.ru' // Mock email, would come from auth.users in real implementation
       })) || [];
 
       setParticipants(transformedData);
@@ -57,6 +80,91 @@ export const EnhancedParticipantManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.first_name || !formData.last_name || !formData.email) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните обязательные поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      if (editingParticipant) {
+        // Update existing participant
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            display_name: `${formData.first_name} ${formData.last_name}`,
+            height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
+            weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
+            date_of_birth: formData.date_of_birth?.toISOString().split('T')[0] || null,
+          })
+          .eq('id', editingParticipant.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Участник обновлен',
+          description: 'Данные участника успешно обновлены',
+        });
+      } else {
+        // For now, we'll show a message that creating users requires backend implementation
+        toast({
+          title: 'Функция в разработке',
+          description: 'Создание новых участников требует backend реализации',
+          variant: 'default',
+        });
+        return;
+      }
+
+      setDialogOpen(false);
+      setEditingParticipant(null);
+      resetForm();
+      fetchParticipants();
+    } catch (error) {
+      console.error('Error saving participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось сохранить участника',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEdit = (participant: Participant) => {
+    setEditingParticipant(participant);
+    setFormData({
+      first_name: participant.first_name || '',
+      last_name: participant.last_name || '',
+      email: participant.email || '',
+      stream: participant.stream || '2-й поток',
+      password: '',
+      height_cm: participant.height_cm?.toString() || '',
+      weight_kg: participant.weight_kg?.toString() || '',
+      date_of_birth: participant.date_of_birth ? new Date(participant.date_of_birth) : undefined,
+    });
+    setDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      stream: '2-й поток',
+      password: '',
+      height_cm: '',
+      weight_kg: '',
+      date_of_birth: undefined,
+    });
   };
 
   const formatParticipantName = (participant: Participant) => {
@@ -99,10 +207,157 @@ export const EnhancedParticipantManagement: React.FC = () => {
           <h1 className="text-2xl font-bold">Управление участниками</h1>
           <p className="text-muted-foreground">Добавляйте и редактируйте участников интенсивов</p>
         </div>
-        <Button className="bg-destructive hover:bg-destructive/90 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить участника
-        </Button>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              className="bg-destructive hover:bg-destructive/90 text-white"
+              onClick={() => {
+                setEditingParticipant(null);
+                resetForm();
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить участника
+            </Button>
+          </DialogTrigger>
+          
+          <DialogContent className="max-w-md bg-gray-900 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                {editingParticipant ? 'Редактировать участника' : 'Добавить нового участника'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Имя *</Label>
+                  <Input
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    placeholder="Имя участника"
+                    className="bg-white text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Фамилия</Label>
+                  <Input
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Фамилия участника"
+                    className="bg-white text-black"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Электронная почта</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="email@example.com"
+                  className="bg-white text-black"
+                  disabled={!!editingParticipant}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-white">Рост (см)</Label>
+                  <Input
+                    type="number"
+                    value={formData.height_cm}
+                    onChange={(e) => setFormData(prev => ({ ...prev, height_cm: e.target.value }))}
+                    placeholder="175"
+                    className="bg-white text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Вес (кг)</Label>
+                  <Input
+                    type="number"
+                    value={formData.weight_kg}
+                    onChange={(e) => setFormData(prev => ({ ...prev, weight_kg: e.target.value }))}
+                    placeholder="70"
+                    className="bg-white text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Дата рождения</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
+                          !formData.date_of_birth && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.date_of_birth ? format(formData.date_of_birth, "dd.MM.yyyy") : "дд.мм.гггг"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-white" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date_of_birth}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, date_of_birth: date }))}
+                        initialFocus
+                        className="bg-white pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Поток</Label>
+                <Select value={formData.stream} onValueChange={(value) => setFormData(prev => ({ ...prev, stream: value }))}>
+                  <SelectTrigger className="bg-white text-black">
+                    <SelectValue placeholder="Выберите поток" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="2-й поток">2-й поток</SelectItem>
+                    <SelectItem value="1-й поток">1-й поток</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {!editingParticipant && (
+                <div>
+                  <Label className="text-white">Пароль</Label>
+                  <Input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="••••••••"
+                    className="bg-white text-black"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button 
+                  type="submit" 
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                >
+                  {editingParticipant ? 'Сохранить' : 'Создать'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4">
@@ -124,6 +379,12 @@ export const EnhancedParticipantManagement: React.FC = () => {
                       <span>{participant.total_points} баллов</span>
                       <span>•</span>
                       <span>{participant.email}</span>
+                      {participant.height_cm && participant.weight_kg && (
+                        <>
+                          <span>•</span>
+                          <span>{participant.height_cm}см, {participant.weight_kg}кг</span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline">{participant.stream}</Badge>
@@ -132,7 +393,11 @@ export const EnhancedParticipantManagement: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEdit(participant)}
+                  >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
