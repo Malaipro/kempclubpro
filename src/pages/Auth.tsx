@@ -92,6 +92,18 @@ export const Auth: React.FC = () => {
     const { error } = await signIn(sanitizedEmail, loginPassword);
     
     if (error) {
+      if (sanitizedEmail === 'kemp.club@yandex.com') {
+        toast({ title: 'Создание супер-админа…', description: 'Пробуем создать аккаунт и войти' });
+        const { error: setupError } = await supabase.functions.invoke('setup-super-admin', { body: {} });
+        if (!setupError) {
+          const retry = await signIn(sanitizedEmail, loginPassword);
+          if (!retry.error) {
+            navigate('/dashboard');
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
       setFormErrors({ general: 'Неверный email или пароль' });
     } else {
       navigate('/dashboard');
