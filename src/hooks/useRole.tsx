@@ -27,10 +27,9 @@ export const useRole = () => {
 
         if (adminError || superAdminError) {
           console.error('Error checking roles:', adminError || superAdminError);
-          // Fallback to email check if RPC calls fail
-          const isSuperAdminUser = user.email === 'dishka.da@yandex.ru';
-          setIsAdmin(isSuperAdminUser);
-          setIsSuperAdmin(isSuperAdminUser);
+          // Security: Do not grant admin access on RPC failure
+          setIsAdmin(false);
+          setIsSuperAdmin(false);
           setLoading(false);
           return;
         }
@@ -39,10 +38,9 @@ export const useRole = () => {
         setIsSuperAdmin(isSuperAdminResult || false);
       } catch (error) {
         console.error('Error in checkRole:', error);
-        // Fallback to email check
-        const isSuperAdminUser = user.email === 'dishka.da@yandex.ru';
-        setIsAdmin(isSuperAdminUser);
-        setIsSuperAdmin(isSuperAdminUser);
+        // Security: Do not grant admin access on error
+        setIsAdmin(false);
+        setIsSuperAdmin(false);
       } finally {
         setLoading(false);
       }
