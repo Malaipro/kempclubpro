@@ -44,25 +44,6 @@ export const EnhancedCooperTest: React.FC = () => {
             Тест 3 (0)
           </TabsTrigger>
         </TabsList>
-      </Tabs>
-    </div>
-  );
-          <TabsTrigger 
-            value="test2" 
-            className="flex items-center gap-2 data-[state=active]:bg-white"
-          >
-            <Zap className="w-4 h-4" />
-            Тест 2 (0)
-          </TabsTrigger>
-          <TabsTrigger 
-            value="comparison" 
-            className="flex items-center gap-2 data-[state=active]:bg-white"
-          >
-            <TrendingUp className="w-4 h-4" />
-            Сравнение (0)
-          </TabsTrigger>
-        </TabsList>
-
         <TabsContent value="test1" className="mt-6">
           <TestCard title="Тест 1" count={0} />
         </TabsContent>
@@ -71,8 +52,8 @@ export const EnhancedCooperTest: React.FC = () => {
           <TestCard title="Тест 2" count={0} />
         </TabsContent>
 
-        <TabsContent value="comparison" className="mt-6">
-          <TestCard title="Сравнение" count={0} />
+        <TabsContent value="test3" className="mt-6">
+          <TestCard title="Тест 3" count={0} />
         </TabsContent>
       </Tabs>
     </div>

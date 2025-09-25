@@ -113,99 +113,95 @@ export const AsceticManagement: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white border-gray-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <Target className="w-5 h-5 text-kamp-accent" />
-          Управление аскезами
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-pulse">Загрузка аскез...</div>
-          </div>
-        ) : (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Участник</TableHead>
-                  <TableHead>Тип аскезы</TableHead>
-                  <TableHead>Длительность</TableHead>
-                  <TableHead>Очки</TableHead>
-                  <TableHead>Дата выполнения</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead>Действия</TableHead>
+    <div className="bg-gray-900 p-6 rounded-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Target className="w-5 h-5 text-destructive" />
+        <h2 className="text-xl font-semibold text-destructive">Управление аскезами</h2>
+      </div>
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-pulse text-gray-400">Загрузка аскез...</div>
+        </div>
+      ) : (
+        <div className="bg-gray-800 border border-gray-700 rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-gray-700">
+                <TableHead className="text-gray-300">Участник</TableHead>
+                <TableHead className="text-gray-300">Тип аскезы</TableHead>
+                <TableHead className="text-gray-300">Длительность</TableHead>
+                <TableHead className="text-gray-300">Очки</TableHead>
+                <TableHead className="text-gray-300">Дата выполнения</TableHead>
+                <TableHead className="text-gray-300">Статус</TableHead>
+                <TableHead className="text-gray-300">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {asceticActivities.map((activity) => (
+                <TableRow key={activity.id} className="border-b border-gray-700">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <div className="font-medium text-white">{formatUserName(activity)}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    <Badge variant="outline" className="border-gray-600 text-gray-300">
+                      {getActivityTypeLabel(activity.activity_type)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    {activity.duration_minutes ? `${activity.duration_minutes} мин` : '—'}
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    <Badge className="bg-destructive text-white">{activity.points_earned}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm text-gray-300">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(activity.completed_at).toLocaleDateString('ru-RU')}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={activity.verified ? "default" : "secondary"} className={activity.verified ? "bg-green-600 text-white" : "bg-gray-600 text-white"}>
+                      {activity.verified ? 'Подтверждено' : 'Ожидает подтверждения'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {!activity.verified ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerification(activity.id, true)}
+                          className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerification(activity.id, false)}
+                          className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {asceticActivities.map((activity) => (
-                  <TableRow key={activity.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <div className="font-medium">{formatUserName(activity)}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {getActivityTypeLabel(activity.activity_type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {activity.duration_minutes ? `${activity.duration_minutes} мин` : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge>{activity.points_earned}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(activity.completed_at).toLocaleDateString('ru-RU')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={activity.verified ? "default" : "secondary"}>
-                        {activity.verified ? 'Подтверждено' : 'Ожидает подтверждения'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {!activity.verified ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerification(activity.id, true)}
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerification(activity.id, false)}
-                            className="text-red-600"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-        {asceticActivities.length === 0 && !loading && (
-          <div className="text-center py-8 text-gray-500">
-            Нет записей об аскезах
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {asceticActivities.length === 0 && !loading && (
+        <div className="text-center py-8 text-gray-400">
+          Нет записей об аскезах
+        </div>
+      )}
+    </div>
   );
 };

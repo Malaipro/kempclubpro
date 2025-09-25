@@ -121,110 +121,106 @@ export const CooperTestManagement: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white border-gray-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <Activity className="w-5 h-5 text-kamp-accent" />
-          Управление тестом Купера
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-pulse">Загрузка результатов...</div>
-          </div>
-        ) : (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Участник</TableHead>
-                  <TableHead>Дистанция</TableHead>
-                  <TableHead>Время</TableHead>
-                  <TableHead>Возраст</TableHead>
-                  <TableHead>Пол</TableHead>
-                  <TableHead>Уровень</TableHead>
-                  <TableHead>Дата теста</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead>Действия</TableHead>
+    <div className="bg-gray-900 p-6 rounded-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Activity className="w-5 h-5 text-destructive" />
+        <h2 className="text-xl font-semibold text-destructive">Управление тестом Купера</h2>
+      </div>
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-pulse text-gray-400">Загрузка результатов...</div>
+        </div>
+      ) : (
+        <div className="bg-gray-800 border border-gray-700 rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-gray-700">
+                <TableHead className="text-gray-300">Участник</TableHead>
+                <TableHead className="text-gray-300">Дистанция</TableHead>
+                <TableHead className="text-gray-300">Время</TableHead>
+                <TableHead className="text-gray-300">Возраст</TableHead>
+                <TableHead className="text-gray-300">Пол</TableHead>
+                <TableHead className="text-gray-300">Уровень</TableHead>
+                <TableHead className="text-gray-300">Дата теста</TableHead>
+                <TableHead className="text-gray-300">Статус</TableHead>
+                <TableHead className="text-gray-300">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {testResults.map((result) => (
+                <TableRow key={result.id} className="border-b border-gray-700">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <div className="font-medium text-white">{formatUserName(result)}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-white">{result.distance} м</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-gray-300">
+                      <Clock className="w-3 h-3" />
+                      {result.time_minutes} мин
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    {result.age ? `${result.age} лет` : '—'}
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    {result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getFitnessLevelColor(result.fitness_level)}>
+                      {getFitnessLevelLabel(result.fitness_level)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm text-gray-300">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(result.test_date).toLocaleDateString('ru-RU')}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={result.verified ? "default" : "secondary"} className={result.verified ? "bg-green-600 text-white" : "bg-gray-600 text-white"}>
+                      {result.verified ? 'Подтвержден' : 'Ожидает подтверждения'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {!result.verified ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerification(result.id, true)}
+                          className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVerification(result.id, false)}
+                          className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {testResults.map((result) => (
-                  <TableRow key={result.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <div className="font-medium">{formatUserName(result)}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{result.distance} м</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {result.time_minutes} мин
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {result.age ? `${result.age} лет` : '—'}
-                    </TableCell>
-                    <TableCell>
-                      {result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getFitnessLevelColor(result.fitness_level)}>
-                        {getFitnessLevelLabel(result.fitness_level)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(result.test_date).toLocaleDateString('ru-RU')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={result.verified ? "default" : "secondary"}>
-                        {result.verified ? 'Подтвержден' : 'Ожидает подтверждения'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {!result.verified ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerification(result.id, true)}
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerification(result.id, false)}
-                            className="text-red-600"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-        {testResults.length === 0 && !loading && (
-          <div className="text-center py-8 text-gray-500">
-            Нет результатов теста Купера
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {testResults.length === 0 && !loading && (
+        <div className="text-center py-8 text-gray-400">
+          Нет результатов теста Купера
+        </div>
+      )}
+    </div>
   );
 };
