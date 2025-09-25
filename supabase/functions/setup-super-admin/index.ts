@@ -15,8 +15,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const adminEmail = 'kemp.club@yandex.com'
-    const adminPassword = 'Dishk@82'
+    const adminEmail = Deno.env.get('ADMIN_EMAIL')
+    const adminPassword = Deno.env.get('ADMIN_PASSWORD')
+
+    if (!adminEmail || !adminPassword) {
+      console.error('Missing required environment variables: ADMIN_EMAIL or ADMIN_PASSWORD')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     console.log('Setting up super admin account...')
 

@@ -13,7 +13,7 @@ import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
 import { DetailedScheduleManagement } from '@/components/schedule/DetailedScheduleManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
 import { ContentManager } from '@/components/cms/ContentManager';
-import { SecurityAuditLog } from '@/components/admin/SecurityAuditLog';
+import { SecurityEnhancements } from '@/components/security/SecurityEnhancements';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield } from 'lucide-react';
@@ -183,9 +183,9 @@ export const Dashboard: React.FC = () => {
                    <ContentManager />
                  </TabsContent>
                  
-                 <TabsContent value="security">
-                   <SecurityAuditLog />
-                 </TabsContent>
+                  <TabsContent value="security">
+                    <SecurityEnhancements />
+                  </TabsContent>
               </Tabs>
             ) : (
               <Tabs defaultValue="kamp" className="w-full">
