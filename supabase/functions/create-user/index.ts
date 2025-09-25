@@ -9,7 +9,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, password, metadata } = await req.json()
+    const { email, password, metadata, role } = await req.json()
 
     // Create a Supabase client with service role key
     const supabaseAdmin = createClient(
@@ -34,6 +34,24 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
+    }
+
+    // If role is specified, add it to user_roles table
+    if (role && authData.user) {
+      const { error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: role,
+          assigned_by: authData.user.id
+        })
+
+      if (roleError) {
+        console.error('Role assignment error:', roleError)
+        // Don't fail the whole operation, just log the error
+      } else {
+        console.log(`Successfully assigned role ${role} to user ${authData.user.id}`)
+      }
     }
 
     return new Response(

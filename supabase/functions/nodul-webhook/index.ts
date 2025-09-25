@@ -84,8 +84,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'Failed to send data to Nodul',
-        details: error.toString()
+        error: (error as Error).message || 'Failed to send data to Nodul',
+        details: (error as Error).toString()
       }),
       { 
         status: 200, 

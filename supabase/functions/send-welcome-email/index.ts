@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Resend functionality temporarily disabled
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,41 +112,20 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: "КЭМП <kemp.club@yandex.com>",
-      to: [email],
-      subject: "Добро пожаловать в КЭМП! 🏆",
-      html: emailHtml,
-      text: `Добро пожаловать в КЭМП, ${name}!
+    // Email sending temporarily disabled - Resend not configured
+    console.log(`Welcome email would be sent to ${email} for ${name}`);
+    
+    const emailResponse = {
+      id: 'temp-' + Date.now(),
+      message: 'Email sending disabled'
+    };
 
-Поздравляем с успешной регистрацией в системе КЭМП!
-
-Теперь у вас есть доступ к:
-- Личному кабинету для отслеживания прогресса
-- Системе геймификации с закалами, гранями и шрамами
-- Трекеру аскез для личных вызовов
-- Таблице лидеров и достижениям
-
-${confirmUrl ? `Подтвердите регистрацию: ${confirmUrl}` : ''}
-
-Что делать дальше:
-1. Войдите в свой личный кабинет
-2. Изучите инструкцию по системе КЭМП
-3. Начните добавлять свои активности
-4. Создайте первую аскезу для получения тотема "Монах"
-5. Следите за прогрессом к тотемам
-
-Если у вас есть вопросы, обратитесь к тренерам или кураторам клуба.
-
-КЭМП - ваш путь к дисциплине и прогрессу`
-    });
-
-    console.log("Welcome email sent successfully:", emailResponse);
+    console.log("Welcome email disabled:", emailResponse);
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: "Welcome email sent successfully",
-      emailId: emailResponse.data?.id 
+      message: "Welcome email disabled - Resend not configured",
+      emailId: emailResponse.id 
     }), {
       status: 200,
       headers: {
