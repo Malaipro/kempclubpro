@@ -3,16 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { Layout } from '@/components/Layout';
+import { KampSystemUser } from '@/components/kamp/KampSystemUser';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { KampInstructions } from '@/components/kamp/KampInstructions';
-import { KampProgress } from '@/components/kamp/KampProgress';
-import { ActivityForm } from '@/components/kamp/ActivityForm';
-import { AsceticManagement } from '@/components/kamp/AsceticManagement';
-import { ParticipantsList } from '@/components/admin/ParticipantsList';
-import { KampManual } from '@/components/instructions/KampManual';
+import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
+import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Shield, Book, Trophy, Plus, Target, Users, FileText } from 'lucide-react';
+import { LogOut, User, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Dashboard: React.FC = () => {
@@ -115,67 +112,36 @@ export const Dashboard: React.FC = () => {
             {isSuperAdmin ? (
               <AdminDashboard />
             ) : (
-              <div>
-                <div className="section-heading mb-8 text-center">
-                  <h2 className="text-gradient">Система КЭМП</h2>
-                  <p>Полная система геймификации: инструкции, прогресс, активности и аскезы</p>
+              <Tabs defaultValue="kamp" className="w-full">
+                <div className="mb-6">
+                  <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1">
+                    <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                      <User className="w-4 h-4" />
+                      <span className="text-center">КЭМП Система</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                      <User className="w-4 h-4" />
+                      <span className="text-center">Тест Купера</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                      <Shield className="w-4 h-4" />
+                      <span className="text-center">Расписание</span>
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-
-                <Tabs defaultValue="instructions" className="w-full">
-                  <div className="mb-8 overflow-x-auto">
-                    <TabsList className="flex w-max min-w-full h-auto gap-1 p-1 bg-gray-800 rounded-lg">
-                      <TabsTrigger value="instructions" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <Book className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Инструкция</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="progress" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <Trophy className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Прогресс</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="activities" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <Plus className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Активности</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="ascetics" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <Target className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Аскезы</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="participants" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <Users className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Участники</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="manual" className="flex flex-col items-center gap-1 text-xs px-3 py-3 min-w-[80px] flex-shrink-0 data-[state=active]:bg-white data-[state=active]:text-black text-white">
-                        <FileText className="w-4 h-4" />
-                        <span className="whitespace-nowrap">Руководство</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-                  
-                  <TabsContent value="instructions">
-                    <KampInstructions />
-                  </TabsContent>
-                  
-                  <TabsContent value="progress">
-                    <KampProgress />
-                  </TabsContent>
-                  
-                  <TabsContent value="activities">
-                    <ActivityForm />
-                  </TabsContent>
-                  
-                  <TabsContent value="ascetics">
-                    <AsceticManagement />
-                  </TabsContent>
-                  
-                  <TabsContent value="participants">
-                    <ParticipantsList />
-                  </TabsContent>
-                  
-                  <TabsContent value="manual">
-                    <KampManual />
-                  </TabsContent>
-                </Tabs>
-              </div>
+                
+                <TabsContent value="kamp">
+                  <KampSystemUser />
+                </TabsContent>
+                
+                <TabsContent value="cooper">
+                  <CooperTestManagement />
+                </TabsContent>
+                
+                <TabsContent value="schedule">
+                  <ScheduleViewer />
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </section>
