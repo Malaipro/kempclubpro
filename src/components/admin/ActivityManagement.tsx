@@ -113,149 +113,109 @@ export const ActivityManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-destructive/10 rounded-lg">
-          <Plus className="w-6 h-6 text-destructive" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">Добавить активность участнику</h1>
-          <p className="text-muted-foreground">Добавьте активность любому участнику текущего потока</p>
-        </div>
+    <div className="bg-gray-900 p-6 rounded-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Plus className="w-5 h-5 text-destructive" />
+        <h2 className="text-xl font-semibold text-destructive">Добавить активность участнику</h2>
       </div>
+      <p className="text-gray-400 mb-6">Добавьте активность любому участнику текущего потока</p>
 
-      <Card>
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Participant Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="participant">Выберите участника</Label>
-              <Select value={selectedParticipant} onValueChange={setSelectedParticipant} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите участника" />
-                </SelectTrigger>
-                <SelectContent>
-                  {participants.map((participant) => (
-                    <SelectItem key={participant.user_id} value={participant.user_id}>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        {formatParticipantName(participant)}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Participant Selection */}
+        <Select value={selectedParticipant} onValueChange={setSelectedParticipant} required>
+          <SelectTrigger className="bg-white text-black">
+            <SelectValue placeholder="Выберите участника" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            {participants.map((participant) => (
+              <SelectItem key={participant.user_id} value={participant.user_id}>
+                {formatParticipantName(participant)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Activity Type */}
-            <div className="space-y-2">
-              <Label htmlFor="activity-type">Выберите тип награды</Label>
-              <Select value={activityType} onValueChange={setActivityType} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите тип награды" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kickboxing">Кикбоксинг</SelectItem>
-                  <SelectItem value="bjj">BJJ</SelectItem>
-                  <SelectItem value="ofp">ОФП</SelectItem>
-                  <SelectItem value="tactical">Тактическая медицина</SelectItem>
-                  <SelectItem value="theory">Теория</SelectItem>
-                  <SelectItem value="challenges">Челленджи</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Activity Type */}
+        <Select value={activityType} onValueChange={setActivityType} required>
+          <SelectTrigger className="bg-white text-black">
+            <SelectValue placeholder="Выберите тип награды" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="kickboxing">Кикбоксинг</SelectItem>
+            <SelectItem value="bjj">BJJ</SelectItem>
+            <SelectItem value="ofp">ОФП</SelectItem>
+            <SelectItem value="tactical">Тактическая медицина</SelectItem>
+            <SelectItem value="theory">Теория</SelectItem>
+            <SelectItem value="challenges">Челленджи</SelectItem>
+          </SelectContent>
+        </Select>
 
-            {/* Points and Duration Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="points">Очки</Label>
-                <Input
-                  id="points"
-                  type="number"
-                  min="1"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Длительность</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите длительность" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 минут</SelectItem>
-                    <SelectItem value="60">1 час</SelectItem>
-                    <SelectItem value="90">1.5 часа</SelectItem>
-                    <SelectItem value="120">2 часа</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        {/* Points and Duration Row */}
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            type="number"
+            min="1"
+            value={points}
+            onChange={(e) => setPoints(e.target.value)}
+            placeholder="1"
+            className="bg-white text-black"
+            required
+          />
+          
+          <Input
+            placeholder="Длительность"
+            className="bg-white text-black"
+          />
+        </div>
 
-            {/* Date Selection */}
-            <div className="space-y-2">
-              <Label>Дата</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd.MM.yyyy") : "25.09.2025"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Trainer */}
-            <div className="space-y-2">
-              <Label htmlFor="trainer">Имя тренера или куратора</Label>
-              <Input
-                id="trainer"
-                value={trainer}
-                onChange={(e) => setTrainer(e.target.value)}
-                placeholder="Имя тренера или куратора"
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Дополнительная информация об активности</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Дополнительная информация об активности"
-                rows={3}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button 
-              type="submit" 
-              className="w-full bg-destructive hover:bg-destructive/90 text-white"
-              disabled={loading}
+        {/* Date Selection */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50"
             >
-              Добавить активность
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "dd.MM.yyyy") : "25.09.2025"}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 bg-white" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              initialFocus
+              className="bg-white"
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Trainer */}
+        <Input
+          value={trainer}
+          onChange={(e) => setTrainer(e.target.value)}
+          placeholder="Имя тренера или куратора"
+          className="bg-white text-black"
+        />
+
+        {/* Notes */}
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Дополнительная информация об активности"
+          rows={3}
+          className="bg-white text-black"
+        />
+
+        {/* Submit Button */}
+        <Button 
+          type="submit" 
+          className="w-full bg-destructive hover:bg-destructive/90 text-white"
+          disabled={loading}
+        >
+          Добавить активность
+        </Button>
+      </form>
     </div>
   );
 };
