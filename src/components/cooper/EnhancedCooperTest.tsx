@@ -22,30 +22,31 @@ export const EnhancedCooperTest: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Zap className="w-6 h-6 text-destructive" />
-            Тест Купера
-          </h1>
-          <p className="text-muted-foreground">Управление результатами всех участников (4 круга в зале)</p>
-        </div>
-        <Button className="bg-destructive hover:bg-destructive/90 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить результат
-        </Button>
+    <div className="bg-gray-900 p-6 rounded-lg">
+      <div className="flex items-center gap-2 mb-6">
+        <Zap className="w-5 h-5 text-destructive" />
+        <h2 className="text-xl font-semibold text-destructive">Тест Купера</h2>
       </div>
+      <p className="text-gray-400 mb-6">Управление результатами всех участников (4 круга в зале)</p>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/20">
-          <TabsTrigger 
-            value="test1" 
-            className="flex items-center gap-2 data-[state=active]:bg-white"
-          >
-            <Zap className="w-4 h-4" />
+        <TabsList className="grid w-full grid-cols-3 bg-gray-800 mb-6">
+          <TabsTrigger value="test1" className="text-white data-[state=active]:bg-destructive data-[state=active]:text-white">
+            <Zap className="w-4 h-4 mr-2" />
             Тест 1 (0)
           </TabsTrigger>
+          <TabsTrigger value="test2" className="text-white data-[state=active]:bg-destructive data-[state=active]:text-white">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Тест 2 (0)
+          </TabsTrigger>
+          <TabsTrigger value="test3" className="text-white data-[state=active]:bg-destructive data-[state=active]:text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Тест 3 (0)
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+  );
           <TabsTrigger 
             value="test2" 
             className="flex items-center gap-2 data-[state=active]:bg-white"
