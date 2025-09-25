@@ -22,7 +22,7 @@ export const Testimonials: React.FC = () => {
 
   // Загружаем отзывы из базы данных
   // Используем статические отзывы до создания таблицы testimonials
-  const testimonials = [
+  const testimonials = React.useMemo(() => [
     {
       id: '1',
       name: 'Александр К.',
@@ -37,20 +37,18 @@ export const Testimonials: React.FC = () => {
       text_content: 'Программа научила меня дисциплине и целеустремленности. Результаты превзошли все ожидания.',
       video_url: '/public/videos/testimonial-2.mp4'
     }
-  ];
+  ], []);
   
   const isLoading = false;
 
-  // Инициализируем состояние звука после загрузки данных
+  // Инициализируем состояние звука один раз
   React.useEffect(() => {
-    if (testimonials.length > 0) {
-      const initialMutedStatus = testimonials.reduce((acc, testimonial, index) => {
-        acc[index + 1] = true;
-        return acc;
-      }, {} as { [key: number]: boolean });
-      setMutedStatus(initialMutedStatus);
-    }
-  }, [testimonials]);
+    const initialMutedStatus = testimonials.reduce((acc, testimonial, index) => {
+      acc[index + 1] = true;
+      return acc;
+    }, {} as { [key: number]: boolean });
+    setMutedStatus(initialMutedStatus);
+  }, []); // Убираем зависимость от testimonials
   const togglePlay = (index: number) => {
     const videoElement = videoRefs.current[index];
     if (!videoElement) return;

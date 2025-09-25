@@ -49,19 +49,7 @@ export const ContactForm: React.FC = () => {
         // Обработка ошибок загрузки
         script.onerror = () => {
           console.error('Failed to load Bitrix24 form script');
-          const container = document.getElementById('bitrix-form-container');
-          if (container) {
-            container.innerHTML = `
-              <div class="text-center text-gray-400 p-8">
-                <p class="mb-4">Форма временно недоступна</p>
-                <p class="text-sm">Попробуйте связаться с нами напрямую:</p>
-                <div class="mt-4 space-y-2">
-                  <p>WhatsApp: <a href="https://wa.me/79673785151" class="text-kamp-primary hover:underline">+7 967 378 51 51</a></p>
-                  <p>Telegram: <a href="https://t.me/Dmitriy116" class="text-kamp-primary hover:underline">@Dmitriy116</a></p>
-                </div>
-              </div>
-            `;
-          }
+          showFallbackForm();
         };
         
         script.onload = () => {
@@ -75,6 +63,91 @@ export const ContactForm: React.FC = () => {
         }
       } catch (error) {
         console.error('Error creating Bitrix24 form script:', error);
+        showFallbackForm();
+      }
+    };
+
+    const showFallbackForm = () => {
+      const container = document.getElementById('bitrix-form-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+            <h4 class="text-white text-lg font-semibold mb-4">Заявка на участие в КЭМП</h4>
+            <form id="fallback-contact-form" class="space-y-4">
+              <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">Имя *</label>
+                <input type="text" name="name" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Ваше имя">
+              </div>
+              <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">Телефон *</label>
+                <input type="tel" name="phone" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="+7 (999) 123-45-67">
+              </div>
+              <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">Интенсив *</label>
+                <select name="course" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500">
+                  <option value="">Выберите интенсив</option>
+                  <option value="intensive-1">1-й интенсив КЭМП</option>
+                  <option value="intensive-2">2-й интенсив КЭМП</option>
+                  <option value="intensive-3">3-й интенсив КЭМП</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">Социальные сети</label>
+                <input type="text" name="social" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Instagram, VK или другое">
+              </div>
+              <div>
+                <label class="block text-gray-300 text-sm font-medium mb-2">Сообщение</label>
+                <textarea name="message" rows="3" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Расскажите о себе и ваших целях"></textarea>
+              </div>
+              <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-md transition-colors">
+                Отправить заявку
+              </button>
+            </form>
+            <div class="mt-6 pt-4 border-t border-gray-600">
+              <p class="text-gray-400 text-sm mb-2">Или свяжитесь с нами напрямую:</p>
+              <div class="space-y-1">
+                <p class="text-gray-300 text-sm">WhatsApp: <a href="https://wa.me/79673785151" class="text-red-400 hover:underline">+7 967 378 51 51</a></p>
+                <p class="text-gray-300 text-sm">Telegram: <a href="https://t.me/Dmitriy116" class="text-red-400 hover:underline">@Dmitriy116</a></p>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Добавляем обработчик формы
+        const fallbackForm = document.getElementById('fallback-contact-form');
+        if (fallbackForm) {
+          fallbackForm.addEventListener('submit', handleFallbackFormSubmit);
+        }
+      }
+    };
+
+    const handleFallbackFormSubmit = async (e: Event) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
+      try {
+        // Здесь можно добавить отправку на сервер или в Supabase
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const container = document.getElementById('bitrix-form-container');
+          if (container) {
+            container.innerHTML = `
+              <div class="text-center text-green-400 p-8">
+                <div class="text-4xl mb-4">✓</div>
+                <h4 class="text-xl font-semibold mb-2">Заявка отправлена!</h4>
+                <p class="text-gray-300">Мы свяжемся с вами в ближайшее время</p>
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('Произошла ошибка при отправке. Попробуйте связаться с нами напрямую.');
       }
     };
 
