@@ -47,7 +47,7 @@ export const CooperTestManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTestResults(data || []);
+      setTestResults((data as unknown) as CooperTestResult[] || []);
     } catch (error) {
       console.error('Error fetching Cooper test results:', error);
       toast({

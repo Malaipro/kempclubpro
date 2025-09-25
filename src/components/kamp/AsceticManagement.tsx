@@ -45,7 +45,7 @@ export const AsceticManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAsceticActivities(data || []);
+      setAsceticActivities((data as unknown) as AsceticActivity[] || []);
     } catch (error) {
       console.error('Error fetching ascetic activities:', error);
       toast({
