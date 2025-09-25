@@ -3,17 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { Layout } from '@/components/Layout';
-import { KampSystem } from '@/components/kamp';
 import { KampSystemUser } from '@/components/kamp/KampSystemUser';
-import { AdminPanel } from '@/components/admin/AdminPanel';
-import { ParticipantManagement } from '@/components/admin/ParticipantManagement';
-import { StreamManagement } from '@/components/admin/StreamManagement';
-import { ActivityFormAdmin } from '@/components/kamp/ActivityFormAdmin';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
-import { DetailedScheduleManagement } from '@/components/schedule/DetailedScheduleManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
-import { ContentManager } from '@/components/cms/ContentManager';
-import { SecurityEnhancements } from '@/components/security/SecurityEnhancements';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield } from 'lucide-react';
@@ -117,76 +110,7 @@ export const Dashboard: React.FC = () => {
         <section className="kamp-section">
           <div className="kamp-container">
             {isSuperAdmin ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="mb-6 overflow-x-auto">
-                  <TabsList className="flex w-max min-w-full h-auto p-1 gap-1">
-                    <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <User className="w-4 h-4" />
-                      <span className="whitespace-nowrap">КЭМП</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="activities" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <Shield className="w-4 h-4" />
-                      <span className="whitespace-nowrap">Активности</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="participants" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <User className="w-4 h-4" />
-                      <span className="whitespace-nowrap">Участники</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="streams" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <Shield className="w-4 h-4" />
-                      <span className="whitespace-nowrap">Потоки</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <User className="w-4 h-4" />
-                      <span className="whitespace-nowrap">Купер</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                      <Shield className="w-4 h-4" />
-                      <span className="whitespace-nowrap">Расписание</span>
-                    </TabsTrigger>
-                     <TabsTrigger value="cms" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                       <Shield className="w-4 h-4" />
-                       <span className="whitespace-nowrap">CMS</span>
-                     </TabsTrigger>
-                     <TabsTrigger value="security" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[60px] flex-shrink-0">
-                       <Shield className="w-4 h-4" />
-                       <span className="whitespace-nowrap">Безопасность</span>
-                     </TabsTrigger>
-                   </TabsList>
-                 </div>
-                 
-                 <TabsContent value="kamp">
-                   <KampSystem />
-                 </TabsContent>
-                 
-                 <TabsContent value="activities">
-                   <ActivityFormAdmin />
-                 </TabsContent>
-                 
-                 <TabsContent value="participants">
-                   <ParticipantManagement />
-                 </TabsContent>
-                 
-                 <TabsContent value="streams">
-                   <StreamManagement />
-                 </TabsContent>
-                 
-                 <TabsContent value="cooper">
-                   <CooperTestManagement />
-                 </TabsContent>
-                 
-                 <TabsContent value="schedule">
-                   <DetailedScheduleManagement />
-                 </TabsContent>
-                 
-                 <TabsContent value="cms">
-                   <ContentManager />
-                 </TabsContent>
-                 
-                  <TabsContent value="security">
-                    <SecurityEnhancements />
-                  </TabsContent>
-              </Tabs>
+              <AdminDashboard />
             ) : (
               <Tabs defaultValue="kamp" className="w-full">
                 <div className="mb-6">

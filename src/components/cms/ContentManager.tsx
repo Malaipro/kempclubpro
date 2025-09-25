@@ -46,6 +46,27 @@ export const ContentManager: React.FC = () => {
   const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
   const [editingProgram, setEditingProgram] = useState<TrainingProgram | null>(null);
+  const [activeTab, setActiveTab] = useState('content');
+  
+  // Page content state
+  const [pageContent, setPageContent] = useState({
+    about: {
+      title: 'О КЭМП',
+      description: 'КЭМП - это не просто спортивный клуб, это сообщество един...',
+      enabled: true
+    },
+    hero: {
+      title: 'КЭМП',
+      subtitle: 'Комплексная Экстремальная Мужская Подготовка',
+      description: 'Тренировочный лагерь для развития боевых навыков, физиче...',
+      enabled: true
+    },
+    philosophy: {
+      title: 'Философия КЭМП',
+      description: 'Наша философия основана на принципах дисциплины, уважен...',
+      enabled: true
+    }
+  });
   
   const [trainerFormData, setTrainerFormData] = useState({
     name: '',
@@ -203,28 +224,133 @@ export const ContentManager: React.FC = () => {
     }
   };
 
-  return (
-    <Card className="kamp-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-kamp-accent">
-          <FileText className="w-5 h-5" />
-          Управление контентом
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="trainers" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="trainers" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Тренеры
-            </TabsTrigger>
-            <TabsTrigger value="programs" className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4" />
-              Программы
-            </TabsTrigger>
-          </TabsList>
+  const updatePageContent = (section: string, field: string, value: any) => {
+    setPageContent(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section as keyof typeof prev],
+        [field]: value
+      }
+    }));
+  };
 
-          <TabsContent value="trainers" className="space-y-4">
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Управление контентом</h1>
+        <p className="text-muted-foreground">Редактируйте весь контент сайта прямо здесь</p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5 bg-muted/50">
+          <TabsTrigger value="content" className="data-[state=active]:bg-destructive data-[state=active]:text-white">
+            Контент страниц
+          </TabsTrigger>
+          <TabsTrigger value="trainers">Тренеры</TabsTrigger>
+          <TabsTrigger value="programs">Программы</TabsTrigger>
+          <TabsTrigger value="moments">Моменты КЭМП</TabsTrigger>
+          <TabsTrigger value="reviews">Отзывы</TabsTrigger>
+        </TabsList>
+
+        {/* Content Pages Tab */}
+        <TabsContent value="content" className="space-y-6">
+          {/* About Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>title</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.about.title}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.about.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>description</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.about.description}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.about.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Hero Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Hero</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>title</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.hero.title}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.hero.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>subtitle</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.hero.subtitle}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.hero.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>description</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.hero.description}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.hero.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Philosophy Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Philosophy</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>title</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.philosophy.title}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.philosophy.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>description</Label>
+                  <div className="text-sm text-muted-foreground">{pageContent.philosophy.description}</div>
+                </div>
+                <div className="w-12 h-6 bg-muted rounded-full relative">
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pageContent.philosophy.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Trainers Tab */}
+        <TabsContent value="trainers" className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Управление тренерами</h3>
               <Dialog open={isTrainerDialogOpen} onOpenChange={setIsTrainerDialogOpen}>
@@ -364,7 +490,8 @@ export const ContentManager: React.FC = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="programs" className="space-y-4">
+        {/* Programs Tab */}
+        <TabsContent value="programs" className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Тренировочные программы</h3>
               <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
@@ -514,8 +641,31 @@ export const ContentManager: React.FC = () => {
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+
+        {/* Moments Tab */}
+        <TabsContent value="moments" className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground py-8">
+                <h3 className="text-lg font-semibold mb-2">Моменты КЭМП в разработке</h3>
+                <p className="text-sm">Здесь будет управление особыми моментами программы</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reviews Tab */}
+        <TabsContent value="reviews" className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground py-8">
+                <h3 className="text-lg font-semibold mb-2">Отзывы в разработке</h3>
+                <p className="text-sm">Здесь будет управление отзывами участников</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
