@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, User } from 'lucide-react';
+import { CalendarIcon, Plus, User, Target, BookOpen, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,11 +30,14 @@ export const ActivityManagement: React.FC = () => {
   const [date, setDate] = useState<Date>();
   const [trainer, setTrainer] = useState('');
   const [notes, setNotes] = useState('');
+  const [trainers, setTrainers] = useState<any[]>([]);
+  const [multiplier, setMultiplier] = useState('1.0');
   
   const { toast } = useToast();
 
   useEffect(() => {
     fetchParticipants();
+    fetchTrainers();
   }, []);
 
   const fetchParticipants = async () => {
@@ -58,6 +61,26 @@ export const ActivityManagement: React.FC = () => {
     }
   };
 
+  const fetchTrainers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trainers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (error) throw error;
+      setTrainers(data || []);
+    } catch (error) {
+      console.error('Error fetching trainers:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить тренеров',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -71,13 +94,15 @@ export const ActivityManagement: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
+        const { error } = await supabase
         .from('training_sessions')
         .insert([{
           user_id: selectedParticipant,
           session_type: activityType,
           points_earned: parseInt(points),
+          multiplier: parseFloat(multiplier),
           session_date: date?.toISOString() || new Date().toISOString(),
+          trainer_id: trainer || null,
           notes: notes || null,
         }]);
 
@@ -92,6 +117,7 @@ export const ActivityManagement: React.FC = () => {
       setSelectedParticipant('');
       setActivityType('');
       setPoints('1');
+      setMultiplier('1.0');
       setDate(undefined);
       setTrainer('');
       setNotes('');
@@ -141,31 +167,48 @@ export const ActivityManagement: React.FC = () => {
             <SelectValue placeholder="Выберите тип награды" />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            <SelectItem value="kickboxing">Кикбоксинг</SelectItem>
-            <SelectItem value="bjj">BJJ</SelectItem>
-            <SelectItem value="ofp">ОФП</SelectItem>
-            <SelectItem value="tactical">Тактическая медицина</SelectItem>
-            <SelectItem value="theory">Теория</SelectItem>
-            <SelectItem value="challenges">Челленджи</SelectItem>
+            <SelectItem value="physical">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-red-500" />
+                <span>Закал (физика)</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="theory">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-blue-500" />
+                <span>Грань (теория)</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="challenge">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-orange-500" />
+                <span>Шрам (испытания)</span>
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Points and Duration Row */}
+        {/* Points and Multiplier Row */}
         <div className="grid grid-cols-2 gap-4">
           <Input
             type="number"
             min="1"
             value={points}
             onChange={(e) => setPoints(e.target.value)}
-            placeholder="1"
+            placeholder="Баллы"
             className="bg-white text-black"
             required
           />
           
-          <Input
-            placeholder="Длительность"
-            className="bg-white text-black"
-          />
+          <Select value={multiplier} onValueChange={setMultiplier}>
+            <SelectTrigger className="bg-white text-black">
+              <SelectValue placeholder="Коэффициент" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              <SelectItem value="1.0">x1.0 (обычно)</SelectItem>
+              <SelectItem value="1.5">x1.5 (за сверхусилие)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Date Selection */}
@@ -191,12 +234,18 @@ export const ActivityManagement: React.FC = () => {
         </Popover>
 
         {/* Trainer */}
-        <Input
-          value={trainer}
-          onChange={(e) => setTrainer(e.target.value)}
-          placeholder="Имя тренера или куратора"
-          className="bg-white text-black"
-        />
+        <Select value={trainer} onValueChange={setTrainer}>
+          <SelectTrigger className="bg-white text-black">
+            <SelectValue placeholder="Выберите тренера или куратора" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            {trainers.map((trainerItem) => (
+              <SelectItem key={trainerItem.id} value={trainerItem.id}>
+                {trainerItem.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Notes */}
         <Textarea
