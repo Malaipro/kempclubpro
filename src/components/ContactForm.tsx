@@ -15,36 +15,23 @@ declare global {
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
   useEffect(() => {
-    const ALLOWED_BITRIX_DOMAIN = 'cdn-ru.bitrix24.ru';
-    const BITRIX_FORM_ID = 'inline/134/km4hms';
-    const BITRIX_PROJECT_ID = 'b23536290';
-    
     const loadBitrixForm = () => {
       // Проверяем, что форма еще не загружена
-      if (document.querySelector(`[data-b24-form="${BITRIX_FORM_ID}"]`)) {
+      if (document.querySelector(`[data-b24-form="inline/134/km4hms"]`)) {
         return;
       }
 
       try {
-        // Безопасное создание скрипта с валидацией домена
-        const scriptUrl = `https://${ALLOWED_BITRIX_DOMAIN}/${BITRIX_PROJECT_ID}/crm/form/loader_134.js`;
-        
-        // Проверяем валидность URL
-        const url = new URL(scriptUrl);
-        if (url.hostname !== ALLOWED_BITRIX_DOMAIN) {
-          console.error('Invalid Bitrix24 domain detected');
-          return;
-        }
-
+        // Создаем скрипт точно как предоставил пользователь
         const script = document.createElement('script');
-        script.setAttribute('data-b24-form', BITRIX_FORM_ID);
+        script.setAttribute('data-b24-form', 'inline/134/km4hms');
         script.setAttribute('data-skip-moving', 'true');
-        script.setAttribute('crossorigin', 'anonymous');
-        script.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-        
-        // Безопасная загрузка скрипта без innerHTML
-        script.src = scriptUrl + '?' + Math.floor(Date.now() / 180000);
-        script.async = true;
+        script.innerHTML = `
+          (function(w,d,u){
+            var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
+            var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
+          })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js');
+        `;
         
         // Обработка ошибок загрузки
         script.onerror = () => {
@@ -157,7 +144,7 @@ export const ContactForm: React.FC = () => {
     // Очистка при размонтировании компонента
     return () => {
       clearTimeout(timeoutId);
-      const scripts = document.querySelectorAll(`[data-b24-form="${BITRIX_FORM_ID}"]`);
+      const scripts = document.querySelectorAll(`[data-b24-form="inline/134/km4hms"]`);
       scripts.forEach(script => {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
