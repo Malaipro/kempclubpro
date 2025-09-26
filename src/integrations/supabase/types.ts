@@ -95,6 +95,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean | null
+          last_activity: string | null
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ascetic_activities: {
         Row: {
           activity_type: string
@@ -739,7 +775,9 @@ export type Database = {
           id: string
           join_date: string | null
           last_name: string | null
+          leaderboard_visible: boolean | null
           phone: string | null
+          profile_private: boolean | null
           rank_position: number | null
           stream_end_date: string | null
           stream_start_date: string | null
@@ -764,7 +802,9 @@ export type Database = {
           id?: string
           join_date?: string | null
           last_name?: string | null
+          leaderboard_visible?: boolean | null
           phone?: string | null
+          profile_private?: boolean | null
           rank_position?: number | null
           stream_end_date?: string | null
           stream_start_date?: string | null
@@ -789,7 +829,9 @@ export type Database = {
           id?: string
           join_date?: string | null
           last_name?: string | null
+          leaderboard_visible?: boolean | null
           phone?: string | null
+          profile_private?: boolean | null
           rank_position?: number | null
           stream_end_date?: string | null
           stream_start_date?: string | null
@@ -1510,9 +1552,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_cleanup_contact_submissions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       calculate_cooper_fitness_level: {
         Args: { total_seconds: number }
         Returns: string
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       enhanced_contact_rate_limit: {
         Args: { p_ip_address?: unknown }
@@ -1532,6 +1582,10 @@ export type Database = {
       is_super_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      log_security_access: {
+        Args: { p_action: string; p_record_id?: string; p_table_name?: string }
+        Returns: undefined
       }
       log_security_event: {
         Args: { details?: Json; event_type: string; user_id_param?: string }
