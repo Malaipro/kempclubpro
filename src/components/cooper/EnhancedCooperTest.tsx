@@ -61,6 +61,7 @@ export const EnhancedCooperTest: React.FC = () => {
     exercise_2_time: '',
     exercise_3_time: '',
     exercise_4_time: '',
+    test_phase: 'during_stream',
     age: '',
     gender: '',
     notes: '',
@@ -344,6 +345,20 @@ export const EnhancedCooperTest: React.FC = () => {
                           : participant.display_name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-white">Фаза теста</Label>
+                <Select value={formData.test_phase} onValueChange={(value) => setFormData(prev => ({ ...prev, test_phase: value }))}>
+                  <SelectTrigger className="bg-white text-black">
+                    <SelectValue placeholder="Выберите фазу" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    <SelectItem value="before_stream" className="hover:bg-gray-100">До потока</SelectItem>
+                    <SelectItem value="during_stream" className="hover:bg-gray-100">Во время потока</SelectItem>
+                    <SelectItem value="after_stream" className="hover:bg-gray-100">После потока</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

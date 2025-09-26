@@ -270,6 +270,7 @@ export type Database = {
           id: string
           notes: string | null
           test_date: string
+          test_phase: string | null
           total_time: number | null
           user_id: string
           verified: boolean | null
@@ -287,6 +288,7 @@ export type Database = {
           id?: string
           notes?: string | null
           test_date?: string
+          test_phase?: string | null
           total_time?: number | null
           user_id: string
           verified?: boolean | null
@@ -304,6 +306,7 @@ export type Database = {
           id?: string
           notes?: string | null
           test_date?: string
+          test_phase?: string | null
           total_time?: number | null
           user_id?: string
           verified?: boolean | null
@@ -349,6 +352,44 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: []
+      }
+      habit_progress: {
+        Row: {
+          completed: boolean | null
+          created_at: string
+          habit_id: string
+          id: string
+          notes: string | null
+          progress_date: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string
+          habit_id: string
+          id?: string
+          notes?: string | null
+          progress_date?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string
+          habit_id?: string
+          id?: string
+          notes?: string | null
+          progress_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_progress_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "participant_habits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hero_races: {
         Row: {
@@ -561,6 +602,57 @@ export type Database = {
           },
         ]
       }
+      participant_habits: {
+        Row: {
+          completed_days: number | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          habit_name: string
+          habit_type: string
+          id: string
+          is_active: boolean | null
+          is_completed: boolean | null
+          notes: string | null
+          start_date: string
+          target_days: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_days?: number | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          habit_name: string
+          habit_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          notes?: string | null
+          start_date: string
+          target_days?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_days?: number | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          habit_name?: string
+          habit_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_completed?: boolean | null
+          notes?: string | null
+          start_date?: string
+          target_days?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -574,10 +666,14 @@ export type Database = {
           last_name: string | null
           phone: string | null
           rank_position: number | null
+          stream_end_date: string | null
+          stream_start_date: string | null
           telegram: string | null
           total_points: number | null
           updated_at: string
           user_id: string
+          weight_after_stream: number | null
+          weight_before_stream: number | null
           weight_kg: number | null
         }
         Insert: {
@@ -592,10 +688,14 @@ export type Database = {
           last_name?: string | null
           phone?: string | null
           rank_position?: number | null
+          stream_end_date?: string | null
+          stream_start_date?: string | null
           telegram?: string | null
           total_points?: number | null
           updated_at?: string
           user_id: string
+          weight_after_stream?: number | null
+          weight_before_stream?: number | null
           weight_kg?: number | null
         }
         Update: {
@@ -610,10 +710,14 @@ export type Database = {
           last_name?: string | null
           phone?: string | null
           rank_position?: number | null
+          stream_end_date?: string | null
+          stream_start_date?: string | null
           telegram?: string | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
+          weight_after_stream?: number | null
+          weight_before_stream?: number | null
           weight_kg?: number | null
         }
         Relationships: []

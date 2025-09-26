@@ -7,9 +7,10 @@ import { KampSystemUser } from '@/components/kamp/KampSystemUser';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
+import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Shield } from 'lucide-react';
+import { LogOut, User, Shield, Activity, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Dashboard: React.FC = () => {
@@ -112,23 +113,31 @@ export const Dashboard: React.FC = () => {
             {isSuperAdmin ? (
               <AdminDashboard />
             ) : (
-              <Tabs defaultValue="kamp" className="w-full">
+              <Tabs defaultValue="profile" className="w-full">
                 <div className="mb-6">
-                  <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1">
-                    <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                  <TabsList className="grid w-full grid-cols-4 h-auto p-1 gap-1">
+                    <TabsTrigger value="profile" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
                       <User className="w-4 h-4" />
+                      <span className="text-center">Профиль</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                      <Activity className="w-4 h-4" />
                       <span className="text-center">КЭМП Система</span>
                     </TabsTrigger>
                     <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
-                      <User className="w-4 h-4" />
+                      <Shield className="w-4 h-4" />
                       <span className="text-center">Тест Купера</span>
                     </TabsTrigger>
                     <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
-                      <Shield className="w-4 h-4" />
+                      <Calendar className="w-4 h-4" />
                       <span className="text-center">Расписание</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
+                
+                <TabsContent value="profile">
+                  <EnhancedPersonalProfile />
+                </TabsContent>
                 
                 <TabsContent value="kamp">
                   <KampSystemUser />
