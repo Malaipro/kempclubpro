@@ -261,13 +261,16 @@ export type Database = {
         Row: {
           age: number | null
           created_at: string
-          distance: number
+          exercise_1_time: number | null
+          exercise_2_time: number | null
+          exercise_3_time: number | null
+          exercise_4_time: number | null
           fitness_level: string | null
           gender: string | null
           id: string
           notes: string | null
           test_date: string
-          time_minutes: number
+          total_time: number | null
           user_id: string
           verified: boolean | null
           verified_by: string | null
@@ -275,13 +278,16 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string
-          distance: number
+          exercise_1_time?: number | null
+          exercise_2_time?: number | null
+          exercise_3_time?: number | null
+          exercise_4_time?: number | null
           fitness_level?: string | null
           gender?: string | null
           id?: string
           notes?: string | null
           test_date?: string
-          time_minutes: number
+          total_time?: number | null
           user_id: string
           verified?: boolean | null
           verified_by?: string | null
@@ -289,13 +295,16 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string
-          distance?: number
+          exercise_1_time?: number | null
+          exercise_2_time?: number | null
+          exercise_3_time?: number | null
+          exercise_4_time?: number | null
           fitness_level?: string | null
           gender?: string | null
           id?: string
           notes?: string | null
           test_date?: string
-          time_minutes?: number
+          total_time?: number | null
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
@@ -1277,6 +1286,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_cooper_fitness_level: {
+        Args: { total_seconds: number }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
