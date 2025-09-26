@@ -42,16 +42,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string, lastName: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Use the current application URL for email confirmation redirect
+      const redirectUrl = window.location.origin;
       
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${redirectUrl}/#access_token={access_token}&refresh_token={refresh_token}&type=signup`,
           data: {
-            name: name,
-            lastName: lastName
+            first_name: name,
+            last_name: lastName,
+            display_name: `${name} ${lastName}`
           }
         }
       });
