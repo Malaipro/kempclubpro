@@ -7,7 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string, lastName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -39,79 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const signUp = async (email: string, password: string, name: string, lastName: string) => {
-    try {
-      // Use the current application URL for email confirmation redirect
-      const redirectUrl = window.location.origin;
-      
-      const { error, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${redirectUrl}/#access_token={access_token}&refresh_token={refresh_token}&type=signup`,
-          data: {
-            first_name: name,
-            last_name: lastName,
-            display_name: `${name} ${lastName}`
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Ошибка регистрации",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-
-      // Create profile record for the new user
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              user_id: data.user.id,
-              first_name: name,
-              last_name: lastName,
-              display_name: `${name} ${lastName}`
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-        }
-        setTimeout(() => {
-          // Отправляем приветственное письмо новому пользователю
-          supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email: data.user.email,
-              name: `${name} ${lastName}`,
-              confirmUrl: redirectUrl
-            }
-          }).catch(error => {
-            console.error('Error sending welcome email:', error);
-          });
-        }, 0);
-      }
-
-      toast({
-        title: "Регистрация успешна",
-        description: "Проверьте email для подтверждения аккаунта",
-      });
-
-      return { error: null };
-    } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при регистрации",
-        variant: "destructive",
-      });
-      return { error };
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -175,7 +101,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       session,
       loading,
-      signUp,
       signIn,
       signOut,
     }}>
