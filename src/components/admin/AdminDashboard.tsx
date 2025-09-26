@@ -23,7 +23,7 @@ export const AdminDashboard: React.FC = () => {
           <TabsList className="flex w-max min-w-full h-auto p-1 gap-1 bg-muted/50">
             <TabsTrigger 
               value="kamp" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
@@ -31,7 +31,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="activities" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Activity className="w-4 h-4" />
               <span className="whitespace-nowrap">Актив.</span>
@@ -39,7 +39,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="participants" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Users className="w-4 h-4" />
               <span className="whitespace-nowrap">Участн.</span>
@@ -47,7 +47,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="streams" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Layers className="w-4 h-4" />
               <span className="whitespace-nowrap">Потоки</span>
@@ -55,7 +55,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="cooper" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Zap className="w-4 h-4" />
               <span className="whitespace-nowrap">Купер</span>
@@ -63,7 +63,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="schedule" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">Расписан.</span>
@@ -71,7 +71,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="testimonials" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <MessageSquare className="w-4 h-4" />
               <span className="whitespace-nowrap">Отзывы</span>
@@ -79,7 +79,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="moments" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Camera className="w-4 h-4" />
               <span className="whitespace-nowrap">Моменты</span>
@@ -87,7 +87,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="content" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Контент</span>
@@ -95,7 +95,7 @@ export const AdminDashboard: React.FC = () => {
             
             <TabsTrigger 
               value="cms" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
               <Settings className="w-4 h-4" />
               <span className="whitespace-nowrap">Старая CMS</span>
