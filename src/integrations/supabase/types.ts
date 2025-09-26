@@ -770,6 +770,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           display_name: string | null
+          email: string | null
           first_name: string | null
           height_cm: number | null
           id: string
@@ -797,6 +798,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          email?: string | null
           first_name?: string | null
           height_cm?: number | null
           id?: string
@@ -824,6 +826,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          email?: string | null
           first_name?: string | null
           height_cm?: number | null
           id?: string

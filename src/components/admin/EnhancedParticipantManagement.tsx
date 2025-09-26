@@ -57,8 +57,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   const fetchParticipants = async () => {
     try {
-      // Получаем данные из профилей и джойним с auth.users для получения email
-      const { data: profilesData, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select(`
           id, 
@@ -66,35 +65,25 @@ export const EnhancedParticipantManagement: React.FC = () => {
           display_name, 
           first_name, 
           last_name, 
+          email,
+          phone,
+          telegram,
           total_points, 
           height_cm, 
           weight_kg, 
-          date_of_birth,
-          phone,
-          telegram
+          date_of_birth
         `)
         .order('display_name');
       
       if (error) throw error;
 
-      // Получаем email из auth.users для каждого профиля
-      const participantsWithEmail = await Promise.all(
-        (profilesData || []).map(async (profile) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
-          return {
-            ...profile,
-            email: userData.user?.email || 'Не указан'
-          };
-        })
-      );
-
       // Transform data to match our interface
-      const transformedData = participantsWithEmail.map(item => ({
+      const transformedData = data?.map(item => ({
         ...item,
         total_points: item.total_points || 0,
         stream: '2-й поток',
         status: 'registered' as const
-      }));
+      })) || [];
 
       setParticipants(transformedData);
     } catch (error) {
@@ -130,6 +119,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
             first_name: formData.first_name,
             last_name: formData.last_name,
             display_name: `${formData.first_name} ${formData.last_name}`,
+            phone: formData.phone || null,
+            telegram: formData.telegram || null,
             height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
             weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
             date_of_birth: formData.date_of_birth?.toISOString().split('T')[0] || null,
