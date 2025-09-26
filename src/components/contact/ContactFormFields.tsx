@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
-import { validateName, validatePhone, sanitizeInput, rateLimiter } from '@/lib/validation';
+import { contactFormSchema, sanitizeHtml } from '@/lib/validationSchemas';
+import { z } from 'zod';
 
 interface ContactFormFieldsProps {
   formData: {
@@ -22,42 +23,47 @@ export const ContactFormFields: React.FC<ContactFormFieldsProps> = ({
 
   const handleSecureChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const sanitizedValue = sanitizeInput(value);
     
-    // Validate input
+    // Sanitize input to prevent XSS
+    const sanitizedValue = sanitizeHtml(value.trim());
+    
+    // Real-time validation with Zod
     const newErrors = { ...errors };
     
-    if (name === 'name' && sanitizedValue && !validateName(sanitizedValue)) {
-      newErrors.name = 'Имя должно содержать только буквы, пробелы и дефисы';
-    } else {
-      delete newErrors.name;
-    }
-    
-    if (name === 'phone' && sanitizedValue && !validatePhone(sanitizedValue)) {
-      newErrors.phone = 'Введите корректный номер телефона';
-    } else {
-      delete newErrors.phone;
+    try {
+      if (name === 'name' && sanitizedValue) {
+        contactFormSchema.shape.name.parse(sanitizedValue);
+        delete newErrors.name;
+      } else if (name === 'phone' && sanitizedValue) {
+        contactFormSchema.shape.phone.parse(sanitizedValue);
+        delete newErrors.phone;
+      } else if (name === 'social' && sanitizedValue) {
+        contactFormSchema.shape.social?.parse(sanitizedValue);
+        delete newErrors.social;
+      } else {
+        delete newErrors[name];
+      }
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        newErrors[name] = validationError.issues[0]?.message || 'Некорректные данные';
+      }
     }
     
     setErrors(newErrors);
     
-    // Call original handler with sanitized value
+    // Call original handler with trimmed value (not HTML-sanitized for display)
     handleChange({
       ...e,
       target: {
         ...e.target,
-        value: sanitizedValue
+        value: value.trim()
       }
     } as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    // Rate limiting check
-    if (!rateLimiter.isAllowed('contact-form-submit', 3, 60000)) {
-      alert('Слишком много попыток отправки. Попробуйте через минуту.');
-      e.preventDefault();
-      return;
-    }
+    e.preventDefault();
+    // Form submission validation will be handled by parent component and supabaseActions
   };
 
   return (

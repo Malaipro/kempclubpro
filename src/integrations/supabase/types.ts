@@ -1514,6 +1514,10 @@ export type Database = {
         Args: { total_seconds: number }
         Returns: string
       }
+      enhanced_contact_rate_limit: {
+        Args: { p_ip_address?: unknown }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -1529,9 +1533,22 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      log_security_event: {
+        Args: { details?: Json; event_type: string; user_id_param?: string }
+        Returns: undefined
+      }
       mask_phone_number: {
         Args: { phone_number: string }
         Returns: string
+      }
+      validate_contact_submission: {
+        Args: {
+          p_course: string
+          p_name: string
+          p_phone: string
+          p_social?: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
