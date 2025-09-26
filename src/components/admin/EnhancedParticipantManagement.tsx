@@ -461,8 +461,12 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{participant.total_points} баллов</span>
-                      <span>•</span>
-                      <span>{participant.email}</span>
+                      {participant.email && (
+                        <>
+                          <span>•</span>
+                          <span>{participant.email}</span>
+                        </>
+                      )}
                       {participant.height_cm && participant.weight_kg && (
                         <>
                           <span>•</span>

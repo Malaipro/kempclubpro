@@ -74,6 +74,13 @@ export const Dashboard: React.FC = () => {
     navigate('/');
   };
 
+  const displayName =
+    participantData?.display_name ||
+    [participantData?.first_name, participantData?.last_name].filter(Boolean).join(' ') ||
+    (user.user_metadata?.display_name as string | undefined) ||
+    [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ') ||
+    user.email || 'Пользователь';
+
   return (
     <Layout>
       <div className="bg-black">
@@ -90,7 +97,7 @@ export const Dashboard: React.FC = () => {
                     Личный кабинет
                   </h1>
                   <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} truncate`}>
-                    {user.user_metadata?.name || user.email}
+                    {displayName} • {user.email}
                     {isSuperAdmin && <span className="ml-2 text-kamp-accent font-semibold">(Супер админ)</span>}
                   </p>
                 </div>

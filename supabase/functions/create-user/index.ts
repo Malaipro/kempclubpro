@@ -98,6 +98,7 @@ serve(async (req) => {
         first_name: md.first_name ?? null,
         last_name: md.last_name ?? null,
         display_name: md.display_name ?? ((`${md.first_name ?? ''} ${md.last_name ?? ''}`.trim()) || null),
+        email: email,
         height_cm: md.height_cm ?? null,
         weight_kg: md.weight_kg ?? null,
         date_of_birth: md.date_of_birth ?? null,
