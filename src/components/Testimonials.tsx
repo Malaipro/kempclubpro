@@ -157,12 +157,12 @@ export const Testimonials: React.FC = () => {
             >
               <div className="relative">
                 {testimonial.video_url ? (
-                  <div className="relative bg-gray-800" style={{ minHeight: '280px' }}>
+                  <div className="relative bg-gray-800 aspect-[3/4] overflow-hidden">
                     {getVideoType(testimonial.video_url) === 'youtube' || getVideoType(testimonial.video_url) === 'vimeo' ? (
-                      <div className="aspect-video">
+                      <div className="w-full h-full">
                         <iframe
                           src={getVideoEmbedUrl(testimonial.video_url) || ''}
-                          className="w-full h-full"
+                          className="w-full h-full object-cover"
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
@@ -177,18 +177,16 @@ export const Testimonials: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center justify-center min-h-[280px] max-h-[500px]">
+                        <div className="w-full h-full flex items-center justify-center">
                           <video
                             ref={(el) => { videoRefs.current[testimonial.id] = el; }}
                             src={getVideoEmbedUrl(testimonial.video_url) || ''}
-                            className="max-w-full max-h-full object-contain"
+                            className="w-full h-full object-cover"
                             muted={mutedStatus[testimonial.id]}
                             onEnded={() => handleVideoEnd(testimonial.id)}
                             onClick={() => openVideoModal(testimonial.id)}
                             style={{ 
-                              cursor: 'pointer',
-                              width: 'auto',
-                              height: 'auto'
+                              cursor: 'pointer'
                             }}
                           />
                         </div>
@@ -235,15 +233,15 @@ export const Testimonials: React.FC = () => {
                     )}
                   </div>
                 ) : testimonial.image_url ? (
-                  <div className="aspect-video bg-gray-800">
+                  <div className="aspect-[3/4] bg-gray-800 overflow-hidden">
                     <img 
                       src={testimonial.image_url}
                       alt={testimonial.participant_name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video bg-gray-800 flex items-center justify-center">
+                  <div className="aspect-[3/4] bg-gray-800 flex items-center justify-center">
                     <div className="w-16 h-16 bg-kamp-primary/20 rounded-full flex items-center justify-center">
                       <span className="text-kamp-primary text-xl font-bold">
                         {testimonial.participant_name.charAt(0)}
