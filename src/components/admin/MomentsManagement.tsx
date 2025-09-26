@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, X, Video, Image as ImageIcon, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
 
 interface Moment {
   id: string;
@@ -28,6 +29,7 @@ export const MomentsManagement: React.FC = () => {
   const [editingMoment, setEditingMoment] = useState<Moment | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState<{ type: 'video' | 'image' | null; url: string }>({ type: null, url: '' });
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -191,6 +193,23 @@ export const MomentsManagement: React.FC = () => {
       sort_order: 0,
     });
     setEditingMoment(null);
+    setPreviewOpen({ type: null, url: '' });
+  };
+
+  const handlePreview = (type: 'video' | 'image', url: string) => {
+    if (!url.trim()) {
+      toast({
+        title: 'Внимание',
+        description: 'Введите URL для предпросмотра',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setPreviewOpen({ type, url: url.trim() });
+  };
+
+  const closePreview = () => {
+    setPreviewOpen({ type: null, url: '' });
   };
 
   const openDialog = () => {
@@ -307,6 +326,11 @@ export const MomentsManagement: React.FC = () => {
               <Label>Изображение *</Label>
               <div className="space-y-2">
                 <Input
+                  value={formData.image_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  placeholder="URL изображения или загрузите файл ниже"
+                />
+                <Input
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
@@ -322,9 +346,10 @@ export const MomentsManagement: React.FC = () => {
                     <span className="text-sm text-green-500">Изображение загружено</span>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => window.open(formData.image_url, '_blank')}
+                      onClick={() => handlePreview('image', formData.image_url)}
+                      className="mr-2"
                     >
                       <Eye className="w-3 h-3" />
                     </Button>
@@ -345,6 +370,11 @@ export const MomentsManagement: React.FC = () => {
               <Label>Видео (опционально)</Label>
               <div className="space-y-2">
                 <Input
+                  value={formData.video_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                  placeholder="URL видео или загрузите файл ниже"
+                />
+                <Input
                   type="file"
                   accept="video/*"
                   onChange={(e) => {
@@ -360,9 +390,10 @@ export const MomentsManagement: React.FC = () => {
                     <span className="text-sm text-green-500">Видео загружено</span>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => window.open(formData.video_url, '_blank')}
+                      onClick={() => handlePreview('video', formData.video_url)}
+                      className="mr-2"
                     >
                       <Eye className="w-3 h-3" />
                     </Button>
@@ -412,6 +443,70 @@ export const MomentsManagement: React.FC = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen.type !== null} onOpenChange={closePreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>
+                Предпросмотр {previewOpen.type === 'video' ? 'видео' : 'изображения'}
+              </DialogTitle>
+              <Button variant="ghost" size="sm" onClick={closePreview}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          {previewOpen.type === 'video' && previewOpen.url && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
+              {getVideoType(previewOpen.url) === 'youtube' || getVideoType(previewOpen.url) === 'vimeo' ? (
+                <div className="aspect-video">
+                  <iframe
+                    src={getVideoEmbedUrl(previewOpen.url)}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    src={previewOpen.url}
+                    controls
+                    className="w-full h-full object-cover"
+                    onError={() => toast({
+                      title: 'Ошибка',
+                      description: 'Не удалось загрузить видео. Проверьте URL.',
+                      variant: 'destructive',
+                    })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {previewOpen.type === 'image' && previewOpen.url && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
+              <div className="flex justify-center bg-gray-50 rounded-lg p-4">
+                <img
+                  src={previewOpen.url}
+                  alt="Предпросмотр"
+                  className="max-w-full max-h-96 object-contain rounded-lg"
+                  onError={() => toast({
+                    title: 'Ошибка',
+                    description: 'Не удалось загрузить изображение. Проверьте URL.',
+                    variant: 'destructive',
+                  })}
+                />
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

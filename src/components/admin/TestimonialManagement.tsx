@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Upload, X, Video, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, X, Video, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
 
 interface Testimonial {
   id: string;
@@ -29,6 +30,7 @@ export const TestimonialManagement: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState<{ type: 'video' | 'image' | null; url: string }>({ type: null, url: '' });
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -193,6 +195,23 @@ export const TestimonialManagement: React.FC = () => {
       sort_order: 0,
     });
     setEditingTestimonial(null);
+    setPreviewOpen({ type: null, url: '' });
+  };
+
+  const handlePreview = (type: 'video' | 'image', url: string) => {
+    if (!url.trim()) {
+      toast({
+        title: 'Внимание',
+        description: 'Введите URL для предпросмотра',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setPreviewOpen({ type, url: url.trim() });
+  };
+
+  const closePreview = () => {
+    setPreviewOpen({ type: null, url: '' });
   };
 
   const openDialog = () => {
@@ -333,26 +352,40 @@ export const TestimonialManagement: React.FC = () => {
                   <p className="text-xs text-muted-foreground">
                     Поддерживаются YouTube, Vimeo, прямые ссылки на .mp4, .webm
                   </p>
-                  {formData.video_url && (
-                    <div className="flex items-center gap-2">
-                      <Video className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">URL видео добавлен</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFormData(prev => ({ ...prev, video_url: '' }))}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
+                   {formData.video_url && (
+                     <div className="flex items-center gap-2">
+                       <Video className="w-4 h-4 text-green-500" />
+                       <span className="text-sm text-green-500">URL видео добавлен</span>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handlePreview('video', formData.video_url)}
+                         className="mr-2"
+                       >
+                         <Eye className="w-3 h-3" />
+                       </Button>
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => setFormData(prev => ({ ...prev, video_url: '' }))}
+                       >
+                         <X className="w-3 h-3" />
+                       </Button>
+                     </div>
+                   )}
                 </div>
               </div>
 
               <div>
                 <Label>Изображение</Label>
                 <div className="space-y-2">
+                  <Input
+                    value={formData.image_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                    placeholder="URL изображения или загрузите файл ниже"
+                  />
                   <Input
                     type="file"
                     accept="image/*"
@@ -363,20 +396,29 @@ export const TestimonialManagement: React.FC = () => {
                     disabled={uploadingImage}
                   />
                   {uploadingImage && <p className="text-sm text-muted-foreground">Загрузка...</p>}
-                  {formData.image_url && (
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">Изображение загружено</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
+                   {formData.image_url && (
+                     <div className="flex items-center gap-2">
+                       <ImageIcon className="w-4 h-4 text-green-500" />
+                       <span className="text-sm text-green-500">Изображение загружено</span>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handlePreview('image', formData.image_url)}
+                         className="mr-2"
+                       >
+                         <Eye className="w-3 h-3" />
+                       </Button>
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                       >
+                         <X className="w-3 h-3" />
+                       </Button>
+                     </div>
+                   )}
                 </div>
               </div>
             </div>
@@ -414,6 +456,70 @@ export const TestimonialManagement: React.FC = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen.type !== null} onOpenChange={closePreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>
+                Предпросмотр {previewOpen.type === 'video' ? 'видео' : 'изображения'}
+              </DialogTitle>
+              <Button variant="ghost" size="sm" onClick={closePreview}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          {previewOpen.type === 'video' && previewOpen.url && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
+              {getVideoType(previewOpen.url) === 'youtube' || getVideoType(previewOpen.url) === 'vimeo' ? (
+                <div className="aspect-video">
+                  <iframe
+                    src={getVideoEmbedUrl(previewOpen.url)}
+                    className="w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    src={previewOpen.url}
+                    controls
+                    className="w-full h-full object-cover"
+                    onError={() => toast({
+                      title: 'Ошибка',
+                      description: 'Не удалось загрузить видео. Проверьте URL.',
+                      variant: 'destructive',
+                    })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {previewOpen.type === 'image' && previewOpen.url && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
+              <div className="flex justify-center bg-gray-50 rounded-lg p-4">
+                <img
+                  src={previewOpen.url}
+                  alt="Предпросмотр"
+                  className="max-w-full max-h-96 object-contain rounded-lg"
+                  onError={() => toast({
+                    title: 'Ошибка',
+                    description: 'Не удалось загрузить изображение. Проверьте URL.',
+                    variant: 'destructive',
+                  })}
+                />
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
