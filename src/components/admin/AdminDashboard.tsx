@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target } from 'lucide-react';
 import { ContentManager } from '@/components/cms/ContentManager';
 import { ActivityManagement } from './ActivityManagement';
+import { AsceticManagement } from '@/components/kamp/AsceticManagement';
 import { EnhancedCooperTest } from '@/components/cooper/EnhancedCooperTest';
 import { EnhancedParticipantManagement } from '@/components/admin/EnhancedParticipantManagement';
 import { EnhancedStreamManagement } from '@/components/admin/EnhancedStreamManagement';
@@ -27,6 +28,14 @@ export const AdminDashboard: React.FC = () => {
             >
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="ascetics" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+            >
+              <Target className="w-4 h-4" />
+              <span className="whitespace-nowrap">Аскезы</span>
             </TabsTrigger>
             
             <TabsTrigger 
@@ -106,6 +115,10 @@ export const AdminDashboard: React.FC = () => {
         {/* Tab Content */}
         <TabsContent value="kamp" className="mt-0">
           <KampSystem />
+        </TabsContent>
+        
+        <TabsContent value="ascetics" className="mt-0">
+          <AsceticManagement />
         </TabsContent>
         
         <TabsContent value="activities" className="mt-0">

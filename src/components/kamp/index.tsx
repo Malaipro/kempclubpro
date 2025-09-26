@@ -77,4 +77,5 @@ export const KampSystem: React.FC = () => {
 export * from './KampInstructions';
 export * from './KampProgress';
 export * from './ActivityFormAdmin';
+export * from './AsceticManagement';
 export * from './AsceticTracker';
