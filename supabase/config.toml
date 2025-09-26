@@ -13,8 +13,6 @@ verify_jwt = false
 [functions.nodul-webhook]
 verify_jwt = false
 
-[functions.send-welcome-email]
-verify_jwt = false
 
 [functions.create-user]
 verify_jwt = false
