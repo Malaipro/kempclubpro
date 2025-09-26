@@ -111,7 +111,7 @@ export const TestimonialManagement: React.FC = () => {
     setUploadingVideo(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
-      const path = `${Date.now()}.${ext}`;
+      const path = `videos/${Date.now()}.${ext}`;
 
       const { data: signed, error: signErr } = await supabase
         .storage
