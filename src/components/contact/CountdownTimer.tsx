@@ -61,7 +61,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
       .subscribe();
 
     return () => {
-      streamsSubscription.unsubscribe();
+      supabase.removeChannel(streamsSubscription);
     };
   }, []);
 

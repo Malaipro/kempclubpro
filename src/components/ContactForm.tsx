@@ -1,8 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AskQuestion } from './contact/AskQuestion';
 import { CountdownTimer } from './contact/CountdownTimer';
 import { CourseInfo } from './contact/CourseInfo';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 // Declare Bitrix form interface for TypeScript
 declare global {
@@ -18,6 +21,7 @@ declare global {
 }
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
+  const [startDate, setStartDate] = useState<Date | null>(null);
   useEffect(() => {
     const loadBitrixForm = () => {
       // Проверяем, что форма еще не загружена
@@ -158,6 +162,43 @@ export const ContactForm: React.FC = () => {
       }
     };
   }, []);
+
+  // Fetch active stream date and subscribe to realtime updates
+  useEffect(() => {
+    const fetchActiveStream = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streams')
+          .select('start_date, is_active')
+          .order('is_active', { ascending: false })
+          .order('start_date', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (data && !error) {
+          setStartDate(new Date(data.start_date));
+        }
+      } catch (e) {
+        console.error('Error fetching active stream for ContactForm:', e);
+      }
+    };
+
+    fetchActiveStream();
+
+    const channel = supabase
+      .channel('streams-contactform')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'streams' },
+        () => fetchActiveStream()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const scrollToContactForm = () => {
     const contactFormElement = document.getElementById('contact-form');
     if (contactFormElement) {
@@ -166,6 +207,7 @@ export const ContactForm: React.FC = () => {
       });
     }
   };
+  const formattedDate = startDate ? format(startDate, 'd MMMM yyyy', { locale: ru }) : null;
   return <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
       <div className="kamp-container">
         <div className="section-heading reveal-on-scroll">
@@ -201,11 +243,17 @@ export const ContactForm: React.FC = () => {
             <div className="bg-gradient-to-r from-kamp-accent to-kamp-primary text-white rounded-xl overflow-hidden shadow-lg h-full flex flex-col">
               <div className={`flex-grow ${isMobile ? 'p-4' : 'p-8'}`}>
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
-                {isMobile ? <p className="text-white/80 mb-4 text-sm">
-                    Интенсив начинается 1 сентября! Записывайся сейчас - количество мест ограничено!
-                  </p> : <p className="text-white/80 mb-8">Новый интенсив стартует 8 ноября 2025! Записывайся сейчас - количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.</p>}
+                {isMobile ? (
+                  <p className="text-white/80 mb-4 text-sm">
+                    Интенсив начинается {formattedDate ?? 'скоро'}! Записывайся сейчас — количество мест ограничено!
+                  </p>
+                ) : (
+                  <p className="text-white/80 mb-8">
+                    Новый интенсив стартует {formattedDate ?? 'скоро'}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
+                  </p>
+                )}
 
-                <CountdownTimer />
+                <CountdownTimer targetDate={startDate ?? undefined} />
                 
                 {!isMobile && <CourseInfo />}
               </div>
