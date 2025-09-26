@@ -22,6 +22,8 @@ interface Participant {
   first_name?: string;
   last_name?: string;
   email?: string;
+  phone?: string;
+  telegram?: string;
   total_points: number;
   stream?: string;
   status: 'registered' | 'active' | 'completed';
@@ -39,6 +41,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
+    telegram: '',
     stream: '',
     password: '',
     height_cm: '',
@@ -125,12 +129,14 @@ export const EnhancedParticipantManagement: React.FC = () => {
               first_name: formData.first_name,
               last_name: formData.last_name,
               display_name: `${formData.first_name} ${formData.last_name}`,
+              phone: formData.phone || null,
+              telegram: formData.telegram || null,
               height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
               weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
-              date_of_birth: formData.date_of_birth?.toISOString().split('T')[0] || null,
-            }
-          }
-        });
+              date_of_birth: formData.date_of_birth ? formData.date_of_birth.toISOString().split('T')[0] : null,
+             }
+           }
+         });
 
         if (error) {
           console.error('Error creating participant:', error);
@@ -182,6 +188,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
       first_name: participant.first_name || '',
       last_name: participant.last_name || '',
       email: participant.email || '',
+      phone: '', // participant.phone || '', // Add when available
+      telegram: '', // participant.telegram || '', // Add when available  
       stream: participant.stream || '2-й поток',
       password: '',
       height_cm: participant.height_cm?.toString() || '',
@@ -196,6 +204,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
       first_name: '',
       last_name: '',
       email: '',
+      phone: '',
+      telegram: '',
       stream: '2-й поток',
       password: '',
       height_cm: '',
@@ -299,6 +309,27 @@ export const EnhancedParticipantManagement: React.FC = () => {
                   className="bg-white text-black"
                   disabled={!!editingParticipant}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Телефон</Label>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+7 (999) 123-45-67"
+                    className="bg-white text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Telegram</Label>
+                  <Input
+                    value={formData.telegram}
+                    onChange={(e) => setFormData(prev => ({ ...prev, telegram: e.target.value }))}
+                    placeholder="@username"
+                    className="bg-white text-black"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">

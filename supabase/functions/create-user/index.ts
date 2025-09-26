@@ -32,10 +32,12 @@ serve(async (req) => {
     let authData: any = null
     
     try {
-      // Create user and send invitation email via Supabase SMTP
-      const { data: newUserData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: metadata || {},
-        redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`
+      // Create user with auto-confirmed email (no email confirmation needed)
+      const { data: newUserData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: safePassword,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: metadata || {}
       })
 
       if (authError) {
@@ -75,7 +77,7 @@ serve(async (req) => {
         }
       } else {
         authData = newUserData
-        console.log(`Successfully invited user ${email}`)
+        console.log(`Successfully created user ${email} with auto-confirmed email`)
       }
     } catch (error) {
       console.error('Unexpected error:', error)
@@ -99,7 +101,11 @@ serve(async (req) => {
         height_cm: md.height_cm ?? null,
         weight_kg: md.weight_kg ?? null,
         date_of_birth: md.date_of_birth ?? null,
-        approved: false,
+        phone: md.phone ?? null,
+        telegram: md.telegram ?? null,
+        approved: true, // Auto-approve since admin is creating them
+        approved_at: new Date().toISOString(),
+        approved_by: authData.user.id,
         leaderboard_visible: true,
       }
 
