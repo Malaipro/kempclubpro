@@ -1537,9 +1537,21 @@ export type Database = {
         Args: { details?: Json; event_type: string; user_id_param?: string }
         Returns: undefined
       }
+      mask_email_secure: {
+        Args: { email_address: string }
+        Returns: string
+      }
       mask_phone_number: {
         Args: { phone_number: string }
         Returns: string
+      }
+      mask_phone_secure: {
+        Args: { phone_number: string }
+        Returns: string
+      }
+      validate_audit_log_entry: {
+        Args: { p_action: string; p_table_name: string; p_user_id?: string }
+        Returns: boolean
       }
       validate_contact_submission: {
         Args: {

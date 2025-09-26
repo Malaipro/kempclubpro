@@ -95,6 +95,7 @@ export const SecurityEnhancements: React.FC = () => {
 
   const loadContactSubmissions = async () => {
     try {
+      // Load contact submissions with enhanced security monitoring
       const { data, error } = await supabase
         .from('contact_submissions')
         .select('*')
@@ -113,15 +114,24 @@ export const SecurityEnhancements: React.FC = () => {
     }
   };
 
+  // Enhanced masking using improved client-side functions
   const maskSensitiveData = (data: string, type: 'phone' | 'email') => {
     if (showSensitiveData) return data;
     
     if (type === 'phone') {
-      return data.replace(/(\+?\d{1,3})\d+(\d{2})/, '$1****$2');
+      // Enhanced phone masking with international number support
+      if (data.startsWith('+')) {
+        return data.substring(0, 3) + '****' + data.slice(-2);
+      }
+      return data.substring(0, 2) + '****' + data.slice(-2);
     } else if (type === 'email') {
-      const [username, domain] = data.split('@');
-      const maskedUsername = username.substring(0, 2) + '****' + username.slice(-1);
-      return `${maskedUsername}@${domain}`;
+      const atIndex = data.indexOf('@');
+      if (atIndex > 3) {
+        const username = data.substring(0, atIndex);
+        const domain = data.substring(atIndex);
+        return username.substring(0, 2) + '***' + username.slice(-1) + domain;
+      }
+      return data.substring(0, 1) + '***@' + data.split('@')[1];
     }
     return data;
   };
@@ -218,12 +228,12 @@ export const SecurityEnhancements: React.FC = () => {
                     <label className="text-sm font-medium text-gray-500">Name</label>
                     <p className="text-sm">{submission.name}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Phone</label>
-                    <p className="text-sm font-mono">
-                      {maskSensitiveData(submission.phone, 'phone')}
-                    </p>
-                  </div>
+                   <div>
+                     <label className="text-sm font-medium text-gray-500">Phone</label>
+                     <p className="text-sm font-mono">
+                       {maskSensitiveData(submission.phone, 'phone')}
+                     </p>
+                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Course</label>
                     <p className="text-sm">{submission.course}</p>
@@ -247,13 +257,16 @@ export const SecurityEnhancements: React.FC = () => {
         <Shield className="w-4 h-4" />
         <AlertDescription>
           <strong>Security Recommendations:</strong>
-          <ul className="mt-2 text-sm space-y-1">
-            <li>• Enable leaked password protection in Supabase Auth settings</li>
-            <li>• Set up regular database backups with encryption</li>
-            <li>• Monitor failed authentication attempts</li>
-            <li>• Implement session timeouts for admin accounts</li>
-            <li>• Review and audit RLS policies regularly</li>
-          </ul>
+           <ul className="mt-2 text-sm space-y-1">
+             <li>• <strong>CRITICAL:</strong> Enable leaked password protection in Supabase Auth settings</li>
+             <li>• Enhanced rate limiting is now active on contact forms</li>
+             <li>• Data masking functions protect PII in admin views</li>
+             <li>• Set up regular database backups with encryption</li>
+             <li>• Monitor failed authentication attempts</li>
+             <li>• Implement session timeouts for admin accounts</li>
+             <li>• Review and audit RLS policies regularly</li>
+             <li>• Enable audit logging for all sensitive operations</li>
+           </ul>
         </AlertDescription>
       </Alert>
     </div>

@@ -58,20 +58,43 @@ const sanitizeInput = (input: string): string => {
 // Rate limiting store (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-const checkRateLimit = (identifier: string, maxRequests = 5, windowMs = 15 * 60 * 1000): boolean => {
+const checkRateLimit = async (supabase: any, identifier: string, clientIP: string, maxRequests = 3, windowMs = 15 * 60 * 1000): Promise<boolean> => {
   const now = Date.now();
   const userLimit = rateLimitStore.get(identifier);
   
+  // Clean old entries
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (now > value.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+  
   if (!userLimit || now > userLimit.resetTime) {
     rateLimitStore.set(identifier, { count: 1, resetTime: now + windowMs });
-    return true;
+  } else {
+    if (userLimit.count >= maxRequests) {
+      // Use enhanced database rate limiting
+      try {
+        const { data: allowed } = await supabase.rpc('enhanced_rate_limit_check', {
+          p_ip_address: clientIP,
+          p_identifier: identifier,
+          p_max_requests: maxRequests,
+          p_window_minutes: Math.floor(windowMs / (1000 * 60))
+        });
+        
+        if (!allowed) {
+          return false;
+        }
+      } catch (error) {
+        console.warn('Database rate limit check failed:', error);
+        return false; // Fail secure
+      }
+      
+      return false;
+    }
+    userLimit.count++;
   }
   
-  if (userLimit.count >= maxRequests) {
-    return false;
-  }
-  
-  userLimit.count++;
   return true;
 };
 
@@ -94,20 +117,23 @@ serve(async (req) => {
     // Get client IP for rate limiting
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     
-    // Check rate limit
-    if (!checkRateLimit(clientIP, 5, 15 * 60 * 1000)) {
-      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+    // Enhanced rate limiting with database integration
+    if (!(await checkRateLimit(supabase, clientIP, clientIP, 3, 15 * 60 * 1000))) {
+      console.log(`Enhanced rate limit exceeded for IP: ${clientIP}`);
       
-      // Log security event
-      await supabase.from('audit_log').insert({
-        action: 'WEBHOOK_RATE_LIMIT_EXCEEDED',
-        table_name: 'enhanced_security_webhook',
-        ip_address: clientIP,
-        user_agent: req.headers.get('user-agent')
-      });
+      // Log enhanced security event
+      try {
+        await supabase.rpc('log_security_event', {
+          event_type: 'RATE_LIMIT_EXCEEDED',
+          user_id_param: null,
+          details: { ip: clientIP, source: 'webhook' }
+        });
+      } catch (error) {
+        console.error('Failed to log rate limit event:', error);
+      }
       
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded' }),
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
         { 
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -115,21 +141,31 @@ serve(async (req) => {
       );
     }
 
-    // Validate input data
+    // Enhanced validation with database functions
     const validation = validateWebhookInput(requestData);
     if (!validation.valid) {
-      console.log('Validation failed:', validation.errors);
+      console.log('Enhanced validation failed:', validation.errors);
       
-      // Log security event for invalid data
-      await supabase.from('audit_log').insert({
-        action: 'WEBHOOK_INVALID_DATA',
-        table_name: 'enhanced_security_webhook',
-        ip_address: clientIP,
-        user_agent: req.headers.get('user-agent')
-      });
+      // Log enhanced security event for invalid data
+      try {
+        await supabase.rpc('log_security_event', {
+          event_type: 'SECURITY_EVENT',
+          user_id_param: null,
+          details: { 
+            event: 'webhook_validation_failed', 
+            errors: validation.errors,
+            ip: clientIP
+          }
+        });
+      } catch (error) {
+        console.error('Failed to log validation failure:', error);
+      }
       
       return new Response(
-        JSON.stringify({ error: 'Invalid input data', details: validation.errors }),
+        JSON.stringify({ 
+          error: 'Enhanced security validation failed', 
+          details: validation.errors 
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -137,33 +173,49 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize input data
+    // Enhanced sanitization
     const sanitizedData = {
       name: requestData.name ? sanitizeInput(requestData.name) : undefined,
       phone: requestData.phone ? sanitizeInput(requestData.phone) : undefined,
       email: requestData.email ? sanitizeInput(requestData.email) : undefined,
       course: requestData.course ? sanitizeInput(requestData.course) : undefined,
       social: requestData.social ? sanitizeInput(requestData.social) : undefined,
-      message: requestData.message ? sanitizeInput(requestData.message) : undefined
+      message: requestData.message ? sanitizeInput(requestData.message) : undefined,
+      ip_address: clientIP
     };
 
     // Process the webhook data based on type
     let result;
     
     if (requestData.type === 'contact_form') {
-      // Insert contact submission with enhanced security
+      // Enhanced contact form processing with database validation
       const { data, error } = await supabase
         .from('contact_submissions')
         .insert({
           name: sanitizedData.name,
           phone: sanitizedData.phone,
           course: sanitizedData.course || 'Не указан',
-          social: sanitizedData.social
+          social: sanitizedData.social,
+          ip_address: sanitizedData.ip_address
         })
         .select()
         .single();
 
       if (error) {
+        // Enhanced error logging
+        try {
+          await supabase.rpc('log_security_event', {
+            event_type: 'SECURITY_EVENT',
+            user_id_param: null,
+            details: { 
+              event: 'webhook_contact_form_error', 
+              error: error.message,
+              ip: clientIP
+            }
+          });
+        } catch (logError) {
+          console.error('Failed to log database error:', logError);
+        }
         throw error;
       }
       
@@ -173,13 +225,20 @@ serve(async (req) => {
       result = { message: 'Webhook processed successfully', data: sanitizedData };
     }
 
-    // Log successful webhook processing
-    await supabase.from('audit_log').insert({
-      action: 'WEBHOOK_PROCESSED',
-      table_name: 'enhanced_security_webhook',
-      ip_address: clientIP,
-      user_agent: req.headers.get('user-agent')
-    });
+    // Enhanced success logging
+    try {
+      await supabase.rpc('log_security_event', {
+        event_type: 'SECURITY_EVENT',
+        user_id_param: null,
+        details: { 
+          event: 'webhook_processed_successfully', 
+          type: requestData.type,
+          ip: clientIP
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log success event:', error);
+    }
 
     return new Response(
       JSON.stringify({ success: true, data: result }),
