@@ -41,37 +41,26 @@ serve(async (req) => {
       if (authError) {
         // Check if user already exists
         if (authError.message?.includes('already been registered') || authError.status === 422) {
-          console.log(`User ${email} already exists, resending invitation`)
-          
-          // For existing users, try to resend invitation
-          const { data: resendData, error: resendError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            data: metadata || {},
-            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify`
-          })
-          
-          if (resendError) {
+          console.log(`User ${email} already exists, skipping invite and proceeding to profile update`)
+
+          // Find existing user by email
+          const { data: userData, error: listErr } = await supabaseAdmin.auth.admin.listUsers()
+          if (listErr) {
+            console.error('List users error:', listErr)
             return new Response(
-              JSON.stringify({ error: 'Пользователь уже зарегистрирован, не удалось отправить повторное приглашение' }),
-              { 
-                status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-              }
+              JSON.stringify({ error: 'Не удалось получить список пользователей' }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
           }
-          
-          // Get existing user ID for profile update
-          const { data: userData } = await supabaseAdmin.auth.admin.listUsers()
-          const existingUser = userData.users.find(u => u.email === email)
-          
+
+          const existingUser = userData.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase())
+
           if (existingUser) {
             authData = { user: existingUser }
           } else {
             return new Response(
-              JSON.stringify({ error: 'Не удалось найти существующего пользователя' }),
-              { 
-                status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-              }
+              JSON.stringify({ error: 'Пользователь с таким email уже существует, но не найден в списке' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
           }
         } else {
