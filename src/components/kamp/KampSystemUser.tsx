@@ -6,7 +6,8 @@ import { AsceticManagement } from './AsceticManagement';
 import { KampManual } from '@/components/instructions/KampManual';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
 import { AccountSettings } from '@/components/profile';
-import { Book, Trophy, Target, FileText, User, Settings } from 'lucide-react';
+import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
+import { Book, Trophy, Target, FileText, User, Settings, Calendar } from 'lucide-react';
 
 export const KampSystemUser: React.FC = () => {
   return (
@@ -40,6 +41,10 @@ export const KampSystemUser: React.FC = () => {
                 <Target className="w-4 h-4" />
                 <span className="whitespace-nowrap">Аскезы</span>
               </TabsTrigger>
+              <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
+                <Calendar className="w-4 h-4" />
+                <span className="whitespace-nowrap">Расписание</span>
+              </TabsTrigger>
               <TabsTrigger value="manual" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
                 <FileText className="w-4 h-4" />
                 <span className="whitespace-nowrap">Руководство</span>
@@ -65,6 +70,10 @@ export const KampSystemUser: React.FC = () => {
           
           <TabsContent value="ascetics">
             <AsceticManagement />
+          </TabsContent>
+          
+          <TabsContent value="schedule">
+            <ScheduleViewer />
           </TabsContent>
           
           <TabsContent value="manual">

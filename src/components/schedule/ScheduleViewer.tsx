@@ -207,20 +207,6 @@ export const ScheduleViewer: React.FC = () => {
                         <Clock className="w-4 h-4" />
                         {format(parseISO(schedule.start_time), 'HH:mm')} - {format(parseISO(schedule.end_time), 'HH:mm')}
                       </div>
-                      
-                      {schedule.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {schedule.location}
-                        </div>
-                      )}
-                      
-                      {schedule.max_participants && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          Макс. {schedule.max_participants} чел.
-                        </div>
-                      )}
                     </div>
                   </div>
                   
