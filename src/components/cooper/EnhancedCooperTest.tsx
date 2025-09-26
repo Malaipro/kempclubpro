@@ -21,8 +21,11 @@ interface CooperTestResult {
   id: string;
   user_id: string;
   test_date: string;
-  distance: number;
-  time_minutes: number;
+  exercise_1_time: number;
+  exercise_2_time: number;
+  exercise_3_time: number;
+  exercise_4_time: number;
+  total_time: number;
   verified: boolean;
   age?: number;
   gender?: string;
@@ -54,8 +57,10 @@ export const EnhancedCooperTest: React.FC = () => {
   const [formData, setFormData] = useState({
     user_id: '',
     test_number: '1',
-    distance: '',
-    time_seconds: '',
+    exercise_1_time: '',
+    exercise_2_time: '',
+    exercise_3_time: '',
+    exercise_4_time: '',
     age: '',
     gender: '',
     notes: '',
@@ -136,10 +141,10 @@ export const EnhancedCooperTest: React.FC = () => {
     }
   };
 
-  const getFitnessLevel = (timeMinutes: number) => {
-    if (timeMinutes <= 3) return { level: 'excellent', label: 'Отлично', color: 'bg-green-100 text-green-800' };
-    if (timeMinutes <= 4) return { level: 'good', label: 'Хорошо', color: 'bg-blue-100 text-blue-800' };
-    if (timeMinutes <= 5) return { level: 'satisfactory', label: 'Удовлетворительно', color: 'bg-yellow-100 text-yellow-800' };
+  const getFitnessLevel = (totalSeconds: number) => {
+    if (totalSeconds <= 600) return { level: 'excellent', label: 'Отлично', color: 'bg-green-100 text-green-800' };
+    if (totalSeconds <= 900) return { level: 'good', label: 'Хорошо', color: 'bg-blue-100 text-blue-800' };
+    if (totalSeconds <= 1200) return { level: 'satisfactory', label: 'Удовлетворительно', color: 'bg-yellow-100 text-yellow-800' };
     return { level: 'poor', label: 'Плохо', color: 'bg-red-100 text-red-800' };
   };
 
@@ -153,24 +158,30 @@ export const EnhancedCooperTest: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.user_id || !formData.distance || !formData.time_seconds) {
+    if (!formData.user_id || !formData.exercise_1_time || !formData.exercise_2_time || !formData.exercise_3_time || !formData.exercise_4_time) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните обязательные поля',
+        description: 'Заполните все обязательные поля упражнений',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      const timeMinutes = parseInt(formData.time_seconds) / 60;
-      const fitnessLevel = getFitnessLevel(timeMinutes);
+      const exercise1Time = parseInt(formData.exercise_1_time);
+      const exercise2Time = parseInt(formData.exercise_2_time);
+      const exercise3Time = parseInt(formData.exercise_3_time);
+      const exercise4Time = parseInt(formData.exercise_4_time);
+      const totalSeconds = exercise1Time + exercise2Time + exercise3Time + exercise4Time;
+      const fitnessLevel = getFitnessLevel(totalSeconds);
 
       const testData = {
         user_id: formData.user_id,
         test_date: formData.test_date.toISOString(),
-        distance: parseInt(formData.distance),
-        time_minutes: Math.round(timeMinutes),
+        exercise_1_time: exercise1Time,
+        exercise_2_time: exercise2Time,
+        exercise_3_time: exercise3Time,
+        exercise_4_time: exercise4Time,
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
         fitness_level: fitnessLevel.level,
@@ -222,8 +233,10 @@ export const EnhancedCooperTest: React.FC = () => {
     setFormData({
       user_id: result.user_id,
       test_number: '1', // We'll determine this from the data
-      distance: result.distance.toString(),
-      time_seconds: (result.time_minutes * 60).toString(),
+      exercise_1_time: result.exercise_1_time?.toString() || '',
+      exercise_2_time: result.exercise_2_time?.toString() || '',
+      exercise_3_time: result.exercise_3_time?.toString() || '',
+      exercise_4_time: result.exercise_4_time?.toString() || '',
       age: result.age?.toString() || '',
       gender: result.gender || '',
       notes: result.notes || '',
@@ -260,8 +273,10 @@ export const EnhancedCooperTest: React.FC = () => {
     setFormData({
       user_id: '',
       test_number: '1',
-      distance: '',
-      time_seconds: '',
+      exercise_1_time: '',
+      exercise_2_time: '',
+      exercise_3_time: '',
+      exercise_4_time: '',
       age: '',
       gender: '',
       notes: '',
@@ -333,25 +348,47 @@ export const EnhancedCooperTest: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-white">Дистанция (м) *</Label>
+                  <Label className="text-white">Упражнение 1 (сек) *</Label>
                   <Input
                     type="number"
-                    value={formData.distance}
-                    onChange={(e) => setFormData(prev => ({ ...prev, distance: e.target.value }))}
-                    placeholder="2000"
+                    value={formData.exercise_1_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_1_time: e.target.value }))}
+                    placeholder="60"
                     className="bg-white text-black"
                     required
                   />
                 </div>
                 <div>
-                  <Label className="text-white">Время (сек) *</Label>
+                  <Label className="text-white">Упражнение 2 (сек) *</Label>
                   <Input
                     type="number"
-                    value={formData.time_seconds}
-                    onChange={(e) => setFormData(prev => ({ ...prev, time_seconds: e.target.value }))}
-                    placeholder="180"
+                    value={formData.exercise_2_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_2_time: e.target.value }))}
+                    placeholder="60"
+                    className="bg-white text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Упражнение 3 (сек) *</Label>
+                  <Input
+                    type="number"
+                    value={formData.exercise_3_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_3_time: e.target.value }))}
+                    placeholder="60"
+                    className="bg-white text-black"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Упражнение 4 (сек) *</Label>
+                  <Input
+                    type="number"
+                    value={formData.exercise_4_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_4_time: e.target.value }))}
+                    placeholder="60"
                     className="bg-white text-black"
                     required
                   />
@@ -465,8 +502,11 @@ export const EnhancedCooperTest: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Участник</TableHead>
-                      <TableHead>Дистанция</TableHead>
-                      <TableHead>Время</TableHead>
+                      <TableHead>Упражнение 1</TableHead>
+                      <TableHead>Упражнение 2</TableHead>
+                      <TableHead>Упражнение 3</TableHead>
+                      <TableHead>Упражнение 4</TableHead>
+                      <TableHead>Общее время</TableHead>
                       <TableHead>Возраст</TableHead>
                       <TableHead>Пол</TableHead>
                       <TableHead>Уровень</TableHead>
@@ -477,14 +517,17 @@ export const EnhancedCooperTest: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {test1Results.map((result) => {
-                      const fitnessLevel = getFitnessLevel(result.time_minutes);
+                      const fitnessLevel = getFitnessLevel(result.total_time);
                       return (
                         <TableRow key={result.id}>
                           <TableCell className="font-medium">
                             {formatParticipantName(result)}
                           </TableCell>
-                          <TableCell>{result.distance}м</TableCell>
-                          <TableCell>{result.time_minutes}мин</TableCell>
+                          <TableCell>{result.exercise_1_time || 0}сек</TableCell>
+                          <TableCell>{result.exercise_2_time || 0}сек</TableCell>
+                          <TableCell>{result.exercise_3_time || 0}сек</TableCell>
+                          <TableCell>{result.exercise_4_time || 0}сек</TableCell>
+                          <TableCell className="font-semibold">{result.total_time || 0}сек</TableCell>
                           <TableCell>{result.age || '-'}</TableCell>
                           <TableCell>{result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '-'}</TableCell>
                           <TableCell>
