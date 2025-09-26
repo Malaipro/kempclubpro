@@ -157,9 +157,9 @@ export const Testimonials: React.FC = () => {
             >
               <div className="relative">
                 {testimonial.video_url ? (
-                  <div className="relative aspect-video bg-gray-800">
+                  <div className="relative bg-gray-800" style={{ minHeight: '280px' }}>
                     {getVideoType(testimonial.video_url) === 'youtube' || getVideoType(testimonial.video_url) === 'vimeo' ? (
-                      <>
+                      <div className="aspect-video">
                         <iframe
                           src={getVideoEmbedUrl(testimonial.video_url) || ''}
                           className="w-full h-full"
@@ -170,27 +170,36 @@ export const Testimonials: React.FC = () => {
                         />
                         <button 
                           onClick={() => openVideoModal(testimonial.id)}
-                          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300 z-10"
                         >
                           <Expand className="w-4 h-4 text-white" />
                         </button>
-                      </>
+                      </div>
                     ) : (
                       <>
-                        <video
-                          ref={(el) => { videoRefs.current[testimonial.id] = el; }}
-                          src={getVideoEmbedUrl(testimonial.video_url) || ''}
-                          className="w-full h-full object-cover"
-                          muted={mutedStatus[testimonial.id]}
-                          onEnded={() => handleVideoEnd(testimonial.id)}
-                          onClick={() => openVideoModal(testimonial.id)}
-                          style={{ cursor: 'pointer' }}
-                        />
+                        <div className="flex items-center justify-center min-h-[280px] max-h-[500px]">
+                          <video
+                            ref={(el) => { videoRefs.current[testimonial.id] = el; }}
+                            src={getVideoEmbedUrl(testimonial.video_url) || ''}
+                            className="max-w-full max-h-full object-contain"
+                            muted={mutedStatus[testimonial.id]}
+                            onEnded={() => handleVideoEnd(testimonial.id)}
+                            onClick={() => openVideoModal(testimonial.id)}
+                            style={{ 
+                              cursor: 'pointer',
+                              width: 'auto',
+                              height: 'auto'
+                            }}
+                          />
+                        </div>
                         
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
                           <button 
-                            onClick={() => handlePlayPause(testimonial.id)}
-                            className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayPause(testimonial.id);
+                            }}
+                            className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg pointer-events-auto"
                           >
                             {playingVideo === testimonial.id ? (
                               <Pause className="w-6 h-6 text-white" />
@@ -200,7 +209,7 @@ export const Testimonials: React.FC = () => {
                           </button>
                         </div>
                         
-                        <div className="absolute top-4 right-4 flex gap-2">
+                        <div className="absolute top-4 right-4 flex gap-2 z-10">
                           <button 
                             onClick={() => openVideoModal(testimonial.id)}
                             className="bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
@@ -210,8 +219,11 @@ export const Testimonials: React.FC = () => {
                         </div>
                         
                         <button 
-                          onClick={() => handleMute(testimonial.id)}
-                          className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMute(testimonial.id);
+                          }}
+                          className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300 z-10"
                         >
                           {mutedStatus[testimonial.id] ? (
                             <VolumeX className="w-4 h-4 text-white" />
@@ -278,8 +290,8 @@ export const Testimonials: React.FC = () => {
       {/* Модальное окно для полноэкранного видео */}
       {openVideo && (
         <Dialog open={!!openVideo} onOpenChange={(open) => !open && closeVideoModal()}>
-          <DialogContent className="max-w-6xl w-[95vw] h-[95vh] p-0 bg-black border-0">
-            <div className="relative w-full h-full flex items-center justify-center">
+          <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto h-auto p-0 bg-black border-0 overflow-hidden">
+            <div className="relative flex items-center justify-center min-h-[50vh] max-h-[95vh]">
               {(() => {
                 const testimonial = testimonials.find(t => t.id === openVideo);
                 const videoUrl = testimonial?.video_url;
@@ -290,7 +302,7 @@ export const Testimonials: React.FC = () => {
                 
                 if (videoType === 'youtube' || videoType === 'vimeo') {
                   return (
-                    <div className="w-full h-full max-w-4xl max-h-[90vh] aspect-video">
+                    <div className="w-full max-w-6xl aspect-video">
                       <iframe
                         src={embedUrl?.replace('autoplay=0', 'autoplay=1') || ''}
                         className="w-full h-full"
@@ -306,14 +318,14 @@ export const Testimonials: React.FC = () => {
                     <video
                       ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
                       src={embedUrl || ''}
-                      className="max-w-full max-h-full object-contain"
                       controls
                       autoPlay
+                      className="max-w-full max-h-[95vh] object-contain"
                       style={{ 
                         width: 'auto',
                         height: 'auto',
-                        maxWidth: '100%',
-                        maxHeight: '100%'
+                        minWidth: '300px',
+                        minHeight: '200px'
                       }}
                     />
                   );
@@ -322,7 +334,7 @@ export const Testimonials: React.FC = () => {
               <DialogClose asChild>
                 <Button
                   variant="ghost"
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-50"
+                  className="absolute top-4 right-4 bg-black/70 hover:bg-black/90 text-white rounded-full w-10 h-10 p-0 z-50 flex items-center justify-center"
                   onClick={closeVideoModal}
                 >
                   ✕
