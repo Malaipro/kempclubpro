@@ -32,6 +32,18 @@ export const SecureLeaderboard: React.FC = () => {
 
     setLoading(true);
     try {
+      // Получаем список админов для исключения из общего рейтинга
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['admin', 'super_admin']);
+
+      if (adminError) {
+        console.error('Error fetching admin users:', adminError);
+      }
+
+      const adminUserIds = adminUsers?.map(u => u.user_id) || [];
+
       let query = supabase
         .from('leaderboard')
         .select(`
@@ -48,6 +60,11 @@ export const SecureLeaderboard: React.FC = () => {
 
       if (showPersonalOnly) {
         query = query.eq('user_id', user.id);
+      } else {
+        // В общем рейтинге исключаем админов
+        if (adminUserIds.length > 0) {
+          query = query.not('user_id', 'in', `(${adminUserIds.join(',')})`);
+        }
       }
 
       const { data, error } = await query;
