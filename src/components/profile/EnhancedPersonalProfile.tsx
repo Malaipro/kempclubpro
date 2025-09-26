@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -75,6 +76,7 @@ interface CooperTest {
 export const EnhancedPersonalProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [cooperTests, setCooperTests] = useState<CooperTest[]>([]);
@@ -314,24 +316,44 @@ export const EnhancedPersonalProfile: React.FC = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-muted/50">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} bg-muted/50`}>
+          <TabsTrigger value="profile" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
             <User className="w-4 h-4" />
-            Профиль
+            {!isMobile && 'Профиль'}
           </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-2">
+          <TabsTrigger value="progress" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
             <TrendingUp className="w-4 h-4" />
-            Прогресс
+            {!isMobile && 'Прогресс'}
           </TabsTrigger>
-          <TabsTrigger value="habits" className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            Привычки
-          </TabsTrigger>
-          <TabsTrigger value="tests" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Тесты
-          </TabsTrigger>
+          {!isMobile && (
+            <>
+              <TabsTrigger value="habits" className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Привычки
+              </TabsTrigger>
+              <TabsTrigger value="tests" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Тесты
+              </TabsTrigger>
+            </>
+          )}
+          {isMobile && (
+            <>
+              <TabsTrigger value="habits" className="flex items-center gap-2 text-xs">
+                <Target className="w-4 h-4" />
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
+        
+        {isMobile && (
+          <TabsList className="grid w-full grid-cols-1 bg-muted/50 mt-2">
+            <TabsTrigger value="tests" className="flex items-center gap-2 text-xs">
+              <Activity className="w-4 h-4" />
+              Тесты
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="profile" className="mt-6">
           <Card>
@@ -350,7 +372,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
             <CardContent>
               {editingProfile ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
                       <Label>Имя</Label>
                       <Input
@@ -391,12 +413,13 @@ export const EnhancedPersonalProfile: React.FC = () => {
                           onSelect={(date) => setProfileForm(prev => ({ ...prev, date_of_birth: date }))}
                           disabled={(date) => date > new Date()}
                           initialFocus
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
                       <Label>Рост (см)</Label>
                       <Input
@@ -417,7 +440,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
                       <Label>Вес до потока (кг)</Label>
                       <Input
@@ -438,7 +461,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
                       <Label>Телефон</Label>
                       <Input
@@ -457,7 +480,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2`}>
                     <Button onClick={handleProfileSave} className="bg-kamp-accent hover:bg-kamp-accent/90">
                       Сохранить
                     </Button>
@@ -468,7 +491,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6`}>
                     <div>
                       <h3 className="font-semibold mb-2">Личные данные</h3>
                       <div className="space-y-2 text-sm">
