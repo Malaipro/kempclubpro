@@ -32,6 +32,7 @@ interface CooperTestResult {
   fitness_level?: string;
   notes?: string;
   verified_by?: string;
+  test_phase?: string;
   profile?: {
     first_name?: string;
     last_name?: string;
@@ -238,6 +239,7 @@ export const EnhancedCooperTest: React.FC = () => {
       exercise_2_time: result.exercise_2_time?.toString() || '',
       exercise_3_time: result.exercise_3_time?.toString() || '',
       exercise_4_time: result.exercise_4_time?.toString() || '',
+      test_phase: result.test_phase || 'during_stream',
       age: result.age?.toString() || '',
       gender: result.gender || '',
       notes: result.notes || '',
@@ -278,6 +280,7 @@ export const EnhancedCooperTest: React.FC = () => {
       exercise_2_time: '',
       exercise_3_time: '',
       exercise_4_time: '',
+      test_phase: 'during_stream',
       age: '',
       gender: '',
       notes: '',
