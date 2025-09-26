@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Expand } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -159,14 +159,22 @@ export const Testimonials: React.FC = () => {
                 {testimonial.video_url ? (
                   <div className="relative aspect-video bg-gray-800">
                     {getVideoType(testimonial.video_url) === 'youtube' || getVideoType(testimonial.video_url) === 'vimeo' ? (
-                      <iframe
-                        src={getVideoEmbedUrl(testimonial.video_url) || ''}
-                        className="w-full h-full"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={`Видео отзыв ${testimonial.participant_name}`}
-                      />
+                      <>
+                        <iframe
+                          src={getVideoEmbedUrl(testimonial.video_url) || ''}
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          title={`Видео отзыв ${testimonial.participant_name}`}
+                        />
+                        <button 
+                          onClick={() => openVideoModal(testimonial.id)}
+                          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                        >
+                          <Expand className="w-4 h-4 text-white" />
+                        </button>
+                      </>
                     ) : (
                       <>
                         <video
@@ -189,6 +197,15 @@ export const Testimonials: React.FC = () => {
                             ) : (
                               <Play className="w-6 h-6 text-white ml-1" />
                             )}
+                          </button>
+                        </div>
+                        
+                        <div className="absolute top-4 right-4 flex gap-2">
+                          <button 
+                            onClick={() => openVideoModal(testimonial.id)}
+                            className="bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                          >
+                            <Expand className="w-4 h-4 text-white" />
                           </button>
                         </div>
                         
@@ -261,8 +278,8 @@ export const Testimonials: React.FC = () => {
       {/* Модальное окно для полноэкранного видео */}
       {openVideo && (
         <Dialog open={!!openVideo} onOpenChange={(open) => !open && closeVideoModal()}>
-          <DialogContent className="max-w-4xl w-full p-0 bg-black border-0">
-            <div className="relative aspect-video">
+          <DialogContent className="max-w-6xl w-[95vw] h-[95vh] p-0 bg-black border-0">
+            <div className="relative w-full h-full flex items-center justify-center">
               {(() => {
                 const testimonial = testimonials.find(t => t.id === openVideo);
                 const videoUrl = testimonial?.video_url;
@@ -273,23 +290,31 @@ export const Testimonials: React.FC = () => {
                 
                 if (videoType === 'youtube' || videoType === 'vimeo') {
                   return (
-                    <iframe
-                      src={embedUrl?.replace('autoplay=0', 'autoplay=1') || ''}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={`Полный видео отзыв ${testimonial.participant_name}`}
-                    />
+                    <div className="w-full h-full max-w-4xl max-h-[90vh] aspect-video">
+                      <iframe
+                        src={embedUrl?.replace('autoplay=0', 'autoplay=1') || ''}
+                        className="w-full h-full"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={`Полный видео отзыв ${testimonial.participant_name}`}
+                      />
+                    </div>
                   );
                 } else {
                   return (
                     <video
                       ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
                       src={embedUrl || ''}
-                      className="w-full h-full object-contain"
+                      className="max-w-full max-h-full object-contain"
                       controls
                       autoPlay
+                      style={{ 
+                        width: 'auto',
+                        height: 'auto',
+                        maxWidth: '100%',
+                        maxHeight: '100%'
+                      }}
                     />
                   );
                 }
@@ -297,7 +322,7 @@ export const Testimonials: React.FC = () => {
               <DialogClose asChild>
                 <Button
                   variant="ghost"
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2"
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 z-50"
                   onClick={closeVideoModal}
                 >
                   ✕
