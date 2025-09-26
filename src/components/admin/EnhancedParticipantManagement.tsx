@@ -57,21 +57,44 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   const fetchParticipants = async () => {
     try {
-      const { data, error } = await supabase
+      // Получаем данные из профилей и джойним с auth.users для получения email
+      const { data: profilesData, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, first_name, last_name, total_points, height_cm, weight_kg, date_of_birth')
+        .select(`
+          id, 
+          user_id, 
+          display_name, 
+          first_name, 
+          last_name, 
+          total_points, 
+          height_cm, 
+          weight_kg, 
+          date_of_birth,
+          phone,
+          telegram
+        `)
         .order('display_name');
-
+      
       if (error) throw error;
 
+      // Получаем email из auth.users для каждого профиля
+      const participantsWithEmail = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
+          return {
+            ...profile,
+            email: userData.user?.email || 'Не указан'
+          };
+        })
+      );
+
       // Transform data to match our interface
-      const transformedData = data?.map(item => ({
+      const transformedData = participantsWithEmail.map(item => ({
         ...item,
         total_points: item.total_points || 0,
         stream: '2-й поток',
-        status: 'registered' as const,
-        email: 'participant@mail.ru' // Mock email, would come from auth.users in real implementation
-      })) || [];
+        status: 'registered' as const
+      }));
 
       setParticipants(transformedData);
     } catch (error) {
@@ -188,8 +211,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
       first_name: participant.first_name || '',
       last_name: participant.last_name || '',
       email: participant.email || '',
-      phone: '', // participant.phone || '', // Add when available
-      telegram: '', // participant.telegram || '', // Add when available  
+      phone: participant.phone || '',
+      telegram: participant.telegram || '',
       stream: participant.stream || '2-й поток',
       password: '',
       height_cm: participant.height_cm?.toString() || '',
