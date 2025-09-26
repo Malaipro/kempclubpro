@@ -7,6 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+// Менять дату следующего запуска КЭМП здесь
+export const FIXED_TARGET_DATE = new Date('2025-11-08T00:00:00');
+
 // Declare Bitrix form interface for TypeScript
 declare global {
   interface Window {
@@ -210,7 +213,8 @@ export const ContactForm: React.FC = () => {
       });
     }
   };
-  const formattedDate = startDate ? format(startDate, 'd MMMM yyyy', { locale: ru }) : null;
+const effectiveDate = (startDate && startDate.getTime() > Date.now()) ? startDate : FIXED_TARGET_DATE;
+const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
   return <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
       <div className="kamp-container">
         <div className="section-heading reveal-on-scroll">
@@ -248,15 +252,15 @@ export const ContactForm: React.FC = () => {
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
                 {isMobile ? (
                   <p className="text-white/80 mb-4 text-sm">
-                    Интенсив начинается {formattedDate ?? '8 ноября 2025'}! Записывайся сейчас — количество мест ограничено!
+                    Интенсив начинается {formattedDate}! Записывайся сейчас — количество мест ограничено!
                   </p>
                 ) : (
                   <p className="text-white/80 mb-8">
-                    Новый интенсив стартует {formattedDate ?? '8 ноября 2025'}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
+                    Новый интенсив стартует {formattedDate}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
                   </p>
                 )}
 
-                <CountdownTimer targetDate={startDate ?? new Date('2025-11-08T00:00:00')} />
+                <CountdownTimer targetDate={effectiveDate} />
                 
                 {!isMobile && <CourseInfo />}
               </div>
