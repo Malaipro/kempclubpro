@@ -189,14 +189,41 @@ serve(async (req) => {
     
     if (requestData.type === 'contact_form') {
       // Enhanced contact form processing with database validation
+      // First encrypt the phone number for secure storage
+      let encryptedPhone = sanitizedData.phone;
+      
+      if (sanitizedData.phone) {
+        try {
+          const { data: phoneData, error: encryptError } = await supabase
+            .rpc('encrypt_phone', { phone_text: sanitizedData.phone });
+
+          if (encryptError) {
+            console.error('Phone encryption error:', encryptError);
+            await supabase.rpc('log_security_event', {
+              event_type: 'PHONE_ENCRYPTION',
+              details: { error: 'phone_encryption_failed' }
+            });
+          } else {
+            encryptedPhone = phoneData;
+            // Log successful encryption
+            await supabase.rpc('log_security_event', {
+              event_type: 'PHONE_ENCRYPTION',
+              details: { success: true, action: 'contact_form_encrypted' }
+            });
+          }
+        } catch (error) {
+          console.error('Phone encryption failed:', error);
+        }
+      }
+
       const { data, error } = await supabase
         .from('contact_submissions')
         .insert({
           name: sanitizedData.name,
-          phone: sanitizedData.phone,
+          phone: encryptedPhone,
           course: sanitizedData.course || 'Не указан',
           social: sanitizedData.social,
-          ip_address: sanitizedData.ip_address
+          message: sanitizedData.message
         })
         .select()
         .single();

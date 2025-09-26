@@ -1040,8 +1040,11 @@ export type Database = {
       }
       testimonials: {
         Row: {
+          consent_date: string | null
+          consent_given: boolean | null
           content: string | null
           created_at: string
+          data_retention_until: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
@@ -1052,8 +1055,11 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          consent_date?: string | null
+          consent_given?: boolean | null
           content?: string | null
           created_at?: string
+          data_retention_until?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1064,8 +1070,11 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          consent_date?: string | null
+          consent_given?: boolean | null
           content?: string | null
           created_at?: string
+          data_retention_until?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1564,8 +1573,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_old_audit_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      decrypt_phone: {
+        Args: { encrypted_phone: string }
+        Returns: string
+      }
+      encrypt_phone: {
+        Args: { phone_text: string }
+        Returns: string
+      }
       enhanced_contact_rate_limit: {
         Args: { p_ip_address?: unknown }
+        Returns: boolean
+      }
+      enhanced_rate_limit_check: {
+        Args: { p_action?: string; p_ip_address?: unknown }
         Returns: boolean
       }
       has_role: {

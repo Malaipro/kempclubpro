@@ -7,6 +7,7 @@ import { Shield, AlertTriangle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRole } from '@/hooks/useRole';
 import { useToast } from '@/hooks/use-toast';
+import { DecryptedPhoneDisplay } from '@/components/admin/DecryptedPhoneDisplay';
 
 interface SecurityMetric {
   name: string;
@@ -230,9 +231,11 @@ export const SecurityEnhancements: React.FC = () => {
                   </div>
                    <div>
                      <label className="text-sm font-medium text-gray-500">Phone</label>
-                     <p className="text-sm font-mono">
-                       {maskSensitiveData(submission.phone, 'phone')}
-                     </p>
+                     <DecryptedPhoneDisplay 
+                       encryptedPhone={submission.phone}
+                       showMasked={!showSensitiveData}
+                       className="text-sm"
+                     />
                    </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Course</label>
@@ -256,9 +259,11 @@ export const SecurityEnhancements: React.FC = () => {
       <Alert>
         <Shield className="w-4 h-4" />
         <AlertDescription>
-          <strong>Security Recommendations:</strong>
+           <strong>Security Recommendations:</strong>
            <ul className="mt-2 text-sm space-y-1">
              <li>• <strong>CRITICAL:</strong> Enable leaked password protection in Supabase Auth settings</li>
+             <li>• <strong>NEW:</strong> Phone number encryption is now active</li>
+             <li>• <strong>NEW:</strong> Testimonial consent tracking implemented (GDPR compliance)</li>
              <li>• Enhanced rate limiting is now active on contact forms</li>
              <li>• Data masking functions protect PII in admin views</li>
              <li>• Set up regular database backups with encryption</li>
