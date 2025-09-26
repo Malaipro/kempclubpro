@@ -113,7 +113,7 @@ export const DetailedScheduleManagement: React.FC = () => {
     return days[date.getDay()];
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.date || !formData.activity) {
@@ -124,6 +124,13 @@ export const DetailedScheduleManagement: React.FC = () => {
       });
       return;
     }
+
+    const toISO = (date: Date, time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      const d = new Date(date);
+      d.setHours(h || 0, m || 0, 0, 0);
+      return d.toISOString();
+    };
 
     const selectedTrainer = trainers.find(t => t.id === formData.instructor_id);
     const newEvent: ScheduleItem = {
@@ -137,7 +144,39 @@ export const DetailedScheduleManagement: React.FC = () => {
       instructor: selectedTrainer ? selectedTrainer.name : '-'
     };
 
+    // Обновим локальную таблицу для визуальной обратной связи
     setScheduleItems(prev => [...prev, newEvent]);
+
+    // Сохранение в базу данных (таблица schedules)
+    try {
+      const { error } = await supabase.from('schedules').insert({
+        title: formData.activity,
+        description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+        start_time: toISO(formData.date, formData.start_time),
+        end_time: toISO(formData.date, formData.end_time),
+        location: null,
+        activity_type: formData.activity,
+        max_participants: null,
+        is_active: true,
+        instructor_id: formData.instructor_id || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успех',
+        description: 'Мероприятие добавлено и опубликовано в расписании',
+      });
+    } catch (err) {
+      console.error('Error inserting schedule:', err);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось сохранить мероприятие. Проверьте права и попробуйте снова.',
+        variant: 'destructive',
+      });
+    }
+
+    // Сброс формы
     setDialogOpen(false);
     setFormData({
       ascetic_nutrition: '',
@@ -147,11 +186,6 @@ export const DetailedScheduleManagement: React.FC = () => {
       end_time: '09:30',
       activity: '',
       instructor_id: '',
-    });
-
-    toast({
-      title: 'Успех',
-      description: 'Мероприятие добавлено в расписание',
     });
   };
 
