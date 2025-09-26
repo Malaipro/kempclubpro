@@ -40,8 +40,9 @@ export const SecureLeaderboard: React.FC = () => {
           total_points,
           rank_position,
           last_updated,
-          profiles!inner(display_name)
+          profiles!inner(display_name, approved)
         `)
+        .eq('profiles.approved', true)
         .order('total_points', { ascending: false })
         .limit(showPersonalOnly ? 1 : 10);
 

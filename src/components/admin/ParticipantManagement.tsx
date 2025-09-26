@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, Search, UserPlus, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, Search, UserPlus, Mail, Phone, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +19,9 @@ interface Profile {
   total_points: number;
   rank_position: number;
   created_at: string;
+  approved: boolean;
+  approved_at: string | null;
+  approved_by: string | null;
 }
 
 export const ParticipantManagement: React.FC = () => {
@@ -32,7 +35,7 @@ export const ParticipantManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('total_points', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setParticipants(data || []);
@@ -45,6 +48,35 @@ export const ParticipantManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveParticipant = async (participantId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          approved: true,
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', participantId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успешно',
+        description: 'Участник утвержден',
+      });
+
+      fetchParticipants();
+    } catch (error) {
+      console.error('Error approving participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось утвердить участника',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -101,8 +133,8 @@ export const ParticipantManagement: React.FC = () => {
               <TableRow className="border-b border-gray-700">
                 <TableHead className="text-gray-300">Участник</TableHead>
                 <TableHead className="text-gray-300">Контакты</TableHead>
+                <TableHead className="text-gray-300">Статус</TableHead>
                 <TableHead className="text-gray-300">Очки</TableHead>
-                <TableHead className="text-gray-300">Позиция</TableHead>
                 <TableHead className="text-gray-300">Дата регистрации</TableHead>
                 <TableHead className="text-gray-300">Действия</TableHead>
               </TableRow>
@@ -130,10 +162,20 @@ export const ParticipantManagement: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="bg-destructive text-white">{participant.total_points}</Badge>
+                    {participant.approved ? (
+                      <Badge variant="secondary" className="bg-green-600 text-white flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Утвержден
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-yellow-600 text-white flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Зарегистрирован
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="border-gray-600 text-gray-300">#{participant.rank_position}</Badge>
+                    <Badge variant="secondary" className="bg-destructive text-white">{participant.total_points}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm text-gray-300">
@@ -142,12 +184,19 @@ export const ParticipantManagement: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {!participant.approved && (
+                        <Button 
+                          onClick={() => handleApproveParticipant(participant.id)}
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Утвердить
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
                         Редактировать
-                      </Button>
-                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                        Профиль
                       </Button>
                     </div>
                   </TableCell>

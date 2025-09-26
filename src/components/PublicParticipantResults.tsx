@@ -63,7 +63,7 @@ export const PublicParticipantResults: React.FC = () => {
 
   const loadPublicData = async () => {
     try {
-      // Загружаем статистику участников
+      // Загружаем статистику участников (только утвержденные)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -74,8 +74,10 @@ export const PublicParticipantResults: React.FC = () => {
           weight_before_stream,
           weight_after_stream,
           stream_start_date,
-          stream_end_date
+          stream_end_date,
+          approved
         `)
+        .eq('approved', true)
         .order('display_name');
 
       if (profilesError) throw profilesError;

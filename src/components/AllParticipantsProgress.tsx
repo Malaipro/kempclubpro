@@ -27,10 +27,33 @@ export const AllParticipantsProgress: React.FC = () => {
   const { data: progressStats, isLoading, error } = useQuery({
     queryKey: ['all-participants-progress'],
     queryFn: async (): Promise<ProgressStats> => {
-      // Get leaderboard data instead of non-existent tables
+      // Get approved participants from profiles first
+      const { data: approvedProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('approved', true);
+
+      if (profilesError) throw profilesError;
+
+      const approvedUserIds = approvedProfiles?.map(p => p.user_id) || [];
+      
+      if (approvedUserIds.length === 0) {
+        return {
+          totalPoints: 0,
+          totalZakals: 0,
+          totalGrans: 0,
+          totalShramy: 0,
+          participantCount: 0,
+          zakalsByType: { bjj: 0, kick: 0, ofp: 0 },
+          shramsByType: { bjj: 0, kick: 0, ofp: 0, tactics: 0 }
+        };
+      }
+
+      // Get leaderboard data only for approved participants
       const { data: leaderboard, error: leaderboardError } = await supabase
         .from('leaderboard')
-        .select('*');
+        .select('*')
+        .in('user_id', approvedUserIds);
 
       if (leaderboardError) throw leaderboardError;
 
@@ -100,10 +123,10 @@ export const AllParticipantsProgress: React.FC = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4">
             <Trophy className="w-10 h-10 text-kamp-accent inline-block mr-3" />
-            Общий прогресс КЭМП
+            Общий прогресс утвержденных участников
           </h2>
           <p className="text-gray-400 text-lg">
-            Текущие достижения и прогресс по всем направлениям
+            Текущие достижения и прогресс по всем направлениям (только утвержденные участники)
           </p>
         </div>
 
@@ -113,7 +136,7 @@ export const AllParticipantsProgress: React.FC = () => {
             <CardContent className="p-6 text-center">
               <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
               <div className="text-3xl font-bold text-white">{stats.participantCount}</div>
-              <div className="text-gray-400 text-sm">Участников</div>
+              <div className="text-gray-400 text-sm">Утвержденных участников</div>
             </CardContent>
           </Card>
           <Card className="bg-gray-900/50 border-gray-800">

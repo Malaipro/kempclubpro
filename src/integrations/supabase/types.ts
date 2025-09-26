@@ -655,6 +655,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           created_at: string
           date_of_birth: string | null
@@ -677,6 +680,9 @@ export type Database = {
           weight_kg: number | null
         }
         Insert: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -699,6 +705,9 @@ export type Database = {
           weight_kg?: number | null
         }
         Update: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
