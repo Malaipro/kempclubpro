@@ -4,7 +4,8 @@ import { KampInstructions } from './KampInstructions';
 import { KampProgress } from './KampProgress';
 import { AsceticManagement } from './AsceticManagement';
 import { KampManual } from '@/components/instructions/KampManual';
-import { PersonalProfile, AccountSettings } from '@/components/profile';
+import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
+import { AccountSettings } from '@/components/profile';
 import { Book, Trophy, Target, FileText, User, Settings } from 'lucide-react';
 
 export const KampSystemUser: React.FC = () => {
@@ -51,7 +52,7 @@ export const KampSystemUser: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="profile">
-            <PersonalProfile />
+            <EnhancedPersonalProfile />
           </TabsContent>
           
           <TabsContent value="settings">
