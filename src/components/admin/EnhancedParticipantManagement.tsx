@@ -136,7 +136,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
           console.error('Error creating participant:', error);
           toast({
             title: 'Ошибка',
-            description: 'Не удалось создать участника',
+            description: (error as any)?.message || 'Не удалось создать участника',
             variant: 'destructive',
           });
           return;
@@ -352,13 +352,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
               {!editingParticipant && (
                 <div>
-                  <Label className="text-white">Пароль</Label>
+                  <Label className="text-white">Пароль *</Label>
                   <Input
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="••••••••"
+                    placeholder="Минимум 6 символов"
                     className="bg-white text-black"
+                    required
+                    minLength={6}
                   />
                 </div>
               )}

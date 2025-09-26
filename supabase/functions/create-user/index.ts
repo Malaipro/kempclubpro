@@ -11,16 +11,27 @@ serve(async (req) => {
   try {
     const { email, password, metadata, role } = await req.json()
 
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: 'Email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Create a Supabase client with service role key
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    const safePassword = password && String(password).length >= 6
+      ? password
+      : crypto.randomUUID()
+
     // Create user in auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password,
+      password: safePassword,
       email_confirm: true,
       user_metadata: metadata || {}
     })
@@ -36,29 +47,39 @@ serve(async (req) => {
       )
     }
 
-    // Update profile with additional metadata if provided
-    if (metadata && authData.user) {
+    // Create or update profile with additional metadata if provided
+    if (authData.user) {
+      const md = (metadata || {}) as Record<string, any>
       const profileData: any = {
-        user_id: authData.user.id
-      };
+        user_id: authData.user.id,
+        first_name: md.first_name ?? null,
+        last_name: md.last_name ?? null,
+        display_name: md.display_name ?? ((`${md.first_name ?? ''} ${md.last_name ?? ''}`.trim()) || null),
+        height_cm: md.height_cm ?? null,
+        weight_kg: md.weight_kg ?? null,
+        date_of_birth: md.date_of_birth ?? null,
+        approved: false,
+        leaderboard_visible: true,
+      }
 
-      // Map metadata to profile fields
-      if (metadata.first_name) profileData.first_name = metadata.first_name;
-      if (metadata.last_name) profileData.last_name = metadata.last_name;
-      if (metadata.display_name) profileData.display_name = metadata.display_name;
-      if (metadata.height_cm) profileData.height_cm = metadata.height_cm;
-      if (metadata.weight_kg) profileData.weight_kg = metadata.weight_kg;
-      if (metadata.date_of_birth) profileData.date_of_birth = metadata.date_of_birth;
-
-      const { error: profileError } = await supabaseAdmin
+      // Try insert first, fallback to update if row exists
+      const { error: insertErr } = await supabaseAdmin
         .from('profiles')
-        .update(profileData)
-        .eq('user_id', authData.user.id);
+        .insert(profileData)
 
-      if (profileError) {
-        console.error('Profile update error:', profileError);
+      if (insertErr) {
+        console.warn('Profile insert error (will try update):', insertErr)
+        const { error: updateErr } = await supabaseAdmin
+          .from('profiles')
+          .update(profileData)
+          .eq('user_id', authData.user.id)
+        if (updateErr) {
+          console.error('Profile upsert failed:', updateErr)
+        } else {
+          console.log(`Successfully updated profile for user ${authData.user.id}`)
+        }
       } else {
-        console.log(`Successfully updated profile for user ${authData.user.id}`);
+        console.log(`Successfully created profile for user ${authData.user.id}`)
       }
     }
 
