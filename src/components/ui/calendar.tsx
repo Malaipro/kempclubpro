@@ -20,11 +20,18 @@ function Calendar({
       className={cn("p-3 pointer-events-auto", className)}
       locale={ru}
       weekStartsOn={1}
+      captionLayout="dropdown-buttons"
+      fromYear={1900}
+      toYear={2030}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
+        caption_dropdowns: "flex justify-center gap-1",
+        dropdown_month: "flex items-center",
+        dropdown_year: "flex items-center",
+        dropdown: "appearance-none bg-transparent border-0 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2 py-1",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
