@@ -74,7 +74,7 @@ export const MomentsManagement: React.FC = () => {
     try {
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'dat';
       const timestamp = Date.now();
-      const filePath = `${type}s/${timestamp}.${fileExt}`;
+      const filePath = `${timestamp}.${fileExt}`;
 
       if (type === 'video') {
         // Use signed upload for better reliability on larger files
