@@ -264,7 +264,7 @@ export const DetailedScheduleManagement: React.FC = () => {
                       selected={formData.date}
                       onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
                       initialFocus
-                      className="bg-white"
+                      className="bg-white pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

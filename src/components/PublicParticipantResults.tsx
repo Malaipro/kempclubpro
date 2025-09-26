@@ -24,8 +24,6 @@ interface ParticipantStats {
   display_name: string;
   weight_before_stream?: number;
   weight_after_stream?: number;
-  stream_start_date?: string;
-  stream_end_date?: string;
   active_habits_count: number;
   completed_habits_count: number;
   cooper_improvement?: number;
@@ -73,8 +71,6 @@ export const PublicParticipantResults: React.FC = () => {
           display_name,
           weight_before_stream,
           weight_after_stream,
-          stream_start_date,
-          stream_end_date,
           approved
         `)
         .eq('approved', true)
@@ -373,15 +369,6 @@ export const PublicParticipantResults: React.FC = () => {
                             <Zap className="w-4 h-4 text-kamp-accent" />
                             <span className="text-gray-300">
                               Купер: {participant.cooper_improvement > 0 ? '-' : '+'}{Math.abs(participant.cooper_improvement)}с
-                            </span>
-                          </div>
-                        )}
-
-                        {participant.stream_start_date && (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">
-                              Поток: {format(new Date(participant.stream_start_date), "dd.MM.yyyy")}
                             </span>
                           </div>
                         )}

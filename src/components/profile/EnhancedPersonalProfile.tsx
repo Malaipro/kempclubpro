@@ -42,8 +42,6 @@ interface Profile {
   weight_kg?: number;
   weight_before_stream?: number;
   weight_after_stream?: number;
-  stream_start_date?: string;
-  stream_end_date?: string;
   phone?: string;
   telegram?: string;
 }
@@ -92,8 +90,6 @@ export const EnhancedPersonalProfile: React.FC = () => {
     weight_kg: '',
     weight_before_stream: '',
     weight_after_stream: '',
-    stream_start_date: null as Date | null,
-    stream_end_date: null as Date | null,
     phone: '',
     telegram: '',
   });
@@ -137,8 +133,6 @@ export const EnhancedPersonalProfile: React.FC = () => {
         weight_kg: profileData?.weight_kg?.toString() || '',
         weight_before_stream: profileData?.weight_before_stream?.toString() || '',
         weight_after_stream: profileData?.weight_after_stream?.toString() || '',
-        stream_start_date: profileData?.stream_start_date ? new Date(profileData.stream_start_date) : null,
-        stream_end_date: profileData?.stream_end_date ? new Date(profileData.stream_end_date) : null,
         phone: profileData?.phone || '',
         telegram: profileData?.telegram || '',
       });
@@ -188,8 +182,6 @@ export const EnhancedPersonalProfile: React.FC = () => {
         weight_kg: profileForm.weight_kg ? parseInt(profileForm.weight_kg) : null,
         weight_before_stream: profileForm.weight_before_stream ? parseInt(profileForm.weight_before_stream) : null,
         weight_after_stream: profileForm.weight_after_stream ? parseInt(profileForm.weight_after_stream) : null,
-        stream_start_date: profileForm.stream_start_date?.toISOString().split('T')[0] || null,
-        stream_end_date: profileForm.stream_end_date?.toISOString().split('T')[0] || null,
         phone: profileForm.phone,
         telegram: profileForm.telegram,
       };
@@ -443,59 +435,6 @@ export const EnhancedPersonalProfile: React.FC = () => {
                         onChange={(e) => setProfileForm(prev => ({ ...prev, weight_after_stream: e.target.value }))}
                         placeholder="70"
                       />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Дата начала потока</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {profileForm.stream_start_date
-                              ? format(profileForm.stream_start_date, "dd.MM.yyyy")
-                              : "Выберите дату"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={profileForm.stream_start_date}
-                            onSelect={(date) => setProfileForm(prev => ({ ...prev, stream_start_date: date }))}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div>
-                      <Label>Дата окончания потока</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {profileForm.stream_end_date
-                              ? format(profileForm.stream_end_date, "dd.MM.yyyy")
-                              : "Выберите дату"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={profileForm.stream_end_date}
-                            onSelect={(date) => setProfileForm(prev => ({ ...prev, stream_end_date: date }))}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
                     </div>
                   </div>
 
