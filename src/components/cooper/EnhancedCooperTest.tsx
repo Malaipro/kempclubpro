@@ -450,7 +450,7 @@ export const EnhancedCooperTest: React.FC = () => {
                       {format(formData.test_date, "dd.MM.yyyy")}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white" align="start">
+                  <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                     <Calendar
                       mode="single"
                       selected={formData.test_date}

@@ -236,7 +236,7 @@ export const EnhancedStreamManagement: React.FC = () => {
                         {formData.start_date ? format(formData.start_date, "dd.MM.yyyy") : "Выберите дату"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={formData.start_date}
@@ -263,7 +263,7 @@ export const EnhancedStreamManagement: React.FC = () => {
                         {formData.end_date ? format(formData.end_date, "dd.MM.yyyy") : "Выберите дату"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={formData.end_date}

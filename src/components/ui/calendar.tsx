@@ -17,7 +17,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3 pointer-events-auto", className)}
+      className={cn("p-3 pointer-events-auto relative z-[9999]", className)}
       locale={ru}
       weekStartsOn={1}
       captionLayout="dropdown-buttons"

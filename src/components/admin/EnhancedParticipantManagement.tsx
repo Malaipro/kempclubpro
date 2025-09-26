@@ -324,7 +324,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         {formData.date_of_birth ? format(formData.date_of_birth, "dd.MM.yyyy") : "дд.мм.гггг"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                       <Calendar
                         mode="single"
                         selected={formData.date_of_birth}

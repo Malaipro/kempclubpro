@@ -406,7 +406,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                           }
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                         <Calendar
                           mode="single"
                           selected={profileForm.date_of_birth}
@@ -649,7 +649,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                               {format(habitForm.start_date, "dd.MM.yyyy")}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 bg-white" align="start">
+                          <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
                             <Calendar
                               mode="single"
                               selected={habitForm.start_date}

@@ -222,7 +222,7 @@ export const ActivityManagement: React.FC = () => {
               {date ? format(date, "dd.MM.yyyy") : "25.09.2025"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+          <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
             <Calendar
               mode="single"
               selected={date}
