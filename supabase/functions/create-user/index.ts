@@ -28,17 +28,10 @@ serve(async (req) => {
       ? password
       : crypto.randomUUID()
 
-    // Check if user already exists
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email)
-    
+    // Try to create user, handle if already exists
     let authData: any = null
     
-    if (existingUser) {
-      // User exists, use existing user data
-      authData = { user: existingUser }
-      console.log(`User ${email} already exists, updating profile`)
-    } else {
-      // Create new user in auth
+    try {
       const { data: newUserData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password: safePassword,
@@ -47,18 +40,52 @@ serve(async (req) => {
       })
 
       if (authError) {
-        console.error('Auth error:', authError)
-        return new Response(
-          JSON.stringify({ error: `Ошибка создания пользователя: ${authError.message}` }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        // Check if user already exists
+        if (authError.message?.includes('already been registered') || authError.status === 422) {
+          console.log(`User ${email} already exists, will update profile only`)
+          
+          // Get existing user ID from profiles table
+          const { data: profileData } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id')
+            .ilike('display_name', `%${metadata?.first_name || ''}%${metadata?.last_name || ''}%`)
+            .limit(1)
+            .single()
+          
+          if (profileData) {
+            authData = { user: { id: profileData.user_id } }
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Пользователь с таким email уже существует' }),
+              { 
+                status: 400, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            )
           }
-        )
+        } else {
+          console.error('Auth error:', authError)
+          return new Response(
+            JSON.stringify({ error: `Ошибка создания пользователя: ${authError.message}` }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+      } else {
+        authData = newUserData
+        console.log(`Successfully created new user ${email}`)
       }
-      
-      authData = newUserData
-      console.log(`Successfully created new user ${email}`)
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      return new Response(
+        JSON.stringify({ error: 'Внутренняя ошибка сервера' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Create or update profile with additional metadata if provided
