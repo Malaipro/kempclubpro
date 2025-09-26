@@ -30,6 +30,7 @@ export const TestimonialManagement: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [previewOpen, setPreviewOpen] = useState<{ type: 'video' | 'image' | null; url: string }>({ type: null, url: '' });
   const { toast } = useToast();
 
@@ -102,6 +103,40 @@ export const TestimonialManagement: React.FC = () => {
       });
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  // Видео-загрузка через подписанные ссылки для надёжности
+  const handleVideoFileUpload = async (file: File) => {
+    setUploadingVideo(true);
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+      const path = `videos/${Date.now()}.${ext}`;
+
+      const { data: signed, error: signErr } = await supabase
+        .storage
+        .from('testimonials')
+        .createSignedUploadUrl(path);
+      if (signErr || !signed) throw signErr || new Error('Не удалось создать ссылку для загрузки');
+
+      const { error: putErr } = await supabase
+        .storage
+        .from('testimonials')
+        .uploadToSignedUrl(path, signed.token, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+      if (putErr) throw putErr;
+
+      const { data } = supabase.storage.from('testimonials').getPublicUrl(path);
+      setFormData(prev => ({ ...prev, video_url: data.publicUrl }));
+
+      toast({ title: 'Успешно', description: 'Видео загружено' });
+    } catch (error: any) {
+      console.error('Video upload error:', error);
+      toast({ title: 'Ошибка загрузки', description: error?.message || 'Не удалось загрузить видео', variant: 'destructive' });
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -352,10 +387,22 @@ export const TestimonialManagement: React.FC = () => {
                   <p className="text-xs text-muted-foreground">
                     Поддерживаются YouTube, Vimeo, прямые ссылки на .mp4, .webm
                   </p>
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleVideoFileUpload(file);
+                    }}
+                    disabled={uploadingVideo}
+                  />
+                  {uploadingVideo && (
+                    <p className="text-sm text-muted-foreground">Загрузка видео...</p>
+                  )}
                    {formData.video_url && (
                      <div className="flex items-center gap-2">
                        <Video className="w-4 h-4 text-green-500" />
-                       <span className="text-sm text-green-500">URL видео добавлен</span>
+                       <span className="text-sm text-green-500">Видео добавлено</span>
                        <Button
                          type="button"
                          variant="outline"
