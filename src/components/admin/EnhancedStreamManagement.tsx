@@ -3,10 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Users, Plus, Eye, Edit } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Users, Plus, Eye, Edit, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface Stream {
   id: string;
@@ -23,6 +30,14 @@ interface Stream {
 export const EnhancedStreamManagement: React.FC = () => {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    start_date: undefined as Date | undefined,
+    end_date: undefined as Date | undefined,
+    max_participants: '',
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,6 +103,58 @@ export const EnhancedStreamManagement: React.FC = () => {
     }
   };
 
+  const handleCreateStream = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.start_date) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните обязательные поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .insert({
+          name: formData.name,
+          description: formData.description,
+          start_date: formData.start_date.toISOString().split('T')[0],
+          end_date: formData.end_date?.toISOString().split('T')[0],
+          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setStreams(prev => [{ ...data, participant_count: 0 }, ...prev]);
+      setDialogOpen(false);
+      setFormData({
+        name: '',
+        description: '',
+        start_date: undefined,
+        end_date: undefined,
+        max_participants: '',
+      });
+
+      toast({
+        title: 'Успех',
+        description: 'Поток успешно создан',
+      });
+    } catch (error) {
+      console.error('Error creating stream:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать поток',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (isActive: boolean, isCurrent: boolean = false) => {
     if (isCurrent) {
       return <Badge className="bg-green-100 text-green-800">Текущий</Badge>;
@@ -118,10 +185,127 @@ export const EnhancedStreamManagement: React.FC = () => {
           <h1 className="text-2xl font-bold">Управление потоками</h1>
           <p className="text-muted-foreground">Создавайте и управляйте интенсивными потоками</p>
         </div>
-        <Button className="bg-destructive hover:bg-destructive/90 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Создать поток
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-destructive hover:bg-destructive/90 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Создать поток
+            </Button>
+          </DialogTrigger>
+          
+          <DialogContent className="max-w-md bg-gray-900 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Создать новый поток</DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleCreateStream} className="space-y-4">
+              <div>
+                <Label className="text-white">Название потока *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="3-й поток"
+                  className="bg-white text-black"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-white">Описание</Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Описание потока..."
+                  className="bg-white text-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Дата начала *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
+                          !formData.start_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.start_date ? format(formData.start_date, "dd.MM.yyyy") : "Выберите дату"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.start_date}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, start_date: date }))}
+                        initialFocus
+                        className="bg-white"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Label className="text-white">Дата окончания</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
+                          !formData.end_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.end_date ? format(formData.end_date, "dd.MM.yyyy") : "Выберите дату"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.end_date}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, end_date: date }))}
+                        initialFocus
+                        className="bg-white"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Максимум участников</Label>
+                <Input
+                  type="number"
+                  value={formData.max_participants}
+                  onChange={(e) => setFormData(prev => ({ ...prev, max_participants: e.target.value }))}
+                  placeholder="20"
+                  className="bg-white text-black"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  type="submit" 
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                >
+                  Создать поток
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4">

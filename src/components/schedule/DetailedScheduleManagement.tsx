@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar, Plus, Edit, Trash2, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ScheduleItem {
   id: string;
@@ -16,8 +27,13 @@ interface ScheduleItem {
   instructor: string;
 }
 
+interface Trainer {
+  id: string;
+  name: string;
+}
+
 export const DetailedScheduleManagement: React.FC = () => {
-  const [scheduleItems] = useState<ScheduleItem[]>([
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([
     {
       id: '1',
       ascetic_nutrition: 'вводная неделя',
@@ -58,17 +74,86 @@ export const DetailedScheduleManagement: React.FC = () => {
       activity: 'Тренировка Кикбоксинг',
       instructor: 'Андреев Дмитрий'
     },
-    {
-      id: '5',
-      ascetic_nutrition: 'вводная неделя',
-      nutrition: 'вводная неделя',
-      date: '-',
-      dayOfWeek: 'Понедельник',
-      time: '07:30:00-07:30:00',
-      activity: 'вводная лекция по нутрициологии',
-      instructor: 'Михаил Гришин'
-    }
   ]);
+
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    ascetic_nutrition: '',
+    nutrition: '',
+    date: undefined as Date | undefined,
+    start_time: '08:00',
+    end_time: '09:30',
+    activity: '',
+    instructor_id: '',
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchTrainers();
+  }, []);
+
+  const fetchTrainers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trainers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTrainers(data || []);
+    } catch (error) {
+      console.error('Error fetching trainers:', error);
+    }
+  };
+
+  const getDayOfWeek = (date: Date) => {
+    const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    return days[date.getDay()];
+  };
+
+  const handleAddEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.date || !formData.activity) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните обязательные поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const selectedTrainer = trainers.find(t => t.id === formData.instructor_id);
+    const newEvent: ScheduleItem = {
+      id: Date.now().toString(),
+      ascetic_nutrition: formData.ascetic_nutrition,
+      nutrition: formData.nutrition,
+      date: format(formData.date, 'dd.MM.yyyy'),
+      dayOfWeek: getDayOfWeek(formData.date),
+      time: `${formData.start_time}:00-${formData.end_time}:00`,
+      activity: formData.activity,
+      instructor: selectedTrainer ? selectedTrainer.name : '-'
+    };
+
+    setScheduleItems(prev => [...prev, newEvent]);
+    setDialogOpen(false);
+    setFormData({
+      ascetic_nutrition: '',
+      nutrition: '',
+      date: undefined,
+      start_time: '08:00',
+      end_time: '09:30',
+      activity: '',
+      instructor_id: '',
+    });
+
+    toast({
+      title: 'Успех',
+      description: 'Мероприятие добавлено в расписание',
+    });
+  };
 
   const getActivityBadgeColor = (activity: string) => {
     if (activity.includes('BJJ')) return 'bg-blue-100 text-blue-800';
@@ -89,10 +174,141 @@ export const DetailedScheduleManagement: React.FC = () => {
           </h1>
           <p className="text-muted-foreground">Детальное расписание мероприятий с полным редактированием</p>
         </div>
-        <Button className="bg-destructive hover:bg-destructive/90 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить мероприятие
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-destructive hover:bg-destructive/90 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить мероприятие
+            </Button>
+          </DialogTrigger>
+          
+          <DialogContent className="max-w-lg bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Добавить мероприятие</DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleAddEvent} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Смысл аскезы/Парадигма КЭМП</Label>
+                  <Input
+                    value={formData.ascetic_nutrition}
+                    onChange={(e) => setFormData(prev => ({ ...prev, ascetic_nutrition: e.target.value }))}
+                    placeholder="вводная неделя"
+                    className="bg-white text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Смысл аскезы/Нутрициология</Label>
+                  <Input
+                    value={formData.nutrition}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nutrition: e.target.value }))}
+                    placeholder="Вводная по нутрициологии"
+                    className="bg-white text-black"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Дата мероприятия *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
+                        !formData.date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.date ? format(formData.date, "dd.MM.yyyy") : "Выберите дату"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.date}
+                      onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
+                      initialFocus
+                      className="bg-white"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Время начала</Label>
+                  <Input
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                    className="bg-white text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white">Время окончания</Label>
+                  <Input
+                    type="time"
+                    value={formData.end_time}
+                    onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                    className="bg-white text-black"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Мероприятие *</Label>
+                <Select value={formData.activity} onValueChange={(value) => setFormData(prev => ({ ...prev, activity: value }))}>
+                  <SelectTrigger className="bg-white text-black">
+                    <SelectValue placeholder="Выберите тип мероприятия" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    <SelectItem value="BJJ" className="hover:bg-gray-100">BJJ</SelectItem>
+                    <SelectItem value="ОФП" className="hover:bg-gray-100">ОФП</SelectItem>
+                    <SelectItem value="Кикбоксинг" className="hover:bg-gray-100">Кикбоксинг</SelectItem>
+                    <SelectItem value="Тактическая подготовка" className="hover:bg-gray-100">Тактическая подготовка</SelectItem>
+                    <SelectItem value="Лекция Пирамида КЭМП" className="hover:bg-gray-100">Лекция Пирамида КЭМП</SelectItem>
+                    <SelectItem value="Теория" className="hover:bg-gray-100">Теория</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-white">Лектор/Тренер</Label>
+                <Select value={formData.instructor_id} onValueChange={(value) => setFormData(prev => ({ ...prev, instructor_id: value }))}>
+                  <SelectTrigger className="bg-white text-black">
+                    <SelectValue placeholder="Выберите тренера" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    {trainers.map((trainer) => (
+                      <SelectItem key={trainer.id} value={trainer.id} className="hover:bg-gray-100">
+                        {trainer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  type="submit" 
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                >
+                  Добавить мероприятие
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
