@@ -177,6 +177,9 @@ export const ContactForm: React.FC = () => {
 
         if (data && !error) {
           setStartDate(new Date(data.start_date));
+        } else {
+          // Fallback date: 8 November 2025
+          setStartDate(new Date('2025-11-08T00:00:00'));
         }
       } catch (e) {
         console.error('Error fetching active stream for ContactForm:', e);
@@ -245,15 +248,15 @@ export const ContactForm: React.FC = () => {
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
                 {isMobile ? (
                   <p className="text-white/80 mb-4 text-sm">
-                    Интенсив начинается {formattedDate ?? 'скоро'}! Записывайся сейчас — количество мест ограничено!
+                    Интенсив начинается {formattedDate ?? '8 ноября 2025'}! Записывайся сейчас — количество мест ограничено!
                   </p>
                 ) : (
                   <p className="text-white/80 mb-8">
-                    Новый интенсив стартует {formattedDate ?? 'скоро'}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
+                    Новый интенсив стартует {formattedDate ?? '8 ноября 2025'}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
                   </p>
                 )}
 
-                <CountdownTimer targetDate={startDate ?? undefined} />
+                <CountdownTimer targetDate={startDate ?? new Date('2025-11-08T00:00:00')} />
                 
                 {!isMobile && <CourseInfo />}
               </div>
