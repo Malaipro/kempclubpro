@@ -8,7 +8,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 declare global {
   interface Window {
     B24Form?: {
-      init: (config: { id: number; type: string; container: string }) => void;
+      init: (config: {
+        id: number;
+        type: string;
+        container: string;
+      }) => void;
     };
   }
 }
@@ -20,7 +24,6 @@ export const ContactForm: React.FC = () => {
       if (document.querySelector(`[data-b24-form="inline/134/km4hms"]`)) {
         return;
       }
-
       try {
         // Создаем скрипт точно как предоставил пользователь
         const script = document.createElement('script');
@@ -32,17 +35,15 @@ export const ContactForm: React.FC = () => {
             var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
           })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js');
         `;
-        
+
         // Обработка ошибок загрузки
         script.onerror = () => {
           console.error('Failed to load Bitrix24 form script');
           showFallbackForm();
         };
-        
         script.onload = () => {
           console.log('Bitrix24 form loaded successfully');
         };
-        
         const container = document.getElementById('bitrix-form-container');
         if (container) {
           container.innerHTML = '';
@@ -53,7 +54,6 @@ export const ContactForm: React.FC = () => {
         showFallbackForm();
       }
     };
-
     const showFallbackForm = () => {
       const container = document.getElementById('bitrix-form-container');
       if (container) {
@@ -99,7 +99,7 @@ export const ContactForm: React.FC = () => {
             </div>
           </div>
         `;
-        
+
         // Добавляем обработчик формы
         const fallbackForm = document.getElementById('fallback-contact-form');
         if (fallbackForm) {
@@ -107,19 +107,16 @@ export const ContactForm: React.FC = () => {
         }
       }
     };
-
     const handleFallbackFormSubmit = async (e: Event) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
       const formData = new FormData(form);
-      
       try {
         // Здесь можно добавить отправку на сервер или в Supabase
         const response = await fetch('/api/contact', {
           method: 'POST',
-          body: formData,
+          body: formData
         });
-        
         if (response.ok) {
           const container = document.getElementById('bitrix-form-container');
           if (container) {
@@ -150,7 +147,7 @@ export const ContactForm: React.FC = () => {
           script.parentNode.removeChild(script);
         }
       });
-      
+
       // Очистка глобальных переменных Bitrix24
       if (window.B24Form) {
         try {
@@ -187,10 +184,7 @@ export const ContactForm: React.FC = () => {
               <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white mb-4 md:mb-6`}>Оставить заявку</h3>
               
               {/* Безопасный контейнер для Битрикс формы */}
-              <div 
-                id="bitrix-form-container" 
-                className="bitrix-form-container min-h-[600px] flex items-center justify-center"
-              >
+              <div id="bitrix-form-container" className="bitrix-form-container min-h-[600px] flex items-center justify-center">
                 <div className="text-gray-400 text-center">
                   <div className="animate-spin w-6 h-6 border-2 border-kamp-primary border-t-transparent rounded-full mx-auto mb-2"></div>
                   <p className="text-sm">Загрузка формы...</p>
@@ -207,14 +201,9 @@ export const ContactForm: React.FC = () => {
             <div className="bg-gradient-to-r from-kamp-accent to-kamp-primary text-white rounded-xl overflow-hidden shadow-lg h-full flex flex-col">
               <div className={`flex-grow ${isMobile ? 'p-4' : 'p-8'}`}>
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
-                {isMobile ? 
-                  <p className="text-white/80 mb-4 text-sm">
+                {isMobile ? <p className="text-white/80 mb-4 text-sm">
                     Интенсив начинается 1 сентября! Записывайся сейчас - количество мест ограничено!
-                  </p> : 
-                  <p className="text-white/80 mb-8">
-                    Новый интенсив стартует 8 сентября 2025! Записывайся сейчас - количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
-                  </p>
-                }
+                  </p> : <p className="text-white/80 mb-8">Новый интенсив стартует 8 ноября 2025! Записывайся сейчас - количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.</p>}
 
                 <CountdownTimer targetDate={new Date('2025-09-01T00:00:00')} />
                 
@@ -227,10 +216,7 @@ export const ContactForm: React.FC = () => {
                     <div className={`${isMobile ? 'text-base' : 'text-xl'} font-bold`}>Ограниченный набор</div>
                     <div className="text-white/70 text-xs md:text-sm">Запишись прямо сейчас</div>
                   </div>
-                  <button 
-                    onClick={scrollToContactForm} 
-                    className={`kamp-button text-kamp-primary bg-white hover:bg-white/90 ${isMobile ? 'text-xs px-3 py-2' : 'px-4 py-2.5'}`}
-                  >
+                  <button onClick={scrollToContactForm} className={`kamp-button text-kamp-primary bg-white hover:bg-white/90 ${isMobile ? 'text-xs px-3 py-2' : 'px-4 py-2.5'}`}>
                     Записаться
                   </button>
                 </div>
