@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText } from 'lucide-react';
 import { ContentManager } from '@/components/cms/ContentManager';
 import { ActivityManagement } from './ActivityManagement';
 import { EnhancedCooperTest } from '@/components/cooper/EnhancedCooperTest';
 import { EnhancedParticipantManagement } from '@/components/admin/EnhancedParticipantManagement';
 import { EnhancedStreamManagement } from '@/components/admin/EnhancedStreamManagement';
 import { DetailedScheduleManagement } from '@/components/schedule/DetailedScheduleManagement';
+import { TestimonialManagement } from './TestimonialManagement';
+import { MomentsManagement } from './MomentsManagement';
+import { ContentBlocksManagement } from './ContentBlocksManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
@@ -67,11 +70,35 @@ export const AdminDashboard: React.FC = () => {
             </TabsTrigger>
             
             <TabsTrigger 
+              value="testimonials" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span className="whitespace-nowrap">Отзывы</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="moments" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Camera className="w-4 h-4" />
+              <span className="whitespace-nowrap">Моменты</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="content" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="whitespace-nowrap">Контент</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
               value="cms" 
               className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Settings className="w-4 h-4" />
-              <span className="whitespace-nowrap">CMS</span>
+              <span className="whitespace-nowrap">Старая CMS</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -99,6 +126,18 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="schedule" className="mt-0">
           <DetailedScheduleManagement />
+        </TabsContent>
+        
+        <TabsContent value="testimonials" className="mt-0">
+          <TestimonialManagement />
+        </TabsContent>
+        
+        <TabsContent value="moments" className="mt-0">
+          <MomentsManagement />
+        </TabsContent>
+        
+        <TabsContent value="content" className="mt-0">
+          <ContentBlocksManagement />
         </TabsContent>
         
         <TabsContent value="cms" className="mt-0">

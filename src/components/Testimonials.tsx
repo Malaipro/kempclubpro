@@ -1,223 +1,272 @@
 import React, { useState, useRef } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+
+interface Testimonial {
+  id: string;
+  participant_name: string;
+  participant_title?: string;
+  content: string;
+  video_url?: string;
+  image_url?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export const Testimonials: React.FC = () => {
-  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
-  const [mutedStatus, setMutedStatus] = useState<{
-    [key: number]: boolean;
-  }>({});
-  const [openVideo, setOpenVideo] = useState<number | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+  const [mutedStatus, setMutedStatus] = useState<{ [key: string]: boolean }>({});
+  const [openVideo, setOpenVideo] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const videoRefs = useRef<{
-    [key: number]: HTMLVideoElement | null;
-  }>({});
-  const modalVideoRefs = useRef<{
-    [key: number]: HTMLVideoElement | null;
-  }>({});
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const modalVideoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   // Загружаем отзывы из базы данных
-  // Используем статические отзывы до создания таблицы testimonials
-  const testimonials = React.useMemo(() => [
-    {
-      id: '1',
-      name: 'Александр К.',
-      position: 'Участник КЭМП',
-      text_content: 'КЭМП кардинально изменил мою жизнь. За 3 месяца я не только улучшил физическую форму, но и развил ментальную стойкость.',
-      video_url: '/public/videos/testimonial-1.mp4'
+  const { data: testimonials = [], isLoading } = useQuery({
+    queryKey: ['testimonials'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data as Testimonial[];
     },
-    {
-      id: '2', 
-      name: 'Дмитрий М.',
-      position: 'Участник КЭМП',
-      text_content: 'Программа научила меня дисциплине и целеустремленности. Результаты превзошли все ожидания.',
-      video_url: '/public/videos/testimonial-2.mp4'
-    }
-  ], []);
-  
-  const isLoading = false;
+  });
 
-  // Инициализируем состояние звука один раз
+  // Загружаем динамический контент для заголовков
+  const { data: contentBlocks = [] } = useQuery({
+    queryKey: ['content-blocks-testimonials'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .in('block_key', ['testimonials_title', 'testimonials_subtitle'])
+        .eq('is_active', true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const getContentBlock = (key: string) => {
+    return contentBlocks.find(block => block.block_key === key);
+  };
+
+  // Инициализируем состояние звука
   React.useEffect(() => {
-    const initialMutedStatus = testimonials.reduce((acc, testimonial, index) => {
-      acc[index + 1] = true;
-      return acc;
-    }, {} as { [key: number]: boolean });
-    setMutedStatus(initialMutedStatus);
-  }, []); // Убираем зависимость от testimonials
-  const togglePlay = (index: number) => {
-    const videoElement = videoRefs.current[index];
-    if (!videoElement) return;
-    if (playingVideo === index) {
-      videoElement.pause();
+    if (testimonials.length > 0) {
+      const initialMutedStatus = testimonials.reduce((acc, testimonial) => {
+        acc[testimonial.id] = true;
+        return acc;
+      }, {} as { [key: string]: boolean });
+      setMutedStatus(initialMutedStatus);
+    }
+  }, [testimonials]);
+
+  const handlePlayPause = (testimonialId: string) => {
+    const video = videoRefs.current[testimonialId];
+    if (!video) return;
+
+    if (playingVideo === testimonialId) {
+      video.pause();
       setPlayingVideo(null);
     } else {
-      if (playingVideo !== null && videoRefs.current[playingVideo]) {
-        videoRefs.current[playingVideo]?.pause();
-      }
-      videoElement.play().catch(err => {
-        console.error("Error playing video:", err);
+      // Останавливаем все другие видео
+      Object.values(videoRefs.current).forEach((v) => {
+        if (v) v.pause();
       });
-      setPlayingVideo(index);
+      video.currentTime = 0;
+      video.play();
+      setPlayingVideo(testimonialId);
     }
   };
-  const toggleMute = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const videoElement = videoRefs.current[index];
-    if (!videoElement) return;
-    const newMutedStatus = !mutedStatus[index];
-    videoElement.muted = newMutedStatus;
+
+  const handleMute = (testimonialId: string) => {
+    const video = videoRefs.current[testimonialId];
+    if (!video) return;
+    
+    const newMutedState = !mutedStatus[testimonialId];
+    video.muted = newMutedState;
     setMutedStatus(prev => ({
       ...prev,
-      [index]: newMutedStatus
+      [testimonialId]: newMutedState
     }));
   };
-  const openVideoDialog = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setOpenVideo(index);
-    if (playingVideo === index) {
-      const videoElement = videoRefs.current[index];
-      if (videoElement) {
-        videoElement.pause();
-        setPlayingVideo(null);
-      }
+
+  const handleVideoEnd = (testimonialId: string) => {
+    setPlayingVideo(null);
+  };
+
+  const openVideoModal = (testimonialId: string) => {
+    setOpenVideo(testimonialId);
+    const modalVideo = modalVideoRefs.current[testimonialId];
+    if (modalVideo) {
+      modalVideo.currentTime = 0;
+      modalVideo.play();
     }
   };
-  const handleDialogClose = () => {
-    if (openVideo !== null && modalVideoRefs.current[openVideo]) {
-      modalVideoRefs.current[openVideo]?.pause();
+
+  const closeVideoModal = () => {
+    if (openVideo) {
+      const modalVideo = modalVideoRefs.current[openVideo];
+      if (modalVideo) {
+        modalVideo.pause();
+      }
     }
     setOpenVideo(null);
   };
-  return <section id="testimonials" className="kamp-section bg-black py-6 md:py-16">
+
+  if (isLoading) {
+    return (
+      <section id="testimonials" className="kamp-section bg-black py-4 md:py-16">
+        <div className="kamp-container flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kamp-primary"></div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="testimonials" className="kamp-section bg-black py-4 md:py-16">
       <div className="kamp-container">
-        <div className="section-heading mb-4 md:mb-12">
-          <h2 className="text-white text-2xl md:text-3xl lg:text-4xl mb-2">Отзывы участников</h2>
-          <p className="text-gray-300 text-sm md:text-base">
-            Узнайте, что говорят наши выпускники о программе КЭМП и как она изменила их жизнь
+        <div className="section-heading reveal-on-scroll text-center">
+          <span className="inline-block text-kamp-primary font-semibold mb-2 text-sm">
+            {getContentBlock('testimonials_title')?.title || 'Отзывы участников'}
+          </span>
+          <h2 className="text-white text-xl md:text-4xl mb-4">
+            {getContentBlock('testimonials_title')?.content || 'Отзывы участников'}
+          </h2>
+          <p className="text-gray-300 text-xs md:text-base max-w-3xl mx-auto">
+            {getContentBlock('testimonials_subtitle')?.content || 
+            'Узнайте, что говорят наши выпускники о программе КЭМП и как она изменила их жизнь'}
           </p>
         </div>
-        
-        {isLoading ? (
-          <div className="text-center text-white">Загрузка отзывов...</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8">
-            {testimonials.map((testimonial, index) => {
-              const testimonialIndex = index + 1;
-              return (
-                <Card key={testimonial.id} className="overflow-hidden hover-lift bg-gray-900 border-gray-800 cursor-pointer" onClick={() => togglePlay(testimonialIndex)}>
-                  <CardContent className="p-0 relative aspect-video">
-                    <div className="relative w-full h-full overflow-hidden">
-                      {testimonial.video_url ? (
-                        <video
-                          ref={el => videoRefs.current[testimonialIndex] = el}
-                          src={testimonial.video_url}
-                          muted={mutedStatus[testimonialIndex]}
-                          className="w-full h-full object-cover"
-                          onEnded={() => setPlayingVideo(null)}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                          <p className="text-white text-center p-4">{testimonial.text_content}</p>
-                        </div>
-                      )}
-                      
-                      {/* Play/Pause Button */}
-                      {testimonial.video_url && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Button
-                            variant="secondary"
-                            size="lg"
-                            className="bg-black/60 hover:bg-black/80 text-white border-0 rounded-full p-4"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              togglePlay(testimonialIndex);
-                            }}
-                          >
-                            {playingVideo === testimonialIndex ? (
-                              <Pause size={24} />
-                            ) : (
-                              <Play size={24} />
-                            )}
-                          </Button>
-                        </div>
-                      )}
 
-                      {/* Controls */}
-                      {testimonial.video_url && (
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="bg-black/60 hover:bg-black/80 text-white border-0 rounded-full p-2"
-                            onClick={(e) => toggleMute(testimonialIndex, e)}
-                          >
-                            {mutedStatus[testimonialIndex] ? (
-                              <VolumeX size={16} />
-                            ) : (
-                              <Volume2 size={16} />
-                            )}
-                          </Button>
-                          
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="bg-black/60 hover:bg-black/80 text-white border-0 rounded-full p-2"
-                            onClick={(e) => openVideoDialog(testimonialIndex, e)}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                            </svg>
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* Info Overlay */}
-                      <div className="absolute bottom-0 left-0 p-3 bg-gradient-to-t from-black/80 to-transparent w-full">
-                        <h4 className="font-bold text-white text-sm md:text-base">
-                          {testimonial.name}
-                        </h4>
-                        <p className="text-gray-300 text-xs">
-                          {testimonial.position}
-                        </p>
-                      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mt-8 md:mt-16">
+          {testimonials.map((testimonial) => (
+            <Card 
+              key={testimonial.id}
+              className="overflow-hidden bg-gray-900 border border-gray-700 reveal-on-scroll hover-lift"
+            >
+              <div className="relative">
+                {testimonial.video_url ? (
+                  <div className="relative aspect-video bg-gray-800">
+                    <video
+                      ref={(el) => { videoRefs.current[testimonial.id] = el; }}
+                      src={testimonial.video_url}
+                      className="w-full h-full object-cover"
+                      muted={mutedStatus[testimonial.id]}
+                      onEnded={() => handleVideoEnd(testimonial.id)}
+                      onClick={() => openVideoModal(testimonial.id)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <button 
+                        onClick={() => handlePlayPause(testimonial.id)}
+                        className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg"
+                      >
+                        {playingVideo === testimonial.id ? (
+                          <Pause className="w-6 h-6 text-white" />
+                        ) : (
+                          <Play className="w-6 h-6 text-white ml-1" />
+                        )}
+                      </button>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    
+                    <button 
+                      onClick={() => handleMute(testimonial.id)}
+                      className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                    >
+                      {mutedStatus[testimonial.id] ? (
+                        <VolumeX className="w-4 h-4 text-white" />
+                      ) : (
+                        <Volume2 className="w-4 h-4 text-white" />
+                      )}
+                    </button>
+                  </div>
+                ) : testimonial.image_url ? (
+                  <div className="aspect-video bg-gray-800">
+                    <img 
+                      src={testimonial.image_url}
+                      alt={testimonial.participant_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-gray-800 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-kamp-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-kamp-primary text-xl font-bold">
+                        {testimonial.participant_name.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <CardContent className="p-4 md:p-6">
+                <div className="text-center">
+                  <h3 className="text-white text-lg md:text-xl font-bold mb-2">
+                    {testimonial.participant_name}
+                  </h3>
+                  {testimonial.participant_title && (
+                    <p className="text-kamp-primary text-sm md:text-base font-medium mb-4">
+                      {testimonial.participant_title}
+                    </p>
+                  )}
+                  <blockquote className="text-gray-300 text-sm md:text-base italic leading-relaxed">
+                    "{testimonial.content}"
+                  </blockquote>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {testimonials.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-gray-400 mb-4">
+              <span className="text-6xl">💬</span>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Отзывы скоро появятся</h3>
+            <p className="text-gray-400 text-sm">
+              Мы добавляем отзывы наших участников
+            </p>
           </div>
         )}
       </div>
 
-      <Dialog open={openVideo !== null} onOpenChange={open => !open && handleDialogClose()}>
-        <DialogContent className="max-w-4xl p-0 border-gray-800 bg-black w-[95vw]">
-          <DialogClose className="absolute right-2 top-2 md:right-4 md:top-4 z-20 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 transition-all" />
-          
-          {openVideo && testimonials[openVideo - 1]?.video_url && (
-            <div className="relative aspect-video w-full">
-              <video 
-                ref={el => modalVideoRefs.current[openVideo] = el} 
-                src={testimonials[openVideo - 1]?.video_url} 
-                autoPlay 
-                controls 
-                className="w-full h-full object-contain" 
+      {/* Модальное окно для полноэкранного видео */}
+      {openVideo && (
+        <Dialog open={!!openVideo} onOpenChange={(open) => !open && closeVideoModal()}>
+          <DialogContent className="max-w-4xl w-full p-0 bg-black border-0">
+            <div className="relative aspect-video">
+              <video
+                ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
+                src={testimonials.find(t => t.id === openVideo)?.video_url}
+                className="w-full h-full object-contain"
+                controls
+                autoPlay
               />
-              <div className="absolute bottom-0 left-0 p-2 md:p-4 bg-gradient-to-t from-black to-transparent w-full">
-                <h4 className="font-bold text-white text-base md:text-xl">
-                  {testimonials[openVideo - 1]?.name}
-                </h4>
-                <p className="text-gray-300 text-xs md:text-sm">
-                  {testimonials[openVideo - 1]?.position}
-                </p>
-              </div>
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2"
+                  onClick={closeVideoModal}
+                >
+                  ✕
+                </Button>
+              </DialogClose>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </section>;
+          </DialogContent>
+        </Dialog>
+      )}
+    </section>
+  );
 };

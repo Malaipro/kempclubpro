@@ -257,6 +257,42 @@ export type Database = {
         }
         Relationships: []
       }
+      content_blocks: {
+        Row: {
+          block_key: string
+          content: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          block_key: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          block_key?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cooper_test_results: {
         Row: {
           age: number | null
@@ -558,6 +594,42 @@ export type Database = {
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
+        }
+        Relationships: []
+      }
+      moments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          sort_order: number | null
+          title: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -921,6 +993,45 @@ export type Database = {
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          participant_name: string
+          participant_title: string | null
+          sort_order: number | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_name: string
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_name?: string
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
