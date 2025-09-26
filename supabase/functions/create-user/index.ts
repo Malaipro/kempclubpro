@@ -36,6 +36,32 @@ serve(async (req) => {
       )
     }
 
+    // Update profile with additional metadata if provided
+    if (metadata && authData.user) {
+      const profileData: any = {
+        user_id: authData.user.id
+      };
+
+      // Map metadata to profile fields
+      if (metadata.first_name) profileData.first_name = metadata.first_name;
+      if (metadata.last_name) profileData.last_name = metadata.last_name;
+      if (metadata.display_name) profileData.display_name = metadata.display_name;
+      if (metadata.height_cm) profileData.height_cm = metadata.height_cm;
+      if (metadata.weight_kg) profileData.weight_kg = metadata.weight_kg;
+      if (metadata.date_of_birth) profileData.date_of_birth = metadata.date_of_birth;
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update(profileData)
+        .eq('user_id', authData.user.id);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+      } else {
+        console.log(`Successfully updated profile for user ${authData.user.id}`);
+      }
+    }
+
     // If role is specified, add it to user_roles table
     if (role && authData.user) {
       const { error: roleError } = await supabaseAdmin

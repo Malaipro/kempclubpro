@@ -116,13 +116,37 @@ export const EnhancedParticipantManagement: React.FC = () => {
           description: 'Данные участника успешно обновлены',
         });
       } else {
-        // For now, we'll show a message that creating users requires backend implementation
+        // Create new participant
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: {
+            email: formData.email,
+            password: formData.password,
+            metadata: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              display_name: `${formData.first_name} ${formData.last_name}`,
+              height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
+              weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
+              date_of_birth: formData.date_of_birth?.toISOString().split('T')[0] || null,
+            }
+          }
+        });
+
+        if (error) {
+          console.error('Error creating participant:', error);
+          toast({
+            title: 'Ошибка',
+            description: 'Не удалось создать участника',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         toast({
-          title: 'Функция в разработке',
-          description: 'Создание новых участников требует backend реализации',
+          title: 'Успешно',
+          description: 'Участник создан',
           variant: 'default',
         });
-        return;
       }
 
       setDialogOpen(false);
