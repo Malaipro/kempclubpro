@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, Search, UserPlus, Mail, Phone, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { Users, Search, UserPlus, Mail, Phone, Calendar, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -75,6 +75,35 @@ export const ParticipantManagement: React.FC = () => {
       toast({
         title: 'Ошибка',
         description: 'Не удалось утвердить участника',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteParticipant = async (userId: string, displayName: string) => {
+    if (!confirm(`Вы уверены, что хотите удалить пользователя "${displayName}"? Это действие необратимо!`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успех',
+        description: 'Пользователь успешно удален',
+        variant: 'default',
+      });
+
+      fetchParticipants();
+    } catch (error) {
+      console.error('Error deleting participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить пользователя',
         variant: 'destructive',
       });
     }
@@ -197,6 +226,15 @@ export const ParticipantManagement: React.FC = () => {
                       )}
                       <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
                         Редактировать
+                      </Button>
+                      <Button 
+                        onClick={() => handleDeleteParticipant(participant.user_id, participant.display_name || 'Неизвестный')}
+                        size="sm" 
+                        variant="outline"
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Удалить
                       </Button>
                     </div>
                   </TableCell>

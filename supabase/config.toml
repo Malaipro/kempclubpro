@@ -13,8 +13,10 @@ verify_jwt = false
 [functions.nodul-webhook]
 verify_jwt = false
 
-
 [functions.create-user]
+verify_jwt = false
+
+[functions.delete-user]
 verify_jwt = false
 
 [functions.setup-super-admin]
