@@ -65,8 +65,20 @@ export const EnhancedCooperTest: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTestResults();
-    fetchParticipants();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchTestResults();
+        await fetchParticipants();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchTestResults = async () => {
@@ -78,18 +90,24 @@ export const EnhancedCooperTest: React.FC = () => {
 
       if (error) throw error;
       
-      // Fetch profiles separately
-      const resultsWithProfiles = await Promise.all(
-        (data || []).map(async (result) => {
+      // Fetch profiles separately with better error handling
+      const results = data || [];
+      const resultsWithProfiles: CooperTestResult[] = [];
+      
+      for (const result of results) {
+        try {
           const { data: profile } = await supabase
             .from('profiles')
             .select('first_name, last_name, display_name')
             .eq('user_id', result.user_id)
             .single();
           
-          return { ...result, profile };
-        })
-      );
+          resultsWithProfiles.push({ ...result, profile });
+        } catch (profileError) {
+          // If profile fetch fails, add result without profile
+          resultsWithProfiles.push({ ...result, profile: null });
+        }
+      }
       
       setTestResults(resultsWithProfiles);
     } catch (error) {
