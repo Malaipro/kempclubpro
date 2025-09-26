@@ -103,24 +103,51 @@ serve(async (req) => {
         leaderboard_visible: true,
       }
 
-      // Try insert first, fallback to update if row exists
-      const { error: insertErr } = await supabaseAdmin
+      // Check if profile already exists
+      const { data: existingProfile } = await supabaseAdmin
         .from('profiles')
-        .insert(profileData)
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single()
 
-      if (insertErr) {
-        console.warn('Profile insert error (will try update):', insertErr)
+      if (existingProfile) {
+        // Update existing profile
         const { error: updateErr } = await supabaseAdmin
           .from('profiles')
           .update(profileData)
           .eq('user_id', authData.user.id)
+        
         if (updateErr) {
-          console.error('Profile upsert failed:', updateErr)
+          console.error('Profile update failed:', updateErr)
         } else {
           console.log(`Successfully updated profile for user ${authData.user.id}`)
         }
       } else {
-        console.log(`Successfully created profile for user ${authData.user.id}`)
+        // Create new profile
+        const { error: insertErr } = await supabaseAdmin
+          .from('profiles')
+          .insert(profileData)
+
+        if (insertErr) {
+          console.error('Profile creation failed:', insertErr)
+        } else {
+          console.log(`Successfully created profile for user ${authData.user.id}`)
+          
+          // Initialize leaderboard entry for new profile
+          const { error: leaderboardErr } = await supabaseAdmin
+            .from('leaderboard')
+            .insert({
+              user_id: authData.user.id,
+              total_points: 0,
+              rank_position: 0
+            })
+          
+          if (leaderboardErr) {
+            console.error('Leaderboard initialization failed:', leaderboardErr)
+          } else {
+            console.log(`Successfully initialized leaderboard for user ${authData.user.id}`)
+          }
+        }
       }
     }
 
