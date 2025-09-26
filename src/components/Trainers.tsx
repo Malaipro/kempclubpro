@@ -42,7 +42,7 @@ export const Trainers: React.FC = () => {
       if (error) throw error;
       return data.map(trainer => ({
         ...trainer,
-        experience: trainer.experience.toString() // Convert number to string to match interface
+        experience: trainer.experience ? trainer.experience.toString() : undefined // Handle null values
       })) as Trainer[];
     },
   });
