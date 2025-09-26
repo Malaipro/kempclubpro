@@ -23,15 +23,15 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
   });
   const [streamStartDate, setStreamStartDate] = useState<Date | null>(null);
 
-  // Fetch active stream start date
+  // Fetch active stream start date and subscribe to changes
   useEffect(() => {
     const fetchActiveStream = async () => {
       try {
         const { data, error } = await supabase
           .from('streams')
-          .select('start_date')
+          .select('start_date, name')
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setStreamStartDate(new Date(data.start_date));
@@ -42,11 +42,32 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
     };
 
     fetchActiveStream();
+
+    // Subscribe to real-time changes in streams table
+    const streamsSubscription = supabase
+      .channel('streams-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'streams'
+        },
+        (payload) => {
+          console.log('Stream data changed:', payload);
+          fetchActiveStream(); // Refetch active stream when any stream changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      streamsSubscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    // Use provided targetDate, fetched streamStartDate, or fallback to July 6, 2025
-    const calculatedTargetDate = targetDate || streamStartDate || new Date('2025-07-06T00:00:00');
+    // Use provided targetDate, fetched streamStartDate, or fallback to default date
+    const calculatedTargetDate = targetDate || streamStartDate || new Date('2025-11-08T00:00:00');
     
     const interval = setInterval(() => {
       const now = new Date();
