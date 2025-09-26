@@ -119,6 +119,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
             first_name: formData.first_name,
             last_name: formData.last_name,
             display_name: `${formData.first_name} ${formData.last_name}`,
+            email: formData.email || null,
             phone: formData.phone || null,
             telegram: formData.telegram || null,
             height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
@@ -321,7 +322,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@example.com"
                   className="bg-white text-black"
-                  disabled={!!editingParticipant}
+                  required
                 />
               </div>
 

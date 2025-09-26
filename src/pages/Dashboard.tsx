@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
                     Личный кабинет
                   </h1>
                   <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} truncate`}>
-                    {displayName} • {user.email}
+                    {displayName} • {participantData?.email || user.email}
                     {isSuperAdmin && <span className="ml-2 text-kamp-accent font-semibold">(Супер админ)</span>}
                   </p>
                 </div>
