@@ -23,6 +23,7 @@ interface ContentBlock {
 }
 
 const PREDEFINED_BLOCKS = [
+  // Основной сайт
   { key: 'hero_title', name: 'Заголовок главной секции', type: 'text' },
   { key: 'hero_subtitle', name: 'Подзаголовок главной секции', type: 'text' },
   { key: 'hero_description', name: 'Описание главной секции', type: 'textarea' },
@@ -36,6 +37,25 @@ const PREDEFINED_BLOCKS = [
   { key: 'testimonials_subtitle', name: 'Подзаголовок отзывов', type: 'text' },
   { key: 'contact_title', name: 'Заголовок контактной формы', type: 'text' },
   { key: 'contact_description', name: 'Описание контактной формы', type: 'textarea' },
+  
+  // Система КЭМП - Инструкция
+  { key: 'kamp_instructions_title', name: 'КЭМП - Заголовок инструкции', type: 'text' },
+  { key: 'kamp_instructions_subtitle', name: 'КЭМП - Подзаголовок инструкции', type: 'text' },
+  { key: 'kamp_gamification_why', name: 'КЭМП - Зачем геймификация', type: 'textarea' },
+  { key: 'kamp_bracelet_info', name: 'КЭМП - Информация о браслете', type: 'textarea' },
+  { key: 'kamp_quick_rules', name: 'КЭМП - Быстрые правила', type: 'textarea' },
+  { key: 'kamp_roles_info', name: 'КЭМП - Описание ролей', type: 'textarea' },
+  { key: 'kamp_special_totems', name: 'КЭМП - Особые тотемы', type: 'textarea' },
+  
+  // Система КЭМП - Руководство
+  { key: 'kamp_manual_title', name: 'КЭМП - Заголовок руководства', type: 'text' },
+  { key: 'kamp_manual_subtitle', name: 'КЭМП - Подзаголовок руководства', type: 'text' },
+  { key: 'kamp_manual_important', name: 'КЭМП - Важное сообщение', type: 'textarea' },
+  { key: 'kamp_manual_db_structure', name: 'КЭМП - Структура БД', type: 'textarea' },
+  { key: 'kamp_manual_activities', name: 'КЭМП - Как заполнять активности', type: 'textarea' },
+  { key: 'kamp_manual_totems', name: 'КЭМП - Автоматический расчет тотемов', type: 'textarea' },
+  { key: 'kamp_manual_roles', name: 'КЭМП - Роли и ответственности', type: 'textarea' },
+  { key: 'kamp_manual_multipliers', name: 'КЭМП - Множители', type: 'textarea' },
 ];
 
 export const ContentBlocksManagement: React.FC = () => {

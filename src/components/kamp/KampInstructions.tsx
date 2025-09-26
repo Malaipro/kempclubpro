@@ -1,9 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Target, Book, Zap, Star, DropletIcon, Utensils, Share2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const KampInstructions: React.FC = () => {
+  const [contentBlocks, setContentBlocks] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    fetchContentBlocks();
+  }, []);
+
+  const fetchContentBlocks = async () => {
+    try {
+      const { data } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .in('block_key', [
+          'kamp_instructions_title',
+          'kamp_instructions_subtitle', 
+          'kamp_gamification_why',
+          'kamp_bracelet_info',
+          'kamp_quick_rules',
+          'kamp_roles_info',
+          'kamp_special_totems'
+        ])
+        .eq('is_active', true);
+
+      const blocks = (data || []).reduce((acc, block) => {
+        acc[block.block_key] = block;
+        return acc;
+      }, {});
+      
+      setContentBlocks(blocks);
+    } catch (error) {
+      console.error('Error fetching content blocks:', error);
+    }
+  };
+
+  const getBlockContent = (key: string, fallback: string) => {
+    return contentBlocks[key]?.content || fallback;
+  };
+
+  const getBlockTitle = (key: string, fallback: string) => {
+    return contentBlocks[key]?.title || fallback;
+  };
   const rewardTypes = [
     {
       icon: <Target className="w-5 h-5" />,
@@ -63,27 +104,35 @@ export const KampInstructions: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-2xl text-kamp-accent flex items-center gap-2">
             <Trophy className="w-6 h-6" />
-            КЭМП — Полная инструкция по геймификации
+            {getBlockTitle('kamp_instructions_title', 'КЭМП — Полная инструкция по геймификации')}
           </CardTitle>
-          <p className="text-gray-400">Версия 1.0 (рабочий регламент на 60 дней)</p>
+          <p className="text-gray-400">{getBlockContent('kamp_instructions_subtitle', 'Версия 1.0 (рабочий регламент на 60 дней)')}</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold text-white mb-3">Зачем геймификация</h3>
-            <ul className="space-y-2 text-gray-300">
-              <li><strong>Дисциплина через ясные правила.</strong> Каждый шаг виден: тренировка → отметка → награда.</li>
-              <li><strong>Мотивация и прогресс.</strong> Видимый браслет и таблица лидеров поджигают соревновательность.</li>
-              <li><strong>Единый язык.</strong> Закал, Грань, Шрам, Тотем — простые коды, понятные всем.</li>
-            </ul>
+            <div className="text-gray-300" dangerouslySetInnerHTML={{
+              __html: getBlockContent('kamp_gamification_why', `
+                <ul class="space-y-2">
+                  <li><strong>Дисциплина через ясные правила.</strong> Каждый шаг виден: тренировка → отметка → награда.</li>
+                  <li><strong>Мотивация и прогресс.</strong> Видимый браслет и таблица лидеров поджигают соревновательность.</li>
+                  <li><strong>Единый язык.</strong> Закал, Грань, Шрам, Тотем — простые коды, понятные всем.</li>
+                </ul>
+              `).replace(/\n\s+/g, '')
+            }} />
           </div>
 
           <div>
             <h3 className="text-lg font-semibold text-white mb-3">Браслет участника</h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>• Выдаётся <strong>пустой</strong> в начале сезона.</li>
-              <li>• На браслет ставим <strong>только штампы‑тотемы</strong> за закрытие направлений.</li>
-              <li>• Все текущие отметки (тренировки, лекции, тактика и т.п.) <strong>считаются в таблице и отражаются на сайте</strong>.</li>
-            </ul>
+            <div className="text-gray-300" dangerouslySetInnerHTML={{
+              __html: getBlockContent('kamp_bracelet_info', `
+                <ul class="space-y-2">
+                  <li>• Выдаётся <strong>пустой</strong> в начале сезона.</li>
+                  <li>• На браслет ставим <strong>только штампы‑тотемы</strong> за закрытие направлений.</li>
+                  <li>• Все текущие отметки (тренировки, лекции, тактика и т.п.) <strong>считаются в таблице и отражаются на сайте</strong>.</li>
+                </ul>
+              `).replace(/\n\s+/g, '')
+            }} />
           </div>
         </CardContent>
       </Card>
@@ -176,13 +225,17 @@ export const KampInstructions: React.FC = () => {
           <CardTitle className="text-xl text-kamp-accent">Быстрые правила для участника</CardTitle>
         </CardHeader>
         <CardContent>
-          <ol className="space-y-3 text-gray-300">
-            <li><strong>1.</strong> Пришёл → отметился у тренера/куратора → после тренировки получишь <strong>Закал</strong>.</li>
-            <li><strong>2.</strong> Лекция/ДЗ → <strong>Грань</strong>. Делай и показывай куратору.</li>
-            <li><strong>3.</strong> Краш‑тест/гонка/тактика → <strong>Шрам</strong>. Готовься, не прогуливай.</li>
-            <li><strong>4.</strong> Закрыл все требования направления → <strong>Тотем</strong>.</li>
-            <li><strong>5.</strong> Максимум 2 награды в день для защиты от травм.</li>
-          </ol>
+          <div className="text-gray-300" dangerouslySetInnerHTML={{
+            __html: getBlockContent('kamp_quick_rules', `
+              <ol class="space-y-3">
+                <li><strong>1.</strong> Пришёл → отметился у тренера/куратора → после тренировки получишь <strong>Закал</strong>.</li>
+                <li><strong>2.</strong> Лекция/ДЗ → <strong>Грань</strong>. Делай и показывай куратору.</li>
+                <li><strong>3.</strong> Краш‑тест/гонка/тактика → <strong>Шрам</strong>. Готовься, не прогуливай.</li>
+                <li><strong>4.</strong> Закрыл все требования направления → <strong>Тотем</strong>.</li>
+                <li><strong>5.</strong> Максимум 2 награды в день для защиты от травм.</li>
+              </ol>
+            `).replace(/\n\s+/g, '')
+          }} />
         </CardContent>
       </Card>
 
@@ -191,20 +244,24 @@ export const KampInstructions: React.FC = () => {
           <CardTitle className="text-xl text-kamp-accent">Роли</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h4 className="font-semibold text-white mb-2">Тренер</h4>
-              <p className="text-sm text-gray-300">Принимает зачёты, выдаёт множитель ×1.5, вносит особые отметки.</p>
-            </div>
-            <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h4 className="font-semibold text-white mb-2">Куратор</h4>
-              <p className="text-sm text-gray-300">Ведёт учёт, проверяет ДЗ, фиксирует аскезы и трекеры, готовит еженедельную сводку.</p>
-            </div>
-            <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h4 className="font-semibold text-white mb-2">Участник</h4>
-              <p className="text-sm text-gray-300">Отмечается у тренера/куратора в таблице, сдаёт ДЗ, хранит браслет как паспорт прогресса.</p>
-            </div>
-          </div>
+          <div className="text-gray-300" dangerouslySetInnerHTML={{
+            __html: getBlockContent('kamp_roles_info', `
+              <div class="space-y-4">
+                <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <h4 class="font-semibold text-white mb-2">Тренер</h4>
+                  <p class="text-sm text-gray-300">Принимает зачёты, выдаёт множитель ×1.5, вносит особые отметки.</p>
+                </div>
+                <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <h4 class="font-semibold text-white mb-2">Куратор</h4>
+                  <p class="text-sm text-gray-300">Ведёт учёт, проверяет ДЗ, фиксирует аскезы и трекеры, готовит еженедельную сводку.</p>
+                </div>
+                <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <h4 class="font-semibold text-white mb-2">Участник</h4>
+                  <p class="text-sm text-gray-300">Отмечается у тренера/куратора в таблице, сдаёт ДЗ, хранит браслет как паспорт прогресса.</p>
+                </div>
+              </div>
+            `).replace(/\n\s+/g, '')
+          }} />
         </CardContent>
       </Card>
 
@@ -213,22 +270,26 @@ export const KampInstructions: React.FC = () => {
           <CardTitle className="text-xl text-kamp-accent">Особые тотемы</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-              <span className="text-2xl">🏮</span>
-              <div>
-                <h4 className="font-semibold text-yellow-400">Маяк</h4>
-                <p className="text-sm text-gray-300">За вклад/служение клубу; присуждается по решению руководителя клуба.</p>
+          <div className="text-gray-300" dangerouslySetInnerHTML={{
+            __html: getBlockContent('kamp_special_totems', `
+              <div class="space-y-4">
+                <div class="flex items-center gap-3 p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                  <span class="text-2xl">🏮</span>
+                  <div>
+                    <h4 class="font-semibold text-yellow-400">Маяк</h4>
+                    <p class="text-sm text-gray-300">За вклад/служение клубу; присуждается по решению руководителя клуба.</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <span class="text-2xl">🐻</span>
+                  <div>
+                    <h4 class="font-semibold text-purple-400">Медведь</h4>
+                    <p class="text-sm text-gray-300">Супер‑тотем за особые достижения; присуждается по решению руководителя клуба.</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
-              <span className="text-2xl">🐻</span>
-              <div>
-                <h4 className="font-semibold text-purple-400">Медведь</h4>
-                <p className="text-sm text-gray-300">Супер‑тотем за особые достижения; присуждается по решению руководителя клуба.</p>
-              </div>
-            </div>
-          </div>
+            `).replace(/\n\s+/g, '')
+          }} />
         </CardContent>
       </Card>
     </div>

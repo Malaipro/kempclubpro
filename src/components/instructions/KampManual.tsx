@@ -1,76 +1,118 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookOpen, Users, Database, Trophy, Target } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const KampManual: React.FC = () => {
+  const [contentBlocks, setContentBlocks] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    fetchContentBlocks();
+  }, []);
+
+  const fetchContentBlocks = async () => {
+    try {
+      const { data } = await supabase
+        .from('content_blocks')
+        .select('*')
+        .in('block_key', [
+          'kamp_manual_title',
+          'kamp_manual_subtitle',
+          'kamp_manual_important',
+          'kamp_manual_db_structure',
+          'kamp_manual_activities',
+          'kamp_manual_totems',
+          'kamp_manual_roles',
+          'kamp_manual_multipliers'
+        ])
+        .eq('is_active', true);
+
+      const blocks = (data || []).reduce((acc, block) => {
+        acc[block.block_key] = block;
+        return acc;
+      }, {});
+      
+      setContentBlocks(blocks);
+    } catch (error) {
+      console.error('Error fetching content blocks:', error);
+    }
+  };
+
+  const getBlockContent = (key: string, fallback: string) => {
+    return contentBlocks[key]?.content || fallback;
+  };
+
+  const getBlockTitle = (key: string, fallback: string) => {
+    return contentBlocks[key]?.title || fallback;
+  };
+
   return (
     <div className="space-y-8">
       <Card className="kamp-card">
         <CardHeader>
           <CardTitle className="text-2xl text-kamp-accent flex items-center gap-2">
             <BookOpen className="w-6 h-6" />
-            Инструкция по заполнению системы КЭМП
+            {getBlockTitle('kamp_manual_title', 'Инструкция по заполнению системы КЭМП')}
           </CardTitle>
-          <p className="text-gray-400">Подробное руководство для тренеров и кураторов</p>
+          <p className="text-gray-400">{getBlockContent('kamp_manual_subtitle', 'Подробное руководство для тренеров и кураторов')}</p>
         </CardHeader>
         <CardContent className="space-y-8">
           
           <Alert className="border-kamp-accent/50 bg-kamp-accent/10">
             <Trophy className="h-4 w-4 text-kamp-accent" />
-            <AlertDescription className="text-kamp-accent">
-              <strong>Важно!</strong> После переименования таблиц на русский язык, тотемы теперь рассчитываются автоматически при добавлении новых активностей.
-            </AlertDescription>
+            <AlertDescription className="text-kamp-accent" dangerouslySetInnerHTML={{
+              __html: getBlockContent('kamp_manual_important', '<strong>Важно!</strong> После переименования таблиц на русский язык, тотемы теперь рассчитываются автоматически при добавлении новых активностей.')
+            }} />
           </Alert>
 
           <div>
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
               <Database className="w-5 h-5" />
-              Структура базы данных
+              {getBlockTitle('kamp_manual_db_structure', 'Структура базы данных')}
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-gray-800/50 border-gray-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-kamp-accent">Основные таблицы</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">участники</span>
-                    <Badge variant="secondary">Пользователи</Badge>
+            <div className="text-gray-300" dangerouslySetInnerHTML={{
+              __html: getBlockContent('kamp_manual_db_structure', `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    <h4 class="text-lg text-kamp-accent mb-3">Основные таблицы</h4>
+                    <div class="space-y-3">
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">участники</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Пользователи</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">кэмп_активности</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Закалы/Грани/Шрамы</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">тотемы_участников</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Полученные тотемы</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">требования_тотемов</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Условия тотемов</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">кэмп_активности</span>
-                    <Badge variant="secondary">Закалы/Грани/Шрамы</Badge>
+                  <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    <h4 class="text-lg text-kamp-accent mb-3">Аскезы</h4>
+                    <div class="space-y-3">
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">аскезы_участников</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Созданные аскезы</span>
+                      </div>
+                      <div class="flex justify-between items-center">
+                        <span class="text-gray-300">прогресс_аскез</span>
+                        <span class="px-2 py-1 bg-gray-600 rounded text-xs">Ежедневный прогресс</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">тотемы_участников</span>
-                    <Badge variant="secondary">Полученные тотемы</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">требования_тотемов</span>
-                    <Badge variant="secondary">Условия тотемов</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800/50 border-gray-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-kamp-accent">Аскезы</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">аскезы_участников</span>
-                    <Badge variant="secondary">Созданные аскезы</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">прогресс_аскез</span>
-                    <Badge variant="secondary">Ежедневный прогресс</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              `).replace(/\n\s+/g, '')
+            }} />
           </div>
 
           <div>

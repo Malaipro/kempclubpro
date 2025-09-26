@@ -11,6 +11,7 @@ import { DetailedScheduleManagement } from '@/components/schedule/DetailedSchedu
 import { TestimonialManagement } from './TestimonialManagement';
 import { MomentsManagement } from './MomentsManagement';
 import { ContentBlocksManagement } from './ContentBlocksManagement';
+import { InstructionsManagement } from './InstructionsManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
@@ -95,6 +96,14 @@ export const AdminDashboard: React.FC = () => {
             </TabsTrigger>
             
             <TabsTrigger 
+              value="instructions" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="whitespace-nowrap">Инструкц.</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
               value="content" 
               className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
             >
@@ -147,6 +156,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="moments" className="mt-0">
           <MomentsManagement />
+        </TabsContent>
+        
+        <TabsContent value="instructions" className="mt-0">
+          <InstructionsManagement />
         </TabsContent>
         
         <TabsContent value="content" className="mt-0">
