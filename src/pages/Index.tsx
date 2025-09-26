@@ -41,11 +41,11 @@ const Index = () => {
       <Program />
       <Trainers />
       <PhotoGallery />
+      <Testimonials />
       <AllParticipantsProgress />
       <Leaderboard />
       <RegisteredParticipants />
       <Achievements />
-      <Testimonials />
       <ContactForm />
       
       {/* Fixed Personal Cabinet Button */}
