@@ -152,13 +152,13 @@ export const ActivityManagement: React.FC = () => {
           <SelectTrigger className="bg-white text-black">
             <SelectValue placeholder="Выберите участника" />
           </SelectTrigger>
-          <SelectContent className="bg-white">
-            {participants.map((participant) => (
-              <SelectItem key={participant.user_id} value={participant.user_id}>
-                {formatParticipantName(participant)}
-              </SelectItem>
-            ))}
-          </SelectContent>
+            <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+              {participants.map((participant) => (
+                <SelectItem key={participant.user_id} value={participant.user_id} className="hover:bg-gray-100">
+                  {formatParticipantName(participant)}
+                </SelectItem>
+              ))}
+            </SelectContent>
         </Select>
 
         {/* Activity Type */}
@@ -166,22 +166,22 @@ export const ActivityManagement: React.FC = () => {
           <SelectTrigger className="bg-white text-black">
             <SelectValue placeholder="Выберите тип награды" />
           </SelectTrigger>
-          <SelectContent className="bg-white">
-            <SelectItem value="physical">
+          <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+            <SelectItem value="physical" className="hover:bg-gray-100">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-red-500" />
+                <Target className="w-4 h-4 text-red-500 opacity-100" />
                 <span>Закал (физика)</span>
               </div>
             </SelectItem>
-            <SelectItem value="theory">
+            <SelectItem value="theory" className="hover:bg-gray-100">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-500" />
+                <BookOpen className="w-4 h-4 text-blue-500 opacity-100" />
                 <span>Грань (теория)</span>
               </div>
             </SelectItem>
-            <SelectItem value="challenge">
+            <SelectItem value="challenge" className="hover:bg-gray-100">
               <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-orange-500" />
+                <Zap className="w-4 h-4 text-orange-500 opacity-100" />
                 <span>Шрам (испытания)</span>
               </div>
             </SelectItem>
@@ -204,9 +204,9 @@ export const ActivityManagement: React.FC = () => {
             <SelectTrigger className="bg-white text-black">
               <SelectValue placeholder="Коэффициент" />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="1.0">x1.0 (обычно)</SelectItem>
-              <SelectItem value="1.5">x1.5 (за сверхусилие)</SelectItem>
+            <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+              <SelectItem value="1.0" className="hover:bg-gray-100">x1.0 (обычно)</SelectItem>
+              <SelectItem value="1.5" className="hover:bg-gray-100">x1.5 (за сверхусилие)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -222,7 +222,7 @@ export const ActivityManagement: React.FC = () => {
               {date ? format(date, "dd.MM.yyyy") : "25.09.2025"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-white" align="start">
+          <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
             <Calendar
               mode="single"
               selected={date}
@@ -238,13 +238,13 @@ export const ActivityManagement: React.FC = () => {
           <SelectTrigger className="bg-white text-black">
             <SelectValue placeholder="Выберите тренера или куратора" />
           </SelectTrigger>
-          <SelectContent className="bg-white">
-            {trainers.map((trainerItem) => (
-              <SelectItem key={trainerItem.id} value={trainerItem.id}>
-                {trainerItem.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
+            <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+              {trainers.map((trainerItem) => (
+                <SelectItem key={trainerItem.id} value={trainerItem.id} className="hover:bg-gray-100">
+                  {trainerItem.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
         </Select>
 
         {/* Notes */}

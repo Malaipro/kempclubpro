@@ -321,9 +321,9 @@ export const EnhancedCooperTest: React.FC = () => {
                   <SelectTrigger className="bg-white text-black">
                     <SelectValue placeholder="Выберите участника" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
                     {participants.map((participant) => (
-                      <SelectItem key={participant.user_id} value={participant.user_id}>
+                      <SelectItem key={participant.user_id} value={participant.user_id} className="hover:bg-gray-100">
                         {participant.first_name && participant.last_name 
                           ? `${participant.first_name} ${participant.last_name}`
                           : participant.display_name}
@@ -375,9 +375,9 @@ export const EnhancedCooperTest: React.FC = () => {
                     <SelectTrigger className="bg-white text-black">
                       <SelectValue placeholder="Выберите пол" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="male">Мужской</SelectItem>
-                      <SelectItem value="female">Женский</SelectItem>
+                    <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                      <SelectItem value="male" className="hover:bg-gray-100">Мужской</SelectItem>
+                      <SelectItem value="female" className="hover:bg-gray-100">Женский</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -300,7 +300,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         {formData.date_of_birth ? format(formData.date_of_birth, "dd.MM.yyyy") : "дд.мм.гггг"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-50" align="start">
                       <Calendar
                         mode="single"
                         selected={formData.date_of_birth}
@@ -319,9 +319,9 @@ export const EnhancedParticipantManagement: React.FC = () => {
                   <SelectTrigger className="bg-white text-black">
                     <SelectValue placeholder="Выберите поток" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="2-й поток">2-й поток</SelectItem>
-                    <SelectItem value="1-й поток">1-й поток</SelectItem>
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    <SelectItem value="2-й поток" className="hover:bg-gray-100">2-й поток</SelectItem>
+                    <SelectItem value="1-й поток" className="hover:bg-gray-100">1-й поток</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
