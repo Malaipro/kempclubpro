@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Timer } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type TimeLeft = {
   days: number;
@@ -20,10 +21,32 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
     minutes: 0,
     seconds: 0,
   });
+  const [streamStartDate, setStreamStartDate] = useState<Date | null>(null);
+
+  // Fetch active stream start date
+  useEffect(() => {
+    const fetchActiveStream = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streams')
+          .select('start_date')
+          .eq('is_active', true)
+          .single();
+
+        if (data && !error) {
+          setStreamStartDate(new Date(data.start_date));
+        }
+      } catch (error) {
+        console.error('Error fetching active stream:', error);
+      }
+    };
+
+    fetchActiveStream();
+  }, []);
 
   useEffect(() => {
-    // Set target date to July 6, 2025 if no targetDate is provided
-    const calculatedTargetDate = targetDate || new Date('2025-07-06T00:00:00');
+    // Use provided targetDate, fetched streamStartDate, or fallback to July 6, 2025
+    const calculatedTargetDate = targetDate || streamStartDate || new Date('2025-07-06T00:00:00');
     
     const interval = setInterval(() => {
       const now = new Date();
@@ -44,7 +67,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [targetDate]);
+  }, [targetDate, streamStartDate]);
 
   return (
     <div className="mb-8">
