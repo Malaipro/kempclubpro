@@ -15,7 +15,7 @@ interface Testimonial {
   id: string;
   participant_name: string;
   participant_title?: string;
-  content: string;
+  content?: string;
   video_url?: string;
   image_url?: string;
   is_active: boolean;
@@ -28,7 +28,6 @@ export const TestimonialManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
 
@@ -68,9 +67,8 @@ export const TestimonialManagement: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (file: File, type: 'video' | 'image') => {
-    const setUploading = type === 'video' ? setUploadingVideo : setUploadingImage;
-    setUploading(true);
+  const handleFileUpload = async (file: File, type: 'image') => {
+    setUploadingImage(true);
 
     try {
       const fileExt = file.name.split('.').pop();
@@ -87,12 +85,11 @@ export const TestimonialManagement: React.FC = () => {
         .from('testimonials')
         .getPublicUrl(filePath);
 
-      const field = type === 'video' ? 'video_url' : 'image_url';
-      setFormData(prev => ({ ...prev, [field]: data.publicUrl }));
+      setFormData(prev => ({ ...prev, image_url: data.publicUrl }));
 
       toast({
         title: 'Успешно',
-        description: `${type === 'video' ? 'Видео' : 'Изображение'} загружено`,
+        description: 'Изображение загружено',
       });
     } catch (error) {
       console.error('Upload error:', error);
@@ -102,7 +99,7 @@ export const TestimonialManagement: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setUploading(false);
+      setUploadingImage(false);
     }
   };
 
@@ -149,7 +146,7 @@ export const TestimonialManagement: React.FC = () => {
     setFormData({
       participant_name: testimonial.participant_name,
       participant_title: testimonial.participant_title || '',
-      content: testimonial.content,
+      content: testimonial.content || '',
       video_url: testimonial.video_url || '',
       image_url: testimonial.image_url || '',
       is_active: testimonial.is_active,
@@ -239,7 +236,7 @@ export const TestimonialManagement: React.FC = () => {
                   <TableRow key={testimonial.id}>
                     <TableCell className="font-medium">{testimonial.participant_name}</TableCell>
                     <TableCell>{testimonial.participant_title || '-'}</TableCell>
-                    <TableCell className="max-w-xs truncate">{testimonial.content}</TableCell>
+                    <TableCell className="max-w-xs truncate">{testimonial.content || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         {testimonial.video_url && (
@@ -315,34 +312,31 @@ export const TestimonialManagement: React.FC = () => {
             </div>
 
             <div>
-              <Label>Содержание отзыва *</Label>
+              <Label>Содержание отзыва</Label>
               <Textarea
                 value={formData.content}
                 onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Текст отзыва..."
+                placeholder="Текст отзыва (необязательно)..."
                 rows={4}
-                required
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Видео</Label>
+                <Label>Видео URL</Label>
                 <div className="space-y-2">
                   <Input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file, 'video');
-                    }}
-                    disabled={uploadingVideo}
+                    value={formData.video_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                    placeholder="https://youtube.com/watch?v=... или прямая ссылка на видео"
                   />
-                  {uploadingVideo && <p className="text-sm text-muted-foreground">Загрузка...</p>}
+                  <p className="text-xs text-muted-foreground">
+                    Поддерживаются YouTube, Vimeo, прямые ссылки на .mp4, .webm
+                  </p>
                   {formData.video_url && (
                     <div className="flex items-center gap-2">
                       <Video className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">Видео загружено</span>
+                      <span className="text-sm text-green-500">URL видео добавлен</span>
                       <Button
                         type="button"
                         variant="ghost"

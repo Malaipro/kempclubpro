@@ -998,7 +998,7 @@ export type Database = {
       }
       testimonials: {
         Row: {
-          content: string
+          content: string | null
           created_at: string
           id: string
           image_url: string | null
@@ -1010,7 +1010,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -1022,7 +1022,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string
           id?: string
           image_url?: string | null

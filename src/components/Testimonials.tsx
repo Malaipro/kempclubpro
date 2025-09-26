@@ -6,12 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
 
 interface Testimonial {
   id: string;
   participant_name: string;
   participant_title?: string;
-  content: string;
+  content?: string;
   video_url?: string;
   image_url?: string;
   is_active: boolean;
@@ -157,39 +158,52 @@ export const Testimonials: React.FC = () => {
               <div className="relative">
                 {testimonial.video_url ? (
                   <div className="relative aspect-video bg-gray-800">
-                    <video
-                      ref={(el) => { videoRefs.current[testimonial.id] = el; }}
-                      src={testimonial.video_url}
-                      className="w-full h-full object-cover"
-                      muted={mutedStatus[testimonial.id]}
-                      onEnded={() => handleVideoEnd(testimonial.id)}
-                      onClick={() => openVideoModal(testimonial.id)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <button 
-                        onClick={() => handlePlayPause(testimonial.id)}
-                        className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg"
-                      >
-                        {playingVideo === testimonial.id ? (
-                          <Pause className="w-6 h-6 text-white" />
-                        ) : (
-                          <Play className="w-6 h-6 text-white ml-1" />
-                        )}
-                      </button>
-                    </div>
-                    
-                    <button 
-                      onClick={() => handleMute(testimonial.id)}
-                      className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
-                    >
-                      {mutedStatus[testimonial.id] ? (
-                        <VolumeX className="w-4 h-4 text-white" />
-                      ) : (
-                        <Volume2 className="w-4 h-4 text-white" />
-                      )}
-                    </button>
+                    {getVideoType(testimonial.video_url) === 'youtube' || getVideoType(testimonial.video_url) === 'vimeo' ? (
+                      <iframe
+                        src={getVideoEmbedUrl(testimonial.video_url) || ''}
+                        className="w-full h-full"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={`Видео отзыв ${testimonial.participant_name}`}
+                      />
+                    ) : (
+                      <>
+                        <video
+                          ref={(el) => { videoRefs.current[testimonial.id] = el; }}
+                          src={getVideoEmbedUrl(testimonial.video_url) || ''}
+                          className="w-full h-full object-cover"
+                          muted={mutedStatus[testimonial.id]}
+                          onEnded={() => handleVideoEnd(testimonial.id)}
+                          onClick={() => openVideoModal(testimonial.id)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                          <button 
+                            onClick={() => handlePlayPause(testimonial.id)}
+                            className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg"
+                          >
+                            {playingVideo === testimonial.id ? (
+                              <Pause className="w-6 h-6 text-white" />
+                            ) : (
+                              <Play className="w-6 h-6 text-white ml-1" />
+                            )}
+                          </button>
+                        </div>
+                        
+                        <button 
+                          onClick={() => handleMute(testimonial.id)}
+                          className="absolute bottom-4 right-4 bg-black/50 hover:bg-black/70 rounded-full p-2 transition-all duration-300"
+                        >
+                          {mutedStatus[testimonial.id] ? (
+                            <VolumeX className="w-4 h-4 text-white" />
+                          ) : (
+                            <Volume2 className="w-4 h-4 text-white" />
+                          )}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ) : testimonial.image_url ? (
                   <div className="aspect-video bg-gray-800">
@@ -220,9 +234,11 @@ export const Testimonials: React.FC = () => {
                       {testimonial.participant_title}
                     </p>
                   )}
-                  <blockquote className="text-gray-300 text-sm md:text-base italic leading-relaxed">
-                    "{testimonial.content}"
-                  </blockquote>
+                  {testimonial.content && (
+                    <blockquote className="text-gray-300 text-sm md:text-base italic leading-relaxed">
+                      "{testimonial.content}"
+                    </blockquote>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -247,13 +263,37 @@ export const Testimonials: React.FC = () => {
         <Dialog open={!!openVideo} onOpenChange={(open) => !open && closeVideoModal()}>
           <DialogContent className="max-w-4xl w-full p-0 bg-black border-0">
             <div className="relative aspect-video">
-              <video
-                ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
-                src={testimonials.find(t => t.id === openVideo)?.video_url}
-                className="w-full h-full object-contain"
-                controls
-                autoPlay
-              />
+              {(() => {
+                const testimonial = testimonials.find(t => t.id === openVideo);
+                const videoUrl = testimonial?.video_url;
+                if (!videoUrl) return null;
+                
+                const videoType = getVideoType(videoUrl);
+                const embedUrl = getVideoEmbedUrl(videoUrl);
+                
+                if (videoType === 'youtube' || videoType === 'vimeo') {
+                  return (
+                    <iframe
+                      src={embedUrl?.replace('autoplay=0', 'autoplay=1') || ''}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`Полный видео отзыв ${testimonial.participant_name}`}
+                    />
+                  );
+                } else {
+                  return (
+                    <video
+                      ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
+                      src={embedUrl || ''}
+                      className="w-full h-full object-contain"
+                      controls
+                      autoPlay
+                    />
+                  );
+                }
+              })()}
               <DialogClose asChild>
                 <Button
                   variant="ghost"
