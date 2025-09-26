@@ -22,14 +22,10 @@ export const SecureLeaderboard: React.FC = () => {
   const [showPersonalOnly, setShowPersonalOnly] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchLeaderboard();
-    }
+    fetchLeaderboard();
   }, [user, showPersonalOnly]);
 
   const fetchLeaderboard = async () => {
-    if (!user) return;
-
     setLoading(true);
     try {
       // Получаем список админов для исключения из общего рейтинга
@@ -58,7 +54,7 @@ export const SecureLeaderboard: React.FC = () => {
         .order('total_points', { ascending: false })
         .limit(showPersonalOnly ? 1 : 10);
 
-      if (showPersonalOnly) {
+      if (showPersonalOnly && user) {
         query = query.eq('user_id', user.id);
       } else {
         // В общем рейтинге исключаем админов
@@ -100,17 +96,6 @@ export const SecureLeaderboard: React.FC = () => {
     return <span className="w-5 h-5 flex items-center justify-center text-sm font-bold">{position}</span>;
   };
 
-  if (!user) {
-    return (
-      <div className="text-center py-8">
-        <Trophy className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-semibold mb-2">Войдите для просмотра рейтинга</h3>
-        <p className="text-sm text-gray-500">
-          Рейтинг доступен только авторизованным пользователям
-        </p>
-      </div>
-    );
-  }
 
   return (
     <Card className="bg-white border-gray-300">
@@ -120,22 +105,24 @@ export const SecureLeaderboard: React.FC = () => {
             <Trophy className="w-5 h-5 text-kamp-accent" />
             Рейтинг участников
           </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant={!showPersonalOnly ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowPersonalOnly(false)}
-            >
-              Общий
-            </Button>
-            <Button
-              variant={showPersonalOnly ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowPersonalOnly(true)}
-            >
-              Мой
-            </Button>
-          </div>
+          {user && (
+            <div className="flex gap-2">
+              <Button
+                variant={!showPersonalOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowPersonalOnly(false)}
+              >
+                Общий
+              </Button>
+              <Button
+                variant={showPersonalOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowPersonalOnly(true)}
+              >
+                Мой
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -161,7 +148,7 @@ export const SecureLeaderboard: React.FC = () => {
               <div
                 key={entry.id}
                 className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                  entry.user_id === user.id 
+                  user && entry.user_id === user.id 
                     ? 'bg-kamp-accent/10 border-kamp-accent' 
                     : 'bg-gray-50 border-gray-200'
                 }`}
@@ -171,7 +158,7 @@ export const SecureLeaderboard: React.FC = () => {
                   <div>
                     <p className="font-semibold text-gray-900">
                       {entry.display_name}
-                      {entry.user_id === user.id && (
+                      {user && entry.user_id === user.id && (
                         <span className="ml-2 text-sm text-kamp-accent">(Вы)</span>
                       )}
                     </p>
