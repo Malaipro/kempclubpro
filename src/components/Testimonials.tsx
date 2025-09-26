@@ -149,7 +149,7 @@ export const Testimonials: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mt-8 md:mt-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-8 mt-3 md:mt-16">
           {testimonials.map((testimonial) => (
             <Card 
               key={testimonial.id}
@@ -251,18 +251,18 @@ export const Testimonials: React.FC = () => {
                 )}
               </div>
 
-              <CardContent className="p-4 md:p-6">
+              <CardContent className="p-1.5 md:p-4 bg-black">
                 <div className="text-center">
-                  <h3 className="text-white text-lg md:text-xl font-bold mb-2">
+                  <h3 className="text-white text-xs md:text-lg font-bold">
                     {testimonial.participant_name}
                   </h3>
                   {testimonial.participant_title && (
-                    <p className="text-kamp-primary text-sm md:text-base font-medium mb-4">
+                    <p className="text-kamp-primary text-[10px] md:text-xs font-medium mb-1 md:mb-3">
                       {testimonial.participant_title}
                     </p>
                   )}
-                  {testimonial.content && (
-                    <blockquote className="text-gray-300 text-sm md:text-base italic leading-relaxed">
+                  {!isMobile && testimonial.content && (
+                    <blockquote className="text-gray-300 text-xs md:text-sm italic leading-relaxed">
                       "{testimonial.content}"
                     </blockquote>
                   )}
