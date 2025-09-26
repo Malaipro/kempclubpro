@@ -193,18 +193,18 @@ export const Testimonials: React.FC = () => {
                           />
                         </div>
                         
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                        <div className="absolute inset-0 bg-black/20 flex items-end justify-center pb-16 pointer-events-none">
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePlayPause(testimonial.id);
                             }}
-                            className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-4 transition-all duration-300 shadow-lg pointer-events-auto"
+                            className="bg-kamp-primary hover:bg-kamp-primary/90 rounded-full p-3 transition-all duration-300 shadow-lg pointer-events-auto"
                           >
                             {playingVideo === testimonial.id ? (
-                              <Pause className="w-6 h-6 text-white" />
+                              <Pause className="w-5 h-5 text-white" />
                             ) : (
-                              <Play className="w-6 h-6 text-white ml-1" />
+                              <Play className="w-5 h-5 text-white ml-0.5" />
                             )}
                           </button>
                         </div>
