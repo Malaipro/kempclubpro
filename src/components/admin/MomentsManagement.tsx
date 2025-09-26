@@ -72,15 +72,38 @@ export const MomentsManagement: React.FC = () => {
     setUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'dat';
+      const timestamp = Date.now();
+      const filePath = `${type}s/${timestamp}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('moments')
-        .upload(filePath, file);
+      if (type === 'video') {
+        // Use signed upload for better reliability on larger files
+        const { data: signed, error: signErr } = await supabase
+          .storage
+          .from('moments')
+          .createSignedUploadUrl(filePath);
 
-      if (uploadError) throw uploadError;
+        if (signErr || !signed) throw signErr || new Error('Не удалось создать ссылку для загрузки');
+
+        const { error: putErr } = await supabase
+          .storage
+          .from('moments')
+          .uploadToSignedUrl(filePath, signed.token, file, {
+            contentType: file.type,
+            upsert: true,
+          });
+
+        if (putErr) throw putErr;
+      } else {
+        const { error: uploadError } = await supabase.storage
+          .from('moments')
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from('moments')
@@ -93,11 +116,11 @@ export const MomentsManagement: React.FC = () => {
         title: 'Успешно',
         description: `${type === 'image' ? 'Изображение' : 'Видео'} загружено`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить файл',
+        title: 'Ошибка загрузки',
+        description: error?.message || 'Не удалось загрузить файл',
         variant: 'destructive',
       });
     } finally {
