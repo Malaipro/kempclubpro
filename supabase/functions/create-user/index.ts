@@ -28,23 +28,37 @@ serve(async (req) => {
       ? password
       : crypto.randomUUID()
 
-    // Create user in auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: safePassword,
-      email_confirm: true,
-      user_metadata: metadata || {}
-    })
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email)
+    
+    let authData: any = null
+    
+    if (existingUser) {
+      // User exists, use existing user data
+      authData = { user: existingUser }
+      console.log(`User ${email} already exists, updating profile`)
+    } else {
+      // Create new user in auth
+      const { data: newUserData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: safePassword,
+        email_confirm: true,
+        user_metadata: metadata || {}
+      })
 
-    if (authError) {
-      console.error('Auth error:', authError)
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      if (authError) {
+        console.error('Auth error:', authError)
+        return new Response(
+          JSON.stringify({ error: `Ошибка создания пользователя: ${authError.message}` }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      authData = newUserData
+      console.log(`Successfully created new user ${email}`)
     }
 
     // Create or update profile with additional metadata if provided

@@ -134,9 +134,22 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
         if (error) {
           console.error('Error creating participant:', error);
+          let errorMessage = 'Не удалось создать участника';
+          
+          // Try to extract error message from different possible structures
+          if (typeof error === 'object' && error !== null) {
+            if ('message' in error) {
+              errorMessage = error.message as string;
+            } else if ('error' in error && typeof error.error === 'string') {
+              errorMessage = error.error;
+            } else if ('details' in error && typeof error.details === 'string') {
+              errorMessage = error.details;
+            }
+          }
+          
           toast({
             title: 'Ошибка',
-            description: (error as any)?.message || 'Не удалось создать участника',
+            description: errorMessage,
             variant: 'destructive',
           });
           return;
