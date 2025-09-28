@@ -333,16 +333,14 @@ export type Database = {
         Row: {
           age: number | null
           created_at: string
-          exercise_1_time: number | null
-          exercise_2_time: number | null
-          exercise_3_time: number | null
-          exercise_4_time: number | null
           fitness_level: string | null
           gender: string | null
           id: string
           notes: string | null
           test_date: string
           test_phase: string | null
+          total_minutes: number | null
+          total_seconds: number | null
           total_time: number | null
           user_id: string
           verified: boolean | null
@@ -351,16 +349,14 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string
-          exercise_1_time?: number | null
-          exercise_2_time?: number | null
-          exercise_3_time?: number | null
-          exercise_4_time?: number | null
           fitness_level?: string | null
           gender?: string | null
           id?: string
           notes?: string | null
           test_date?: string
           test_phase?: string | null
+          total_minutes?: number | null
+          total_seconds?: number | null
           total_time?: number | null
           user_id: string
           verified?: boolean | null
@@ -369,16 +365,14 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string
-          exercise_1_time?: number | null
-          exercise_2_time?: number | null
-          exercise_3_time?: number | null
-          exercise_4_time?: number | null
           fitness_level?: string | null
           gender?: string | null
           id?: string
           notes?: string | null
           test_date?: string
           test_phase?: string | null
+          total_minutes?: number | null
+          total_seconds?: number | null
           total_time?: number | null
           user_id?: string
           verified?: boolean | null
@@ -768,6 +762,7 @@ export type Database = {
           approved_by: string | null
           avatar_url: string | null
           created_at: string
+          current_stream_id: string | null
           date_of_birth: string | null
           display_name: string | null
           email: string | null
@@ -796,6 +791,7 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           created_at?: string
+          current_stream_id?: string | null
           date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
@@ -824,6 +820,7 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           created_at?: string
+          current_stream_id?: string | null
           date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
@@ -846,7 +843,15 @@ export type Database = {
           weight_before_stream?: number | null
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_stream_id_fkey"
+            columns: ["current_stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       public_profiles: {
         Row: {
@@ -1614,6 +1619,10 @@ export type Database = {
       }
       calculate_cooper_fitness_level: {
         Args: { total_seconds: number }
+        Returns: string
+      }
+      calculate_cooper_fitness_level_minutes: {
+        Args: { total_minutes: number }
         Returns: string
       }
       cleanup_expired_sessions: {

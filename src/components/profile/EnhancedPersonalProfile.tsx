@@ -157,7 +157,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
         .order('test_date', { ascending: false });
 
       if (cooperError) throw cooperError;
-      setCooperTests(cooperData || []);
+      setCooperTests((cooperData as any) || []);
 
     } catch (error) {
       console.error('Error loading profile data:', error);

@@ -1,92 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, TrendingUp, Plus, Edit, Trash2, CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
+import { Activity, Plus, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 interface CooperTestResult {
   id: string;
   user_id: string;
+  total_minutes: number | null;
+  total_seconds: number | null;
+  total_time: number | null;
+  age: number | null;
+  gender: string | null;
   test_date: string;
-  exercise_1_time: number;
-  exercise_2_time: number;
-  exercise_3_time: number;
-  exercise_4_time: number;
-  total_time: number;
+  test_phase: string;
   verified: boolean;
-  age?: number;
-  gender?: string;
-  fitness_level?: string;
-  notes?: string;
-  verified_by?: string;
-  test_phase?: string;
-  profile?: {
-    first_name?: string;
-    last_name?: string;
-    display_name?: string;
-  };
+  verified_by: string | null;
+  created_at: string;
+  notes: string | null;
+  fitness_level: string | null;
+  profiles?: {
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
 }
 
 interface Participant {
-  id: string;
   user_id: string;
-  display_name: string;
-  first_name?: string;
-  last_name?: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 export const EnhancedCooperTest: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('test1');
   const [testResults, setTestResults] = useState<CooperTestResult[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState<CooperTestResult | null>(null);
+
   const [formData, setFormData] = useState({
     user_id: '',
-    test_number: '1',
-    exercise_1_time: '',
-    exercise_2_time: '',
-    exercise_3_time: '',
-    exercise_4_time: '',
-    test_phase: 'during_stream',
+    total_minutes: '',
+    total_seconds: '',
     age: '',
     gender: '',
+    test_date: new Date().toISOString().split('T')[0],
+    test_phase: 'during_stream',
     notes: '',
-    test_date: new Date(),
   });
-  
-  const { toast } = useToast();
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      if (isMounted) {
-        await fetchTestResults();
-        await fetchParticipants();
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { toast } = useToast();
 
   const fetchTestResults = async () => {
     try {
@@ -97,31 +71,25 @@ export const EnhancedCooperTest: React.FC = () => {
 
       if (error) throw error;
       
-      // Fetch profiles separately with better error handling
-      const results = data || [];
-      const resultsWithProfiles: CooperTestResult[] = [];
-      
-      for (const result of results) {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name, display_name')
-            .eq('user_id', result.user_id)
-            .single();
-          
-          resultsWithProfiles.push({ ...result, profile });
-        } catch (profileError) {
-          // If profile fetch fails, add result without profile
-          resultsWithProfiles.push({ ...result, profile: null });
-        }
-      }
-      
+      // Fetch profiles separately to avoid relationship issues  
+      const userIds = (data || []).map(result => result.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, first_name, last_name')
+        .in('user_id', userIds);
+
+      // Merge profiles with results
+      const resultsWithProfiles = (data || []).map(result => ({
+        ...result,
+        profiles: profilesData?.find(p => p.user_id === result.user_id) || null
+      }));
+
       setTestResults(resultsWithProfiles);
     } catch (error) {
       console.error('Error fetching test results:', error);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось загрузить результаты тестов',
+        description: 'Не удалось загрузить результаты теста',
         variant: 'destructive',
       });
     } finally {
@@ -133,8 +101,8 @@ export const EnhancedCooperTest: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, display_name, first_name, last_name')
-        .order('display_name');
+        .select('user_id, display_name, first_name, last_name')
+        .order('display_name', { ascending: true });
 
       if (error) throw error;
       setParticipants(data || []);
@@ -143,51 +111,50 @@ export const EnhancedCooperTest: React.FC = () => {
     }
   };
 
-  const getFitnessLevel = (totalSeconds: number) => {
-    if (totalSeconds <= 600) return { level: 'excellent', label: 'Отлично', color: 'bg-green-100 text-green-800' };
-    if (totalSeconds <= 900) return { level: 'good', label: 'Хорошо', color: 'bg-blue-100 text-blue-800' };
-    if (totalSeconds <= 1200) return { level: 'satisfactory', label: 'Удовлетворительно', color: 'bg-yellow-100 text-yellow-800' };
-    return { level: 'poor', label: 'Плохо', color: 'bg-red-100 text-red-800' };
-  };
+  useEffect(() => {
+    fetchTestResults();
+    fetchParticipants();
+  }, []);
 
-  const formatParticipantName = (result: CooperTestResult) => {
-    if (result.profile?.first_name && result.profile?.last_name) {
-      return `${result.profile.first_name} ${result.profile.last_name}`;
-    }
-    return result.profile?.display_name || 'Неизвестный участник';
+  const getFitnessLevel = (totalMinutes: number | null): string => {
+    if (!totalMinutes) return 'unknown';
+    
+    // Based on total time in minutes for all 4 exercises
+    if (totalMinutes <= 3) return 'excellent';      // 3 minutes or less
+    if (totalMinutes <= 4) return 'good';           // 4 minutes or less  
+    if (totalMinutes <= 5) return 'satisfactory';   // 5 minutes or less
+    return 'poor';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.user_id || !formData.exercise_1_time || !formData.exercise_2_time || !formData.exercise_3_time || !formData.exercise_4_time) {
+    if (!formData.user_id || !formData.total_minutes || !formData.total_seconds) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните все обязательные поля упражнений',
+        description: 'Заполните все обязательные поля',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      const exercise1Time = parseInt(formData.exercise_1_time);
-      const exercise2Time = parseInt(formData.exercise_2_time);
-      const exercise3Time = parseInt(formData.exercise_3_time);
-      const exercise4Time = parseInt(formData.exercise_4_time);
-      const totalSeconds = exercise1Time + exercise2Time + exercise3Time + exercise4Time;
-      const fitnessLevel = getFitnessLevel(totalSeconds);
+      const totalMinutes = parseInt(formData.total_minutes);
+      const totalSeconds = parseInt(formData.total_seconds);
+      const totalTime = totalMinutes * 60 + totalSeconds;
+      const fitnessLevel = getFitnessLevel(totalMinutes);
 
       const testData = {
         user_id: formData.user_id,
-        test_date: formData.test_date.toISOString(),
-        exercise_1_time: exercise1Time,
-        exercise_2_time: exercise2Time,
-        exercise_3_time: exercise3Time,
-        exercise_4_time: exercise4Time,
+        total_minutes: totalMinutes,
+        total_seconds: totalSeconds,
+        total_time: totalTime,
         age: formData.age ? parseInt(formData.age) : null,
         gender: formData.gender || null,
-        fitness_level: fitnessLevel.level,
+        test_date: new Date(formData.test_date).toISOString(),
+        test_phase: formData.test_phase,
         notes: formData.notes || null,
+        fitness_level: fitnessLevel,
         verified: false,
       };
 
@@ -196,28 +163,19 @@ export const EnhancedCooperTest: React.FC = () => {
           .from('cooper_test_results')
           .update(testData)
           .eq('id', editingResult.id);
-
+        
         if (error) throw error;
-
-        toast({
-          title: 'Результат обновлен',
-          description: 'Результат теста успешно обновлен',
-        });
+        toast({ title: 'Успешно', description: 'Результат обновлен' });
       } else {
         const { error } = await supabase
           .from('cooper_test_results')
           .insert([testData]);
-
+        
         if (error) throw error;
-
-        toast({
-          title: 'Результат добавлен',
-          description: 'Результат теста успешно добавлен',
-        });
+        toast({ title: 'Успешно', description: 'Результат добавлен' });
       }
 
       setDialogOpen(false);
-      setEditingResult(null);
       resetForm();
       fetchTestResults();
     } catch (error) {
@@ -234,16 +192,13 @@ export const EnhancedCooperTest: React.FC = () => {
     setEditingResult(result);
     setFormData({
       user_id: result.user_id,
-      test_number: '1', // We'll determine this from the data
-      exercise_1_time: result.exercise_1_time?.toString() || '',
-      exercise_2_time: result.exercise_2_time?.toString() || '',
-      exercise_3_time: result.exercise_3_time?.toString() || '',
-      exercise_4_time: result.exercise_4_time?.toString() || '',
-      test_phase: result.test_phase || 'during_stream',
+      total_minutes: result.total_minutes?.toString() || '',
+      total_seconds: result.total_seconds?.toString() || '',
       age: result.age?.toString() || '',
       gender: result.gender || '',
+      test_date: result.test_date.split('T')[0],
+      test_phase: result.test_phase,
       notes: result.notes || '',
-      test_date: new Date(result.test_date),
     });
     setDialogOpen(true);
   };
@@ -252,21 +207,25 @@ export const EnhancedCooperTest: React.FC = () => {
     try {
       const { error } = await supabase
         .from('cooper_test_results')
-        .update({ verified })
+        .update({ 
+          verified,
+          verified_by: verified ? (await supabase.auth.getUser()).data.user?.id : null
+        })
         .eq('id', resultId);
 
       if (error) throw error;
-
-      fetchTestResults();
+      
       toast({
         title: verified ? 'Результат подтвержден' : 'Подтверждение отменено',
-        description: `Результат ${verified ? 'подтвержден' : 'не подтвержден'}`,
+        description: 'Статус успешно обновлен',
       });
+      
+      fetchTestResults();
     } catch (error) {
       console.error('Error updating verification:', error);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось изменить статус подтверждения',
+        description: 'Не удалось обновить статус подтверждения',
         variant: 'destructive',
       });
     }
@@ -275,41 +234,83 @@ export const EnhancedCooperTest: React.FC = () => {
   const resetForm = () => {
     setFormData({
       user_id: '',
-      test_number: '1',
-      exercise_1_time: '',
-      exercise_2_time: '',
-      exercise_3_time: '',
-      exercise_4_time: '',
-      test_phase: 'during_stream',
+      total_minutes: '',
+      total_seconds: '',
       age: '',
       gender: '',
+      test_date: new Date().toISOString().split('T')[0],
+      test_phase: 'during_stream',
       notes: '',
-      test_date: new Date(),
     });
+    setEditingResult(null);
   };
 
-  const getTestResults = (testNumber: string) => {
-    // For now, we'll show all results as we don't have test_number field in the database
-    return testResults;
+  const formatParticipantName = (result: CooperTestResult) => {
+    if (result.profiles?.first_name && result.profiles?.last_name) {
+      return `${result.profiles.first_name} ${result.profiles.last_name}`;
+    }
+    return result.profiles?.display_name || 'Неизвестный участник';
+  };
+
+  const getFitnessLevelColor = (level: string | null) => {
+    switch (level) {
+      case 'excellent':
+        return 'bg-green-600 text-white';
+      case 'good':
+        return 'bg-blue-600 text-white';
+      case 'satisfactory':
+        return 'bg-yellow-600 text-white';
+      case 'poor':
+        return 'bg-red-600 text-white';
+      default:
+        return 'bg-gray-600 text-white';
+    }
+  };
+
+  const getFitnessLevelLabel = (level: string | null) => {
+    switch (level) {
+      case 'excellent':
+        return 'Отлично';
+      case 'good':
+        return 'Хорошо';
+      case 'satisfactory':
+        return 'Удовлетворительно';
+      case 'poor':
+        return 'Плохо';
+      default:
+        return 'Неизвестно';
+    }
+  };
+
+  // Group results by test phase for different measurements
+  const getTestResults = (phase: string) => {
+    return testResults.filter(result => result.test_phase === phase);  
+  };
+
+  // Get user's different test phases to show improvement
+  const getUserTestHistory = (userId: string) => {
+    return testResults.filter(result => result.user_id === userId)
+      .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime());
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-pulse">Загрузка результатов...</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-lg">Загрузка результатов теста...</div>
       </div>
     );
   }
 
-  const test1Results = getTestResults('1');
-  const test2Results = getTestResults('2');
+  const beforeStreamResults = getTestResults('before_stream');
+  const duringStreamResults = getTestResults('during_stream'); 
+  const afterStreamResults = getTestResults('after_stream');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Тест Купера</h1>
-          <p className="text-muted-foreground">Управление результатами всех участников (4 круга в зале)</p>
+          <p className="text-muted-foreground">Управление результатами всех участников (общее время за 4 упражнения)</p>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -367,49 +368,35 @@ export const EnhancedCooperTest: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <Label className="text-white">Упражнение 1 (сек) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.exercise_1_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_1_time: e.target.value }))}
-                    placeholder="60"
-                    className="bg-white text-black"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white">Минуты *</Label>
+                    <Input
+                      type="number"
+                      value={formData.total_minutes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_minutes: e.target.value }))}
+                      placeholder="3"
+                      className="bg-white text-black"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-white">Секунды *</Label>
+                    <Input
+                      type="number"
+                      value={formData.total_seconds}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_seconds: e.target.value }))}
+                      placeholder="30"
+                      className="bg-white text-black"
+                      min="0"
+                      max="59"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-white">Упражнение 2 (сек) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.exercise_2_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_2_time: e.target.value }))}
-                    placeholder="60"
-                    className="bg-white text-black"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label className="text-white">Упражнение 3 (сек) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.exercise_3_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_3_time: e.target.value }))}
-                    placeholder="60"
-                    className="bg-white text-black"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label className="text-white">Упражнение 4 (сек) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.exercise_4_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, exercise_4_time: e.target.value }))}
-                    placeholder="60"
-                    className="bg-white text-black"
-                    required
-                  />
+                <div className="text-sm text-gray-300">
+                  Общее время выполнения всех 4 упражнений
                 </div>
               </div>
 
@@ -422,6 +409,8 @@ export const EnhancedCooperTest: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
                     placeholder="25"
                     className="bg-white text-black"
+                    min="16"
+                    max="80"
                   />
                 </div>
                 <div>
@@ -440,26 +429,12 @@ export const EnhancedCooperTest: React.FC = () => {
 
               <div>
                 <Label className="text-white">Дата теста</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(formData.test_date, "dd.MM.yyyy")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.test_date}
-                      onSelect={(date) => date && setFormData(prev => ({ ...prev, test_date: date }))}
-                      initialFocus
-                      className="bg-white pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  type="date"
+                  value={formData.test_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, test_date: e.target.value }))}
+                  className="bg-white text-black"
+                />
               </div>
 
               <div>
@@ -474,18 +449,10 @@ export const EnhancedCooperTest: React.FC = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button 
-                  type="submit" 
-                  className="bg-destructive hover:bg-destructive/90 text-white"
-                >
-                  {editingResult ? 'Сохранить' : 'Добавить'}
+                <Button type="submit" className="flex-1 bg-destructive hover:bg-destructive/90">
+                  {editingResult ? 'Обновить' : 'Добавить'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setDialogOpen(false)}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                >
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Отмена
                 </Button>
               </div>
@@ -494,128 +461,159 @@ export const EnhancedCooperTest: React.FC = () => {
         </Dialog>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-          <TabsTrigger value="test1" className="flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Тест 1 ({test1Results.length})
-          </TabsTrigger>
-          <TabsTrigger value="test2" className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Тест 2 ({test2Results.length})
-          </TabsTrigger>
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all">Все результаты</TabsTrigger>
+          <TabsTrigger value="before">До потока ({beforeStreamResults.length})</TabsTrigger>
+          <TabsTrigger value="during">Во время ({duringStreamResults.length})</TabsTrigger>
+          <TabsTrigger value="after">После потока ({afterStreamResults.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="test1" className="mt-6">
+        <TabsContent value="all" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-kamp-accent" />
-                Результаты теста Купера - Тест 1
+                <Activity className="w-5 h-5 text-destructive" />
+                Все результаты теста Купера
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {test1Results.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Участник</TableHead>
-                      <TableHead>Упражнение 1</TableHead>
-                      <TableHead>Упражнение 2</TableHead>
-                      <TableHead>Упражнение 3</TableHead>
-                      <TableHead>Упражнение 4</TableHead>
-                      <TableHead>Общее время</TableHead>
-                      <TableHead>Возраст</TableHead>
-                      <TableHead>Пол</TableHead>
-                      <TableHead>Уровень</TableHead>
-                      <TableHead>Дата теста</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Действия</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Участник</TableHead>
+                    <TableHead>Общее время</TableHead>
+                    <TableHead>Возраст</TableHead>
+                    <TableHead>Пол</TableHead>
+                    <TableHead>Уровень физ. подготовки</TableHead>
+                    <TableHead>Дата теста</TableHead>
+                    <TableHead>Фаза</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {testResults.map((result) => (
+                    <TableRow key={result.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="font-medium">
+                          {formatParticipantName(result)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-semibold">
+                          {result.total_minutes !== null && result.total_seconds !== null 
+                            ? `${result.total_minutes}:${result.total_seconds.toString().padStart(2, '0')}` 
+                            : '—'}
+                        </div>
+                      </TableCell>
+                      <TableCell>{result.age || '—'}</TableCell>
+                      <TableCell>{result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '—'}</TableCell>
+                      <TableCell>
+                        <Badge className={getFitnessLevelColor(result.fitness_level)}>
+                          {getFitnessLevelLabel(result.fitness_level)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(result.test_date).toLocaleDateString('ru-RU')}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {result.test_phase === 'before_stream' ? 'До потока' : 
+                           result.test_phase === 'during_stream' ? 'Во время потока' : 
+                           result.test_phase === 'after_stream' ? 'После потока' : result.test_phase}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={result.verified ? "default" : "secondary"}>
+                          {result.verified ? 'Подтверждено' : 'Ожидает'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(result)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerification(result.id, !result.verified)}
+                            className={result.verified ? "text-red-600" : "text-green-600"}
+                          >
+                            {result.verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {test1Results.map((result) => {
-                      const fitnessLevel = getFitnessLevel(result.total_time);
-                      return (
-                        <TableRow key={result.id}>
-                          <TableCell className="font-medium">
-                            {formatParticipantName(result)}
-                          </TableCell>
-                          <TableCell>{result.exercise_1_time || 0}сек</TableCell>
-                          <TableCell>{result.exercise_2_time || 0}сек</TableCell>
-                          <TableCell>{result.exercise_3_time || 0}сек</TableCell>
-                          <TableCell>{result.exercise_4_time || 0}сек</TableCell>
-                          <TableCell className="font-semibold">{result.total_time || 0}сек</TableCell>
-                          <TableCell>{result.age || '-'}</TableCell>
-                          <TableCell>{result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '-'}</TableCell>
-                          <TableCell>
-                            <Badge className={fitnessLevel.color}>
-                              {fitnessLevel.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{format(new Date(result.test_date), 'dd.MM.yyyy')}</TableCell>
-                          <TableCell>
-                            {result.verified ? (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Подтвержден
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">
-                                <XCircle className="w-3 h-3 mr-1" />
-                                Не подтвержден
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(result)}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleVerification(result.id, !result.verified)}
-                                className={result.verified ? "text-red-600" : "text-green-600"}
-                              >
-                                {result.verified ? <XCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Zap className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
-                  <p className="text-sm">Добавьте первый результат теста</p>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {testResults.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Результаты тестов не найдены
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="test2" className="mt-6">
+        <TabsContent value="before" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-kamp-accent" />
-                Результаты теста Купера - Тест 2
-              </CardTitle>
+              <CardTitle>Результаты до потока</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <TrendingUp className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Тест 2 в разработке</h3>
-                <p className="text-sm">Функциональность для второго теста будет добавлена позже</p>
-              </div>
+              {/* Similar table structure for before stream results */}
+              {beforeStreamResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Нет результатов до потока
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  Найдено результатов: {beforeStreamResults.length}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="during" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Результаты во время потока</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {duringStreamResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Нет результатов во время потока
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  Найдено результатов: {duringStreamResults.length}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="after" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Результаты после потока</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {afterStreamResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Нет результатов после потока
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  Найдено результатов: {afterStreamResults.length}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
