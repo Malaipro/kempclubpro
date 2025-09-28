@@ -24,7 +24,7 @@ interface ProgressStats {
 }
 
 export const AllParticipantsProgress: React.FC = () => {
-  const { data: progressStats, isLoading, error } = useQuery({
+  const { data: progressStats, isLoading, error, refetch } = useQuery({
     queryKey: ['all-participants-progress'],
     queryFn: async (): Promise<ProgressStats> => {
       // Get approved participants from profiles first
@@ -87,7 +87,9 @@ export const AllParticipantsProgress: React.FC = () => {
         zakalsByType,
         shramsByType
       };
-    }
+    },
+    refetchInterval: 30000, // Обновляем данные каждые 30 секунд
+    staleTime: 10000 // Данные считаются устаревшими через 10 секунд
   });
 
   if (isLoading) {

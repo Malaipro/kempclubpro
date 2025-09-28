@@ -29,6 +29,10 @@ export const SecureLeaderboard: React.FC = () => {
 
   useEffect(() => {
     fetchLeaderboard();
+    
+    // Обновляем данные каждые 30 секунд
+    const interval = setInterval(fetchLeaderboard, 30000);
+    return () => clearInterval(interval);
   }, [user, showPersonalOnly]);
 
   const fetchLeaderboard = async () => {

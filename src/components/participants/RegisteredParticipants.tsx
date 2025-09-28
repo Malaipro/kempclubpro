@@ -34,7 +34,12 @@ export const RegisteredParticipants: React.FC = () => {
         setLoading(false);
       }
     };
+    
     fetchParticipants();
+    
+    // Обновляем данные каждые 30 секунд
+    const interval = setInterval(fetchParticipants, 30000);
+    return () => clearInterval(interval);
   }, []);
   const formatName = (participant: Participant) => {
     if (participant.first_name && participant.last_name) {
