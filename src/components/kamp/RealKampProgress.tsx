@@ -167,16 +167,15 @@ export const RealKampProgress: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Общая статистика */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-kamp-accent">{stats.totalPoints}</div>
-            <div className="text-sm text-gray-600">Общие баллы</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-kamp-accent">#{stats.rank || '—'}</div>
-            <div className="text-sm text-gray-600">Место в рейтинге</div>
-          </div>
+        {/* Рейтинг - Главная информация */}
+        <div className="text-center p-6 bg-gradient-to-r from-kamp-accent/10 to-kamp-accent/5 rounded-lg border border-kamp-accent/20 mb-6">
+          <div className="text-4xl font-bold text-kamp-accent mb-2">#{stats.rank || '—'}</div>
+          <div className="text-lg font-semibold text-gray-800 mb-1">Ваше место в рейтинге</div>
+          <div className="text-2xl font-bold text-kamp-accent">{stats.totalPoints} баллов</div>
+        </div>
+
+        {/* Детализированная статистика */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-kamp-accent">{stats.trainingsSessions}</div>
             <div className="text-sm text-gray-600">Тренировки</div>
@@ -184,6 +183,10 @@ export const RealKampProgress: React.FC = () => {
           <div className="text-center">
             <div className="text-2xl font-bold text-kamp-accent">{stats.cooperTestsCompleted}</div>
             <div className="text-sm text-gray-600">Тесты Купера</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-kamp-accent">{stats.asceticActivities}</div>
+            <div className="text-sm text-gray-600">Аскезы</div>
           </div>
         </div>
 

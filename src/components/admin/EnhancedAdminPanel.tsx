@@ -10,7 +10,8 @@ import {
   Activity,
   AlertTriangle,
   UserCheck,
-  Database
+  Database,
+  Target
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -21,6 +22,7 @@ import { SecurityAuditLog } from '@/components/admin/SecurityAuditLog';
 import { TestimonialConsentManager } from '@/components/admin/TestimonialConsentManager';
 import { TestimonialManagement } from '@/components/admin/TestimonialManagement';
 import { StreamManagement } from '@/components/admin/StreamManagement';
+import { HabitsManagement } from '@/components/admin/HabitsManagement';
 
 interface TabConfig {
   id: string;
@@ -48,6 +50,12 @@ const adminTabs: TabConfig[] = [
     label: 'Потоки', 
     icon: Activity,
     description: 'Управление потоками обучения'
+  },
+  { 
+    id: 'habits', 
+    label: 'Привычки', 
+    icon: Target,
+    description: 'Управление привычками участников'
   },
   { 
     id: 'security', 
@@ -116,6 +124,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <TestimonialManagement />;
       case 'streams':
         return <StreamManagement />;
+      case 'habits':
+        return <HabitsManagement />;
       case 'security':
         return <SecurityEnhancements />;
       case 'security-audit':
