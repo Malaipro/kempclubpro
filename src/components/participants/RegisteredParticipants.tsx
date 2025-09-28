@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, Trophy, Star, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 interface Participant {
@@ -79,43 +80,65 @@ export const RegisteredParticipants: React.FC = () => {
         </div>
         
         <Card className="bg-white border-gray-300 mt-8">
-          <CardHeader>
-            
-          </CardHeader>
-          <CardContent>
-            {participants.length === 0 ? <div className="text-center text-gray-400 py-8">
+          <CardContent className="p-6">
+            {participants.length === 0 ? (
+              <div className="text-center text-gray-400 py-8">
                 <Users className="w-16 h-16 mx-auto mb-4 text-kamp-accent/50" />
                 <h3 className="text-lg font-semibold mb-2">Пока нет утвержденных участников</h3>
                 <p className="text-sm">
                   Участники появятся после утверждения администратором
                 </p>
-              </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {participants.map((participant, index) => <Card key={participant.id} className="bg-gray-50 border border-gray-200 hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {getRankIcon(participant.rank_position || index + 1)}
-                          <span className="text-lg font-semibold text-gray-900">
-                            #{participant.rank_position || index + 1}
-                          </span>
-                        </div>
-                        <Badge variant="secondary" className="bg-kamp-accent text-white flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          {participant.total_points} очков
-                        </Badge>
-                      </div>
-                      
-                      <div className="text-center">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {formatName(participant)}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Участник КЭМП
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>)}
-              </div>}
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <Users className="w-5 h-5 text-kamp-accent" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Утвержденные участники ({participants.length})
+                  </h3>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Позиция</TableHead>
+                      <TableHead>Участник</TableHead>
+                      <TableHead className="text-right">Очки</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {participants.map((participant, index) => (
+                      <TableRow key={participant.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRankIcon(participant.rank_position || index + 1)}
+                            <span className="font-semibold">
+                              #{participant.rank_position || index + 1}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {formatName(participant)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Участник КЭМП
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary" className="bg-kamp-accent text-white">
+                            <TrendingUp className="w-3 h-3 mr-1" />
+                            {participant.total_points} очков
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
