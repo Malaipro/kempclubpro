@@ -87,12 +87,59 @@ export const RegisteredParticipants: React.FC = () => {
         <Card className="bg-white border-gray-300 mt-8">
           <CardContent className="p-6">
             {participants.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
-                <Users className="w-16 h-16 mx-auto mb-4 text-kamp-accent/50" />
-                <h3 className="text-lg font-semibold mb-2">Пока нет утвержденных участников</h3>
-                <p className="text-sm">
-                  Участники появятся после утверждения администратором
-                </p>
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <Users className="w-5 h-5 text-kamp-accent" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Топ участники (демо данные)
+                  </h3>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Позиция</TableHead>
+                      <TableHead>Участник</TableHead>
+                      <TableHead className="text-right">Очки</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      { id: '1', name: 'Иван Петров', points: 150, rank: 1 },
+                      { id: '2', name: 'Александр Сидоров', points: 120, rank: 2 },
+                      { id: '3', name: 'Дмитрий Козлов', points: 95, rank: 3 },
+                      { id: '4', name: 'Михаил Волков', points: 80, rank: 4 },
+                      { id: '5', name: 'Николай Морозов', points: 65, rank: 5 }
+                    ].map((participant) => (
+                      <TableRow key={participant.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRankIcon(participant.rank)}
+                            <span className="font-semibold">
+                              #{participant.rank}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {participant.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Участник КЭМП
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary" className="bg-kamp-accent text-white">
+                            <TrendingUp className="w-3 h-3 mr-1" />
+                            {participant.points} очков
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <div>
