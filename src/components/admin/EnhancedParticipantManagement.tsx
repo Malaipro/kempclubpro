@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,9 @@ interface Participant {
   height_cm?: number;
   weight_kg?: number;
   date_of_birth?: string;
+  approved?: boolean;
+  approved_at?: string | null;
+  approved_by?: string | null;
 }
 
 export const EnhancedParticipantManagement: React.FC = () => {
@@ -50,6 +54,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
     date_of_birth: undefined as Date | undefined,
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchParticipants();
@@ -59,7 +64,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
+.select(`
           id, 
           user_id, 
           display_name, 
@@ -71,7 +76,10 @@ export const EnhancedParticipantManagement: React.FC = () => {
           total_points, 
           height_cm, 
           weight_kg, 
-          date_of_birth
+          date_of_birth,
+          approved,
+          approved_at,
+          approved_by
         `)
         .order('display_name');
       
@@ -227,6 +235,31 @@ export const EnhancedParticipantManagement: React.FC = () => {
       weight_kg: '',
       date_of_birth: undefined,
     });
+  };
+
+  const handleToggleApproval = async (p: Participant) => {
+    try {
+      const newApproved = !p.approved;
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          approved: newApproved,
+          approved_at: newApproved ? new Date().toISOString() : null,
+          approved_by: newApproved && user ? user.id : null,
+        })
+        .eq('id', p.id);
+
+      if (error) throw error;
+
+      toast({
+        title: newApproved ? 'Участник утвержден' : 'Утверждение снято',
+        description: p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Участник',
+      });
+      fetchParticipants();
+    } catch (err) {
+      console.error('Error toggling approval:', err);
+      toast({ title: 'Ошибка', description: 'Не удалось обновить статус утверждения', variant: 'destructive' });
+    }
   };
 
   const formatParticipantName = (participant: Participant) => {
@@ -476,12 +509,20 @@ export const EnhancedParticipantManagement: React.FC = () => {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline">{participant.stream}</Badge>
-                      {getStatusBadge(participant.status)}
-                    </div>
+          <Badge variant="outline">{participant.stream}</Badge>
+          {participant.approved && (<Badge className="bg-green-100 text-green-800">Утвержден</Badge>)}
+          {getStatusBadge(participant.status)}
+        </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleToggleApproval(participant)}
+                  >
+                    {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
