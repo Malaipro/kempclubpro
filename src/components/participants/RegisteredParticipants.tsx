@@ -12,8 +12,6 @@ interface Participant {
   display_name: string | null;
   total_points: number;
   rank_position: number;
-  approved: boolean;
-  approved_at: string | null;
 }
 
 export const RegisteredParticipants: React.FC = () => {
@@ -21,12 +19,11 @@ export const RegisteredParticipants: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchApprovedParticipants = async () => {
+    const fetchParticipants = async () => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('*')
-          .eq('approved', true)
           .order('total_points', { ascending: false })
           .limit(12); // Показываем топ-12 участников
 
@@ -39,7 +36,7 @@ export const RegisteredParticipants: React.FC = () => {
       }
     };
 
-    fetchApprovedParticipants();
+    fetchParticipants();
   }, []);
 
   const formatName = (participant: Participant) => {
@@ -95,16 +92,16 @@ export const RegisteredParticipants: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-900">
               <Users className="w-5 h-5 text-kamp-accent" />
-              Утвержденные участники ({participants.length})
+              Участники КЭМП ({participants.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {participants.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Users className="w-16 h-16 mx-auto mb-4 text-kamp-accent/50" />
-                <h3 className="text-lg font-semibold mb-2">Пока нет утвержденных участников</h3>
+                <h3 className="text-lg font-semibold mb-2">Пока нет участников</h3>
                 <p className="text-sm">
-                  Участники появятся после утверждения администратором
+                  Участники появятся после регистрации в системе
                 </p>
               </div>
             ) : (
@@ -133,7 +130,7 @@ export const RegisteredParticipants: React.FC = () => {
                           {formatName(participant)}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Утвержден {participant.approved_at ? new Date(participant.approved_at).toLocaleDateString('ru-RU') : 'недавно'}
+                          Участник КЭМП
                         </p>
                       </div>
                     </CardContent>
