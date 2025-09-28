@@ -126,7 +126,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
           .update({
             first_name: formData.first_name,
             last_name: formData.last_name,
-            display_name: `${formData.first_name} ${formData.last_name}`,
+            display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' ') || null,
             email: formData.email || null,
             phone: formData.phone || null,
             telegram: formData.telegram || null,
@@ -151,7 +151,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
             metadata: {
               first_name: formData.first_name,
               last_name: formData.last_name,
-              display_name: `${formData.first_name} ${formData.last_name}`,
+              display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' '),
               phone: formData.phone || null,
               telegram: formData.telegram || null,
               height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
@@ -263,10 +263,13 @@ export const EnhancedParticipantManagement: React.FC = () => {
   };
 
   const formatParticipantName = (participant: Participant) => {
-    if (participant.first_name && participant.last_name) {
-      return `${participant.first_name} ${participant.last_name}`;
-    }
-    return participant.display_name || 'Неизвестный участник';
+    const first = (participant.first_name || '').trim();
+    const last = (participant.last_name || '').trim();
+    const disp = (participant.display_name || '').trim();
+    if (first || last) return `${first} ${last}`.trim();
+    if (disp) return disp;
+    if (participant.email) return participant.email.split('@')[0];
+    return 'Участник';
   };
 
   const getInitials = (participant: Participant) => {
