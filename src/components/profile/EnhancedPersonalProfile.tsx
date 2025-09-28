@@ -30,7 +30,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 
 interface Profile {
   id: string;
@@ -65,12 +65,12 @@ interface CooperTest {
   id: string;
   test_date: string;
   test_phase: string;
-  exercise_1_time: number;
-  exercise_2_time: number;
-  exercise_3_time: number;
-  exercise_4_time: number;
-  total_time: number;
+  total_minutes: number | null;
+  total_seconds: number | null;
+  total_time: number | null;
   fitness_level?: string;
+  verified: boolean;
+  notes?: string;
 }
 
 export const EnhancedPersonalProfile: React.FC = () => {
@@ -281,7 +281,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
     const beforeTest = cooperTests.find(test => test.test_phase === 'before_stream');
     const afterTest = cooperTests.find(test => test.test_phase === 'after_stream');
     
-    if (!beforeTest || !afterTest) return null;
+    if (!beforeTest || !afterTest || !beforeTest.total_time || !afterTest.total_time) return null;
     
     const improvement = beforeTest.total_time - afterTest.total_time;
     const percentage = Math.abs((improvement / beforeTest.total_time) * 100);
@@ -746,82 +746,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="tests" className="mt-6">
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">История тестов Купера</h2>
-            
-            <div className="grid gap-4">
-              {cooperTests.map((test) => (
-                <Card key={test.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="font-semibold">
-                          Тест от {format(new Date(test.test_date), "dd.MM.yyyy")}
-                        </h3>
-                        <Badge variant={
-                          test.test_phase === 'before_stream' ? 'destructive' :
-                          test.test_phase === 'after_stream' ? 'default' : 'secondary'
-                        }>
-                          {test.test_phase === 'before_stream' ? 'До потока' :
-                           test.test_phase === 'after_stream' ? 'После потока' : 'Во время потока'}
-                        </Badge>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold">{test.total_time}с</p>
-                        <p className="text-sm text-muted-foreground">Общее время</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-4 text-sm">
-                      <div className="text-center">
-                        <p className="font-semibold">{test.exercise_1_time}с</p>
-                        <p className="text-muted-foreground">Упр. 1</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{test.exercise_2_time}с</p>
-                        <p className="text-muted-foreground">Упр. 2</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{test.exercise_3_time}с</p>
-                        <p className="text-muted-foreground">Упр. 3</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{test.exercise_4_time}с</p>
-                        <p className="text-muted-foreground">Упр. 4</p>
-                      </div>
-                    </div>
-
-                    {test.fitness_level && (
-                      <div className="mt-4">
-                        <Badge className={
-                          test.fitness_level === 'excellent' ? 'bg-green-100 text-green-800' :
-                          test.fitness_level === 'good' ? 'bg-blue-100 text-blue-800' :
-                          test.fitness_level === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }>
-                          {test.fitness_level === 'excellent' ? 'Отлично' :
-                           test.fitness_level === 'good' ? 'Хорошо' :
-                           test.fitness_level === 'satisfactory' ? 'Удовлетворительно' : 'Плохо'}
-                        </Badge>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-
-              {cooperTests.length === 0 && (
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <div className="text-muted-foreground">
-                      <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>У вас пока нет результатов тестов Купера</p>
-                      <p className="text-sm">Результаты будут появляться после прохождения тестов</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+          <CooperTestResults />
         </TabsContent>
       </Tabs>
     </div>
