@@ -179,6 +179,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ascetic_types: {
+        Row: {
+          created_at: string
+          default_duration_minutes: number | null
+          default_points: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_duration_minutes?: number | null
+          default_points?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_duration_minutes?: number | null
+          default_points?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string

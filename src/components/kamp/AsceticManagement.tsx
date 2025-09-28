@@ -26,6 +26,8 @@ interface AsceticActivity {
   completed_at: string;
   notes: string | null;
   created_at: string;
+  challenge_duration: number;
+  completion_percentage: number;
   profiles?: {
     display_name: string | null;
     first_name: string | null;
@@ -76,20 +78,36 @@ export const AsceticManagement: React.FC = () => {
     }
     
     try {
-      const { data, error } = await supabase
+      const { data: activities, error } = await supabase
         .from('ascetic_activities')
-        .select(`
-          *,
-          profiles:user_id (
-            display_name,
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAsceticActivities((data as unknown) as AsceticActivity[] || []);
+
+      // Получаем профили отдельно
+      const userIds = [...new Set(activities?.map(a => a.user_id) || [])];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Соединяем данные
+      const activitiesWithProfiles = activities?.map(activity => {
+        const profile = profiles?.find(p => p.user_id === activity.user_id);
+        return {
+          ...activity,
+          profiles: profile ? {
+            display_name: profile.display_name,
+            first_name: profile.first_name,
+            last_name: profile.last_name
+          } : null
+        };
+      }) || [];
+
+      setAsceticActivities(activitiesWithProfiles);
     } catch (error) {
       console.error('Error fetching ascetic activities:', error);
       toast({

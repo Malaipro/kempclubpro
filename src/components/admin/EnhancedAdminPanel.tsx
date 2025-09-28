@@ -23,6 +23,7 @@ import { TestimonialConsentManager } from '@/components/admin/TestimonialConsent
 import { TestimonialManagement } from '@/components/admin/TestimonialManagement';
 import { StreamManagement } from '@/components/admin/StreamManagement';
 import { HabitsManagement } from '@/components/admin/HabitsManagement';
+import { AsceticTypesManagement } from '@/components/admin/AsceticTypesManagement';
 
 interface TabConfig {
   id: string;
@@ -56,6 +57,13 @@ const adminTabs: TabConfig[] = [
     label: 'Привычки', 
     icon: Target,
     description: 'Управление привычками участников'
+  },
+  { 
+    id: 'ascetic-types', 
+    label: 'Типы аскез', 
+    icon: Settings,
+    description: 'Управление типами аскез',
+    requiresSuperAdmin: true
   },
   { 
     id: 'security', 
@@ -126,6 +134,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <StreamManagement />;
       case 'habits':
         return <HabitsManagement />;
+      case 'ascetic-types':
+        return <AsceticTypesManagement />;
       case 'security':
         return <SecurityEnhancements />;
       case 'security-audit':
