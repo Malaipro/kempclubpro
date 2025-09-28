@@ -116,6 +116,29 @@ export const SecurityEnhancements: React.FC = () => {
   };
 
   // Enhanced masking using improved client-side functions
+  const setupSuperAdmin = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('setup-super-admin');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Super admin account setup completed",
+      });
+      
+      // Refresh the page to update role
+      window.location.reload();
+    } catch (error) {
+      console.error('Error setting up super admin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to setup super admin account",
+        variant: "destructive"
+      });
+    }
+  };
+
   const maskSensitiveData = (data: string, type: 'phone' | 'email') => {
     if (showSensitiveData) return data;
     
@@ -252,6 +275,28 @@ export const SecurityEnhancements: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>System Setup</CardTitle>
+          <CardDescription>Administrative functions and system configuration</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Button
+              onClick={setupSuperAdmin}
+              className="w-full"
+              variant="outline"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Setup Super Admin Account
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Creates or updates the super admin account using environment variables.
+            </p>
           </div>
         </CardContent>
       </Card>

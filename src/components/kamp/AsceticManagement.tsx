@@ -8,14 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Target, CheckCircle, XCircle, Calendar, User, Plus } from 'lucide-react';
+import { Target, CheckCircle, XCircle, Calendar, User, Plus, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRole } from '@/hooks/useRole';
+import { z } from 'zod';
 
 interface AsceticActivity {
   id: string;
   user_id: string;
   activity_type: string;
+  challenge_name?: string | null;
   duration_minutes: number | null;
   points_earned: number;
   verified: boolean;
@@ -39,11 +42,21 @@ interface CreateAsceticForm {
   notes: string;
 }
 
+const asceticSchema = z.object({
+  user_id: z.string().uuid('Выберите участника'),
+  activity_type: z.string().min(1, 'Выберите тип аскезы'),
+  challenge_name: z.string().min(1, 'Введите название аскезы').max(200, 'Название слишком длинное'),
+  duration_minutes: z.number().min(0, 'Длительность не может быть отрицательной').max(1440, 'Максимум 24 часа'),
+  points_earned: z.number().min(1, 'Минимум 1 очко').max(100, 'Максимум 100 очков'),
+  notes: z.string().max(500, 'Заметки слишком длинные').optional()
+});
+
 export const AsceticManagement: React.FC = () => {
   const [asceticActivities, setAsceticActivities] = useState<AsceticActivity[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAscetic, setEditingAscetic] = useState<AsceticActivity | null>(null);
   const [formData, setFormData] = useState<CreateAsceticForm>({
     user_id: '',
     activity_type: '',
@@ -52,9 +65,16 @@ export const AsceticManagement: React.FC = () => {
     points_earned: 1,
     notes: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { isAdmin, isSuperAdmin, loading: roleLoading } = useRole();
 
   const fetchAsceticActivities = async () => {
+    if (!isAdmin && !isSuperAdmin) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('ascetic_activities')
@@ -97,58 +117,136 @@ export const AsceticManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAsceticActivities();
-    fetchParticipants();
-  }, []);
+    if (!roleLoading) {
+      fetchAsceticActivities();
+      fetchParticipants();
+    }
+  }, [isAdmin, isSuperAdmin, roleLoading]);
 
   const handleCreateAscetic = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     
-    if (!formData.user_id || !formData.activity_type || !formData.challenge_name) {
+    // Validate form data
+    try {
+      const validatedData = asceticSchema.parse({
+        user_id: formData.user_id,
+        activity_type: formData.activity_type,
+        challenge_name: formData.challenge_name,
+        duration_minutes: formData.duration_minutes,
+        points_earned: formData.points_earned,
+        notes: formData.notes
+      });
+
+      const asceticData = {
+        user_id: validatedData.user_id,
+        activity_type: validatedData.activity_type,
+        challenge_name: validatedData.challenge_name,
+        duration_minutes: validatedData.duration_minutes || null,
+        points_earned: validatedData.points_earned,
+        notes: validatedData.notes || null,
+        verified: false,
+        completed_at: new Date().toISOString(),
+      };
+
+      if (editingAscetic) {
+        const { error } = await supabase
+          .from('ascetic_activities')
+          .update(asceticData)
+          .eq('id', editingAscetic.id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Успешно',
+          description: 'Аскеза обновлена',
+        });
+      } else {
+        const { error } = await supabase
+          .from('ascetic_activities')
+          .insert(asceticData);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Успешно',
+          description: 'Аскеза создана',
+        });
+      }
+
+      setDialogOpen(false);
+      setEditingAscetic(null);
+      resetForm();
+      fetchAsceticActivities();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0] as string] = issue.message;
+          }
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+      
+      console.error('Error saving ascetic:', error);
       toast({
         title: 'Ошибка',
-        description: 'Заполните все обязательные поля',
+        description: editingAscetic ? 'Не удалось обновить аскезу' : 'Не удалось создать аскезу',
         variant: 'destructive',
       });
-      return;
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      user_id: '',
+      activity_type: '',
+      challenge_name: '',
+      duration_minutes: 0,
+      points_earned: 1,
+      notes: '',
+    });
+    setErrors({});
+  };
+
+  const handleEditAscetic = (ascetic: AsceticActivity) => {
+    setEditingAscetic(ascetic);
+    setFormData({
+      user_id: ascetic.user_id,
+      activity_type: ascetic.activity_type,
+      challenge_name: ascetic.challenge_name || '',
+      duration_minutes: ascetic.duration_minutes || 0,
+      points_earned: ascetic.points_earned,
+      notes: ascetic.notes || '',
+    });
+    setErrors({});
+    setDialogOpen(true);
+  };
+
+  const handleDeleteAscetic = async (asceticId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить эту аскезу?')) return;
 
     try {
       const { error } = await supabase
         .from('ascetic_activities')
-        .insert({
-          user_id: formData.user_id,
-          activity_type: formData.activity_type,
-          challenge_name: formData.challenge_name,
-          duration_minutes: formData.duration_minutes || null,
-          points_earned: formData.points_earned,
-          notes: formData.notes || null,
-          verified: false,
-          completed_at: new Date().toISOString(),
-        });
+        .delete()
+        .eq('id', asceticId);
 
       if (error) throw error;
 
       toast({
         title: 'Успешно',
-        description: 'Аскеза создана',
+        description: 'Аскеза удалена',
       });
 
-      setDialogOpen(false);
-      setFormData({
-        user_id: '',
-        activity_type: '',
-        challenge_name: '',
-        duration_minutes: 0,
-        points_earned: 1,
-        notes: '',
-      });
       fetchAsceticActivities();
     } catch (error) {
-      console.error('Error creating ascetic:', error);
+      console.error('Error deleting ascetic:', error);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось создать аскезу',
+        description: 'Не удалось удалить аскезу',
         variant: 'destructive',
       });
     }
@@ -211,6 +309,54 @@ export const AsceticManagement: React.FC = () => {
     return participant.display_name || 'Неизвестный пользователь';
   };
 
+  const setupSuperAdmin = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('setup-super-admin');
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Успешно',
+        description: 'Супер-админ настроен',
+      });
+      
+      // Refresh the page to update role
+      window.location.reload();
+    } catch (error) {
+      console.error('Error setting up super admin:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось настроить супер-админа',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-pulse text-gray-400">Загрузка...</div>
+      </div>
+    );
+  }
+
+  if (!isAdmin && !isSuperAdmin) {
+    return (
+      <div className="bg-gray-900 p-6 rounded-lg">
+        <div className="text-center py-8">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+          <h3 className="text-lg font-semibold text-white mb-2">Доступ ограничен</h3>
+          <p className="text-gray-400 mb-4">
+            Управление аскезами доступно только администраторам
+          </p>
+          <Button onClick={setupSuperAdmin} className="kamp-button-primary">
+            Настроить супер-админа
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-900 p-6 rounded-lg">
       <div className="flex items-center justify-between mb-6">
@@ -228,13 +374,15 @@ export const AsceticManagement: React.FC = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] bg-gray-900 border-gray-700">
             <DialogHeader>
-              <DialogTitle className="text-destructive">Создать новую аскезу</DialogTitle>
+              <DialogTitle className="text-destructive">
+                {editingAscetic ? 'Редактировать аскезу' : 'Создать новую аскезу'}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateAscetic} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="participant" className="text-gray-300">Участник *</Label>
                 <Select value={formData.user_id} onValueChange={(value) => setFormData({...formData, user_id: value})}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className={`bg-gray-800 border-gray-700 text-white ${errors.user_id ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Выберите участника" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
@@ -245,12 +393,13 @@ export const AsceticManagement: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.user_id && <p className="text-red-400 text-sm">{errors.user_id}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="activity_type" className="text-gray-300">Тип аскезы *</Label>
                 <Select value={formData.activity_type} onValueChange={(value) => setFormData({...formData, activity_type: value})}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className={`bg-gray-800 border-gray-700 text-white ${errors.activity_type ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Выберите тип аскезы" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
@@ -264,6 +413,7 @@ export const AsceticManagement: React.FC = () => {
                     <SelectItem value="other" className="text-white">Другое</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.activity_type && <p className="text-red-400 text-sm">{errors.activity_type}</p>}
               </div>
 
               <div className="space-y-2">
@@ -272,9 +422,10 @@ export const AsceticManagement: React.FC = () => {
                   id="challenge_name"
                   value={formData.challenge_name}
                   onChange={(e) => setFormData({...formData, challenge_name: e.target.value})}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className={`bg-gray-800 border-gray-700 text-white ${errors.challenge_name ? 'border-red-500' : ''}`}
                   placeholder="Например: 21 день холодного душа"
                 />
+                {errors.challenge_name && <p className="text-red-400 text-sm">{errors.challenge_name}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -285,9 +436,10 @@ export const AsceticManagement: React.FC = () => {
                     type="number"
                     value={formData.duration_minutes}
                     onChange={(e) => setFormData({...formData, duration_minutes: parseInt(e.target.value) || 0})}
-                    className="bg-gray-800 border-gray-700 text-white"
+                    className={`bg-gray-800 border-gray-700 text-white ${errors.duration_minutes ? 'border-red-500' : ''}`}
                     placeholder="0"
                   />
+                  {errors.duration_minutes && <p className="text-red-400 text-sm">{errors.duration_minutes}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -297,9 +449,10 @@ export const AsceticManagement: React.FC = () => {
                     type="number"
                     value={formData.points_earned}
                     onChange={(e) => setFormData({...formData, points_earned: parseInt(e.target.value) || 1})}
-                    className="bg-gray-800 border-gray-700 text-white"
+                    className={`bg-gray-800 border-gray-700 text-white ${errors.points_earned ? 'border-red-500' : ''}`}
                     min="1"
                   />
+                  {errors.points_earned && <p className="text-red-400 text-sm">{errors.points_earned}</p>}
                 </div>
               </div>
 
@@ -309,17 +462,27 @@ export const AsceticManagement: React.FC = () => {
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className={`bg-gray-800 border-gray-700 text-white ${errors.notes ? 'border-red-500' : ''}`}
                   placeholder="Дополнительные заметки..."
                   rows={3}
                 />
+                {errors.notes && <p className="text-red-400 text-sm">{errors.notes}</p>}
               </div>
 
               <div className="flex gap-2">
                 <Button type="submit" className="kamp-button-primary flex-1">
-                  Создать аскезу
+                  {editingAscetic ? 'Сохранить изменения' : 'Создать аскезу'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-600 text-gray-300">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setDialogOpen(false);
+                    setEditingAscetic(null);
+                    resetForm();
+                  }} 
+                  className="border-gray-600 text-gray-300"
+                >
                   Отмена
                 </Button>
               </div>
@@ -338,6 +501,7 @@ export const AsceticManagement: React.FC = () => {
               <TableRow className="border-b border-gray-700">
                 <TableHead className="text-gray-300">Участник</TableHead>
                 <TableHead className="text-gray-300">Тип аскезы</TableHead>
+                <TableHead className="text-gray-300">Название</TableHead>
                 <TableHead className="text-gray-300">Длительность</TableHead>
                 <TableHead className="text-gray-300">Очки</TableHead>
                 <TableHead className="text-gray-300">Дата выполнения</TableHead>
@@ -358,6 +522,12 @@ export const AsceticManagement: React.FC = () => {
                     <Badge variant="outline" className="border-gray-600 text-gray-300">
                       {getActivityTypeLabel(activity.activity_type)}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-300">
+                    <div className="font-medium">{activity.challenge_name || '—'}</div>
+                    {activity.notes && (
+                      <div className="text-sm text-gray-400 mt-1">{activity.notes}</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-gray-300">
                     {activity.duration_minutes ? `${activity.duration_minutes} мин` : '—'}
@@ -384,6 +554,7 @@ export const AsceticManagement: React.FC = () => {
                           size="sm"
                           onClick={() => handleVerification(activity.id, true)}
                           className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white"
+                          title="Подтвердить"
                         >
                           <CheckCircle className="w-4 h-4" />
                         </Button>
@@ -393,10 +564,29 @@ export const AsceticManagement: React.FC = () => {
                           size="sm"
                           onClick={() => handleVerification(activity.id, false)}
                           className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                          title="Отменить подтверждение"
                         >
                           <XCircle className="w-4 h-4" />
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditAscetic(activity)}
+                        className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+                        title="Редактировать"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteAscetic(activity.id)}
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                        title="Удалить"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
