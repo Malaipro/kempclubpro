@@ -31,6 +31,7 @@ export const EnhancedStreamManagement: React.FC = () => {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingStream, setEditingStream] = useState<Stream | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -115,24 +116,54 @@ export const EnhancedStreamManagement: React.FC = () => {
       return;
     }
 
+    const streamData = {
+      name: formData.name,
+      description: formData.description || null,
+      start_date: formData.start_date.toISOString().split('T')[0],
+      end_date: formData.end_date?.toISOString().split('T')[0] || null,
+      max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+      is_active: true,
+    };
+
     try {
-      const { data, error } = await supabase
-        .from('streams')
-        .insert({
-          name: formData.name,
-          description: formData.description,
-          start_date: formData.start_date.toISOString().split('T')[0],
-          end_date: formData.end_date?.toISOString().split('T')[0],
-          max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-          is_active: true,
-        })
-        .select()
-        .single();
+      if (editingStream) {
+        const { error } = await supabase
+          .from('streams')
+          .update(streamData)
+          .eq('id', editingStream.id);
+        
+        if (error) throw error;
+        
+        // Update stream in local state
+        setStreams(prev => prev.map(stream => 
+          stream.id === editingStream.id 
+            ? { ...stream, ...streamData }
+            : stream
+        ));
+        
+        toast({
+          title: 'Успех',
+          description: 'Поток успешно обновлен',
+        });
+      } else {
+        const { data, error } = await supabase
+          .from('streams')
+          .insert(streamData)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setStreams(prev => [{ ...data, participant_count: 0 }, ...prev]);
+        setStreams(prev => [{ ...data, participant_count: 0 }, ...prev]);
+        
+        toast({
+          title: 'Успех',
+          description: 'Поток успешно создан',
+        });
+      }
+
       setDialogOpen(false);
+      setEditingStream(null);
       setFormData({
         name: '',
         description: '',
@@ -140,19 +171,26 @@ export const EnhancedStreamManagement: React.FC = () => {
         end_date: undefined,
         max_participants: '',
       });
-
-      toast({
-        title: 'Успех',
-        description: 'Поток успешно создан',
-      });
     } catch (error) {
-      console.error('Error creating stream:', error);
+      console.error('Error saving stream:', error);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось создать поток',
+        description: editingStream ? 'Не удалось обновить поток' : 'Не удалось создать поток',
         variant: 'destructive',
       });
     }
+  };
+
+  const handleEditStream = (stream: Stream) => {
+    setEditingStream(stream);
+    setFormData({
+      name: stream.name,
+      description: stream.description || '',
+      start_date: new Date(stream.start_date),
+      end_date: stream.end_date ? new Date(stream.end_date) : undefined,
+      max_participants: stream.max_participants?.toString() || '',
+    });
+    setDialogOpen(true);
   };
 
   const getStatusBadge = (isActive: boolean, isCurrent: boolean = false) => {
@@ -195,7 +233,9 @@ export const EnhancedStreamManagement: React.FC = () => {
           
           <DialogContent className="max-w-md bg-gray-900 border-gray-700">
             <DialogHeader>
-              <DialogTitle className="text-white">Создать новый поток</DialogTitle>
+              <DialogTitle className="text-white">
+                {editingStream ? 'Редактировать поток' : 'Создать новый поток'}
+              </DialogTitle>
             </DialogHeader>
             
             <form onSubmit={handleCreateStream} className="space-y-4">
@@ -292,7 +332,7 @@ export const EnhancedStreamManagement: React.FC = () => {
                   type="submit" 
                   className="bg-destructive hover:bg-destructive/90 text-white"
                 >
-                  Создать поток
+                  {editingStream ? 'Сохранить изменения' : 'Создать поток'}
                 </Button>
                 <Button 
                   type="button" 
@@ -354,7 +394,11 @@ export const EnhancedStreamManagement: React.FC = () => {
                     <Button variant="outline" size="sm">
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditStream(stream)}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
                   </div>
