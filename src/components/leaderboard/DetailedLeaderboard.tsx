@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Trophy, Medal, Award, Target, Zap, Dumbbell, Book, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-interface LeaderboardEntry {
+interface DetailedLeaderboardEntry {
   id: string;
   user_id: string;
   total_points: number;
@@ -21,11 +22,12 @@ interface LeaderboardEntry {
   last_updated: string;
 }
 
-export const SecureLeaderboard: React.FC = () => {
+export const DetailedLeaderboard: React.FC = () => {
   const { user } = useAuth();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboard, setLeaderboard] = useState<DetailedLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPersonalOnly, setShowPersonalOnly] = useState(false);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchLeaderboard();
@@ -114,6 +116,63 @@ export const SecureLeaderboard: React.FC = () => {
     return <span className="w-5 h-5 flex items-center justify-center text-sm font-bold">{position}</span>;
   };
 
+  const toggleExpanded = (entryId: string) => {
+    setExpandedEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  const getCategoryBadges = (entry: DetailedLeaderboardEntry) => {
+    const badges = [];
+    
+    if (entry.bjj_points > 0) {
+      badges.push({ 
+        label: `БЖЖ: ${entry.bjj_points}`, 
+        icon: <Target className="w-3 h-3" />,
+        color: 'bg-blue-100 text-blue-800' 
+      });
+    }
+    
+    if (entry.kickboxing_points > 0) {
+      badges.push({ 
+        label: `Кикбоксинг: ${entry.kickboxing_points}`, 
+        icon: <Zap className="w-3 h-3" />,
+        color: 'bg-red-100 text-red-800' 
+      });
+    }
+    
+    if (entry.ofp_points > 0) {
+      badges.push({ 
+        label: `ОФП: ${entry.ofp_points}`, 
+        icon: <Dumbbell className="w-3 h-3" />,
+        color: 'bg-green-100 text-green-800' 
+      });
+    }
+    
+    if (entry.theory_points > 0) {
+      badges.push({ 
+        label: `Теория: ${entry.theory_points}`, 
+        icon: <Book className="w-3 h-3" />,
+        color: 'bg-purple-100 text-purple-800' 
+      });
+    }
+    
+    if (entry.tactical_points > 0) {
+      badges.push({ 
+        label: `Тактика: ${entry.tactical_points}`, 
+        icon: <Shield className="w-3 h-3" />,
+        color: 'bg-orange-100 text-orange-800' 
+      });
+    }
+
+    return badges;
+  };
 
   return (
     <Card className="bg-white border-gray-300">
@@ -121,7 +180,7 @@ export const SecureLeaderboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-gray-900">
             <Trophy className="w-5 h-5 text-kamp-accent" />
-            Рейтинг участников
+            Детальный рейтинг участников
           </CardTitle>
           {user && (
             <div className="flex gap-2">
@@ -165,32 +224,60 @@ export const SecureLeaderboard: React.FC = () => {
             {leaderboard.map((entry, index) => (
               <div
                 key={entry.id}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                className={`border rounded-lg transition-colors ${
                   user && entry.user_id === user.id 
                     ? 'bg-kamp-accent/10 border-kamp-accent' 
                     : 'bg-gray-50 border-gray-200'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {getRankIcon(entry.rank_position || index + 1)}
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {entry.display_name}
-                      {user && entry.user_id === user.id && (
-                        <span className="ml-2 text-sm text-kamp-accent">(Вы)</span>
-                      )}
+                <div 
+                  className="flex items-center justify-between p-4 cursor-pointer"
+                  onClick={() => toggleExpanded(entry.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    {getRankIcon(entry.rank_position || index + 1)}
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {entry.display_name}
+                        {user && entry.user_id === user.id && (
+                          <span className="ml-2 text-sm text-kamp-accent">(Вы)</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Место: {entry.rank_position || index + 1}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-lg text-kamp-accent">
+                      {entry.total_points}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      Место: {entry.rank_position || index + 1}
-                    </p>
+                    <p className="text-sm text-gray-500">баллов</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg text-kamp-accent">
-                    {entry.total_points}
-                  </p>
-                  <p className="text-sm text-gray-500">баллов</p>
-                </div>
+                
+                {expandedEntries.has(entry.id) && (
+                  <div className="px-4 pb-4 border-t border-gray-200">
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Разбивка по категориям:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {getCategoryBadges(entry).map((badge, badgeIndex) => (
+                          <Badge 
+                            key={badgeIndex} 
+                            variant="secondary"
+                            className={`${badge.color} flex items-center gap-1`}
+                          >
+                            {badge.icon}
+                            {badge.label}
+                          </Badge>
+                        ))}
+                        {getCategoryBadges(entry).length === 0 && (
+                          <p className="text-sm text-gray-500">Нет активностей</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

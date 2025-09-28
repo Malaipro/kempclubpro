@@ -1,5 +1,6 @@
 import React from 'react';
 import { SecureLeaderboard } from './SecureLeaderboard';
+import { DetailedLeaderboard } from './DetailedLeaderboard';
 
 export const Leaderboard: React.FC = () => {
   return (
@@ -14,7 +15,7 @@ export const Leaderboard: React.FC = () => {
         </div>
         
         <div className="mt-8">
-          <SecureLeaderboard />
+          <DetailedLeaderboard />
         </div>
       </div>
     </section>

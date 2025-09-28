@@ -9,9 +9,11 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
+import { DetailedLeaderboard } from '@/components/leaderboard/DetailedLeaderboard';
+import { UserActivities } from '@/components/leaderboard/UserActivities';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Shield, Activity, Calendar } from 'lucide-react';
+import { LogOut, User, Shield, Activity, Calendar, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Dashboard: React.FC = () => {
@@ -124,20 +126,27 @@ export const Dashboard: React.FC = () => {
             ) : (
               <Tabs defaultValue="profile" className="w-full">
                 <div className="mb-6">
-                  <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} h-auto p-1 gap-1`}>
+                  <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
                     <TabsTrigger 
                       value="profile" 
-                      className={`flex ${isMobile ? 'flex-row' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-3 py-2' : 'text-xs px-2 py-3'}`}
+                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
                     >
                       <User className="w-4 h-4" />
                       <span className="text-center">Профиль</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="kamp" 
-                      className={`flex ${isMobile ? 'flex-row' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-3 py-2' : 'text-xs px-2 py-3'}`}
+                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
                     >
                       <Activity className="w-4 h-4" />
-                      <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП Система'}</span>
+                      <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП'}</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="leaderboard" 
+                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
+                    >
+                      <Trophy className="w-4 h-4" />
+                      <span className="text-center">Рейтинг</span>
                     </TabsTrigger>
                     {!isMobile && (
                       <>
@@ -168,11 +177,18 @@ export const Dashboard: React.FC = () => {
                 </div>
                 
                 <TabsContent value="profile">
-                  <EnhancedPersonalProfile />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <EnhancedPersonalProfile />
+                    <UserActivities />
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="kamp">
                   <KampSystemUser />
+                </TabsContent>
+                
+                <TabsContent value="leaderboard">
+                  <DetailedLeaderboard />
                 </TabsContent>
                 
                 <TabsContent value="cooper">
