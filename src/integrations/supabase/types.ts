@@ -592,13 +592,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "leaderboard_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "public_profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       lectures: {
@@ -713,13 +706,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -973,13 +959,6 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1305,13 +1284,6 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "training_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "training_sessions_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
@@ -1364,13 +1336,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "user_achievements_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -1473,13 +1438,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "user_challenges_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1603,36 +1561,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          display_name: string | null
-          first_name: string | null
-          id: string | null
-          last_name: string | null
-          rank_position: number | null
-          total_points: number | null
-          user_id: string | null
-        }
-        Insert: {
-          display_name?: string | null
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          rank_position?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          display_name?: string | null
-          first_name?: string | null
-          id?: string | null
-          last_name?: string | null
-          rank_position?: number | null
-          total_points?: number | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       auto_cleanup_contact_submissions: {
@@ -1701,6 +1630,10 @@ export type Database = {
       mask_phone_secure: {
         Args: { phone_number: string }
         Returns: string
+      }
+      update_user_leaderboard: {
+        Args: { user_uuid: string }
+        Returns: undefined
       }
       validate_audit_log_entry: {
         Args: { p_action: string; p_table_name: string; p_user_id?: string }
