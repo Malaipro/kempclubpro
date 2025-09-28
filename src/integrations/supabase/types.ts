@@ -848,6 +848,50 @@ export type Database = {
         }
         Relationships: []
       }
+      public_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          rank_position: number | null
+          total_points: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          rank_position?: number | null
+          total_points?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          rank_position?: number | null
+          total_points?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_profiles_profiles_fk"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_audit_log: {
         Row: {
           action: string
