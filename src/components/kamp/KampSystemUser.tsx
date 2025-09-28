@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KampInstructions } from './KampInstructions';
-import { KampProgress } from './KampProgress';
+import { RealKampProgress } from './RealKampProgress';
 import { AsceticManagement } from './AsceticManagement';
 import { KampManual } from '@/components/instructions/KampManual';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
@@ -53,7 +53,7 @@ export const KampSystemUser: React.FC = () => {
           </div>
           
           <TabsContent value="progress">
-            <KampProgress />
+            <RealKampProgress />
           </TabsContent>
           
           <TabsContent value="profile">

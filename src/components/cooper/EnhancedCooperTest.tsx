@@ -56,7 +56,7 @@ export const EnhancedCooperTest: React.FC = () => {
     age: '',
     gender: '',
     test_date: new Date().toISOString().split('T')[0],
-    test_phase: 'during_stream',
+    test_phase: 'test_1',
     notes: '',
   });
 
@@ -239,7 +239,7 @@ export const EnhancedCooperTest: React.FC = () => {
       age: '',
       gender: '',
       test_date: new Date().toISOString().split('T')[0],
-      test_phase: 'during_stream',
+      test_phase: 'test_1',
       notes: '',
     });
     setEditingResult(null);
@@ -287,12 +287,6 @@ export const EnhancedCooperTest: React.FC = () => {
     return testResults.filter(result => result.test_phase === phase);  
   };
 
-  // Get user's different test phases to show improvement
-  const getUserTestHistory = (userId: string) => {
-    return testResults.filter(result => result.user_id === userId)
-      .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime());
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -301,9 +295,8 @@ export const EnhancedCooperTest: React.FC = () => {
     );
   }
 
-  const beforeStreamResults = getTestResults('before_stream');
-  const duringStreamResults = getTestResults('during_stream'); 
-  const afterStreamResults = getTestResults('after_stream');
+  const test1Results = getTestResults('test_1');
+  const test2Results = getTestResults('test_2');
 
   return (
     <div className="space-y-6">
@@ -360,9 +353,8 @@ export const EnhancedCooperTest: React.FC = () => {
                     <SelectValue placeholder="Выберите фазу" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                    <SelectItem value="before_stream" className="hover:bg-gray-100">До потока</SelectItem>
-                    <SelectItem value="during_stream" className="hover:bg-gray-100">Во время потока</SelectItem>
-                    <SelectItem value="after_stream" className="hover:bg-gray-100">После потока</SelectItem>
+                    <SelectItem value="test_1" className="hover:bg-gray-100">Тест 1</SelectItem>
+                    <SelectItem value="test_2" className="hover:bg-gray-100">Тест 2</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -462,11 +454,10 @@ export const EnhancedCooperTest: React.FC = () => {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all">Все результаты</TabsTrigger>
-          <TabsTrigger value="before">До потока ({beforeStreamResults.length})</TabsTrigger>
-          <TabsTrigger value="during">Во время ({duringStreamResults.length})</TabsTrigger>
-          <TabsTrigger value="after">После потока ({afterStreamResults.length})</TabsTrigger>
+          <TabsTrigger value="test1">Тест 1 ({test1Results.length})</TabsTrigger>
+          <TabsTrigger value="test2">Тест 2 ({test2Results.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-6">
@@ -501,46 +492,47 @@ export const EnhancedCooperTest: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-semibold">
-                          {result.total_minutes !== null && result.total_seconds !== null 
-                            ? `${result.total_minutes}:${result.total_seconds.toString().padStart(2, '0')}` 
-                            : '—'}
+                        <div className="font-mono">
+                          {result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}
                         </div>
                       </TableCell>
                       <TableCell>{result.age || '—'}</TableCell>
-                      <TableCell>{result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '—'}</TableCell>
+                      <TableCell>
+                        {result.gender === 'male' ? 'М' : result.gender === 'female' ? 'Ж' : '—'}
+                      </TableCell>
                       <TableCell>
                         <Badge className={getFitnessLevelColor(result.fitness_level)}>
                           {getFitnessLevelLabel(result.fitness_level)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(result.test_date).toLocaleDateString('ru-RU')}</TableCell>
+                      <TableCell>
+                        {new Date(result.test_date).toLocaleDateString('ru-RU')}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {result.test_phase === 'before_stream' ? 'До потока' : 
-                           result.test_phase === 'during_stream' ? 'Во время потока' : 
-                           result.test_phase === 'after_stream' ? 'После потока' : result.test_phase}
+                          {result.test_phase === 'test_1' ? 'Тест 1' : 'Тест 2'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={result.verified ? "default" : "secondary"}>
-                          {result.verified ? 'Подтверждено' : 'Ожидает'}
-                        </Badge>
+                        {result.verified ? (
+                          <Badge className="bg-green-100 text-green-800">Подтверждено</Badge>
+                        ) : (
+                          <Badge variant="outline">Не подтверждено</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
                             size="sm"
+                            variant="outline"
                             onClick={() => handleEdit(result)}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            variant="outline"
                             size="sm"
+                            variant={result.verified ? "destructive" : "default"}
                             onClick={() => handleVerification(result.id, !result.verified)}
-                            className={result.verified ? "text-red-600" : "text-green-600"}
                           >
                             {result.verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                           </Button>
@@ -550,73 +542,154 @@ export const EnhancedCooperTest: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
-
-              {testResults.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  Результаты тестов не найдены
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="before" className="mt-6">
+        <TabsContent value="test1" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Результаты до потока</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-destructive" />
+                Тест 1
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Similar table structure for before stream results */}
-              {beforeStreamResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Нет результатов до потока
+              {test1Results.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
+                  <p className="text-sm">Результаты теста 1 еще не добавлены</p>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  Найдено результатов: {beforeStreamResults.length}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Участник</TableHead>
+                      <TableHead>Время</TableHead>
+                      <TableHead>Уровень</TableHead>
+                      <TableHead>Дата</TableHead>
+                      <TableHead>Статус</TableHead>
+                      <TableHead>Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {test1Results.map((result) => (
+                      <TableRow key={result.id} className="hover:bg-gray-50">
+                        <TableCell>{formatParticipantName(result)}</TableCell>
+                        <TableCell>{result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}</TableCell>
+                        <TableCell>
+                          <Badge className={getFitnessLevelColor(result.fitness_level)}>
+                            {getFitnessLevelLabel(result.fitness_level)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(result.test_date).toLocaleDateString('ru-RU')}</TableCell>
+                        <TableCell>
+                          {result.verified ? (
+                            <Badge className="bg-green-100 text-green-800">Подтверждено</Badge>
+                          ) : (
+                            <Badge variant="outline">Не подтверждено</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(result)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={result.verified ? "destructive" : "default"}
+                              onClick={() => handleVerification(result.id, !result.verified)}
+                            >
+                              {result.verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="during" className="mt-6">
+        <TabsContent value="test2" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Результаты во время потока</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-destructive" />
+                Тест 2
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {duringStreamResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Нет результатов во время потока
+              {test2Results.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
+                  <p className="text-sm">Результаты теста 2 еще не добавлены</p>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  Найдено результатов: {duringStreamResults.length}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Участник</TableHead>
+                      <TableHead>Время</TableHead>
+                      <TableHead>Уровень</TableHead>
+                      <TableHead>Дата</TableHead>
+                      <TableHead>Статус</TableHead>
+                      <TableHead>Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {test2Results.map((result) => (
+                      <TableRow key={result.id} className="hover:bg-gray-50">
+                        <TableCell>{formatParticipantName(result)}</TableCell>
+                        <TableCell>{result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}</TableCell>
+                        <TableCell>
+                          <Badge className={getFitnessLevelColor(result.fitness_level)}>
+                            {getFitnessLevelLabel(result.fitness_level)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(result.test_date).toLocaleDateString('ru-RU')}</TableCell>
+                        <TableCell>
+                          {result.verified ? (
+                            <Badge className="bg-green-100 text-green-800">Подтверждено</Badge>
+                          ) : (
+                            <Badge variant="outline">Не подтверждено</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(result)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={result.verified ? "destructive" : "default"}
+                              onClick={() => handleVerification(result.id, !result.verified)}
+                            >
+                              {result.verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="after" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Результаты после потока</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {afterStreamResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Нет результатов после потока
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  Найдено результатов: {afterStreamResults.length}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
       </Tabs>
     </div>
   );

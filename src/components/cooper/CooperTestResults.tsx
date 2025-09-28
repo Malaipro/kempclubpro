@@ -53,9 +53,8 @@ export const CooperTestResults: React.FC<CooperTestResultsProps> = ({ participan
 
   const getPhaseLabel = (phase: string) => {
     switch (phase) {
-      case 'before_stream': return 'До потока';
-      case 'during_stream': return 'Во время потока';
-      case 'after_stream': return 'После потока';
+      case 'test_1': return 'Тест 1';
+      case 'test_2': return 'Тест 2';
       default: return phase;
     }
   };
