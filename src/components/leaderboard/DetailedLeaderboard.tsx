@@ -209,78 +209,12 @@ export const DetailedLeaderboard: React.FC = () => {
             <p className="text-sm text-gray-500">Загрузка рейтинга...</p>
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="space-y-3">
-            {[
-              { id: '1', name: 'Иван Петров', points: 150, rank: 1, bjj: 45, kickboxing: 35, ofp: 40, theory: 15, tactical: 15 },
-              { id: '2', name: 'Александр Сидоров', points: 120, rank: 2, bjj: 38, kickboxing: 30, ofp: 32, theory: 12, tactical: 8 },
-              { id: '3', name: 'Дмитрий Козлов', points: 95, rank: 3, bjj: 30, kickboxing: 25, ofp: 25, theory: 8, tactical: 7 },
-              { id: '4', name: 'Михаил Волков', points: 80, rank: 4, bjj: 25, kickboxing: 20, ofp: 20, theory: 8, tactical: 7 },
-              { id: '5', name: 'Николай Морозов', points: 65, rank: 5, bjj: 20, kickboxing: 15, ofp: 18, theory: 7, tactical: 5 }
-            ].map((entry, index) => (
-              <div
-                key={entry.id}
-                className="border rounded-lg bg-gray-50 border-gray-200"
-              >
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    {getRankIcon(entry.rank)}
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {entry.name}
-                        <span className="ml-2 text-sm text-gray-500">(демо)</span>
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Место: {entry.rank}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-kamp-accent">
-                      {entry.points}
-                    </p>
-                    <p className="text-sm text-gray-500">баллов</p>
-                  </div>
-                </div>
-                
-                <div className="px-4 pb-4 border-t border-gray-200">
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Разбивка по категориям:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {entry.bjj > 0 && (
-                        <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
-                          <Target className="w-3 h-3" />
-                          БЖЖ: {entry.bjj}
-                        </Badge>
-                      )}
-                      {entry.kickboxing > 0 && (
-                        <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
-                          <Zap className="w-3 h-3" />
-                          Кикбоксинг: {entry.kickboxing}
-                        </Badge>
-                      )}
-                      {entry.ofp > 0 && (
-                        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
-                          <Dumbbell className="w-3 h-3" />
-                          ОФП: {entry.ofp}
-                        </Badge>
-                      )}
-                      {entry.theory > 0 && (
-                        <Badge className="bg-purple-100 text-purple-800 flex items-center gap-1">
-                          <Book className="w-3 h-3" />
-                          Теория: {entry.theory}
-                        </Badge>
-                      )}
-                      {entry.tactical > 0 && (
-                        <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          Тактика: {entry.tactical}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-semibold mb-2 text-gray-700">Нет утвержденных участников</h3>
+            <p className="text-sm text-gray-500">
+              Участники появятся здесь после их утверждения администратором
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
