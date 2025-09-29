@@ -310,8 +310,6 @@ export const EnhancedParticipantManagement: React.FC = () => {
   };
 
   const fetchParticipantDetails = async (userId: string) => {
-    if (participantDetails.has(userId)) return;
-
     try {
       const { data, error } = await supabase
         .from('leaderboard')
@@ -346,6 +344,19 @@ export const EnhancedParticipantManagement: React.FC = () => {
     }
   };
 
+  const refreshParticipantData = async (userId?: string) => {
+    await fetchParticipants();
+    if (userId && expandedParticipants.has(userId)) {
+      // Очистить кэш и перезагрузить детали
+      setParticipantDetails(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(userId);
+        return newMap;
+      });
+      await fetchParticipantDetails(userId);
+    }
+  };
+
   const toggleExpand = (userId: string) => {
     setExpandedParticipants(prev => {
       const newSet = new Set(prev);
@@ -358,6 +369,32 @@ export const EnhancedParticipantManagement: React.FC = () => {
       return newSet;
     });
   };
+
+  // Подписка на изменения в leaderboard
+  useEffect(() => {
+    const channel = supabase
+      .channel('leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leaderboard'
+        },
+        (payload) => {
+          console.log('Leaderboard changed:', payload);
+          const userId = (payload.new as any)?.user_id || (payload.old as any)?.user_id;
+          if (userId) {
+            refreshParticipantData(userId);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [expandedParticipants]);
 
   if (loading) {
     return (

@@ -94,7 +94,7 @@ export const ActivityManagement: React.FC = () => {
     }
 
     try {
-        const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('training_sessions')
         .insert([{
           user_id: selectedParticipant,
@@ -104,13 +104,24 @@ export const ActivityManagement: React.FC = () => {
           session_date: date?.toISOString() || new Date().toISOString(),
           trainer_id: trainer || null,
           notes: notes || null,
+          verified: true, // Активности от админа автоматически верифицированы
         }]);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // Обновляем leaderboard для этого участника
+      const { error: leaderboardError } = await supabase.rpc('update_user_leaderboard', {
+        user_uuid: selectedParticipant
+      });
+
+      if (leaderboardError) {
+        console.error('Error updating leaderboard:', leaderboardError);
+        // Не показываем ошибку пользователю, так как активность добавлена
+      }
 
       toast({
         title: 'Активность добавлена',
-        description: 'Активность успешно добавлена участнику',
+        description: 'Активность успешно добавлена и рейтинг обновлен',
       });
 
       // Reset form

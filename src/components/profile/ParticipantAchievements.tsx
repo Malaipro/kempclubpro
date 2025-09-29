@@ -27,6 +27,32 @@ export const ParticipantAchievements: React.FC = () => {
     }
   }, [user]);
 
+  // Подписка на изменения в leaderboard
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('user-leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leaderboard',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Leaderboard updated:', payload);
+          fetchAchievements();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchAchievements = async () => {
     if (!user) return;
     

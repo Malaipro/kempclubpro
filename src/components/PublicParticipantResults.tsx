@@ -57,6 +57,44 @@ export const PublicParticipantResults: React.FC = () => {
 
   useEffect(() => {
     loadPublicData();
+
+    // Подписка на изменения в leaderboard и профилях
+    const leaderboardChannel = supabase
+      .channel('public-leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leaderboard'
+        },
+        () => {
+          console.log('Leaderboard updated, refreshing data');
+          loadPublicData();
+        }
+      )
+      .subscribe();
+
+    const profilesChannel = supabase
+      .channel('public-profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          console.log('Profiles updated, refreshing data');
+          loadPublicData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(leaderboardChannel);
+      supabase.removeChannel(profilesChannel);
+    };
   }, []);
 
   const loadPublicData = async () => {

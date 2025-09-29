@@ -39,6 +39,27 @@ export const DetailedLeaderboard: React.FC = () => {
 
   useEffect(() => {
     fetchLeaderboard();
+
+    // Подписка на изменения в leaderboard
+    const channel = supabase
+      .channel('detailed-leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leaderboard'
+        },
+        () => {
+          console.log('Leaderboard updated, refreshing');
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // Автоматическое обновление при появлении на странице
