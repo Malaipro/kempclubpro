@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { CooperTestResults } from '@/components/cooper/CooperTestResults';
+import { ParticipantAchievements } from './ParticipantAchievements';
 
 interface Profile {
   id: string;
@@ -308,6 +309,9 @@ export const EnhancedPersonalProfile: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Карточка достижений */}
+      <ParticipantAchievements />
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Личный профиль</h1>

@@ -26,12 +26,11 @@ export const DetailedLeaderboard: React.FC = () => {
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState<DetailedLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showPersonalOnly, setShowPersonalOnly] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [user, showPersonalOnly]);
+  }, [user]);
 
   // Автоматическое обновление при появлении на странице
   useEffect(() => {
@@ -62,33 +61,16 @@ export const DetailedLeaderboard: React.FC = () => {
 
       const adminUserIds = adminUsers?.map(u => u.user_id) || [];
 
+      // Используем public_profiles для публичного доступа
       let query = supabase
-        .from('leaderboard')
-        .select(`
-          id,
-          user_id,
-          total_points,
-          bjj_points,
-          kickboxing_points,
-          ofp_points,
-          theory_points,
-          tactical_points,
-          challenges_points,
-          rank_position,
-          last_updated,
-          profiles!inner(display_name, first_name, last_name, approved)
-        `)
-        .eq('profiles.approved', true)
+        .from('public_profiles')
+        .select('*')
         .order('total_points', { ascending: false })
-        .limit(showPersonalOnly ? 1 : 10);
+        .limit(10);
 
-      if (showPersonalOnly && user) {
-        query = query.eq('user_id', user.id);
-      } else {
-        // В общем рейтинге исключаем админов
-        if (adminUserIds.length > 0) {
-          query = query.not('user_id', 'in', `(${adminUserIds.join(',')})`);
-        }
+      // В общем рейтинге исключаем админов
+      if (adminUserIds.length > 0) {
+        query = query.not('user_id', 'in', `(${adminUserIds.join(',')})`);
       }
 
       const { data, error } = await query;
@@ -99,24 +81,38 @@ export const DetailedLeaderboard: React.FC = () => {
         return;
       }
 
-      const formattedData = data?.map((entry: any) => ({
-        id: entry.id,
-        user_id: entry.user_id,
-        total_points: entry.total_points,
-        bjj_points: entry.bjj_points || 0,
-        kickboxing_points: entry.kickboxing_points || 0,
-        ofp_points: entry.ofp_points || 0,
-        theory_points: entry.theory_points || 0,
-        tactical_points: entry.tactical_points || 0,
-        challenges_points: entry.challenges_points || 0,
-        rank_position: entry.rank_position,
-        display_name: entry.profiles?.first_name && entry.profiles?.last_name 
-          ? `${entry.profiles.first_name} ${entry.profiles.last_name}`
-          : entry.profiles?.display_name || 'Участник',
-        last_updated: entry.last_updated
-      })) || [];
+      console.log('Leaderboard data:', data);
 
-      setLeaderboard(formattedData);
+      // Получаем детальные баллы из leaderboard для каждого участника
+      const detailedData = await Promise.all(
+        (data || []).map(async (entry: any) => {
+          const { data: leaderboardData } = await supabase
+            .from('leaderboard')
+            .select('bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, challenges_points')
+            .eq('user_id', entry.user_id)
+            .maybeSingle();
+
+          return {
+            id: entry.id,
+            user_id: entry.user_id,
+            total_points: entry.total_points || 0,
+            bjj_points: leaderboardData?.bjj_points || 0,
+            kickboxing_points: leaderboardData?.kickboxing_points || 0,
+            ofp_points: leaderboardData?.ofp_points || 0,
+            theory_points: leaderboardData?.theory_points || 0,
+            tactical_points: leaderboardData?.tactical_points || 0,
+            challenges_points: leaderboardData?.challenges_points || 0,
+            rank_position: entry.rank_position || 0,
+            display_name: entry.first_name && entry.last_name 
+              ? `${entry.first_name} ${entry.last_name}`
+              : entry.display_name || 'Участник',
+            last_updated: new Date().toISOString()
+          };
+        })
+      );
+
+      setLeaderboard(detailedData);
+
     } catch (error) {
       console.error('Error in fetchLeaderboard:', error);
       toast.error('Ошибка загрузки рейтинга');
@@ -198,34 +194,15 @@ export const DetailedLeaderboard: React.FC = () => {
             <Trophy className="w-5 h-5 text-kamp-accent" />
             Детальный рейтинг участников
           </CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchLeaderboard}
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            {user && (
-              <>
-                <Button
-                  variant={!showPersonalOnly ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowPersonalOnly(false)}
-                >
-                  Общий
-                </Button>
-                <Button
-                  variant={showPersonalOnly ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowPersonalOnly(true)}
-                >
-                  Мой
-                </Button>
-              </>
-            )}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchLeaderboard}
+            disabled={loading}
+            title="Обновить рейтинг"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

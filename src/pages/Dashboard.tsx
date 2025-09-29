@@ -177,9 +177,11 @@ export const Dashboard: React.FC = () => {
                 </div>
                 
                 <TabsContent value="profile">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-6">
                     <EnhancedPersonalProfile />
-                    <UserActivities />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <UserActivities />
+                    </div>
                   </div>
                 </TabsContent>
                 
