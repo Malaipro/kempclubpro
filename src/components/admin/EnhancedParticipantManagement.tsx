@@ -489,7 +489,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12 bg-destructive/10">
                     <AvatarFallback className="text-destructive font-medium">
-                      <User className="w-6 h-6" />
+                      {getInitials(participant)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
