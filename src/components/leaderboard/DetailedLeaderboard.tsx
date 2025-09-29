@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Medal, Award, Target, Zap, Dumbbell, Book, Shield } from 'lucide-react';
+import { Trophy, Medal, Award, Target, Zap, Dumbbell, Book, Shield, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -32,6 +32,20 @@ export const DetailedLeaderboard: React.FC = () => {
   useEffect(() => {
     fetchLeaderboard();
   }, [user, showPersonalOnly]);
+
+  // Автоматическое обновление при появлении на странице
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchLeaderboard();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const fetchLeaderboard = async () => {
     setLoading(true);
@@ -184,24 +198,34 @@ export const DetailedLeaderboard: React.FC = () => {
             <Trophy className="w-5 h-5 text-kamp-accent" />
             Детальный рейтинг участников
           </CardTitle>
-          {user && (
-            <div className="flex gap-2">
-              <Button
-                variant={!showPersonalOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowPersonalOnly(false)}
-              >
-                Общий
-              </Button>
-              <Button
-                variant={showPersonalOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowPersonalOnly(true)}
-              >
-                Мой
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchLeaderboard}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            {user && (
+              <>
+                <Button
+                  variant={!showPersonalOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowPersonalOnly(false)}
+                >
+                  Общий
+                </Button>
+                <Button
+                  variant={showPersonalOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowPersonalOnly(true)}
+                >
+                  Мой
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
