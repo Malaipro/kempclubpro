@@ -15,15 +15,42 @@ export const AchievementStats: React.FC = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['achievement-stats'],
     queryFn: async (): Promise<AchievementCounts> => {
-      // Get total achievements from existing table
+      // Get approved participants first
+      const { data: approvedProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('approved', true);
+
+      if (profilesError) throw profilesError;
+
+      const approvedUserIds = approvedProfiles?.map(p => p.user_id) || [];
+      
+      // Get total achievements only for approved participants
       const { count: totalAchievements } = await supabase
         .from('user_achievements')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .in('user_id', approvedUserIds);
 
-      // Use placeholder data for non-existent tables
-      const specialBadges = 0;
-      const completedDirections = 0;
-      const totemsEarned = 0;
+      // Calculate real achievement data based on approved participants
+      const { data: leaderboard } = await supabase
+        .from('leaderboard')
+        .select('*')
+        .in('user_id', approvedUserIds);
+
+      // Calculate special badges (шрамы) - каждые 10 закалов = 1 шрам
+      const totalZakals = leaderboard?.reduce((sum, p) => 
+        sum + (p.bjj_points || 0) + (p.kickboxing_points || 0) + (p.ofp_points || 0), 0) || 0;
+      const specialBadges = Math.floor(totalZakals / 10);
+
+      // Calculate completed directions (тотемы) - участники с баллами в определенных категориях
+      const completedDirections = leaderboard?.filter(p => 
+        (p.bjj_points && p.bjj_points >= 10) || 
+        (p.kickboxing_points && p.kickboxing_points >= 10) || 
+        (p.ofp_points && p.ofp_points >= 10)
+      ).length || 0;
+
+      // Calculate totems earned (тактические достижения)
+      const totemsEarned = leaderboard?.reduce((sum, p) => sum + (p.tactical_points || 0), 0) || 0;
 
       return {
         totalAchievements: totalAchievements || 0,

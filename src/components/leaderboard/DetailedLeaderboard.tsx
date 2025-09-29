@@ -62,7 +62,7 @@ export const DetailedLeaderboard: React.FC = () => {
           challenges_points,
           rank_position,
           last_updated,
-          profiles!inner(display_name, approved)
+          profiles!inner(display_name, first_name, last_name, approved)
         `)
         .eq('profiles.approved', true)
         .order('total_points', { ascending: false })
@@ -96,7 +96,9 @@ export const DetailedLeaderboard: React.FC = () => {
         tactical_points: entry.tactical_points || 0,
         challenges_points: entry.challenges_points || 0,
         rank_position: entry.rank_position,
-        display_name: entry.profiles?.display_name || 'Участник',
+        display_name: entry.profiles?.first_name && entry.profiles?.last_name 
+          ? `${entry.profiles.first_name} ${entry.profiles.last_name}`
+          : entry.profiles?.display_name || 'Участник',
         last_updated: entry.last_updated
       })) || [];
 
