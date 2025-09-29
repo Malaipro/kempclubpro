@@ -20,6 +20,15 @@ interface DetailedLeaderboardEntry {
   rank_position: number;
   display_name: string;
   last_updated: string;
+  // Calculated fields for KAMP system
+  bjj_zakals: number;
+  bjj_scars: number;
+  kick_zakals: number;
+  kick_scars: number;
+  ofp_zakals: number;
+  ofp_scars: number;
+  theory_grans: number;
+  tactical_scars: number;
 }
 
 export const DetailedLeaderboard: React.FC = () => {
@@ -92,21 +101,36 @@ export const DetailedLeaderboard: React.FC = () => {
             .eq('user_id', entry.user_id)
             .maybeSingle();
 
+          const bbjPoints = leaderboardData?.bjj_points || 0;
+          const kickPoints = leaderboardData?.kickboxing_points || 0;
+          const ofpPoints = leaderboardData?.ofp_points || 0;
+          const theoryPoints = leaderboardData?.theory_points || 0;
+          const tacticalPoints = leaderboardData?.tactical_points || 0;
+
           return {
             id: entry.id,
             user_id: entry.user_id,
             total_points: entry.total_points || 0,
-            bjj_points: leaderboardData?.bjj_points || 0,
-            kickboxing_points: leaderboardData?.kickboxing_points || 0,
-            ofp_points: leaderboardData?.ofp_points || 0,
-            theory_points: leaderboardData?.theory_points || 0,
-            tactical_points: leaderboardData?.tactical_points || 0,
+            bjj_points: bbjPoints,
+            kickboxing_points: kickPoints,
+            ofp_points: ofpPoints,
+            theory_points: theoryPoints,
+            tactical_points: tacticalPoints,
             challenges_points: leaderboardData?.challenges_points || 0,
             rank_position: entry.rank_position || 0,
             display_name: entry.first_name && entry.last_name 
               ? `${entry.first_name} ${entry.last_name}`
               : entry.display_name || 'Участник',
-            last_updated: new Date().toISOString()
+            last_updated: new Date().toISOString(),
+            // Calculate KAMP system details
+            bjj_zakals: bbjPoints,
+            bjj_scars: Math.floor(bbjPoints / 10),
+            kick_zakals: kickPoints,
+            kick_scars: Math.floor(kickPoints / 10),
+            ofp_zakals: ofpPoints,
+            ofp_scars: Math.floor(ofpPoints / 10),
+            theory_grans: theoryPoints,
+            tactical_scars: tacticalPoints
           };
         })
       );
@@ -140,50 +164,62 @@ export const DetailedLeaderboard: React.FC = () => {
     });
   };
 
-  const getCategoryBadges = (entry: DetailedLeaderboardEntry) => {
-    const badges = [];
+  const getCategoryDetails = (entry: DetailedLeaderboardEntry) => {
+    const details = [];
     
     if (entry.bjj_points > 0) {
-      badges.push({ 
-        label: `БЖЖ: ${entry.bjj_points}`, 
-        icon: <Target className="w-3 h-3" />,
-        color: 'bg-blue-100 text-blue-800' 
+      details.push({ 
+        label: 'БЖЖ',
+        zakals: entry.bjj_zakals,
+        scars: entry.bjj_scars,
+        icon: <Target className="w-4 h-4" />,
+        color: 'text-blue-400' 
       });
     }
     
     if (entry.kickboxing_points > 0) {
-      badges.push({ 
-        label: `Кикбоксинг: ${entry.kickboxing_points}`, 
-        icon: <Zap className="w-3 h-3" />,
-        color: 'bg-red-100 text-red-800' 
+      details.push({ 
+        label: 'Кикбоксинг',
+        zakals: entry.kick_zakals,
+        scars: entry.kick_scars,
+        icon: <Zap className="w-4 h-4" />,
+        color: 'text-red-400' 
       });
     }
     
     if (entry.ofp_points > 0) {
-      badges.push({ 
-        label: `ОФП: ${entry.ofp_points}`, 
-        icon: <Dumbbell className="w-3 h-3" />,
-        color: 'bg-green-100 text-green-800' 
+      details.push({ 
+        label: 'ОФП',
+        zakals: entry.ofp_zakals,
+        scars: entry.ofp_scars,
+        icon: <Dumbbell className="w-4 h-4" />,
+        color: 'text-green-400' 
       });
     }
     
     if (entry.theory_points > 0) {
-      badges.push({ 
-        label: `Теория: ${entry.theory_points}`, 
-        icon: <Book className="w-3 h-3" />,
-        color: 'bg-purple-100 text-purple-800' 
+      details.push({ 
+        label: 'Теория',
+        zakals: entry.theory_grans,
+        scars: 0, // Theory doesn't have scars
+        icon: <Book className="w-4 h-4" />,
+        color: 'text-purple-400',
+        isTheory: true
       });
     }
     
     if (entry.tactical_points > 0) {
-      badges.push({ 
-        label: `Тактика: ${entry.tactical_points}`, 
-        icon: <Shield className="w-3 h-3" />,
-        color: 'bg-orange-100 text-orange-800' 
+      details.push({ 
+        label: 'Тактика',
+        zakals: 0, // Tactical doesn't have zakals
+        scars: entry.tactical_scars,
+        icon: <Shield className="w-4 h-4" />,
+        color: 'text-orange-400',
+        isTactical: true
       });
     }
 
-    return badges;
+    return details;
   };
 
   return (
@@ -192,7 +228,7 @@ export const DetailedLeaderboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-gray-900">
             <Trophy className="w-5 h-5 text-kamp-accent" />
-            Детальный рейтинг участников
+            Рейтинг участников
           </CardTitle>
           <Button
             variant="outline"
@@ -259,20 +295,35 @@ export const DetailedLeaderboard: React.FC = () => {
                 {expandedEntries.has(entry.id) && (
                   <div className="px-4 pb-4 border-t border-gray-200">
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Разбивка по категориям:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {getCategoryBadges(entry).map((badge, badgeIndex) => (
-                          <Badge 
-                            key={badgeIndex} 
-                            variant="secondary"
-                            className={`${badge.color} flex items-center gap-1`}
+                      <p className="text-sm font-medium text-gray-700 mb-3">Детализация по дисциплинам КЭМП:</p>
+                      <div className="space-y-3">
+                        {getCategoryDetails(entry).map((detail, detailIndex) => (
+                          <div 
+                            key={detailIndex}
+                            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                           >
-                            {badge.icon}
-                            {badge.label}
-                          </Badge>
+                            <div className={`${detail.color} mt-1`}>
+                              {detail.icon}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">{detail.label}</p>
+                              <div className="flex flex-wrap gap-3 text-sm">
+                                {!detail.isTactical && detail.zakals > 0 && (
+                                  <span className="text-gray-600">
+                                    {detail.isTheory ? 'Грани' : 'Закалы'}: <span className="font-semibold text-gray-900">{detail.zakals}</span>
+                                  </span>
+                                )}
+                                {!detail.isTheory && detail.scars > 0 && (
+                                  <span className="text-gray-600">
+                                    Шрамы: <span className="font-semibold text-red-600">{detail.scars}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                        {getCategoryBadges(entry).length === 0 && (
-                          <p className="text-sm text-gray-500">Нет активностей</p>
+                        {getCategoryDetails(entry).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-2">Нет активностей</p>
                         )}
                       </div>
                     </div>

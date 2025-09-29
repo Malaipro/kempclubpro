@@ -90,36 +90,48 @@ export const ParticipantAchievements: React.FC = () => {
     );
   }
 
-  const categories = [
+  const disciplines = [
     { 
       label: 'БЖЖ', 
-      points: leaderboardData.bjj_points, 
-      icon: <Target className="w-4 h-4" />,
-      color: 'bg-blue-100 text-blue-800' 
+      zakals: leaderboardData.bjj_points,
+      scars: Math.floor(leaderboardData.bjj_points / 10),
+      icon: <Target className="w-5 h-5" />,
+      color: 'bg-blue-500/10 border-blue-500/30',
+      textColor: 'text-blue-400'
     },
     { 
       label: 'Кикбоксинг', 
-      points: leaderboardData.kickboxing_points, 
-      icon: <Zap className="w-4 h-4" />,
-      color: 'bg-red-100 text-red-800' 
+      zakals: leaderboardData.kickboxing_points,
+      scars: Math.floor(leaderboardData.kickboxing_points / 10),
+      icon: <Zap className="w-5 h-5" />,
+      color: 'bg-red-500/10 border-red-500/30',
+      textColor: 'text-red-400'
     },
     { 
       label: 'ОФП', 
-      points: leaderboardData.ofp_points, 
-      icon: <Dumbbell className="w-4 h-4" />,
-      color: 'bg-green-100 text-green-800' 
+      zakals: leaderboardData.ofp_points,
+      scars: Math.floor(leaderboardData.ofp_points / 10),
+      icon: <Dumbbell className="w-5 h-5" />,
+      color: 'bg-green-500/10 border-green-500/30',
+      textColor: 'text-green-400'
     },
     { 
       label: 'Теория', 
-      points: leaderboardData.theory_points, 
-      icon: <Book className="w-4 h-4" />,
-      color: 'bg-purple-100 text-purple-800' 
+      zakals: leaderboardData.theory_points,
+      scars: 0, // Theory uses 'grans', not scars
+      icon: <Book className="w-5 h-5" />,
+      color: 'bg-purple-500/10 border-purple-500/30',
+      textColor: 'text-purple-400',
+      isTheory: true
     },
     { 
       label: 'Тактика', 
-      points: leaderboardData.tactical_points, 
-      icon: <Shield className="w-4 h-4" />,
-      color: 'bg-orange-100 text-orange-800' 
+      zakals: 0, // Tactical doesn't have zakals
+      scars: leaderboardData.tactical_points,
+      icon: <Shield className="w-5 h-5" />,
+      color: 'bg-orange-500/10 border-orange-500/30',
+      textColor: 'text-orange-400',
+      isTactical: true
     },
   ];
 
@@ -151,24 +163,52 @@ export const ParticipantAchievements: React.FC = () => {
             </div>
           </div>
 
-          {/* Разбивка по категориям */}
+          {/* Детализация по дисциплинам КЭМП */}
           <div>
-            <h4 className="font-semibold mb-3 text-sm text-muted-foreground">Баллы по категориям:</h4>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.map((category, index) => (
+            <h4 className="font-semibold mb-3 text-sm flex items-center gap-2">
+              <Award className="w-4 h-4 text-kamp-accent" />
+              Детализация по дисциплинам КЭМП:
+            </h4>
+            <div className="space-y-3">
+              {disciplines.filter(d => d.zakals > 0 || d.scars > 0).map((discipline, index) => (
                 <div 
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className={`p-4 rounded-lg border ${discipline.color}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded ${category.color}`}>
-                      {category.icon}
+                  <div className="flex items-start gap-3">
+                    <div className={`${discipline.textColor} mt-1`}>
+                      {discipline.icon}
                     </div>
-                    <span className="text-sm font-medium">{category.label}</span>
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-gray-900 mb-2">{discipline.label}</h5>
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        {!discipline.isTactical && discipline.zakals > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-gray-500" />
+                            <span className="text-gray-600">
+                              {discipline.isTheory ? 'Грани' : 'Закалы'}: <span className="font-bold text-gray-900">{discipline.zakals}</span>
+                            </span>
+                          </div>
+                        )}
+                        {!discipline.isTheory && discipline.scars > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Award className="w-4 h-4 text-red-500" />
+                            <span className="text-gray-600">
+                              Шрамы: <span className="font-bold text-red-600">{discipline.scars}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="font-bold text-lg">{category.points}</span>
                 </div>
               ))}
+              {disciplines.filter(d => d.zakals > 0 || d.scars > 0).length === 0 && (
+                <div className="text-center py-6 text-gray-400">
+                  <Trophy className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Активности пока не зафиксированы</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
