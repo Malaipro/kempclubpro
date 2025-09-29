@@ -482,65 +482,82 @@ export const EnhancedParticipantManagement: React.FC = () => {
       </div>
 
       <div className="grid gap-4">
-        {participants.map((participant) => (
-          <Card key={participant.id} className="p-4">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-12 w-12 bg-destructive/10">
-                    <AvatarFallback className="text-destructive font-medium">
-                      {getInitials(participant)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-lg">
-                      {formatParticipantName(participant)}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{participant.total_points} баллов</span>
-                      {participant.email && (
-                        <>
-                          <span>•</span>
-                          <span>{participant.email}</span>
-                        </>
-                      )}
-                      {participant.height_cm && participant.weight_kg && (
-                        <>
-                          <span>•</span>
-                          <span>{participant.height_cm}см, {participant.weight_kg}кг</span>
-                        </>
-                      )}
+        {participants.map((participant) => {
+          const fullName = formatParticipantName(participant);
+          console.log('Rendering participant:', { 
+            id: participant.id, 
+            first_name: participant.first_name, 
+            last_name: participant.last_name,
+            fullName 
+          });
+          
+          return (
+            <Card key={participant.id} className="p-4">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <Avatar className="h-12 w-12 bg-destructive/10 flex-shrink-0">
+                      <AvatarFallback className="text-destructive font-medium">
+                        {getInitials(participant)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg text-foreground">
+                        {fullName}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                        <span>{participant.total_points} баллов</span>
+                        {participant.email && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{participant.email}</span>
+                          </>
+                        )}
+                        {participant.height_cm && participant.weight_kg && (
+                          <>
+                            <span>•</span>
+                            <span>{participant.height_cm}см, {participant.weight_kg}кг</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="outline">{participant.stream}</Badge>
+                        {participant.approved && (<Badge className="bg-green-100 text-green-800">Утвержден</Badge>)}
+                        {getStatusBadge(participant.status)}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-          <Badge variant="outline">{participant.stream}</Badge>
-          {participant.approved && (<Badge className="bg-green-100 text-green-800">Утвержден</Badge>)}
-          {getStatusBadge(participant.status)}
-        </div>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleToggleApproval(participant)}
+                      title={participant.approved ? "Снять утверждение" : "Утвердить участника"}
+                    >
+                      {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEdit(participant)}
+                      title="Редактировать"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                      title="Удалить"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleToggleApproval(participant)}
-                  >
-                    {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEdit(participant)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {participants.length === 0 && (
