@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -36,11 +36,30 @@ interface Participant {
   approved_by?: string | null;
 }
 
+interface ParticipantDetails {
+  bjj_points: number;
+  kickboxing_points: number;
+  ofp_points: number;
+  theory_points: number;
+  tactical_points: number;
+  challenges_points: number;
+  bjj_zakals: number;
+  bjj_scars: number;
+  kick_zakals: number;
+  kick_scars: number;
+  ofp_zakals: number;
+  ofp_scars: number;
+  theory_grans: number;
+  tactical_scars: number;
+}
+
 export const EnhancedParticipantManagement: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [expandedParticipants, setExpandedParticipants] = useState<Set<string>>(new Set());
+  const [participantDetails, setParticipantDetails] = useState<Map<string, ParticipantDetails>>(new Map());
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -290,6 +309,56 @@ export const EnhancedParticipantManagement: React.FC = () => {
     }
   };
 
+  const fetchParticipantDetails = async (userId: string) => {
+    if (participantDetails.has(userId)) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, challenges_points')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        const details: ParticipantDetails = {
+          bjj_points: data.bjj_points || 0,
+          kickboxing_points: data.kickboxing_points || 0,
+          ofp_points: data.ofp_points || 0,
+          theory_points: data.theory_points || 0,
+          tactical_points: data.tactical_points || 0,
+          challenges_points: data.challenges_points || 0,
+          bjj_zakals: data.bjj_points || 0,
+          bjj_scars: Math.floor((data.bjj_points || 0) / 10),
+          kick_zakals: data.kickboxing_points || 0,
+          kick_scars: Math.floor((data.kickboxing_points || 0) / 10),
+          ofp_zakals: data.ofp_points || 0,
+          ofp_scars: Math.floor((data.ofp_points || 0) / 10),
+          theory_grans: data.theory_points || 0,
+          tactical_scars: data.tactical_points || 0,
+        };
+
+        setParticipantDetails(prev => new Map(prev).set(userId, details));
+      }
+    } catch (error) {
+      console.error('Error fetching participant details:', error);
+    }
+  };
+
+  const toggleExpand = (userId: string) => {
+    setExpandedParticipants(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+        fetchParticipantDetails(userId);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -484,12 +553,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
       <div className="grid gap-4">
         {participants.map((participant) => {
           const fullName = formatParticipantName(participant);
-          console.log('Rendering participant:', { 
-            id: participant.id, 
-            first_name: participant.first_name, 
-            last_name: participant.last_name,
-            fullName 
-          });
+          const isExpanded = expandedParticipants.has(participant.user_id);
+          const details = participantDetails.get(participant.user_id);
           
           return (
             <Card key={participant.id} className="p-4">
@@ -531,6 +596,14 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => toggleExpand(participant.user_id)}
+                      title={isExpanded ? "Скрыть детали" : "Показать детали"}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => handleToggleApproval(participant)}
                       title={participant.approved ? "Снять утверждение" : "Утвердить участника"}
                     >
@@ -554,6 +627,121 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     </Button>
                   </div>
                 </div>
+
+                {isExpanded && details && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-kamp-accent" />
+                      Детализация достижений КЭМП:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {details.bjj_points > 0 && (
+                        <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                          <div className="flex items-start gap-2">
+                            <Target className="w-5 h-5 text-blue-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">БЖЖ</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Закалы:</span>
+                                  <span className="font-semibold">{details.bjj_zakals}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Шрамы:</span>
+                                  <span className="font-semibold text-red-600">{details.bjj_scars}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {details.kickboxing_points > 0 && (
+                        <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                          <div className="flex items-start gap-2">
+                            <Zap className="w-5 h-5 text-red-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">Кикбоксинг</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Закалы:</span>
+                                  <span className="font-semibold">{details.kick_zakals}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Шрамы:</span>
+                                  <span className="font-semibold text-red-600">{details.kick_scars}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {details.ofp_points > 0 && (
+                        <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                          <div className="flex items-start gap-2">
+                            <Dumbbell className="w-5 h-5 text-green-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">ОФП</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Закалы:</span>
+                                  <span className="font-semibold">{details.ofp_zakals}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Шрамы:</span>
+                                  <span className="font-semibold text-red-600">{details.ofp_scars}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {details.theory_points > 0 && (
+                        <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                          <div className="flex items-start gap-2">
+                            <Book className="w-5 h-5 text-purple-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">Теория</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Грани:</span>
+                                  <span className="font-semibold">{details.theory_grans}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {details.tactical_points > 0 && (
+                        <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                          <div className="flex items-start gap-2">
+                            <Shield className="w-5 h-5 text-orange-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">Тактика</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Шрамы:</span>
+                                  <span className="font-semibold text-red-600">{details.tactical_scars}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!details.bjj_points && !details.kickboxing_points && !details.ofp_points && 
+                     !details.theory_points && !details.tactical_points && (
+                      <div className="text-center py-4 text-gray-400">
+                        <Award className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Активности пока не зафиксированы</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
