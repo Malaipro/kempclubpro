@@ -61,17 +61,7 @@ export const TrainingSessionManagement: React.FC = () => {
   };
 
   const getPointsForType = (type: string): number => {
-    switch (type) {
-      case 'bjj':
-        return 2;
-      case 'kickboxing':
-        return 2;
-      case 'physical':
-      case 'ofp':
-        return 1;
-      default:
-        return 1;
-    }
+    return 1; // Все тренировки дают 1 балл
   };
 
   const handleSubmit = async () => {
@@ -178,8 +168,8 @@ export const TrainingSessionManagement: React.FC = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bjj">БЖЖ (2 балла)</SelectItem>
-              <SelectItem value="kickboxing">Кикбоксинг (2 балла)</SelectItem>
+              <SelectItem value="bjj">БЖЖ (1 балл)</SelectItem>
+              <SelectItem value="kickboxing">Кикбоксинг (1 балл)</SelectItem>
               <SelectItem value="physical">ОФП (1 балл)</SelectItem>
             </SelectContent>
           </Select>
