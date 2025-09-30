@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +72,9 @@ export const EnhancedParticipantManagement: React.FC = () => {
     weight_kg: '',
     date_of_birth: undefined as Date | undefined,
   });
+  const [resetPasswordDialog, setResetPasswordDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Participant | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -278,6 +281,55 @@ export const EnhancedParticipantManagement: React.FC = () => {
     } catch (err) {
       console.error('Error toggling approval:', err);
       toast({ title: 'Ошибка', description: 'Не удалось обновить статус утверждения', variant: 'destructive' });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите новый пароль',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Ошибка',
+        description: 'Пароль должен содержать минимум 6 символов',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: {
+          userId: selectedUser.user_id,
+          newPassword: newPassword
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Пароль изменен',
+        description: `Пароль для ${formatParticipantName(selectedUser)} успешно изменен`,
+      });
+
+      setResetPasswordDialog(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось изменить пароль',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -656,6 +708,17 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     </Button>
                     <Button 
                       variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUser(participant);
+                        setResetPasswordDialog(true);
+                      }}
+                      title="Изменить пароль"
+                    >
+                      <Key className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
                       size="sm" 
                       className="text-destructive hover:text-destructive"
                       title="Удалить"
@@ -794,6 +857,53 @@ export const EnhancedParticipantManagement: React.FC = () => {
           </div>
         </Card>
       )}
+
+      <Dialog open={resetPasswordDialog} onOpenChange={setResetPasswordDialog}>
+        <DialogContent className="max-w-md bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Изменить пароль для {selectedUser && formatParticipantName(selectedUser)}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-white">Новый пароль</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Минимум 6 символов"
+                className="bg-white text-black"
+                minLength={6}
+              />
+              <p className="text-sm text-gray-400 mt-1">
+                Минимум 6 символов
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setResetPasswordDialog(false);
+                  setSelectedUser(null);
+                  setNewPassword('');
+                }}
+              >
+                Отмена
+              </Button>
+              <Button 
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={handleResetPassword}
+                disabled={!newPassword || newPassword.length < 6}
+              >
+                Изменить пароль
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
