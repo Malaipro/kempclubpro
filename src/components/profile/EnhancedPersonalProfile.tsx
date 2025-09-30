@@ -321,21 +321,21 @@ export const EnhancedPersonalProfile: React.FC = () => {
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} bg-muted/50 p-1`}>
-          <TabsTrigger value="profile" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold`}>
+          <TabsTrigger value="profile" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10`}>
             <User className="w-4 h-4" />
             {!isMobile && 'Профиль'}
           </TabsTrigger>
-          <TabsTrigger value="progress" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold`}>
+          <TabsTrigger value="progress" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10`}>
             <TrendingUp className="w-4 h-4" />
             {!isMobile && 'Прогресс'}
           </TabsTrigger>
           {!isMobile && (
             <>
-              <TabsTrigger value="habits" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
+              <TabsTrigger value="habits" className="flex items-center gap-2 text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10">
                 <Target className="w-4 h-4" />
                 Привычки
               </TabsTrigger>
-              <TabsTrigger value="tests" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
+              <TabsTrigger value="tests" className="flex items-center gap-2 text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10">
                 <Activity className="w-4 h-4" />
                 Тесты
               </TabsTrigger>
@@ -343,7 +343,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
           )}
           {isMobile && (
             <>
-              <TabsTrigger value="habits" className="flex items-center gap-2 text-xs data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
+              <TabsTrigger value="habits" className="flex items-center gap-2 text-xs text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10">
                 <Target className="w-4 h-4" />
               </TabsTrigger>
             </>
@@ -352,7 +352,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
         
         {isMobile && (
           <TabsList className="grid w-full grid-cols-1 bg-muted/50 mt-2 p-1">
-            <TabsTrigger value="tests" className="flex items-center gap-2 text-xs data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
+            <TabsTrigger value="tests" className="flex items-center gap-2 text-xs text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold hover:bg-white/10">
               <Activity className="w-4 h-4" />
               Тесты
             </TabsTrigger>
