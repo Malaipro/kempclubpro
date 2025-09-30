@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Trophy, Star, TrendingUp, Target, Zap, Dumbbell, Book, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Trophy, Star, TrendingUp, Target, Zap, Dumbbell, Book, Shield, ChevronDown, ChevronUp, Award, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Participant {
@@ -18,6 +18,14 @@ interface Participant {
   ofp_points?: number;
   theory_points?: number;
   tactical_points?: number;
+  totems?: Array<{
+    name: string;
+    discipline: string;
+  }>;
+  crash_tests?: Array<{
+    test_type: string;
+    passed: boolean;
+  }>;
 }
 export const RegisteredParticipants: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -44,9 +52,35 @@ export const RegisteredParticipants: React.FC = () => {
 
         if (leaderboardError) throw leaderboardError;
 
+        // Получаем тотемы для каждого участника
+        const { data: totemsData, error: totemsError } = await supabase
+          .from('user_totems')
+          .select(`
+            user_id,
+            totems (
+              name,
+              discipline
+            )
+          `)
+          .in('user_id', userIds);
+
+        if (totemsError) console.error('Error fetching totems:', totemsError);
+
+        // Получаем краш-тесты для каждого участника
+        const { data: crashTestsData, error: crashTestsError } = await supabase
+          .from('crash_tests')
+          .select('user_id, test_type, passed')
+          .eq('verified', true)
+          .in('user_id', userIds);
+
+        if (crashTestsError) console.error('Error fetching crash tests:', crashTestsError);
+
         // Объединяем данные
         const enrichedParticipants = publicProfiles?.map(profile => {
           const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
+          const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
+          const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          
           return {
             ...profile,
             bjj_points: leaderboardEntry?.bjj_points || 0,
@@ -54,6 +88,8 @@ export const RegisteredParticipants: React.FC = () => {
             ofp_points: leaderboardEntry?.ofp_points || 0,
             theory_points: leaderboardEntry?.theory_points || 0,
             tactical_points: leaderboardEntry?.tactical_points || 0,
+            totems: userTotems,
+            crash_tests: userCrashTests,
           };
         }) || [];
 
@@ -246,23 +282,70 @@ export const RegisteredParticipants: React.FC = () => {
                         {expandedRows.has(participant.id) && (
                           <TableRow>
                             <TableCell colSpan={4} className="bg-gray-50 border-t-0">
-                              <div className="py-3 px-2">
-                                <p className="text-sm font-medium text-gray-700 mb-2">Детализация баллов:</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {categoryBadges.map((badge, badgeIndex) => (
-                                    <Badge 
-                                      key={badgeIndex} 
-                                      variant="secondary"
-                                      className={`${badge.color} flex items-center gap-1`}
-                                    >
-                                      {badge.icon}
-                                      {badge.label}
-                                    </Badge>
-                                  ))}
-                                  {categoryBadges.length === 0 && (
-                                    <p className="text-sm text-gray-500">Нет активностей</p>
-                                  )}
+                              <div className="py-3 px-2 space-y-4">
+                                {/* Детализация баллов */}
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 mb-2">Детализация баллов:</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {categoryBadges.map((badge, badgeIndex) => (
+                                      <Badge 
+                                        key={badgeIndex} 
+                                        variant="secondary"
+                                        className={`${badge.color} flex items-center gap-1`}
+                                      >
+                                        {badge.icon}
+                                        {badge.label}
+                                      </Badge>
+                                    ))}
+                                    {categoryBadges.length === 0 && (
+                                      <p className="text-sm text-gray-500">Нет активностей</p>
+                                    )}
+                                  </div>
                                 </div>
+
+                                {/* Тотемы */}
+                                {participant.totems && participant.totems.length > 0 && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                      <Award className="w-4 h-4 text-yellow-600" />
+                                      Полученные тотемы:
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {participant.totems.map((totem, idx) => (
+                                        <Badge 
+                                          key={idx} 
+                                          variant="secondary"
+                                          className="bg-yellow-100 text-yellow-800 flex items-center gap-1"
+                                        >
+                                          <Award className="w-3 h-3" />
+                                          {totem.name} ({totem.discipline})
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Краш-тесты */}
+                                {participant.crash_tests && participant.crash_tests.length > 0 && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                      <Shield className="w-4 h-4 text-green-600" />
+                                      Пройденные краш-тесты:
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {participant.crash_tests.map((test, idx) => (
+                                        <Badge 
+                                          key={idx} 
+                                          variant="secondary"
+                                          className={`${test.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} flex items-center gap-1`}
+                                        >
+                                          {test.passed ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                          {test.test_type.toUpperCase()} {test.passed ? '✓' : '✗'}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
