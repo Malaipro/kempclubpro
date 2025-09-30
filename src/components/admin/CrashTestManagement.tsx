@@ -24,7 +24,7 @@ export const CrashTestManagement: React.FC = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [testType, setTestType] = useState<string>('tactical_test');
+  const [testType, setTestType] = useState<string>('bjj');
   const [testDate, setTestDate] = useState<Date>(new Date());
   const [passed, setPassed] = useState<boolean>(false);
   const [notes, setNotes] = useState('');
@@ -97,7 +97,7 @@ export const CrashTestManagement: React.FC = () => {
 
       // Сброс формы
       setSelectedUserId('');
-      setTestType('tactical_test');
+      setTestType('bjj');
       setTestDate(new Date());
       setPassed(false);
       setNotes('');
@@ -158,9 +158,9 @@ export const CrashTestManagement: React.FC = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tactical_test">Тактический тест</SelectItem>
-              <SelectItem value="physical_test">Физический тест</SelectItem>
-              <SelectItem value="technical_test">Технический тест</SelectItem>
+              <SelectItem value="bjj">БЖЖ</SelectItem>
+              <SelectItem value="kickboxing">Кикбоксинг</SelectItem>
+              <SelectItem value="ofp">ОФП (финальное испытание)</SelectItem>
             </SelectContent>
           </Select>
         </div>
