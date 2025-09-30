@@ -1040,7 +1040,7 @@ export type Database = {
             foreignKeyName: "schedules_instructor_id_fkey"
             columns: ["instructor_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "trainers"
             referencedColumns: ["id"]
           },
         ]
