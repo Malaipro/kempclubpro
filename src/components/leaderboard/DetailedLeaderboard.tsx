@@ -157,6 +157,10 @@ export const DetailedLeaderboard: React.FC = () => {
       );
 
       setLeaderboard(detailedData);
+      
+      // Автоматически раскрываем детали для всех участников
+      const allEntryIds = detailedData.map(entry => entry.id);
+      setExpandedEntries(new Set(allEntryIds));
 
     } catch (error) {
       console.error('Error in fetchLeaderboard:', error);
