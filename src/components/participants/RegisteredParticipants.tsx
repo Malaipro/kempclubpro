@@ -187,7 +187,7 @@ export const RegisteredParticipants: React.FC = () => {
                 <div className="flex items-center gap-2 mb-6">
                   <Users className="w-5 h-5 text-kamp-accent" />
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Утвержденные участники ({participants.length})
+                    Участники ({participants.length})
                   </h3>
                 </div>
                 
