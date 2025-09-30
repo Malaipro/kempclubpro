@@ -320,22 +320,22 @@ export const EnhancedPersonalProfile: React.FC = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} bg-muted/50`}>
-          <TabsTrigger value="profile" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
+        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} bg-muted/50 p-1`}>
+          <TabsTrigger value="profile" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold`}>
             <User className="w-4 h-4" />
             {!isMobile && 'Профиль'}
           </TabsTrigger>
-          <TabsTrigger value="progress" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
+          <TabsTrigger value="progress" className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''} data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold`}>
             <TrendingUp className="w-4 h-4" />
             {!isMobile && 'Прогресс'}
           </TabsTrigger>
           {!isMobile && (
             <>
-              <TabsTrigger value="habits" className="flex items-center gap-2">
+              <TabsTrigger value="habits" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
                 <Target className="w-4 h-4" />
                 Привычки
               </TabsTrigger>
-              <TabsTrigger value="tests" className="flex items-center gap-2">
+              <TabsTrigger value="tests" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
                 <Activity className="w-4 h-4" />
                 Тесты
               </TabsTrigger>
@@ -343,7 +343,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
           )}
           {isMobile && (
             <>
-              <TabsTrigger value="habits" className="flex items-center gap-2 text-xs">
+              <TabsTrigger value="habits" className="flex items-center gap-2 text-xs data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
                 <Target className="w-4 h-4" />
               </TabsTrigger>
             </>
@@ -351,8 +351,8 @@ export const EnhancedPersonalProfile: React.FC = () => {
         </TabsList>
         
         {isMobile && (
-          <TabsList className="grid w-full grid-cols-1 bg-muted/50 mt-2">
-            <TabsTrigger value="tests" className="flex items-center gap-2 text-xs">
+          <TabsList className="grid w-full grid-cols-1 bg-muted/50 mt-2 p-1">
+            <TabsTrigger value="tests" className="flex items-center gap-2 text-xs data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md border-2 border-transparent data-[state=active]:border-gray-300 font-semibold">
               <Activity className="w-4 h-4" />
               Тесты
             </TabsTrigger>
