@@ -201,12 +201,16 @@ export const RegisteredParticipants: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {participants.map((participant, index) => (
-                      <React.Fragment key={participant.id}>
-                        <TableRow 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => toggleExpanded(participant.id)}
-                        >
+                    {participants.map((participant, index) => {
+                      const isExpanded = expandedRows.has(participant.id);
+                      const categoryBadges = getCategoryBadges(participant);
+                      
+                      return (
+                        <React.Fragment key={participant.id}>
+                          <TableRow 
+                            className="cursor-pointer hover:bg-gray-50"
+                            onClick={() => toggleExpanded(participant.id)}
+                          >
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {getRankIcon(participant.rank_position || index + 1)}
@@ -245,7 +249,7 @@ export const RegisteredParticipants: React.FC = () => {
                               <div className="py-3 px-2">
                                 <p className="text-sm font-medium text-gray-700 mb-2">Детализация баллов:</p>
                                 <div className="flex flex-wrap gap-2">
-                                  {getCategoryBadges(participant).map((badge, badgeIndex) => (
+                                  {categoryBadges.map((badge, badgeIndex) => (
                                     <Badge 
                                       key={badgeIndex} 
                                       variant="secondary"
@@ -255,16 +259,17 @@ export const RegisteredParticipants: React.FC = () => {
                                       {badge.label}
                                     </Badge>
                                   ))}
-                                  {getCategoryBadges(participant).length === 0 && (
+                                  {categoryBadges.length === 0 && (
                                     <p className="text-sm text-gray-500">Нет активностей</p>
                                   )}
                                 </div>
                               </div>
                             </TableCell>
                           </TableRow>
-                        )}
-                      </React.Fragment>
-                    ))}
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
