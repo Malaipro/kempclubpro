@@ -15,76 +15,62 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield, Activity, Calendar, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut, loading } = useAuth();
-  const { isSuperAdmin, loading: roleLoading } = useRole();
+  const {
+    user,
+    signOut,
+    loading
+  } = useAuth();
+  const {
+    isSuperAdmin,
+    loading: roleLoading
+  } = useRole();
   const isMobile = useIsMobile();
   const [participantData, setParticipantData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('kamp');
-
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
-
   useEffect(() => {
     const loadParticipantData = async () => {
       if (!user) return;
-      
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
+        const {
+          data,
+          error
+        } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
         if (error) {
           console.error('Error loading profile data:', error);
           return;
         }
-
         setParticipantData(data);
       } catch (error) {
         console.error('Error in loadParticipantData:', error);
       }
     };
-
     if (user) {
       loadParticipantData();
     }
   }, [user]);
-
   if (loading || roleLoading) {
-    return (
-      <Layout>
+    return <Layout>
         <div className="kamp-section bg-black min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kamp-accent"></div>
         </div>
-      </Layout>
-    );
+      </Layout>;
   }
-
   if (!user) {
     return null;
   }
-
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
-
-  const displayName =
-    participantData?.display_name ||
-    [participantData?.first_name, participantData?.last_name].filter(Boolean).join(' ') ||
-    (user.user_metadata?.display_name as string | undefined) ||
-    [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ') ||
-    user.email || 'Пользователь';
-
-  return (
-    <Layout>
+  const displayName = participantData?.display_name || [participantData?.first_name, participantData?.last_name].filter(Boolean).join(' ') || user.user_metadata?.display_name as string | undefined || [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ') || user.email || 'Пользователь';
+  return <Layout>
       <div className="bg-black">
         {/* Dashboard Header */}
         <section className="kamp-section bg-gradient-to-b from-black to-gray-900">
@@ -105,12 +91,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={handleSignOut}
-                variant="outline"
-                size={isMobile ? "sm" : "default"}
-                className="border-kamp-accent text-kamp-accent hover:bg-kamp-accent hover:text-black flex-shrink-0"
-              >
+              <Button onClick={handleSignOut} variant="outline" size={isMobile ? "sm" : "default"} className="border-kamp-accent text-kamp-accent hover:bg-kamp-accent hover:text-black flex-shrink-0">
                 <LogOut className="w-4 h-4 mr-1" />
                 <span className={isMobile ? "text-xs" : ""}>{isMobile ? "Выход" : "Выйти"}</span>
               </Button>
@@ -121,49 +102,31 @@ export const Dashboard: React.FC = () => {
         {/* Dashboard Content */}
         <section className="kamp-section">
           <div className="kamp-container">
-            {isSuperAdmin ? (
-              <AdminDashboard />
-            ) : (
-              <Tabs defaultValue="profile" className="w-full">
+            {isSuperAdmin ? <AdminDashboard /> : <Tabs defaultValue="profile" className="w-full">
                 <div className="mb-6">
                   <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
-                    <TabsTrigger 
-                      value="profile" 
-                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
-                    >
+                    <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
                       <User className="w-4 h-4" />
                       <span className="text-center">Профиль</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="kamp" 
-                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
-                    >
+                    <TabsTrigger value="kamp" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
                       <Activity className="w-4 h-4" />
                       <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП'}</span>
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="leaderboard" 
-                      className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}
-                    >
+                    <TabsTrigger value="leaderboard" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
                       <Trophy className="w-4 h-4" />
                       <span className="text-center">Рейтинг</span>
                     </TabsTrigger>
-                    {!isMobile && (
-                      <>
-                        <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
-                          <Shield className="w-4 h-4" />
-                          <span className="text-center">Тест Купера</span>
-                        </TabsTrigger>
+                    {!isMobile && <>
+                        
                         <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
                           <Calendar className="w-4 h-4" />
                           <span className="text-center">Расписание</span>
                         </TabsTrigger>
-                      </>
-                    )}
+                      </>}
                   </TabsList>
                   
-                  {isMobile && (
-                    <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mt-2">
+                  {isMobile && <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mt-2">
                       <TabsTrigger value="cooper" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
                         <Shield className="w-4 h-4" />
                         <span className="text-center">Купер</span>
@@ -172,8 +135,7 @@ export const Dashboard: React.FC = () => {
                         <Calendar className="w-4 h-4" />
                         <span className="text-center">Расписание</span>
                       </TabsTrigger>
-                    </TabsList>
-                  )}
+                    </TabsList>}
                 </div>
                 
                 <TabsContent value="profile">
@@ -200,11 +162,9 @@ export const Dashboard: React.FC = () => {
                 <TabsContent value="schedule">
                   <ScheduleViewer />
                 </TabsContent>
-              </Tabs>
-            )}
+              </Tabs>}
           </div>
         </section>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
