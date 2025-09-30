@@ -5,7 +5,7 @@ import { useRole } from '@/hooks/useRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Layout } from '@/components/Layout';
 import { KampSystemUser } from '@/components/kamp/KampSystemUser';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { EnhancedAdminPanel } from '@/components/admin/EnhancedAdminPanel';
 import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
@@ -102,7 +102,7 @@ export const Dashboard: React.FC = () => {
         {/* Dashboard Content */}
         <section className="kamp-section">
           <div className="kamp-container">
-            {isSuperAdmin ? <AdminDashboard /> : <Tabs defaultValue="profile" className="w-full">
+            {isSuperAdmin ? <EnhancedAdminPanel /> : <Tabs defaultValue="profile" className="w-full">
                 <div className="mb-6">
                   <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
                     <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
