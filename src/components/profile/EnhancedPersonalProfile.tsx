@@ -33,6 +33,7 @@ import { ru } from 'date-fns/locale';
 import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 import { ParticipantAchievements } from './ParticipantAchievements';
 import { UserTotems } from './UserTotems';
+import { UserActivities } from '@/components/leaderboard/UserActivities';
 
 interface Profile {
   id: string;
@@ -315,6 +316,9 @@ export const EnhancedPersonalProfile: React.FC = () => {
       
       {/* Карточка тотемов */}
       <UserTotems />
+      
+      {/* Активности и краш-тесты */}
+      <UserActivities />
       
       <div className="flex items-center justify-between">
         <div>
