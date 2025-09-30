@@ -5,7 +5,7 @@ import { RealKampProgress } from './RealKampProgress';
 import { KampManual } from '@/components/instructions/KampManual';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
 import { AccountSettings } from '@/components/profile';
-import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
+import { ScheduleTableView } from '@/components/schedule/ScheduleTableView';
 import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 import { Book, Trophy, FileText, User, Settings, Calendar, Activity } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
@@ -76,7 +76,7 @@ export const KampSystemUser: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="schedule">
-            <ScheduleViewer />
+            <ScheduleTableView />
           </TabsContent>
           
           <TabsContent value="manual">

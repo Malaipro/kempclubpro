@@ -25,6 +25,7 @@ interface ScheduleItem {
   time: string;
   activity: string;
   instructor: string;
+  instructor_id?: string | null;
 }
 
 interface Trainer {
@@ -33,51 +34,10 @@ interface Trainer {
 }
 
 export const DetailedScheduleManagement: React.FC = () => {
-  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([
-    {
-      id: '1',
-      ascetic_nutrition: 'вводная неделя',
-      nutrition: 'Вводная по нутрициологии',
-      date: '08.09.2025',
-      dayOfWeek: 'Понедельник',
-      time: '08:00:00-07:30:00',
-      activity: 'BJJ',
-      instructor: '-'
-    },
-    {
-      id: '2',
-      ascetic_nutrition: '-',
-      nutrition: '-',
-      date: '10.09.2025',
-      dayOfWeek: 'Среда',
-      time: '06:00:00-07:30:00',
-      activity: 'ОФП',
-      instructor: 'Андреев Дмитрий'
-    },
-    {
-      id: '3',
-      ascetic_nutrition: 'Вводная неделя',
-      nutrition: 'Вводная неделя',
-      date: '10.09.2025',
-      dayOfWeek: 'Среда',
-      time: '07:30:00-07:30:00',
-      activity: 'Вводная лекция Пирамида КЭМП',
-      instructor: 'Андреев Дмитрий'
-    },
-    {
-      id: '4',
-      ascetic_nutrition: 'вводная неделя',
-      nutrition: 'вводная неделя',
-      date: '12.09.2025',
-      dayOfWeek: 'Пятница',
-      time: '06:00:00-07:30:00',
-      activity: 'Тренировка Кикбоксинг',
-      instructor: 'Андреев Дмитрий'
-    },
-  ]);
-
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     ascetic_nutrition: '',
     nutrition: '',
@@ -91,7 +51,55 @@ export const DetailedScheduleManagement: React.FC = () => {
 
   useEffect(() => {
     fetchTrainers();
+    fetchSchedules();
   }, []);
+
+  const fetchSchedules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('is_active', true)
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+
+      // Fetch trainers to map instructor_id to names
+      const { data: trainersData } = await supabase
+        .from('trainers')
+        .select('id, name')
+        .eq('is_active', true);
+
+      const trainersMap = new Map((trainersData || []).map(t => [t.id, t.name]));
+
+      const formattedItems: ScheduleItem[] = (data || []).map(schedule => {
+        const [ascetic_nutrition = '', nutrition = ''] = (schedule.description || '').split(' | ');
+        const startDate = new Date(schedule.start_time);
+        const endDate = new Date(schedule.end_time);
+        
+        return {
+          id: schedule.id,
+          ascetic_nutrition: ascetic_nutrition || '-',
+          nutrition: nutrition || '-',
+          date: format(startDate, 'dd.MM.yyyy'),
+          dayOfWeek: getDayOfWeek(startDate),
+          time: `${format(startDate, 'HH:mm:ss')}-${format(endDate, 'HH:mm:ss')}`,
+          activity: schedule.title,
+          instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
+          instructor_id: schedule.instructor_id
+        };
+      });
+
+      setScheduleItems(formattedItems);
+    } catch (error) {
+      console.error('Error fetching schedules:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить расписание',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const fetchTrainers = async () => {
     try {
@@ -132,61 +140,114 @@ export const DetailedScheduleManagement: React.FC = () => {
       return d.toISOString();
     };
 
-    const selectedTrainer = trainers.find(t => t.id === formData.instructor_id);
-    const newEvent: ScheduleItem = {
-      id: Date.now().toString(),
-      ascetic_nutrition: formData.ascetic_nutrition,
-      nutrition: formData.nutrition,
-      date: format(formData.date, 'dd.MM.yyyy'),
-      dayOfWeek: getDayOfWeek(formData.date),
-      time: `${formData.start_time}:00-${formData.end_time}:00`,
-      activity: formData.activity,
-      instructor: selectedTrainer ? selectedTrainer.name : '-'
-    };
-
-    // Обновим локальную таблицу для визуальной обратной связи
-    setScheduleItems(prev => [...prev, newEvent]);
-
-    // Сохранение в базу данных (таблица schedules)
     try {
-      const { error } = await supabase.from('schedules').insert({
-        title: formData.activity,
-        description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
-        start_time: toISO(formData.date, formData.start_time),
-        end_time: toISO(formData.date, formData.end_time),
-        location: null,
-        activity_type: formData.activity,
-        max_participants: null,
-        is_active: true,
-        instructor_id: formData.instructor_id || null,
-      });
+      if (editingId) {
+        // Update existing schedule
+        const { error } = await supabase
+          .from('schedules')
+          .update({
+            title: formData.activity,
+            description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+            start_time: toISO(formData.date, formData.start_time),
+            end_time: toISO(formData.date, formData.end_time),
+            activity_type: formData.activity,
+            instructor_id: formData.instructor_id || null,
+          })
+          .eq('id', editingId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: 'Успех',
-        description: 'Мероприятие добавлено и опубликовано в расписании',
+        toast({
+          title: 'Успех',
+          description: 'Мероприятие обновлено',
+        });
+      } else {
+        // Insert new schedule
+        const { error } = await supabase.from('schedules').insert({
+          title: formData.activity,
+          description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+          start_time: toISO(formData.date, formData.start_time),
+          end_time: toISO(formData.date, formData.end_time),
+          location: null,
+          activity_type: formData.activity,
+          max_participants: null,
+          is_active: true,
+          instructor_id: formData.instructor_id || null,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Успех',
+          description: 'Мероприятие добавлено и опубликовано в расписании',
+        });
+      }
+
+      await fetchSchedules();
+      setDialogOpen(false);
+      setEditingId(null);
+      setFormData({
+        ascetic_nutrition: '',
+        nutrition: '',
+        date: undefined,
+        start_time: '08:00',
+        end_time: '09:30',
+        activity: '',
+        instructor_id: '',
       });
     } catch (err) {
-      console.error('Error inserting schedule:', err);
+      console.error('Error saving schedule:', err);
       toast({
         title: 'Ошибка',
         description: 'Не удалось сохранить мероприятие. Проверьте права и попробуйте снова.',
         variant: 'destructive',
       });
     }
+  };
 
-    // Сброс формы
-    setDialogOpen(false);
+  const handleEdit = (item: ScheduleItem) => {
+    const [startTime, endTime] = item.time.split('-');
+    const [day, month, year] = item.date.split('.');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
+    setEditingId(item.id);
     setFormData({
-      ascetic_nutrition: '',
-      nutrition: '',
-      date: undefined,
-      start_time: '08:00',
-      end_time: '09:30',
-      activity: '',
-      instructor_id: '',
+      ascetic_nutrition: item.ascetic_nutrition === '-' ? '' : item.ascetic_nutrition,
+      nutrition: item.nutrition === '-' ? '' : item.nutrition,
+      date: date,
+      start_time: startTime.slice(0, 5),
+      end_time: endTime.slice(0, 5),
+      activity: item.activity,
+      instructor_id: item.instructor_id || '',
     });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить это мероприятие?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успех',
+        description: 'Мероприятие удалено',
+      });
+
+      await fetchSchedules();
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить мероприятие',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getActivityBadgeColor = (activity: string) => {
@@ -208,7 +269,21 @@ export const DetailedScheduleManagement: React.FC = () => {
           </h1>
           <p className="text-muted-foreground">Детальное расписание мероприятий с полным редактированием</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingId(null);
+            setFormData({
+              ascetic_nutrition: '',
+              nutrition: '',
+              date: undefined,
+              start_time: '08:00',
+              end_time: '09:30',
+              activity: '',
+              instructor_id: '',
+            });
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-destructive hover:bg-destructive/90 text-white">
               <Plus className="w-4 h-4 mr-2" />
@@ -218,7 +293,9 @@ export const DetailedScheduleManagement: React.FC = () => {
           
           <DialogContent className="max-w-lg bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-white">Добавить мероприятие</DialogTitle>
+              <DialogTitle className="text-white">
+                {editingId ? 'Редактировать мероприятие' : 'Добавить мероприятие'}
+              </DialogTitle>
             </DialogHeader>
             
             <form onSubmit={handleAddEvent} className="space-y-4">
@@ -329,7 +406,7 @@ export const DetailedScheduleManagement: React.FC = () => {
                   type="submit" 
                   className="bg-destructive hover:bg-destructive/90 text-white"
                 >
-                  Добавить мероприятие
+                  {editingId ? 'Сохранить изменения' : 'Добавить мероприятие'}
                 </Button>
                 <Button 
                   type="button" 
@@ -380,10 +457,20 @@ export const DetailedScheduleManagement: React.FC = () => {
                     <TableCell>{item.instructor}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(item)}
+                          className="hover:bg-gray-700"
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:bg-gray-700"
+                          onClick={() => handleDelete(item.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
