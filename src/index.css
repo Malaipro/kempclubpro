@@ -109,15 +109,15 @@
   }
 
   .kamp-button-primary {
-    @apply kamp-button bg-kamp-primary text-white hover:bg-opacity-90 focus:ring-kamp-primary;
+    @apply kamp-button bg-kamp-primary text-white hover:bg-red-700 focus:ring-kamp-primary shadow-lg hover:shadow-xl;
   }
 
   .kamp-button-accent {
-    @apply kamp-button bg-kamp-accent text-white hover:bg-opacity-90 focus:ring-kamp-accent;
+    @apply kamp-button bg-kamp-accent text-white hover:bg-red-600 focus:ring-kamp-accent shadow-lg hover:shadow-xl;
   }
 
   .kamp-button-secondary {
-    @apply kamp-button bg-black text-white border border-gray-700 hover:bg-gray-900 focus:ring-gray-700;
+    @apply kamp-button bg-gray-900 text-white border-2 border-gray-600 hover:bg-gray-800 hover:border-gray-500 focus:ring-gray-600 shadow-md hover:shadow-lg;
   }
 
   .kamp-input {

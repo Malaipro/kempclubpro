@@ -367,6 +367,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setEditingProfile(!editingProfile)}
+                  className="border-2 border-gray-600 hover:bg-gray-800 hover:border-gray-400 font-semibold"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   {editingProfile ? 'Отмена' : 'Редактировать'}
@@ -485,10 +486,10 @@ export const EnhancedPersonalProfile: React.FC = () => {
                   </div>
 
                   <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2`}>
-                    <Button onClick={handleProfileSave} className="bg-kamp-accent hover:bg-kamp-accent/90">
+                    <Button onClick={handleProfileSave} className="bg-kamp-accent hover:bg-red-600 text-white font-bold shadow-lg">
                       Сохранить
                     </Button>
-                    <Button variant="outline" onClick={() => setEditingProfile(false)}>
+                    <Button variant="outline" onClick={() => setEditingProfile(false)} className="border-2 border-gray-600 hover:bg-gray-800 hover:border-gray-400 font-semibold">
                       Отмена
                     </Button>
                   </div>
@@ -596,7 +597,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
               <h2 className="text-xl font-semibold">Мои привычки и аскезы</h2>
               <Dialog open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-kamp-accent hover:bg-kamp-accent/90">
+                  <Button className="bg-kamp-accent hover:bg-red-600 text-white font-bold shadow-lg">
                     <Plus className="w-4 h-4 mr-2" />
                     Добавить привычку
                   </Button>
@@ -675,10 +676,10 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button onClick={handleHabitSave} className="bg-kamp-accent hover:bg-kamp-accent/90">
+                      <Button onClick={handleHabitSave} className="bg-kamp-accent hover:bg-red-600 text-white font-bold shadow-lg">
                         Добавить
                       </Button>
-                      <Button variant="outline" onClick={() => setHabitDialogOpen(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">
+                      <Button variant="outline" onClick={() => setHabitDialogOpen(false)} className="border-2 border-gray-500 text-gray-200 hover:bg-gray-800 hover:border-gray-400 font-semibold">
                         Отмена
                       </Button>
                     </div>
