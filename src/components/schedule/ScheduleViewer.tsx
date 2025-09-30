@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
@@ -21,16 +20,8 @@ interface Schedule {
   instructor_id: string | null;
 }
 
-interface ScheduleParticipant {
-  id: string;
-  user_id: string;
-  schedule_id: string;
-  attended: boolean;
-}
-
 export const ScheduleViewer: React.FC = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [userParticipation, setUserParticipation] = useState<ScheduleParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -54,73 +45,15 @@ export const ScheduleViewer: React.FC = () => {
     }
   };
 
-  const fetchUserParticipation = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('schedule_participants')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      setUserParticipation(data || []);
-    } catch (error) {
-      console.error('Error fetching user participation:', error);
-    }
-  };
-
-  const handleRegister = async (scheduleId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: 'Ошибка',
-          description: 'Необходимо войти в систему',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('schedule_participants')
-        .insert({
-          user_id: user.id,
-          schedule_id: scheduleId
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Успешно',
-        description: 'Вы записались на занятие',
-      });
-
-      fetchUserParticipation();
-    } catch (error) {
-      console.error('Error registering for schedule:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось записаться на занятие',
-        variant: 'destructive',
-      });
-    }
-  };
-
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchSchedules(), fetchUserParticipation()]);
+      await fetchSchedules();
       setLoading(false);
     };
 
     loadData();
   }, []);
-
-  const isRegistered = (scheduleId: string) => {
-    return userParticipation.some(p => p.schedule_id === scheduleId);
-  };
 
   const getDateLabel = (dateString: string) => {
     const date = parseISO(dateString);
@@ -207,23 +140,6 @@ export const ScheduleViewer: React.FC = () => {
                         {format(parseISO(schedule.start_time), 'HH:mm')} - {format(parseISO(schedule.end_time), 'HH:mm')}
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="ml-4">
-                    {isRegistered(schedule.id) ? (
-                      <Badge variant="secondary" className="bg-green-600 text-white">
-                        Записан
-                      </Badge>
-                    ) : (
-                      <Button
-                        onClick={() => handleRegister(schedule.id)}
-                        size="sm"
-                        className="bg-destructive hover:bg-destructive/90 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Записаться
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
