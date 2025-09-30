@@ -2,14 +2,16 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KampInstructions } from './KampInstructions';
 import { RealKampProgress } from './RealKampProgress';
-import { AsceticManagement } from './AsceticManagement';
 import { KampManual } from '@/components/instructions/KampManual';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
 import { AccountSettings } from '@/components/profile';
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
-import { Book, Trophy, Target, FileText, User, Settings, Calendar } from 'lucide-react';
+import { Book, Trophy, FileText, User, Settings, Calendar } from 'lucide-react';
+import { useRole } from '@/hooks/useRole';
 
 export const KampSystemUser: React.FC = () => {
+  const { isAdmin, isSuperAdmin } = useRole();
+  
   return (
     <section id="kamp-system" className="kamp-section bg-black">
       <div className="kamp-container">
@@ -37,10 +39,6 @@ export const KampSystemUser: React.FC = () => {
                 <Book className="w-4 h-4" />
                 <span className="whitespace-nowrap">Инструкция</span>
               </TabsTrigger>
-              <TabsTrigger value="ascetics" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
-                <Target className="w-4 h-4" />
-                <span className="whitespace-nowrap">Аскезы</span>
-              </TabsTrigger>
               <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
                 <Calendar className="w-4 h-4" />
                 <span className="whitespace-nowrap">Расписание</span>
@@ -66,10 +64,6 @@ export const KampSystemUser: React.FC = () => {
           
           <TabsContent value="instructions">
             <KampInstructions />
-          </TabsContent>
-          
-          <TabsContent value="ascetics">
-            <AsceticManagement />
           </TabsContent>
           
           <TabsContent value="schedule">
