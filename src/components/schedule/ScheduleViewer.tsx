@@ -40,7 +40,6 @@ export const ScheduleViewer: React.FC = () => {
         .from('schedules')
         .select('*')
         .eq('is_active', true)
-        .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true });
 
       if (error) throw error;
