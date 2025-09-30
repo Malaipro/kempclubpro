@@ -24,6 +24,9 @@ import { TestimonialManagement } from '@/components/admin/TestimonialManagement'
 import { StreamManagement } from '@/components/admin/StreamManagement';
 import { HabitsManagement } from '@/components/admin/HabitsManagement';
 import { AsceticTypesManagement } from '@/components/admin/AsceticTypesManagement';
+import { TotemAssignment } from '@/components/admin/TotemAssignment';
+import { CrashTestManagement } from '@/components/admin/CrashTestManagement';
+import { TrainingSessionManagement } from '@/components/admin/TrainingSessionManagement';
 
 interface TabConfig {
   id: string;
@@ -57,6 +60,12 @@ const adminTabs: TabConfig[] = [
     label: 'Привычки', 
     icon: Target,
     description: 'Управление привычками участников'
+  },
+  { 
+    id: 'activities', 
+    label: 'Активности', 
+    icon: Activity,
+    description: 'Добавление тренировок и краштестов'
   },
   { 
     id: 'ascetic-types', 
@@ -134,6 +143,16 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <StreamManagement />;
       case 'habits':
         return <HabitsManagement />;
+      case 'activities':
+        return (
+          <div className="grid gap-6 md:grid-cols-2">
+            <TrainingSessionManagement />
+            <CrashTestManagement />
+            <div className="md:col-span-2">
+              <TotemAssignment />
+            </div>
+          </div>
+        );
       case 'ascetic-types':
         return <AsceticTypesManagement />;
       case 'security':

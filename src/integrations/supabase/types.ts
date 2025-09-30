@@ -1610,36 +1610,44 @@ export type Database = {
       }
       user_totems: {
         Row: {
+          assigned_at: string
+          assigned_by: string | null
           created_at: string
-          earned_at: string
           id: string
+          is_manual: boolean | null
           notes: string | null
-          totem_type: Database["public"]["Enums"]["totem_type"]
+          totem_id: string
           user_id: string
-          verified: boolean | null
-          verified_by: string | null
         }
         Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
           created_at?: string
-          earned_at?: string
           id?: string
+          is_manual?: boolean | null
           notes?: string | null
-          totem_type: Database["public"]["Enums"]["totem_type"]
+          totem_id: string
           user_id: string
-          verified?: boolean | null
-          verified_by?: string | null
         }
         Update: {
+          assigned_at?: string
+          assigned_by?: string | null
           created_at?: string
-          earned_at?: string
           id?: string
+          is_manual?: boolean | null
           notes?: string | null
-          totem_type?: Database["public"]["Enums"]["totem_type"]
+          totem_id?: string
           user_id?: string
-          verified?: boolean | null
-          verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_totems_totem"
+            columns: ["totem_id"]
+            isOneToOne: false
+            referencedRelation: "totems"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
