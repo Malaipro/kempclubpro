@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Award, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { TotemIcon } from '@/components/totems/TotemIcon';
 
 interface UserTotem {
   id: string;
@@ -166,9 +167,10 @@ export const UserTotems: React.FC<Props> = ({ userId }) => {
                   </p>
                 </div>
 
-                <Award
+                <TotemIcon
+                  iconName={userTotem.totems.icon_name}
+                  color={userTotem.totems.icon_color || '#e60000'}
                   className="h-12 w-12 flex-shrink-0"
-                  style={{ color: userTotem.totems.icon_color || '#e60000' }}
                 />
               </div>
             </div>
