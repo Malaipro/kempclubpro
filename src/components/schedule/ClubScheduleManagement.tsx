@@ -499,7 +499,14 @@ export const ClubScheduleManagement: React.FC = () => {
                     <TableCell>{item.dayOfWeek}</TableCell>
                     <TableCell className="font-mono text-sm">{item.time}</TableCell>
                     <TableCell>
-                      <Badge className={getActivityBadgeColor(item.activity)}>
+                      <Badge 
+                        style={{ 
+                          backgroundColor: item.color || '#10b981',
+                          color: 'white',
+                          borderColor: item.color || '#10b981'
+                        }}
+                        className="border"
+                      >
                         {item.activity}
                       </Badge>
                     </TableCell>

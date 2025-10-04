@@ -523,7 +523,14 @@ export const IntensiveScheduleManagement: React.FC = () => {
                     <TableCell>{item.dayOfWeek}</TableCell>
                     <TableCell className="font-mono text-sm">{item.time}</TableCell>
                     <TableCell>
-                      <Badge className={getActivityBadgeColor(item.activity)}>
+                      <Badge 
+                        style={{ 
+                          backgroundColor: item.color || '#6366f1',
+                          color: 'white',
+                          borderColor: item.color || '#6366f1'
+                        }}
+                        className="border"
+                      >
                         {item.activity}
                       </Badge>
                     </TableCell>
