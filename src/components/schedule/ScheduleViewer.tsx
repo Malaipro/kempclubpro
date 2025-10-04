@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, CalendarPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { toast as sonnerToast } from 'sonner';
 
 interface Schedule {
   id: string;
@@ -82,6 +84,16 @@ export const ScheduleViewer: React.FC = () => {
     }
   };
 
+  const handleSubscribeCalendar = () => {
+    const calendarUrl = 'https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/calendar-feed';
+    
+    navigator.clipboard.writeText(calendarUrl).then(() => {
+      sonnerToast.success('Ссылка скопирована!', {
+        description: 'Добавьте эту ссылку в ваш календарь (Google/Apple/Outlook)',
+      });
+    });
+  };
+
   if (loading) {
     return (
       <div className="bg-gray-900 p-6 rounded-lg">
@@ -94,9 +106,20 @@ export const ScheduleViewer: React.FC = () => {
 
   return (
     <div className="bg-gray-900 p-6 rounded-lg">
-      <div className="flex items-center gap-2 mb-6">
-        <Calendar className="w-5 h-5 text-destructive" />
-        <h2 className="text-xl font-semibold text-destructive">Расписание</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-destructive" />
+          <h2 className="text-xl font-semibold text-destructive">Расписание</h2>
+        </div>
+        <Button
+          onClick={handleSubscribeCalendar}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <CalendarPlus className="w-4 h-4" />
+          Подписаться
+        </Button>
       </div>
 
       {schedules.length === 0 ? (

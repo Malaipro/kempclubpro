@@ -24,3 +24,6 @@ verify_jwt = false
 
 [functions.enhanced-security-webhook]
 verify_jwt = false
+
+[functions.calendar-feed]
+verify_jwt = false
