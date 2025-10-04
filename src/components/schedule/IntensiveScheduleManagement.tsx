@@ -504,8 +504,8 @@ export const IntensiveScheduleManagement: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[150px]">Смысл аскезы/Парадигма КЭМП</TableHead>
-                  <TableHead className="min-w-[150px]">Смысл аскезы/Нутрициология</TableHead>
+                  <TableHead className="min-w-[150px] bg-primary/20 font-bold text-primary">Парадигма КЭМП</TableHead>
+                  <TableHead className="min-w-[150px] bg-primary/20 font-bold text-primary">Нутрициология</TableHead>
                   <TableHead className="min-w-[100px]">Дата</TableHead>
                   <TableHead className="min-w-[100px]">День недели</TableHead>
                   <TableHead className="min-w-[120px]">Время</TableHead>
