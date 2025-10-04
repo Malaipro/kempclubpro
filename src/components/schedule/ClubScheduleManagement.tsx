@@ -396,12 +396,64 @@ export const ClubScheduleManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-white">Цвет мероприятия</Label>
-                  <Input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="h-10 w-full"
-                  />
+                  <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
+                    <SelectTrigger className="bg-white text-black">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: formData.color }}></div>
+                        <SelectValue placeholder="Выберите цвет" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                      <SelectItem value="#6366f1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#6366f1]"></div>
+                          <span>Индиго</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#ef4444">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#ef4444]"></div>
+                          <span>Красный</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#3b82f6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#3b82f6]"></div>
+                          <span>Синий</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#10b981">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#10b981]"></div>
+                          <span>Зелёный</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#f59e0b">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#f59e0b]"></div>
+                          <span>Оранжевый</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#8b5cf6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#8b5cf6]"></div>
+                          <span>Фиолетовый</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#ec4899">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#ec4899]"></div>
+                          <span>Розовый</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="#14b8a6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-[#14b8a6]"></div>
+                          <span>Бирюзовый</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
