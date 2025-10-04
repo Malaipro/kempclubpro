@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-
 interface ScheduleItem {
   id: string;
   ascetic_nutrition: string;
@@ -28,12 +27,10 @@ interface ScheduleItem {
   instructor_id?: string | null;
   color?: string;
 }
-
 interface Trainer {
   id: string;
   name: string;
 }
-
 export const IntensiveScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -47,38 +44,32 @@ export const IntensiveScheduleManagement: React.FC = () => {
     end_time: '09:30',
     activity: '',
     instructor_id: '',
-    color: '#6366f1',
+    color: '#6366f1'
   });
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchTrainers();
     fetchSchedules();
   }, []);
-
   const fetchSchedules = async () => {
     try {
-      const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .eq('is_active', true)
-        .eq('schedule_type', 'intensive')
-        .order('start_time', { ascending: true });
-
+      const {
+        data,
+        error
+      } = await supabase.from('schedules').select('*').eq('is_active', true).eq('schedule_type', 'intensive').order('start_time', {
+        ascending: true
+      });
       if (error) throw error;
-
-      const { data: trainersData } = await supabase
-        .from('trainers')
-        .select('id, name')
-        .eq('is_active', true);
-
+      const {
+        data: trainersData
+      } = await supabase.from('trainers').select('id, name').eq('is_active', true);
       const trainersMap = new Map((trainersData || []).map(t => [t.id, t.name]));
-
       const formattedItems: ScheduleItem[] = (data || []).map(schedule => {
         const [ascetic_nutrition = '', nutrition = ''] = (schedule.description || '').split(' | ');
         const startDate = new Date(schedule.start_time);
         const endDate = new Date(schedule.end_time);
-        
         return {
           id: schedule.id,
           ascetic_nutrition: ascetic_nutrition || '-',
@@ -87,82 +78,76 @@ export const IntensiveScheduleManagement: React.FC = () => {
           dayOfWeek: getDayOfWeek(startDate),
           time: `${format(startDate, 'HH:mm:ss')}-${format(endDate, 'HH:mm:ss')}`,
           activity: schedule.title,
-          instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
+          instructor: schedule.instructor_id ? trainersMap.get(schedule.instructor_id) || '-' : '-',
           instructor_id: schedule.instructor_id,
           color: schedule.color || '#6366f1'
         };
       });
-
       setScheduleItems(formattedItems);
     } catch (error) {
       console.error('Error fetching schedules:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось загрузить расписание',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const fetchTrainers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('trainers')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name');
-
+      const {
+        data,
+        error
+      } = await supabase.from('trainers').select('id, name').eq('is_active', true).order('name');
       if (error) throw error;
       setTrainers(data || []);
     } catch (error) {
       console.error('Error fetching trainers:', error);
     }
   };
-
   const getDayOfWeek = (date: Date) => {
     const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
     return days[date.getDay()];
   };
-
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.date || !formData.activity) {
       toast({
         title: 'Ошибка',
         description: 'Заполните обязательные поля',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
-
     const toISO = (date: Date, time: string) => {
       const [h, m] = time.split(':').map(Number);
       const d = new Date(date);
       d.setHours(h || 0, m || 0, 0, 0);
       return d.toISOString();
     };
-
     try {
       if (editingId) {
-        const { error } = await supabase
-          .from('schedules')
-          .update({
-            title: formData.activity,
-            description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
-            start_time: toISO(formData.date, formData.start_time),
-            end_time: toISO(formData.date, formData.end_time),
-            activity_type: formData.activity,
-            instructor_id: formData.instructor_id || null,
-            color: formData.color,
-            schedule_type: 'intensive',
-          })
-          .eq('id', editingId);
-
+        const {
+          error
+        } = await supabase.from('schedules').update({
+          title: formData.activity,
+          description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+          start_time: toISO(formData.date, formData.start_time),
+          end_time: toISO(formData.date, formData.end_time),
+          activity_type: formData.activity,
+          instructor_id: formData.instructor_id || null,
+          color: formData.color,
+          schedule_type: 'intensive'
+        }).eq('id', editingId);
         if (error) throw error;
-        toast({ title: 'Успех', description: 'Мероприятие обновлено' });
+        toast({
+          title: 'Успех',
+          description: 'Мероприятие обновлено'
+        });
       } else {
-        const { error } = await supabase.from('schedules').insert({
+        const {
+          error
+        } = await supabase.from('schedules').insert({
           title: formData.activity,
           description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
           start_time: toISO(formData.date, formData.start_time),
@@ -173,13 +158,14 @@ export const IntensiveScheduleManagement: React.FC = () => {
           is_active: true,
           instructor_id: formData.instructor_id || null,
           color: formData.color,
-          schedule_type: 'intensive',
+          schedule_type: 'intensive'
         });
-
         if (error) throw error;
-        toast({ title: 'Успех', description: 'Мероприятие добавлено' });
+        toast({
+          title: 'Успех',
+          description: 'Мероприятие добавлено'
+        });
       }
-
       await fetchSchedules();
       setDialogOpen(false);
       setEditingId(null);
@@ -191,23 +177,21 @@ export const IntensiveScheduleManagement: React.FC = () => {
         end_time: '09:30',
         activity: '',
         instructor_id: '',
-        color: '#6366f1',
+        color: '#6366f1'
       });
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
         title: 'Ошибка',
         description: 'Не удалось сохранить мероприятие',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const handleEdit = (item: ScheduleItem) => {
     const [startTime, endTime] = item.time.split('-');
     const [day, month, year] = item.date.split('.');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    
     setEditingId(item.id);
     setFormData({
       ascetic_nutrition: item.ascetic_nutrition === '-' ? '' : item.ascetic_nutrition,
@@ -217,41 +201,38 @@ export const IntensiveScheduleManagement: React.FC = () => {
       end_time: endTime.slice(0, 5),
       activity: item.activity,
       instructor_id: item.instructor_id || '',
-      color: item.color || '#6366f1',
+      color: item.color || '#6366f1'
     });
     setDialogOpen(true);
   };
-
   const handleDelete = async (id: string) => {
     if (!confirm('Вы уверены, что хотите удалить это мероприятие?')) return;
-
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .eq('id', id);
-
+      const {
+        error
+      } = await supabase.from('schedules').delete().eq('id', id);
       if (error) throw error;
-      toast({ title: 'Успех', description: 'Мероприятие удалено' });
+      toast({
+        title: 'Успех',
+        description: 'Мероприятие удалено'
+      });
       await fetchSchedules();
     } catch (err) {
       console.error('Error deleting schedule:', err);
       toast({
         title: 'Ошибка',
         description: 'Не удалось удалить мероприятие',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const handleSubscribeCalendar = () => {
     const calendarUrl = `https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/calendar-feed?type=intensive`;
     navigator.clipboard.writeText(calendarUrl);
     sonnerToast.success("Ссылка на календарь скопирована!", {
-      description: "Добавьте её в ваше календарное приложение",
+      description: "Добавьте её в ваше календарное приложение"
     });
   };
-
   const getActivityBadgeColor = (activity: string) => {
     if (activity.includes('BJJ')) return 'bg-blue-100 text-blue-800';
     if (activity.includes('ОФП')) return 'bg-purple-100 text-purple-800';
@@ -260,9 +241,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
     if (activity.includes('нутрициологии')) return 'bg-green-100 text-green-800';
     return 'bg-gray-100 text-gray-800';
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -276,22 +255,22 @@ export const IntensiveScheduleManagement: React.FC = () => {
             <CalendarPlus className="w-4 h-4 mr-2" />
             Подписка на календарь
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) {
-              setEditingId(null);
-              setFormData({
-                ascetic_nutrition: '',
-                nutrition: '',
-                date: undefined,
-                start_time: '08:00',
-                end_time: '09:30',
-                activity: '',
-                instructor_id: '',
-                color: '#6366f1',
-              });
-            }
-          }}>
+          <Dialog open={dialogOpen} onOpenChange={open => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingId(null);
+            setFormData({
+              ascetic_nutrition: '',
+              nutrition: '',
+              date: undefined,
+              start_time: '08:00',
+              end_time: '09:30',
+              activity: '',
+              instructor_id: '',
+              color: '#6366f1'
+            });
+          }
+        }}>
             <DialogTrigger asChild>
               <Button className="bg-destructive hover:bg-destructive/90 text-white">
                 <Plus className="w-4 h-4 mr-2" />
@@ -309,22 +288,18 @@ export const IntensiveScheduleManagement: React.FC = () => {
               <form onSubmit={handleAddEvent} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-white">Смысл аскезы/Парадигма КЭМП</Label>
-                    <Input
-                      value={formData.ascetic_nutrition}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ascetic_nutrition: e.target.value }))}
-                      placeholder="вводная неделя"
-                      className="bg-white text-black"
-                    />
+                    <Label className="text-white">Парадигма КЭМП</Label>
+                    <Input value={formData.ascetic_nutrition} onChange={e => setFormData(prev => ({
+                    ...prev,
+                    ascetic_nutrition: e.target.value
+                  }))} placeholder="вводная неделя" className="bg-white text-black" />
                   </div>
                   <div>
-                    <Label className="text-white">Смысл аскезы/Нутрициология</Label>
-                    <Input
-                      value={formData.nutrition}
-                      onChange={(e) => setFormData(prev => ({ ...prev, nutrition: e.target.value }))}
-                      placeholder="Вводная по нутрициологии"
-                      className="bg-white text-black"
-                    />
+                    <Label className="text-white">Нутрициология</Label>
+                    <Input value={formData.nutrition} onChange={e => setFormData(prev => ({
+                    ...prev,
+                    nutrition: e.target.value
+                  }))} placeholder="Вводная по нутрициологии" className="bg-white text-black" />
                   </div>
                 </div>
 
@@ -332,25 +307,16 @@ export const IntensiveScheduleManagement: React.FC = () => {
                   <Label className="text-white">Дата мероприятия *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
-                          !formData.date && "text-muted-foreground"
-                        )}
-                      >
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50", !formData.date && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.date ? format(formData.date, "dd.MM.yyyy") : "Выберите дату"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={formData.date}
-                        onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
-                        initialFocus
-                        className="bg-white pointer-events-auto"
-                      />
+                      <CalendarComponent mode="single" selected={formData.date} onSelect={date => setFormData(prev => ({
+                      ...prev,
+                      date
+                    }))} initialFocus className="bg-white pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -358,27 +324,26 @@ export const IntensiveScheduleManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-white">Время начала</Label>
-                    <Input
-                      type="time"
-                      value={formData.start_time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                      className="bg-white text-black"
-                    />
+                    <Input type="time" value={formData.start_time} onChange={e => setFormData(prev => ({
+                    ...prev,
+                    start_time: e.target.value
+                  }))} className="bg-white text-black" />
                   </div>
                   <div>
                     <Label className="text-white">Время окончания</Label>
-                    <Input
-                      type="time"
-                      value={formData.end_time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                      className="bg-white text-black"
-                    />
+                    <Input type="time" value={formData.end_time} onChange={e => setFormData(prev => ({
+                    ...prev,
+                    end_time: e.target.value
+                  }))} className="bg-white text-black" />
                   </div>
                 </div>
 
                 <div>
                   <Label className="text-white">Мероприятие *</Label>
-                  <Select value={formData.activity} onValueChange={(value) => setFormData(prev => ({ ...prev, activity: value }))}>
+                  <Select value={formData.activity} onValueChange={value => setFormData(prev => ({
+                  ...prev,
+                  activity: value
+                }))}>
                     <SelectTrigger className="bg-white text-black">
                       <SelectValue placeholder="Выберите тип мероприятия" />
                     </SelectTrigger>
@@ -401,26 +366,32 @@ export const IntensiveScheduleManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-white">Лектор/Тренер</Label>
-                  <Select value={formData.instructor_id} onValueChange={(value) => setFormData(prev => ({ ...prev, instructor_id: value }))}>
+                  <Select value={formData.instructor_id} onValueChange={value => setFormData(prev => ({
+                  ...prev,
+                  instructor_id: value
+                }))}>
                     <SelectTrigger className="bg-white text-black">
                       <SelectValue placeholder="Выберите тренера" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                      {trainers.map((trainer) => (
-                        <SelectItem key={trainer.id} value={trainer.id}>
+                      {trainers.map(trainer => <SelectItem key={trainer.id} value={trainer.id}>
                           {trainer.name}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label className="text-white">Цвет мероприятия</Label>
-                  <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
+                  <Select value={formData.color} onValueChange={value => setFormData(prev => ({
+                  ...prev,
+                  color: value
+                }))}>
                     <SelectTrigger className="bg-white text-black">
                       <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: formData.color }}></div>
+                        <div className="w-4 h-4 rounded" style={{
+                        backgroundColor: formData.color
+                      }}></div>
                         <SelectValue placeholder="Выберите цвет" />
                       </div>
                     </SelectTrigger>
@@ -478,14 +449,10 @@ export const IntensiveScheduleManagement: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setDialogOpen(false);
-                      setEditingId(null);
-                    }}
-                  >
+                  <Button type="button" variant="outline" onClick={() => {
+                  setDialogOpen(false);
+                  setEditingId(null);
+                }}>
                     Отмена
                   </Button>
                   <Button type="submit" className="bg-destructive hover:bg-destructive/90">
@@ -515,111 +482,78 @@ export const IntensiveScheduleManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {scheduleItems.map((item) => (
-                  <TableRow 
-                    key={item.id}
-                    style={{ 
-                      backgroundColor: `${item.color || '#6366f1'}15`
-                    }}
-                  >
+                {scheduleItems.map(item => <TableRow key={item.id} style={{
+                backgroundColor: `${item.color || '#6366f1'}15`
+              }}>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
                         {item.ascetic_nutrition}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
                         {item.nutrition}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
                         {item.date}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
                         {item.dayOfWeek}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold font-mono text-sm"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold font-mono text-sm">
                         {item.time}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        style={{ 
-                          color: item.color || '#6366f1',
-                          borderColor: item.color || '#6366f1',
-                          backgroundColor: 'transparent'
-                        }}
-                        className="border font-semibold"
-                      >
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
                         {item.activity}
                       </Badge>
                     </TableCell>
                     <TableCell>{item.instructor}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(item)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}</TableBody>
+                  </TableRow>)}</TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
