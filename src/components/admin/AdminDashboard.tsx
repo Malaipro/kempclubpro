@@ -14,116 +14,71 @@ import { ContentBlocksManagement } from './ContentBlocksManagement';
 import { InstructionsManagement } from './InstructionsManagement';
 import { SecurityEnhancements } from '@/components/security/SecurityEnhancements';
 import { KampSystem } from '@/components/kamp';
-
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('kamp');
-
-  return (
-    <div className="w-full">
+  return <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Navigation Tabs */}
         <div className="mb-6 overflow-x-auto">
           <TabsList className="flex w-max min-w-full h-auto p-1 gap-1 bg-muted/50">
-            <TabsTrigger 
-              value="kamp" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="ascetics" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="ascetics" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Target className="w-4 h-4" />
               <span className="whitespace-nowrap">Аскезы</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="activities" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="activities" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Activity className="w-4 h-4" />
               <span className="whitespace-nowrap">Актив.</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="participants" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="participants" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Users className="w-4 h-4" />
               <span className="whitespace-nowrap">Участн.</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="streams" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="streams" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Layers className="w-4 h-4" />
               <span className="whitespace-nowrap">Потоки</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="cooper" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Zap className="w-4 h-4" />
               <span className="whitespace-nowrap">Купер</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="schedule" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">Расписан.</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="testimonials" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="testimonials" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <MessageSquare className="w-4 h-4" />
               <span className="whitespace-nowrap">Отзывы</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="moments" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="moments" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Camera className="w-4 h-4" />
               <span className="whitespace-nowrap">Моменты</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="instructions" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="instructions" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Инструкц.</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="content" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            <TabsTrigger value="content" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Контент</span>
             </TabsTrigger>
             
-            <TabsTrigger 
-              value="cms" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="whitespace-nowrap">Старая CMS</span>
-            </TabsTrigger>
             
-            <TabsTrigger 
-              value="security" 
-              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-            >
+            
+            <TabsTrigger value="security" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Shield className="w-4 h-4" />
               <span className="whitespace-nowrap">Безопасн.</span>
             </TabsTrigger>
@@ -183,6 +138,5 @@ export const AdminDashboard: React.FC = () => {
           <SecurityEnhancements />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
