@@ -1654,7 +1654,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_testimonials: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          image_url: string | null
+          is_active: boolean | null
+          participant_title: string | null
+          sort_order: number | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       auto_cleanup_contact_submissions: {
