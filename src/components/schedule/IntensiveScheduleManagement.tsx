@@ -524,14 +524,24 @@ export const IntensiveScheduleManagement: React.FC = () => {
                   >
                     <TableCell>
                       <Badge 
-                        className="border font-semibold bg-transparent text-primary border-primary"
+                        style={{ 
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
                       >
                         {item.ascetic_nutrition}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge 
-                        className="border font-semibold bg-transparent text-primary border-primary"
+                        style={{ 
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
                       >
                         {item.nutrition}
                       </Badge>
