@@ -526,7 +526,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
                     color: item.color || '#6366f1',
                     borderColor: item.color || '#6366f1',
                     backgroundColor: 'transparent'
-                  }} className="border font-semibold font-mono text-sm">
+                  }} className="border font-semibold">
                         {item.time}
                       </Badge>
                     </TableCell>
