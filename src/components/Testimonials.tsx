@@ -35,10 +35,15 @@ export const Testimonials: React.FC = () => {
       const { data, error } = await supabase
         .from('public_testimonials')
         .select('*')
-        .order('sort_order');
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data as Testimonial[];
+      return (data || []) as Testimonial[];
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    retry: 1,
   });
 
   // Загружаем динамический контент для заголовков
