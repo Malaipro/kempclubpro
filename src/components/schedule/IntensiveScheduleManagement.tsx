@@ -539,7 +539,15 @@ export const IntensiveScheduleManagement: React.FC = () => {
                         {item.activity}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.instructor}</TableCell>
+                    <TableCell>
+                      <Badge style={{
+                    color: item.color || '#6366f1',
+                    borderColor: item.color || '#6366f1',
+                    backgroundColor: 'transparent'
+                  }} className="border font-semibold">
+                        {item.instructor}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
