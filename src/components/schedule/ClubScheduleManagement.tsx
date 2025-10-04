@@ -494,18 +494,23 @@ export const ClubScheduleManagement: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {scheduleItems.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow 
+                    key={item.id}
+                    style={{ 
+                      backgroundColor: `${item.color || '#10b981'}15`
+                    }}
+                  >
                     <TableCell>{item.date}</TableCell>
                     <TableCell>{item.dayOfWeek}</TableCell>
                     <TableCell className="font-mono text-sm">{item.time}</TableCell>
                     <TableCell>
                       <Badge 
                         style={{ 
-                          backgroundColor: item.color || '#10b981',
-                          color: 'white',
-                          borderColor: item.color || '#10b981'
+                          color: item.color || '#10b981',
+                          borderColor: item.color || '#10b981',
+                          backgroundColor: 'transparent'
                         }}
-                        className="border"
+                        className="border font-semibold"
                       >
                         {item.activity}
                       </Badge>

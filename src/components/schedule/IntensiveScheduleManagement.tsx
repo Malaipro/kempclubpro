@@ -516,7 +516,12 @@ export const IntensiveScheduleManagement: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {scheduleItems.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow 
+                    key={item.id}
+                    style={{ 
+                      backgroundColor: `${item.color || '#6366f1'}15`
+                    }}
+                  >
                     <TableCell>{item.ascetic_nutrition}</TableCell>
                     <TableCell>{item.nutrition}</TableCell>
                     <TableCell>{item.date}</TableCell>
@@ -525,11 +530,11 @@ export const IntensiveScheduleManagement: React.FC = () => {
                     <TableCell>
                       <Badge 
                         style={{ 
-                          backgroundColor: item.color || '#6366f1',
-                          color: 'white',
-                          borderColor: item.color || '#6366f1'
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
                         }}
-                        className="border"
+                        className="border font-semibold"
                       >
                         {item.activity}
                       </Badge>
