@@ -289,17 +289,43 @@ export const IntensiveScheduleManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-white">Парадигма КЭМП</Label>
-                    <Input value={formData.ascetic_nutrition} onChange={e => setFormData(prev => ({
-                    ...prev,
-                    ascetic_nutrition: e.target.value
-                  }))} placeholder="вводная неделя" className="bg-white text-black" />
+                    <Select value={formData.ascetic_nutrition} onValueChange={value => setFormData(prev => ({
+                      ...prev,
+                      ascetic_nutrition: value
+                    }))}>
+                      <SelectTrigger className="bg-white text-black">
+                        <SelectValue placeholder="Выберите тему" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-300 shadow-lg z-[9999]">
+                        <SelectItem value="Вводная неделя">Вводная неделя</SelectItem>
+                        <SelectItem value="Что я имею/ Окружение">Что я имею/ Окружение</SelectItem>
+                        <SelectItem value="Что я делаю/Поведение">Что я делаю/Поведение</SelectItem>
+                        <SelectItem value="Как я выбираю/Способности">Как я выбираю/Способности</SelectItem>
+                        <SelectItem value="Во что я верю/Убеждения">Во что я верю/Убеждения</SelectItem>
+                        <SelectItem value="Кто я такой/Идентичность">Кто я такой/Идентичность</SelectItem>
+                        <SelectItem value="Зачем я живу/Миссия">Зачем я живу/Миссия</SelectItem>
+                        <SelectItem value="Финальное испытание">Финальное испытание</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label className="text-white">Нутрициология</Label>
-                    <Input value={formData.nutrition} onChange={e => setFormData(prev => ({
-                    ...prev,
-                    nutrition: e.target.value
-                  }))} placeholder="Вводная по нутрициологии" className="bg-white text-black" />
+                    <Select value={formData.nutrition} onValueChange={value => setFormData(prev => ({
+                      ...prev,
+                      nutrition: value
+                    }))}>
+                      <SelectTrigger className="bg-white text-black">
+                        <SelectValue placeholder="Выберите тему" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-300 shadow-lg z-[9999]">
+                        <SelectItem value="Основные функции пищи">Основные функции пищи</SelectItem>
+                        <SelectItem value="Белки. Источники Белка">Белки. Источники Белка</SelectItem>
+                        <SelectItem value="Жиры. Источники Жиров">Жиры. Источники Жиров</SelectItem>
+                        <SelectItem value="Углеводы. Источники Углеводов">Углеводы. Источники Углеводов</SelectItem>
+                        <SelectItem value="Клетчатка. Источники Клетчатки">Клетчатка. Источники Клетчатки</SelectItem>
+                        <SelectItem value="Структура рациона. Правила и Последствия">Структура рациона. Правила и Последствия</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
