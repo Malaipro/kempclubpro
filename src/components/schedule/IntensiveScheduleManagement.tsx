@@ -522,8 +522,8 @@ export const IntensiveScheduleManagement: React.FC = () => {
                       backgroundColor: `${item.color || '#6366f1'}15`
                     }}
                   >
-                    <TableCell>{item.ascetic_nutrition}</TableCell>
-                    <TableCell>{item.nutrition}</TableCell>
+                    <TableCell className="bg-primary/10 font-semibold text-primary">{item.ascetic_nutrition}</TableCell>
+                    <TableCell className="bg-primary/10 font-semibold text-primary">{item.nutrition}</TableCell>
                     <TableCell>{item.date}</TableCell>
                     <TableCell>{item.dayOfWeek}</TableCell>
                     <TableCell className="font-mono text-sm">{item.time}</TableCell>
