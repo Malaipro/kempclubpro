@@ -1034,6 +1034,7 @@ export type Database = {
       schedules: {
         Row: {
           activity_type: string
+          color: string | null
           created_at: string
           description: string | null
           end_time: string
@@ -1048,6 +1049,7 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          color?: string | null
           created_at?: string
           description?: string | null
           end_time: string
@@ -1062,6 +1064,7 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          color?: string | null
           created_at?: string
           description?: string | null
           end_time?: string

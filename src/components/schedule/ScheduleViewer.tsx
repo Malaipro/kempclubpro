@@ -18,6 +18,7 @@ interface Schedule {
   max_participants: number | null;
   is_active: boolean;
   instructor_id: string | null;
+  color: string | null;
 }
 
 export const ScheduleViewer: React.FC = () => {
@@ -115,7 +116,8 @@ export const ScheduleViewer: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge 
-                        className={`text-white ${getActivityTypeColor(schedule.activity_type)}`}
+                        className="text-white"
+                        style={{ backgroundColor: schedule.color || getActivityTypeColor(schedule.activity_type) }}
                       >
                         {schedule.activity_type}
                       </Badge>

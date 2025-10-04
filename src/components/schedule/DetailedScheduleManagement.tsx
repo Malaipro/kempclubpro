@@ -26,6 +26,7 @@ interface ScheduleItem {
   activity: string;
   instructor: string;
   instructor_id?: string | null;
+  color?: string;
 }
 
 interface Trainer {
@@ -46,6 +47,7 @@ export const DetailedScheduleManagement: React.FC = () => {
     end_time: '09:30',
     activity: '',
     instructor_id: '',
+    color: '#6366f1',
   });
   const { toast } = useToast();
 
@@ -86,7 +88,8 @@ export const DetailedScheduleManagement: React.FC = () => {
           time: `${format(startDate, 'HH:mm:ss')}-${format(endDate, 'HH:mm:ss')}`,
           activity: schedule.title,
           instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
-          instructor_id: schedule.instructor_id
+          instructor_id: schedule.instructor_id,
+          color: schedule.color || '#6366f1'
         };
       });
 
@@ -152,6 +155,7 @@ export const DetailedScheduleManagement: React.FC = () => {
             end_time: toISO(formData.date, formData.end_time),
             activity_type: formData.activity,
             instructor_id: formData.instructor_id || null,
+            color: formData.color,
           })
           .eq('id', editingId);
 
@@ -173,6 +177,7 @@ export const DetailedScheduleManagement: React.FC = () => {
           max_participants: null,
           is_active: true,
           instructor_id: formData.instructor_id || null,
+          color: formData.color,
         });
 
         if (error) throw error;
@@ -194,6 +199,7 @@ export const DetailedScheduleManagement: React.FC = () => {
         end_time: '09:30',
         activity: '',
         instructor_id: '',
+        color: '#6366f1',
       });
     } catch (err) {
       console.error('Error saving schedule:', err);
@@ -219,6 +225,7 @@ export const DetailedScheduleManagement: React.FC = () => {
       end_time: endTime.slice(0, 5),
       activity: item.activity,
       instructor_id: item.instructor_id || '',
+      color: item.color || '#6366f1',
     });
     setDialogOpen(true);
   };
@@ -281,6 +288,7 @@ export const DetailedScheduleManagement: React.FC = () => {
               end_time: '09:30',
               activity: '',
               instructor_id: '',
+              color: '#6366f1',
             });
           }
         }}>
@@ -401,6 +409,26 @@ export const DetailedScheduleManagement: React.FC = () => {
                 </Select>
               </div>
 
+              <div>
+                <Label className="text-white">Цвет мероприятия</Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                    className="w-20 h-10 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={formData.color}
+                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                    placeholder="#6366f1"
+                    className="bg-white text-black flex-1"
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button 
                   type="submit" 
@@ -444,7 +472,15 @@ export const DetailedScheduleManagement: React.FC = () => {
               <TableBody>
                 {scheduleItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.ascetic_nutrition}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: item.color || '#6366f1' }}
+                        />
+                        {item.ascetic_nutrition}
+                      </div>
+                    </TableCell>
                     <TableCell>{item.nutrition}</TableCell>
                     <TableCell>{item.date}</TableCell>
                     <TableCell>{item.dayOfWeek}</TableCell>
