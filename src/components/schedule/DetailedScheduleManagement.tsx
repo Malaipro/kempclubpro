@@ -411,22 +411,61 @@ export const DetailedScheduleManagement: React.FC = () => {
 
               <div>
                 <Label className="text-white">Цвет мероприятия</Label>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="w-20 h-10 cursor-pointer"
-                  />
-                  <Input
-                    type="text"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    placeholder="#6366f1"
-                    className="bg-white text-black flex-1"
-                    pattern="^#[0-9A-Fa-f]{6}$"
-                  />
-                </div>
+                <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
+                  <SelectTrigger className="bg-white text-black">
+                    <SelectValue placeholder="Выберите цвет" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    <SelectItem value="#6366f1" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6366f1' }} />
+                        <span>Синий (по умолчанию)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#ef4444" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }} />
+                        <span>Красный</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#10b981" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }} />
+                        <span>Зелёный</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#f59e0b" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f59e0b' }} />
+                        <span>Оранжевый</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#8b5cf6" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#8b5cf6' }} />
+                        <span>Фиолетовый</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#ec4899" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ec4899' }} />
+                        <span>Розовый</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#06b6d4" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#06b6d4' }} />
+                        <span>Голубой</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="#84cc16" className="hover:bg-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: '#84cc16' }} />
+                        <span>Лайм</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex gap-2">
@@ -471,15 +510,16 @@ export const DetailedScheduleManagement: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {scheduleItems.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow 
+                    key={item.id}
+                    style={{ 
+                      backgroundColor: `${item.color || '#6366f1'}15`,
+                      borderLeftColor: item.color || '#6366f1',
+                      borderLeftWidth: '4px'
+                    }}
+                  >
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: item.color || '#6366f1' }}
-                        />
-                        {item.ascetic_nutrition}
-                      </div>
+                      {item.ascetic_nutrition}
                     </TableCell>
                     <TableCell>{item.nutrition}</TableCell>
                     <TableCell>{item.date}</TableCell>

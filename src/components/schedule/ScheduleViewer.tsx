@@ -110,7 +110,14 @@ export const ScheduleViewer: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {schedules.map((schedule) => (
-            <Card key={schedule.id} className="bg-gray-800 border-gray-700">
+            <Card 
+              key={schedule.id} 
+              className="bg-gray-800 border-gray-700 border-l-4"
+              style={{ 
+                borderLeftColor: schedule.color || getActivityTypeColor(schedule.activity_type),
+                backgroundColor: `${schedule.color || getActivityTypeColor(schedule.activity_type)}10`
+              }}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
