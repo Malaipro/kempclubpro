@@ -389,6 +389,7 @@ export const DetailedScheduleManagement: React.FC = () => {
                     <SelectItem value="Тактическая подготовка" className="hover:bg-gray-100">Тактическая подготовка</SelectItem>
                     <SelectItem value="Лекция Пирамида КЭМП" className="hover:bg-gray-100">Лекция Пирамида КЭМП</SelectItem>
                     <SelectItem value="Теория" className="hover:bg-gray-100">Теория</SelectItem>
+                    <SelectItem value="Нутрициология" className="hover:bg-gray-100">Нутрициология</SelectItem>
                     <SelectItem value="Краш тест по BJJ" className="hover:bg-gray-100">Краш тест по BJJ</SelectItem>
                     <SelectItem value="Краш тест по кикбоксингу" className="hover:bg-gray-100">Краш тест по кикбоксингу</SelectItem>
                     <SelectItem value="Гонка Героев" className="hover:bg-gray-100">Гонка Героев</SelectItem>
