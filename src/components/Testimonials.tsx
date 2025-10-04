@@ -10,7 +10,7 @@ import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
 
 interface Testimonial {
   id: string;
-  participant_name: string;
+  participant_name?: string; // Optional - only available to admins
   display_name: string;
   participant_title?: string;
   content?: string;
@@ -28,14 +28,13 @@ export const Testimonials: React.FC = () => {
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const modalVideoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
-  // Загружаем отзывы из базы данных
+  // Загружаем отзывы из базы данных (используем защищенное представление)
   const { data: testimonials = [], isLoading } = useQuery({
-    queryKey: ['testimonials'],
+    queryKey: ['public-testimonials'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('testimonials')
+        .from('public_testimonials')
         .select('*')
-        .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
       return data as Testimonial[];
