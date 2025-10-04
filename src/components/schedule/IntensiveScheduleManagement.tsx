@@ -522,8 +522,20 @@ export const IntensiveScheduleManagement: React.FC = () => {
                       backgroundColor: `${item.color || '#6366f1'}15`
                     }}
                   >
-                    <TableCell className="bg-primary/10 font-semibold text-primary">{item.ascetic_nutrition}</TableCell>
-                    <TableCell className="bg-primary/10 font-semibold text-primary">{item.nutrition}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        className="border font-semibold bg-transparent text-primary border-primary"
+                      >
+                        {item.ascetic_nutrition}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        className="border font-semibold bg-transparent text-primary border-primary"
+                      >
+                        {item.nutrition}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{item.date}</TableCell>
                     <TableCell>{item.dayOfWeek}</TableCell>
                     <TableCell className="font-mono text-sm">{item.time}</TableCell>
