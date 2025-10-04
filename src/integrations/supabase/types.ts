@@ -930,6 +930,45 @@ export type Database = {
           },
         ]
       }
+      public_testimonials: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          participant_title: string | null
+          sort_order: number | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          participant_title?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       role_audit_log: {
         Row: {
           action: string
@@ -1654,45 +1693,7 @@ export type Database = {
       }
     }
     Views: {
-      public_testimonials: {
-        Row: {
-          content: string | null
-          created_at: string | null
-          display_name: string | null
-          id: string | null
-          image_url: string | null
-          is_active: boolean | null
-          participant_title: string | null
-          sort_order: number | null
-          updated_at: string | null
-          video_url: string | null
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_active?: boolean | null
-          participant_title?: string | null
-          sort_order?: number | null
-          updated_at?: string | null
-          video_url?: string | null
-        }
-        Update: {
-          content?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          id?: string | null
-          image_url?: string | null
-          is_active?: boolean | null
-          participant_title?: string | null
-          sort_order?: number | null
-          updated_at?: string | null
-          video_url?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       auto_cleanup_contact_submissions: {
