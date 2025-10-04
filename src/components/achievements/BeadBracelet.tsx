@@ -14,7 +14,7 @@ interface TotemInfo {
 
 const totems: TotemInfo[] = [
   {
-    name: 'Змей',
+    name: 'Змея',
     icon: 'snake',
     symbol: 'Контроль',
     direction: 'БЖЖ',
