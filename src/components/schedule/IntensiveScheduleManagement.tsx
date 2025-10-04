@@ -388,6 +388,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
                       <SelectItem value="Кикбоксинг">Кикбоксинг</SelectItem>
                       <SelectItem value="Тактическая подготовка">Тактическая подготовка</SelectItem>
                       <SelectItem value="Лекция Пирамида КЭМП">Лекция Пирамида КЭМП</SelectItem>
+                      <SelectItem value="Пирамида практика">Пирамида практика</SelectItem>
                       <SelectItem value="Теория">Теория</SelectItem>
                       <SelectItem value="Нутрициология">Нутрициология</SelectItem>
                       <SelectItem value="Краш тест по BJJ">Краш тест по BJJ</SelectItem>
