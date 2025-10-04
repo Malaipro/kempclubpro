@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog } from 'lucide-react';
 import { ContentManager } from '@/components/cms/ContentManager';
 import { ActivityManagement } from './ActivityManagement';
 import { AsceticManagement } from '@/components/kamp/AsceticManagement';
 import { EnhancedCooperTest } from '@/components/cooper/EnhancedCooperTest';
 import { EnhancedParticipantManagement } from '@/components/admin/EnhancedParticipantManagement';
+import { ParticipantStatusManagement } from '@/components/admin/ParticipantStatusManagement';
 import { EnhancedStreamManagement } from '@/components/admin/EnhancedStreamManagement';
 import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
@@ -40,6 +41,11 @@ export const AdminDashboard: React.FC = () => {
             <TabsTrigger value="participants" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Users className="w-4 h-4" />
               <span className="whitespace-nowrap">Участн.</span>
+            </TabsTrigger>
+            
+            <TabsTrigger value="statuses" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <UserCog className="w-4 h-4" />
+              <span className="whitespace-nowrap">Статусы</span>
             </TabsTrigger>
             
             <TabsTrigger value="streams" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
@@ -106,6 +112,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="participants" className="mt-0">
           <EnhancedParticipantManagement />
+        </TabsContent>
+        
+        <TabsContent value="statuses" className="mt-0">
+          <ParticipantStatusManagement />
         </TabsContent>
         
         <TabsContent value="streams" className="mt-0">

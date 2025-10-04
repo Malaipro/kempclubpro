@@ -11,6 +11,7 @@ import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
 import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
 import { DetailedLeaderboard } from '@/components/leaderboard/DetailedLeaderboard';
 import { UserActivities } from '@/components/leaderboard/UserActivities';
+import { ClubResidentDashboard } from '@/components/club/ClubResidentDashboard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield, Activity, Calendar, Trophy } from 'lucide-react';
@@ -70,6 +71,10 @@ export const Dashboard: React.FC = () => {
     navigate('/');
   };
   const displayName = participantData?.display_name || [participantData?.first_name, participantData?.last_name].filter(Boolean).join(' ') || user.user_metadata?.display_name as string | undefined || [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ') || user.email || 'Пользователь';
+  
+  // Check if user is a club resident
+  const isClubResident = participantData?.participant_status === 'club_resident';
+  
   return <Layout>
       <div className="bg-black">
         {/* Dashboard Header */}
@@ -82,11 +87,12 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h1 className={`${isMobile ? 'text-lg' : 'text-xl sm:text-2xl'} font-bold text-white truncate`}>
-                    Личный кабинет
+                    {isClubResident ? 'Мужской клуб' : 'Личный кабинет'}
                   </h1>
                   <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} truncate`}>
                     {displayName} • {participantData?.email || user.email}
                     {isSuperAdmin && <span className="ml-2 text-kamp-accent font-semibold">(Супер админ)</span>}
+                    {isClubResident && <span className="ml-2 text-purple-400 font-semibold">(Резидент клуба)</span>}
                   </p>
                 </div>
               </div>
@@ -102,7 +108,7 @@ export const Dashboard: React.FC = () => {
         {/* Dashboard Content */}
         <section className="kamp-section">
           <div className="kamp-container">
-            {isSuperAdmin ? <AdminDashboard /> : <Tabs defaultValue="profile" className="w-full">
+            {isSuperAdmin ? <AdminDashboard /> : isClubResident ? <ClubResidentDashboard /> : <Tabs defaultValue="profile" className="w-full">
                 <div className="mb-6">
                   <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
                     <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>

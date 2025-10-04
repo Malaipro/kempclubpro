@@ -794,6 +794,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           avatar_url: string | null
+          club_joined_at: string | null
           created_at: string
           current_stream_id: string | null
           date_of_birth: string | null
@@ -802,9 +803,13 @@ export type Database = {
           first_name: string | null
           height_cm: number | null
           id: string
+          intensive_completed_at: string | null
           join_date: string | null
           last_name: string | null
           leaderboard_visible: boolean | null
+          participant_status:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           phone: string | null
           profile_private: boolean | null
           rank_position: number | null
@@ -823,6 +828,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null
+          club_joined_at?: string | null
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null
@@ -831,9 +837,13 @@ export type Database = {
           first_name?: string | null
           height_cm?: number | null
           id?: string
+          intensive_completed_at?: string | null
           join_date?: string | null
           last_name?: string | null
           leaderboard_visible?: boolean | null
+          participant_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
@@ -852,6 +862,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null
+          club_joined_at?: string | null
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null
@@ -860,9 +871,13 @@ export type Database = {
           first_name?: string | null
           height_cm?: number | null
           id?: string
+          intensive_completed_at?: string | null
           join_date?: string | null
           last_name?: string | null
           leaderboard_visible?: boolean | null
+          participant_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
@@ -1781,6 +1796,13 @@ export type Database = {
         Args: { phone_number: string }
         Returns: string
       }
+      update_participant_status: {
+        Args: {
+          p_new_status: Database["public"]["Enums"]["participant_status_type"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       update_user_leaderboard: {
         Args: { user_uuid: string }
         Returns: undefined
@@ -1811,6 +1833,11 @@ export type Database = {
         | "hero_race"
         | "tactics"
         | "ascetic_challenge"
+      participant_status_type:
+        | "intensive_active"
+        | "intensive_completed"
+        | "club_resident"
+        | "alumni"
       schedule_type: "intensive" | "club"
       totem_type:
         | "snake"
@@ -1962,6 +1989,12 @@ export const Constants = {
         "hero_race",
         "tactics",
         "ascetic_challenge",
+      ],
+      participant_status_type: [
+        "intensive_active",
+        "intensive_completed",
+        "club_resident",
+        "alumni",
       ],
       schedule_type: ["intensive", "club"],
       totem_type: [
