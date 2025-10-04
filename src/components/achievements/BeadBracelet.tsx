@@ -119,6 +119,9 @@ export const BeadBracelet: React.FC = () => {
                   
                   <div className="space-y-1 text-sm">
                     <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Тотем:</span> {totem.name}
+                    </p>
+                    <p className="text-muted-foreground">
                       <span className="font-medium text-foreground">Символ:</span> {totem.symbol}
                     </p>
                     <p className="text-muted-foreground">
