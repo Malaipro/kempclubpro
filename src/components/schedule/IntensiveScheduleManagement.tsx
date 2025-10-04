@@ -546,9 +546,42 @@ export const IntensiveScheduleManagement: React.FC = () => {
                         {item.nutrition}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell>{item.dayOfWeek}</TableCell>
-                    <TableCell className="font-mono text-sm">{item.time}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {item.date}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {item.dayOfWeek}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: item.color || '#6366f1',
+                          borderColor: item.color || '#6366f1',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold font-mono text-sm"
+                      >
+                        {item.time}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge 
                         style={{ 
