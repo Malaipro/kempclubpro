@@ -1043,6 +1043,7 @@ export type Database = {
           is_active: boolean | null
           location: string | null
           max_participants: number | null
+          schedule_type: Database["public"]["Enums"]["schedule_type"]
           start_time: string
           title: string
           updated_at: string
@@ -1058,6 +1059,7 @@ export type Database = {
           is_active?: boolean | null
           location?: string | null
           max_participants?: number | null
+          schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time: string
           title: string
           updated_at?: string
@@ -1073,6 +1075,7 @@ export type Database = {
           is_active?: boolean | null
           location?: string | null
           max_participants?: number | null
+          schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time?: string
           title?: string
           updated_at?: string
@@ -1808,6 +1811,7 @@ export type Database = {
         | "hero_race"
         | "tactics"
         | "ascetic_challenge"
+      schedule_type: "intensive" | "club"
       totem_type:
         | "snake"
         | "paw"
@@ -1959,6 +1963,7 @@ export const Constants = {
         "tactics",
         "ascetic_challenge",
       ],
+      schedule_type: ["intensive", "club"],
       totem_type: [
         "snake",
         "paw",
