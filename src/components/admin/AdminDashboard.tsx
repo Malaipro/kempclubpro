@@ -7,7 +7,8 @@ import { AsceticManagement } from '@/components/kamp/AsceticManagement';
 import { EnhancedCooperTest } from '@/components/cooper/EnhancedCooperTest';
 import { EnhancedParticipantManagement } from '@/components/admin/EnhancedParticipantManagement';
 import { EnhancedStreamManagement } from '@/components/admin/EnhancedStreamManagement';
-import { DetailedScheduleManagement } from '@/components/schedule/DetailedScheduleManagement';
+import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
+import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 import { TestimonialManagement } from './TestimonialManagement';
 import { MomentsManagement } from './MomentsManagement';
 import { ContentBlocksManagement } from './ContentBlocksManagement';
@@ -51,9 +52,14 @@ export const AdminDashboard: React.FC = () => {
               <span className="whitespace-nowrap">Купер</span>
             </TabsTrigger>
             
-            <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+            <TabsTrigger value="intensive-schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Calendar className="w-4 h-4" />
-              <span className="whitespace-nowrap">Расписан.</span>
+              <span className="whitespace-nowrap">Интенсив</span>
+            </TabsTrigger>
+            
+            <TabsTrigger value="club-schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Calendar className="w-4 h-4" />
+              <span className="whitespace-nowrap">Клуб</span>
             </TabsTrigger>
             
             <TabsTrigger value="testimonials" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
@@ -110,8 +116,12 @@ export const AdminDashboard: React.FC = () => {
           <EnhancedCooperTest />
         </TabsContent>
         
-        <TabsContent value="schedule" className="mt-0">
-          <DetailedScheduleManagement />
+        <TabsContent value="intensive-schedule" className="mt-0">
+          <IntensiveScheduleManagement />
+        </TabsContent>
+        
+        <TabsContent value="club-schedule" className="mt-0">
+          <ClubScheduleManagement />
         </TabsContent>
         
         <TabsContent value="testimonials" className="mt-0">
