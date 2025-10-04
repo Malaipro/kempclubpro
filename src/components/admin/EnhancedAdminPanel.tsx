@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   UserCheck,
   Database,
-  Target
+  Target,
+  Calendar
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -27,6 +28,8 @@ import { AsceticTypesManagement } from '@/components/admin/AsceticTypesManagemen
 import { TotemAssignment } from '@/components/admin/TotemAssignment';
 import { CrashTestManagement } from '@/components/admin/CrashTestManagement';
 import { TrainingSessionManagement } from '@/components/admin/TrainingSessionManagement';
+import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
+import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 
 interface TabConfig {
   id: string;
@@ -66,6 +69,18 @@ const adminTabs: TabConfig[] = [
     label: 'Активности', 
     icon: Activity,
     description: 'Добавление тренировок и краштестов'
+  },
+  { 
+    id: 'intensive-schedule', 
+    label: 'Расписание интенсива', 
+    icon: Calendar,
+    description: 'Управление расписанием интенсивного потока'
+  },
+  { 
+    id: 'club-schedule', 
+    label: 'Расписание клуба', 
+    icon: Calendar,
+    description: 'Управление расписанием мужского клуба'
   },
   { 
     id: 'ascetic-types', 
@@ -153,6 +168,10 @@ export const EnhancedAdminPanel: React.FC = () => {
             </div>
           </div>
         );
+      case 'intensive-schedule':
+        return <IntensiveScheduleManagement />;
+      case 'club-schedule':
+        return <ClubScheduleManagement />;
       case 'ascetic-types':
         return <AsceticTypesManagement />;
       case 'security':
