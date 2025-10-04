@@ -11,6 +11,7 @@ import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
 interface Testimonial {
   id: string;
   participant_name: string;
+  display_name: string;
   participant_title?: string;
   content?: string;
   video_url?: string;
@@ -166,7 +167,7 @@ export const Testimonials: React.FC = () => {
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
-                          title={`Видео отзыв ${testimonial.participant_name}`}
+                          title={`Видео отзыв ${testimonial.display_name}`}
                         />
                         <button 
                           onClick={() => openVideoModal(testimonial.id)}
@@ -236,15 +237,15 @@ export const Testimonials: React.FC = () => {
                   <div className="aspect-[3/4] bg-gray-800 overflow-hidden">
                     <img 
                       src={testimonial.image_url}
-                      alt={testimonial.participant_name}
+                      alt={testimonial.display_name}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                     />
                   </div>
                 ) : (
                   <div className="aspect-[3/4] bg-gray-800 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-kamp-primary/20 rounded-full flex items-center justify-center">
+                       <div className="w-16 h-16 bg-kamp-primary/20 rounded-full flex items-center justify-center">
                       <span className="text-kamp-primary text-xl font-bold">
-                        {testimonial.participant_name.charAt(0)}
+                        {testimonial.display_name.charAt(0)}
                       </span>
                     </div>
                   </div>
@@ -254,7 +255,7 @@ export const Testimonials: React.FC = () => {
               <CardContent className="p-1.5 md:p-4 bg-black">
                 <div className="text-center">
                   <h3 className="text-white text-xs md:text-lg font-bold">
-                    {testimonial.participant_name}
+                    {testimonial.display_name}
                   </h3>
                   {testimonial.participant_title && (
                     <p className="text-kamp-primary text-[10px] md:text-xs font-medium mb-1 md:mb-3">
@@ -307,7 +308,7 @@ export const Testimonials: React.FC = () => {
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        title={`Полный видео отзыв ${testimonial.participant_name}`}
+                        title={`Полный видео отзыв ${testimonial.display_name}`}
                       />
                     </div>
                   );

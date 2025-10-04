@@ -1130,6 +1130,7 @@ export type Database = {
           content: string | null
           created_at: string
           data_retention_until: string | null
+          display_name: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
@@ -1145,6 +1146,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           data_retention_until?: string | null
+          display_name?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1160,6 +1162,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           data_retention_until?: string | null
+          display_name?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
@@ -1719,6 +1722,10 @@ export type Database = {
       }
       mask_email_secure: {
         Args: { email_address: string }
+        Returns: string
+      }
+      mask_participant_name: {
+        Args: { full_name: string }
         Returns: string
       }
       mask_phone_number: {
