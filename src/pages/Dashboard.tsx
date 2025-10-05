@@ -163,7 +163,7 @@ export const Dashboard: React.FC = () => {
                 </TabsContent>
                 
                 <TabsContent value="schedule">
-                  <ScheduleViewer />
+                  <ScheduleViewer isClubResident={isClubResident} />
                 </TabsContent>
               </Tabs>}
           </div>

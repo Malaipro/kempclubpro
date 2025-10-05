@@ -3,7 +3,11 @@ import { IntensiveScheduleViewer } from "./IntensiveScheduleViewer";
 import { ClubScheduleViewer } from "./ClubScheduleViewer";
 import { Calendar } from "lucide-react";
 
-export const ScheduleViewer: React.FC = () => {
+interface ScheduleViewerProps {
+  isClubResident?: boolean;
+}
+
+export const ScheduleViewer: React.FC<ScheduleViewerProps> = ({ isClubResident = false }) => {
   return (
     <div className="space-y-6">
       <div>
@@ -11,22 +15,28 @@ export const ScheduleViewer: React.FC = () => {
           <Calendar className="w-6 h-6" />
           Расписание
         </h2>
-        <p className="text-muted-foreground">Расписание интенсива и мужского клуба</p>
+        <p className="text-muted-foreground">
+          {isClubResident ? "Расписание интенсива и мужского клуба" : "Расписание интенсива"}
+        </p>
       </div>
 
       <Tabs defaultValue="intensive" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className={`grid w-full ${isClubResident ? 'grid-cols-2' : 'grid-cols-1'}`}>
           <TabsTrigger value="intensive">Интенсив</TabsTrigger>
-          <TabsTrigger value="club">Мужской клуб</TabsTrigger>
+          {isClubResident && (
+            <TabsTrigger value="club">Мужской клуб</TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="intensive" className="mt-6">
           <IntensiveScheduleViewer />
         </TabsContent>
         
-        <TabsContent value="club" className="mt-6">
-          <ClubScheduleViewer />
-        </TabsContent>
+        {isClubResident && (
+          <TabsContent value="club" className="mt-6">
+            <ClubScheduleViewer />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
