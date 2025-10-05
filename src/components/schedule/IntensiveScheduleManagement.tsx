@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -39,6 +40,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
   const [formData, setFormData] = useState({
     ascetic_nutrition: '',
     nutrition: '',
+    event_description: '',
     date: undefined as Date | undefined,
     start_time: '08:00',
     end_time: '09:30',
@@ -67,7 +69,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
       } = await supabase.from('trainers').select('id, name').eq('is_active', true);
       const trainersMap = new Map((trainersData || []).map(t => [t.id, t.name]));
       const formattedItems: ScheduleItem[] = (data || []).map(schedule => {
-        const [ascetic_nutrition = '', nutrition = ''] = (schedule.description || '').split(' | ');
+        const [ascetic_nutrition = '', nutrition = '', event_description = ''] = (schedule.description || '').split(' | ');
         const startDate = new Date(schedule.start_time);
         const endDate = new Date(schedule.end_time);
         return {
@@ -131,7 +133,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
           error
         } = await supabase.from('schedules').update({
           title: formData.activity,
-          description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+          description: [formData.ascetic_nutrition, formData.nutrition, formData.event_description].filter(Boolean).join(' | ') || null,
           start_time: toISO(formData.date, formData.start_time),
           end_time: toISO(formData.date, formData.end_time),
           activity_type: formData.activity,
@@ -149,7 +151,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
           error
         } = await supabase.from('schedules').insert({
           title: formData.activity,
-          description: [formData.ascetic_nutrition, formData.nutrition].filter(Boolean).join(' | ') || null,
+          description: [formData.ascetic_nutrition, formData.nutrition, formData.event_description].filter(Boolean).join(' | ') || null,
           start_time: toISO(formData.date, formData.start_time),
           end_time: toISO(formData.date, formData.end_time),
           location: null,
@@ -172,6 +174,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
       setFormData({
         ascetic_nutrition: '',
         nutrition: '',
+        event_description: '',
         date: undefined,
         start_time: '08:00',
         end_time: '09:30',
@@ -196,6 +199,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
     setFormData({
       ascetic_nutrition: item.ascetic_nutrition === '-' ? '' : item.ascetic_nutrition,
       nutrition: item.nutrition === '-' ? '' : item.nutrition,
+      event_description: '',
       date: date,
       start_time: startTime.slice(0, 5),
       end_time: endTime.slice(0, 5),
@@ -262,6 +266,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
             setFormData({
               ascetic_nutrition: '',
               nutrition: '',
+              event_description: '',
               date: undefined,
               start_time: '08:00',
               end_time: '09:30',
@@ -382,12 +387,30 @@ export const IntensiveScheduleManagement: React.FC = () => {
                       <SelectItem value="Пирамида практика">Пирамида практика</SelectItem>
                       <SelectItem value="Теория">Теория</SelectItem>
                       <SelectItem value="Нутрициология">Нутрициология</SelectItem>
+                      <SelectItem value="Мастер-класс по джиу-джитсу">Мастер-класс по джиу-джитсу</SelectItem>
+                      <SelectItem value="Мастер-класс по единоборствам">Мастер-класс по единоборствам</SelectItem>
+                      <SelectItem value="Лекции приглашенных спикеров">Лекции приглашенных спикеров</SelectItem>
+                      <SelectItem value="Лекции участников">Лекции участников</SelectItem>
+                      <SelectItem value="Семейный день">Семейный день</SelectItem>
                       <SelectItem value="Краш тест по BJJ">Краш тест по BJJ</SelectItem>
                       <SelectItem value="Краш тест по кикбоксингу">Краш тест по кикбоксингу</SelectItem>
                       <SelectItem value="Гонка Героев">Гонка Героев</SelectItem>
                       <SelectItem value="Баня">Баня</SelectItem>
                     </SelectContent>
                   </Select>
+                 </div>
+
+                <div>
+                  <Label className="text-white">Описание мероприятия</Label>
+                  <Textarea 
+                    value={formData.event_description}
+                    onChange={e => setFormData(prev => ({
+                      ...prev,
+                      event_description: e.target.value
+                    }))}
+                    placeholder="Добавьте описание мероприятия..."
+                    className="bg-white text-black min-h-[80px]"
+                  />
                 </div>
 
                 <div>
