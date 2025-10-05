@@ -25,12 +25,16 @@ export function IntensiveScheduleViewer() {
 
   const fetchSchedules = async () => {
     try {
+      // Get start of today in ISO format
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
       const { data, error } = await supabase
         .from("schedules")
         .select("*")
         .eq("is_active", true)
         .eq("schedule_type", "intensive")
-        .gte("end_time", new Date().toISOString())
+        .gte("start_time", today.toISOString())
         .order("start_time", { ascending: true });
 
       if (error) throw error;
