@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarPlus, Clock, MapPin, Users, UserCheck } from "lucide-react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -196,67 +197,95 @@ export function ClubScheduleViewer() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-gray-700 bg-gray-900">
+        <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">Дата</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">День недели</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">Время</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">Мероприятие</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">Место</th>
-                    <th className="text-left p-4 text-sm font-medium text-gray-300">Участники</th>
-                    {user && <th className="text-left p-4 text-sm font-medium text-gray-300">Запись</th>}
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[100px]">Дата</TableHead>
+                    <TableHead className="min-w-[100px]">День недели</TableHead>
+                    <TableHead className="min-w-[100px]">Время</TableHead>
+                    <TableHead className="min-w-[150px]">Мероприятие</TableHead>
+                    <TableHead className="min-w-[120px]">Место</TableHead>
+                    <TableHead className="min-w-[100px]">Участники</TableHead>
+                    {user && <TableHead className="w-[150px]">Запись</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {schedules.map((schedule) => (
-                    <tr 
+                    <TableRow 
                       key={schedule.id}
-                      className="border-b border-gray-800 hover:bg-gray-800 transition-colors"
                       style={{ 
                         backgroundColor: `${schedule.color || '#10b981'}15`
                       }}
                     >
-                      <td className="p-4 text-white font-medium">
-                        {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
-                      </td>
-                      <td className="p-4 text-gray-300">
-                        {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
-                      </td>
-                      <td className="p-4 text-gray-300 font-mono text-sm">
-                        {format(parseISO(schedule.start_time), "HH:mm", { locale: ru })} - {format(parseISO(schedule.end_time), "HH:mm", { locale: ru })}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-2">
-                          <Badge 
-                            className="w-fit border-0"
-                            style={{ 
-                              backgroundColor: schedule.color || '#10b981',
-                              color: 'white'
-                            }}
-                          >
-                            {schedule.activity_type}
-                          </Badge>
-                          {schedule.title && (
-                            <span className="text-sm text-white font-medium">{schedule.title}</span>
-                          )}
-                          {schedule.description && (
-                            <span className="text-xs text-gray-400">{schedule.description}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 text-gray-300">
-                        {schedule.location || '-'}
-                      </td>
-                      <td className="p-4 text-gray-300">
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold font-mono text-sm"
+                        >
+                          {format(parseISO(schedule.start_time), "HH:mm")} - {format(parseISO(schedule.end_time), "HH:mm")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {schedule.activity_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {schedule.location || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         {schedule.participants_count || 0}
                         {schedule.max_participants && ` / ${schedule.max_participants}`}
-                      </td>
+                      </TableCell>
                       {user && (
-                        <td className="p-4">
+                        <TableCell>
                           <Button
                             onClick={() =>
                               schedule.is_registered
@@ -287,12 +316,12 @@ export function ClubScheduleViewer() {
                               </>
                             )}
                           </Button>
-                        </td>
+                        </TableCell>
                       )}
-                    </tr>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
