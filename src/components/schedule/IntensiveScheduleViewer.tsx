@@ -94,19 +94,19 @@ export function IntensiveScheduleViewer() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Расписание интенсива</h2>
-          <p className="text-muted-foreground">Предстоящие занятия</p>
+          <h2 className="text-2xl font-bold text-white">Расписание интенсива</h2>
+          <p className="text-gray-400">Предстоящие занятия</p>
         </div>
-        <Button onClick={handleSubscribeCalendar} variant="outline" size="sm" className="gap-2">
+        <Button onClick={handleSubscribeCalendar} variant="outline" size="sm" className="gap-2 border-gray-600 text-gray-300 hover:bg-gray-800">
           <CalendarPlus className="w-4 h-4" />
           Подписаться на календарь
         </Button>
       </div>
 
       {schedules.length === 0 ? (
-        <Card className="border-border bg-card">
+        <Card className="border-gray-700 bg-gray-900">
           <CardContent className="p-8">
-            <p className="text-center text-muted-foreground">
+            <p className="text-center text-gray-400">
               Нет предстоящих занятий
             </p>
           </CardContent>
@@ -116,7 +116,7 @@ export function IntensiveScheduleViewer() {
           {schedules.map((schedule) => (
             <Card
               key={schedule.id}
-              className="border-border bg-card hover:bg-accent/50 transition-colors overflow-hidden"
+              className="border-gray-700 bg-gray-900 hover:bg-gray-800 transition-colors overflow-hidden"
               style={{
                 borderLeft: `4px solid ${schedule.color || '#6366f1'}`,
               }}
@@ -126,15 +126,15 @@ export function IntensiveScheduleViewer() {
                   <div className="flex-1 space-y-3">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="text-lg font-semibold mb-1">{schedule.title}</h3>
+                        <h3 className="text-lg font-semibold text-white mb-1">{schedule.title}</h3>
                         {schedule.description && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-gray-400">
                             {schedule.description}
                           </p>
                         )}
                       </div>
                       <Badge 
-                        className="shrink-0"
+                        className="shrink-0 border-0"
                         style={{ 
                           backgroundColor: schedule.color || '#6366f1',
                           color: 'white'
@@ -145,9 +145,9 @@ export function IntensiveScheduleViewer() {
                     </div>
                     
                     <div className="flex flex-wrap gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-2 text-gray-400">
                         <Clock className="w-4 h-4" />
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-white">
                           {getDateLabel(schedule.start_time)}
                         </span>
                         <span>
@@ -156,7 +156,7 @@ export function IntensiveScheduleViewer() {
                         </span>
                       </div>
                       {schedule.location && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2 text-gray-400">
                           <MapPin className="w-4 h-4" />
                           <span>{schedule.location}</span>
                         </div>
