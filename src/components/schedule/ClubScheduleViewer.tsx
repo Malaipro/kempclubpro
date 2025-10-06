@@ -111,15 +111,6 @@ export function ClubScheduleViewer() {
     return format(date, "d MMMM, EEEE", { locale: ru });
   };
 
-  const getActivityBadgeColor = (activity: string) => {
-    if (activity.includes('BJJ')) return 'bg-blue-100 text-blue-800';
-    if (activity.includes('ОФП')) return 'bg-purple-100 text-purple-800';
-    if (activity.includes('лекция')) return 'bg-orange-100 text-orange-800';
-    if (activity.includes('Кикбоксинг')) return 'bg-red-100 text-red-800';
-    if (activity.includes('нутрициологи')) return 'bg-green-100 text-green-800';
-    if (activity.includes('Тактическая')) return 'bg-orange-100 text-orange-800';
-    return 'bg-gray-100 text-gray-800';
-  };
 
   const handleSubscribeCalendar = () => {
     const calendarUrl = `https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/calendar-feed?type=club`;
@@ -235,22 +226,93 @@ export function ClubScheduleViewer() {
                     <TableRow 
                       key={schedule.id}
                       style={{ 
-                        backgroundColor: `${schedule.color || '#10b981'}15`,
-                        borderLeftColor: schedule.color || '#10b981',
-                        borderLeftWidth: '4px'
+                        backgroundColor: `${schedule.color || '#10b981'}15`
                       }}
                     >
-                      <TableCell>{schedule.ascetic_nutrition}</TableCell>
-                      <TableCell>{schedule.nutrition}</TableCell>
-                      <TableCell>{format(parseISO(schedule.start_time), "dd.MM.yyyy")}</TableCell>
-                      <TableCell>{format(parseISO(schedule.start_time), "EEEE", { locale: ru })}</TableCell>
-                      <TableCell>{format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}</TableCell>
                       <TableCell>
-                        <Badge className={getActivityBadgeColor(schedule.activity_type)}>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {schedule.ascetic_nutrition}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {schedule.nutrition}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
                           {schedule.activity_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{schedule.instructor_name}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          style={{ 
+                            color: schedule.color || '#10b981',
+                            borderColor: schedule.color || '#10b981',
+                            backgroundColor: 'transparent'
+                          }}
+                          className="border font-semibold"
+                        >
+                          {schedule.instructor_name}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         {schedule.participants_count || 0}
                         {schedule.max_participants && ` / ${schedule.max_participants}`}
