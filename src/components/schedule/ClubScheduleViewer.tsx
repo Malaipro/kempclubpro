@@ -179,25 +179,25 @@ export function ClubScheduleViewer() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Расписание мужского клуба</h2>
-          <p className="text-gray-400">Предстоящие мероприятия клуба</p>
+          <h2 className="text-2xl font-bold">Расписание мужского клуба</h2>
+          <p className="text-muted-foreground">Предстоящие мероприятия клуба</p>
         </div>
-        <Button onClick={handleSubscribeCalendar} variant="outline" size="sm" className="gap-2 border-gray-600 text-gray-300 hover:bg-gray-800">
+        <Button onClick={handleSubscribeCalendar} variant="outline" size="sm" className="gap-2">
           <CalendarPlus className="w-4 h-4" />
           Подписаться на календарь
         </Button>
       </div>
 
       {schedules.length === 0 ? (
-        <Card className="border-gray-700 bg-gray-900">
+        <Card className="bg-card border-border">
           <CardContent className="p-8">
-            <p className="text-center text-gray-400">
+            <p className="text-center text-muted-foreground">
               Нет предстоящих мероприятий
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -205,7 +205,7 @@ export function ClubScheduleViewer() {
                   <TableRow>
                     <TableHead className="min-w-[100px]">Дата</TableHead>
                     <TableHead className="min-w-[100px]">День недели</TableHead>
-                    <TableHead className="min-w-[100px]">Время</TableHead>
+                    <TableHead className="min-w-[120px]">Время</TableHead>
                     <TableHead className="min-w-[150px]">Мероприятие</TableHead>
                     <TableHead className="min-w-[120px]">Место</TableHead>
                     <TableHead className="min-w-[100px]">Участники</TableHead>
