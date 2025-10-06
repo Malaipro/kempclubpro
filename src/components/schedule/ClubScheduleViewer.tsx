@@ -196,102 +196,106 @@ export function ClubScheduleViewer() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {schedules.map((schedule) => (
-            <Card
-              key={schedule.id}
-              className="border-gray-700 bg-gray-900 hover:bg-gray-800 transition-colors overflow-hidden"
-              style={{
-                borderLeft: `4px solid ${schedule.color || '#10b981'}`,
-              }}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className="text-lg font-semibold text-white">{schedule.title}</h3>
-                      <Badge 
-                        className="shrink-0 border-0"
-                        style={{ 
-                          backgroundColor: schedule.color || '#10b981',
-                          color: 'white'
-                        }}
-                      >
-                        {schedule.activity_type}
-                      </Badge>
-                    </div>
-                    {schedule.description && (
-                      <p className="text-sm text-gray-400 mb-3">
-                        {schedule.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-4 text-sm mb-4">
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-medium text-white">
-                          {getDateLabel(schedule.start_time)}
-                        </span>
-                        <span>
-                          {format(parseISO(schedule.start_time), "HH:mm", { locale: ru })} -{" "}
-                          {format(parseISO(schedule.end_time), "HH:mm", { locale: ru })}
-                        </span>
-                      </div>
-                      {schedule.location && (
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <MapPin className="w-4 h-4" />
-                          <span>{schedule.location}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Users className="w-4 h-4" />
-                        <span>
-                          Записано: {schedule.participants_count || 0}
-                          {schedule.max_participants && ` / ${schedule.max_participants}`}
-                        </span>
-                      </div>
-                      {user && (
-                        <Button
-                          onClick={() =>
-                            schedule.is_registered
-                              ? handleUnregister(schedule.id)
-                              : handleRegister(schedule.id)
-                          }
-                          disabled={
-                            registering === schedule.id ||
-                            (!schedule.is_registered &&
-                              schedule.max_participants !== null &&
-                              (schedule.participants_count || 0) >= schedule.max_participants)
-                          }
-                          variant={schedule.is_registered ? "outline" : "default"}
-                          size="sm"
-                          className="gap-2"
-                        >
-                          {registering === schedule.id ? (
-                            "Обработка..."
-                          ) : schedule.is_registered ? (
-                            <>
-                              <UserCheck className="w-4 h-4" />
-                              Отменить запись
-                            </>
-                          ) : (
-                            <>
-                              <Users className="w-4 h-4" />
-                              Записаться
-                            </>
+        <Card className="border-gray-700 bg-gray-900">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">Дата</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">День недели</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">Время</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">Мероприятие</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">Место</th>
+                    <th className="text-left p-4 text-sm font-medium text-gray-300">Участники</th>
+                    {user && <th className="text-left p-4 text-sm font-medium text-gray-300">Запись</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map((schedule) => (
+                    <tr 
+                      key={schedule.id}
+                      className="border-b border-gray-800 hover:bg-gray-800 transition-colors"
+                      style={{ 
+                        backgroundColor: `${schedule.color || '#10b981'}15`
+                      }}
+                    >
+                      <td className="p-4 text-white font-medium">
+                        {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                      </td>
+                      <td className="p-4 text-gray-300">
+                        {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                      </td>
+                      <td className="p-4 text-gray-300 font-mono text-sm">
+                        {format(parseISO(schedule.start_time), "HH:mm", { locale: ru })} - {format(parseISO(schedule.end_time), "HH:mm", { locale: ru })}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-col gap-2">
+                          <Badge 
+                            className="w-fit border-0"
+                            style={{ 
+                              backgroundColor: schedule.color || '#10b981',
+                              color: 'white'
+                            }}
+                          >
+                            {schedule.activity_type}
+                          </Badge>
+                          {schedule.title && (
+                            <span className="text-sm text-white font-medium">{schedule.title}</span>
                           )}
-                        </Button>
+                          {schedule.description && (
+                            <span className="text-xs text-gray-400">{schedule.description}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-gray-300">
+                        {schedule.location || '-'}
+                      </td>
+                      <td className="p-4 text-gray-300">
+                        {schedule.participants_count || 0}
+                        {schedule.max_participants && ` / ${schedule.max_participants}`}
+                      </td>
+                      {user && (
+                        <td className="p-4">
+                          <Button
+                            onClick={() =>
+                              schedule.is_registered
+                                ? handleUnregister(schedule.id)
+                                : handleRegister(schedule.id)
+                            }
+                            disabled={
+                              registering === schedule.id ||
+                              (!schedule.is_registered &&
+                                schedule.max_participants !== null &&
+                                (schedule.participants_count || 0) >= schedule.max_participants)
+                            }
+                            variant={schedule.is_registered ? "outline" : "default"}
+                            size="sm"
+                            className="gap-2"
+                          >
+                            {registering === schedule.id ? (
+                              "..."
+                            ) : schedule.is_registered ? (
+                              <>
+                                <UserCheck className="w-4 h-4" />
+                                Отменить
+                              </>
+                            ) : (
+                              <>
+                                <Users className="w-4 h-4" />
+                                Записаться
+                              </>
+                            )}
+                          </Button>
+                        </td>
                       )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
