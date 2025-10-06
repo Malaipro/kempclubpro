@@ -55,9 +55,9 @@ export const EnhancedCooperTest: React.FC = () => {
     total_seconds: '',
     age: '',
     gender: '',
-    test_date: new Date().toISOString().split('T')[0],
-    test_phase: 'test_1',
-    notes: '',
+      test_date: new Date().toISOString().split('T')[0],
+      test_phase: 'during_stream',
+      notes: '',
   });
 
   const { toast } = useToast();
@@ -239,7 +239,7 @@ export const EnhancedCooperTest: React.FC = () => {
       age: '',
       gender: '',
       test_date: new Date().toISOString().split('T')[0],
-      test_phase: 'test_1',
+      test_phase: 'during_stream',
       notes: '',
     });
     setEditingResult(null);
@@ -295,8 +295,9 @@ export const EnhancedCooperTest: React.FC = () => {
     );
   }
 
-  const test1Results = getTestResults('test_1');
-  const test2Results = getTestResults('test_2');
+  const beforeStreamResults = getTestResults('before_stream');
+  const duringStreamResults = getTestResults('during_stream');
+  const afterStreamResults = getTestResults('after_stream');
 
   return (
     <div className="space-y-6">
@@ -353,8 +354,9 @@ export const EnhancedCooperTest: React.FC = () => {
                     <SelectValue placeholder="Выберите фазу" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                    <SelectItem value="test_1" className="hover:bg-gray-100">Тест 1</SelectItem>
-                    <SelectItem value="test_2" className="hover:bg-gray-100">Тест 2</SelectItem>
+                    <SelectItem value="before_stream" className="hover:bg-gray-100">До потока</SelectItem>
+                    <SelectItem value="during_stream" className="hover:bg-gray-100">Во время потока</SelectItem>
+                    <SelectItem value="after_stream" className="hover:bg-gray-100">После потока</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -454,10 +456,11 @@ export const EnhancedCooperTest: React.FC = () => {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">Все результаты</TabsTrigger>
-          <TabsTrigger value="test1">Тест 1 ({test1Results.length})</TabsTrigger>
-          <TabsTrigger value="test2">Тест 2 ({test2Results.length})</TabsTrigger>
+          <TabsTrigger value="before">До потока ({beforeStreamResults.length})</TabsTrigger>
+          <TabsTrigger value="during">Во время ({duringStreamResults.length})</TabsTrigger>
+          <TabsTrigger value="after">После ({afterStreamResults.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-6">
@@ -510,7 +513,9 @@ export const EnhancedCooperTest: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {result.test_phase === 'test_1' ? 'Тест 1' : 'Тест 2'}
+                          {result.test_phase === 'before_stream' ? 'До потока' : 
+                           result.test_phase === 'during_stream' ? 'Во время потока' : 
+                           result.test_phase === 'after_stream' ? 'После потока' : 'Неизвестно'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -546,20 +551,20 @@ export const EnhancedCooperTest: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="test1" className="mt-6">
+        <TabsContent value="before" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-destructive" />
-                Тест 1
+                Тест до потока
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {test1Results.length === 0 ? (
+              {beforeStreamResults.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
-                  <p className="text-sm">Результаты теста 1 еще не добавлены</p>
+                  <p className="text-sm">Результаты теста до потока еще не добавлены</p>
                 </div>
               ) : (
                 <Table>
@@ -574,7 +579,7 @@ export const EnhancedCooperTest: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {test1Results.map((result) => (
+                    {beforeStreamResults.map((result) => (
                       <TableRow key={result.id} className="hover:bg-gray-50">
                         <TableCell>{formatParticipantName(result)}</TableCell>
                         <TableCell>{result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}</TableCell>
@@ -618,20 +623,20 @@ export const EnhancedCooperTest: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="test2" className="mt-6">
+        <TabsContent value="during" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-destructive" />
-                Тест 2
+                Тест во время потока
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {test2Results.length === 0 ? (
+              {duringStreamResults.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
-                  <p className="text-sm">Результаты теста 2 еще не добавлены</p>
+                  <p className="text-sm">Результаты теста во время потока еще не добавлены</p>
                 </div>
               ) : (
                 <Table>
@@ -646,7 +651,79 @@ export const EnhancedCooperTest: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {test2Results.map((result) => (
+                    {duringStreamResults.map((result) => (
+                      <TableRow key={result.id} className="hover:bg-gray-50">
+                        <TableCell>{formatParticipantName(result)}</TableCell>
+                        <TableCell>{result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}</TableCell>
+                        <TableCell>
+                          <Badge className={getFitnessLevelColor(result.fitness_level)}>
+                            {getFitnessLevelLabel(result.fitness_level)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(result.test_date).toLocaleDateString('ru-RU')}</TableCell>
+                        <TableCell>
+                          {result.verified ? (
+                            <Badge className="bg-green-100 text-green-800">Подтверждено</Badge>
+                          ) : (
+                            <Badge variant="outline">Не подтверждено</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(result)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={result.verified ? "destructive" : "default"}
+                              onClick={() => handleVerification(result.id, !result.verified)}
+                            >
+                              {result.verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="after" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-destructive" />
+                Тест после потока
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {afterStreamResults.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <Activity className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold mb-2">Нет результатов</h3>
+                  <p className="text-sm">Результаты теста после потока еще не добавлены</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Участник</TableHead>
+                      <TableHead>Время</TableHead>
+                      <TableHead>Уровень</TableHead>
+                      <TableHead>Дата</TableHead>
+                      <TableHead>Статус</TableHead>
+                      <TableHead>Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {afterStreamResults.map((result) => (
                       <TableRow key={result.id} className="hover:bg-gray-50">
                         <TableCell>{formatParticipantName(result)}</TableCell>
                         <TableCell>{result.total_minutes}:{(result.total_seconds || 0).toString().padStart(2, '0')}</TableCell>
