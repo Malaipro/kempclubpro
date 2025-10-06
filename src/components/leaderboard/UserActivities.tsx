@@ -237,7 +237,12 @@ export const UserActivities: React.FC = () => {
       case 'theory':
         return <Book className="w-4 h-4 text-purple-600" />;
       case 'tactical':
+      case 'tactics':
         return <Shield className="w-4 h-4 text-orange-600" />;
+      case 'kamp_pyramid':
+        return <Trophy className="w-4 h-4 text-amber-600" />;
+      case 'nutrition':
+        return <Target className="w-4 h-4 text-green-600" />;
       case 'challenge':
         return <Trophy className="w-4 h-4 text-yellow-600" />;
       default:
@@ -266,6 +271,9 @@ export const UserActivities: React.FC = () => {
       'ofp': 'ОФП',
       'theory': 'Теория',
       'tactical': 'Тактика',
+      'tactics': 'Тактика',
+      'kamp_pyramid': 'Пирамида КЭМП',
+      'nutrition': 'Нутрициология',
       'challenge': 'Испытание'
     };
     return names[category] || category;
