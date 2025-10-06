@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, Clock, MapPin, Users } from "lucide-react";
+import { CalendarPlus, Clock, MapPin, Users, UserCheck } from "lucide-react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast as sonnerToast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Schedule {
   id: string;
@@ -17,11 +18,16 @@ interface Schedule {
   activity_type: string;
   color: string | null;
   schedule_type: 'intensive' | 'club';
+  max_participants: number | null;
+  participants_count?: number;
+  is_registered?: boolean;
 }
 
 export function ClubScheduleViewer() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [registering, setRegistering] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchSchedules = async () => {
     try {
@@ -34,7 +40,35 @@ export function ClubScheduleViewer() {
         .order("start_time", { ascending: true });
 
       if (error) throw error;
-      setSchedules(data || []);
+
+      // Fetch participants count and registration status for each schedule
+      const schedulesWithParticipants = await Promise.all(
+        (data || []).map(async (schedule) => {
+          const { count } = await supabase
+            .from("schedule_participants")
+            .select("*", { count: "exact", head: true })
+            .eq("schedule_id", schedule.id);
+
+          let isRegistered = false;
+          if (user) {
+            const { data: regData } = await supabase
+              .from("schedule_participants")
+              .select("id")
+              .eq("schedule_id", schedule.id)
+              .eq("user_id", user.id)
+              .single();
+            isRegistered = !!regData;
+          }
+
+          return {
+            ...schedule,
+            participants_count: count || 0,
+            is_registered: isRegistered,
+          };
+        })
+      );
+
+      setSchedules(schedulesWithParticipants);
     } catch (error) {
       console.error("Error fetching schedules:", error);
       sonnerToast.error("Ошибка загрузки расписания");
@@ -75,6 +109,60 @@ export function ClubScheduleViewer() {
     sonnerToast.success("Ссылка на календарь скопирована!", {
       description: "Добавьте её в ваше календарное приложение",
     });
+  };
+
+  const handleRegister = async (scheduleId: string) => {
+    if (!user) {
+      sonnerToast.error("Необходимо войти в систему");
+      return;
+    }
+
+    setRegistering(scheduleId);
+    try {
+      const { error } = await supabase
+        .from("schedule_participants")
+        .insert({
+          schedule_id: scheduleId,
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+
+      sonnerToast.success("Вы успешно записались на мероприятие!");
+      await fetchSchedules();
+    } catch (error: any) {
+      console.error("Error registering:", error);
+      if (error.code === "23505") {
+        sonnerToast.error("Вы уже записаны на это мероприятие");
+      } else {
+        sonnerToast.error("Ошибка при записи на мероприятие");
+      }
+    } finally {
+      setRegistering(null);
+    }
+  };
+
+  const handleUnregister = async (scheduleId: string) => {
+    if (!user) return;
+
+    setRegistering(scheduleId);
+    try {
+      const { error } = await supabase
+        .from("schedule_participants")
+        .delete()
+        .eq("schedule_id", scheduleId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      sonnerToast.success("Вы отменили запись на мероприятие");
+      await fetchSchedules();
+    } catch (error) {
+      console.error("Error unregistering:", error);
+      sonnerToast.error("Ошибка при отмене записи");
+    } finally {
+      setRegistering(null);
+    }
   };
 
   if (loading) {
@@ -142,7 +230,7 @@ export function ClubScheduleViewer() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium">
@@ -159,6 +247,46 @@ export function ClubScheduleViewer() {
                         <span>{schedule.location}</span>
                       </div>
                     )}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>
+                          Записано: {schedule.participants_count || 0}
+                          {schedule.max_participants && ` / ${schedule.max_participants}`}
+                        </span>
+                      </div>
+                      {user && (
+                        <Button
+                          onClick={() =>
+                            schedule.is_registered
+                              ? handleUnregister(schedule.id)
+                              : handleRegister(schedule.id)
+                          }
+                          disabled={
+                            registering === schedule.id ||
+                            (!schedule.is_registered &&
+                              schedule.max_participants !== null &&
+                              (schedule.participants_count || 0) >= schedule.max_participants)
+                          }
+                          variant={schedule.is_registered ? "outline" : "default"}
+                          size="sm"
+                        >
+                          {registering === schedule.id ? (
+                            "Обработка..."
+                          ) : schedule.is_registered ? (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Отменить запись
+                            </>
+                          ) : (
+                            <>
+                              <Users className="w-4 h-4 mr-2" />
+                              Записаться
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ interface ScheduleItem {
   instructor_id?: string | null;
   color?: string;
   location?: string;
+  participants_count?: number;
 }
 
 interface Trainer {
@@ -33,11 +35,24 @@ interface Trainer {
   name: string;
 }
 
+interface Participant {
+  id: string;
+  user_id: string;
+  registered_at: string;
+  profiles: {
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+}
+
 export const ClubScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [formData, setFormData] = useState({
     date: undefined as Date | undefined,
     start_time: '19:00',
@@ -72,7 +87,19 @@ export const ClubScheduleManagement: React.FC = () => {
 
       const trainersMap = new Map((trainersData || []).map(t => [t.id, t.name]));
 
-      const formattedItems: ScheduleItem[] = (data || []).map(schedule => {
+      // Fetch participants count for each schedule
+      const schedulesWithCounts = await Promise.all(
+        (data || []).map(async (schedule) => {
+          const { count } = await supabase
+            .from("schedule_participants")
+            .select("*", { count: "exact", head: true })
+            .eq("schedule_id", schedule.id);
+          
+          return { ...schedule, participants_count: count || 0 };
+        })
+      );
+
+      const formattedItems: ScheduleItem[] = schedulesWithCounts.map(schedule => {
         const startDate = new Date(schedule.start_time);
         const endDate = new Date(schedule.end_time);
         
@@ -85,7 +112,8 @@ export const ClubScheduleManagement: React.FC = () => {
           instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
           instructor_id: schedule.instructor_id,
           location: schedule.location || '-',
-          color: schedule.color || '#10b981'
+          color: schedule.color || '#10b981',
+          participants_count: schedule.participants_count
         };
       });
 
@@ -247,6 +275,48 @@ export const ClubScheduleManagement: React.FC = () => {
     });
   };
 
+  const fetchParticipants = async (scheduleId: string) => {
+    try {
+      const { data: participantsData, error: participantsError } = await supabase
+        .from("schedule_participants")
+        .select("id, user_id, registered_at")
+        .eq("schedule_id", scheduleId)
+        .order("registered_at", { ascending: false });
+
+      if (participantsError) throw participantsError;
+
+      // Fetch profiles for each participant
+      const participantsWithProfiles = await Promise.all(
+        (participantsData || []).map(async (participant) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, first_name, last_name")
+            .eq("user_id", participant.user_id)
+            .single();
+
+          return {
+            ...participant,
+            profiles: profile || null,
+          };
+        })
+      );
+
+      setParticipants(participantsWithProfiles);
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить список участников",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewParticipants = async (scheduleId: string) => {
+    setViewingParticipants(scheduleId);
+    await fetchParticipants(scheduleId);
+  };
+
   const getActivityBadgeColor = (activity: string) => {
     if (activity.includes('BJJ')) return 'bg-blue-100 text-blue-800';
     if (activity.includes('ОФП')) return 'bg-purple-100 text-purple-800';
@@ -254,6 +324,19 @@ export const ClubScheduleManagement: React.FC = () => {
     if (activity.includes('Встреча')) return 'bg-green-100 text-green-800';
     if (activity.includes('Баня')) return 'bg-orange-100 text-orange-800';
     return 'bg-gray-100 text-gray-800';
+  };
+
+  const getParticipantName = (participant: Participant) => {
+    if (participant.profiles?.display_name) {
+      return participant.profiles.display_name;
+    }
+    if (participant.profiles?.first_name && participant.profiles?.last_name) {
+      return `${participant.profiles.first_name} ${participant.profiles.last_name}`;
+    }
+    if (participant.profiles?.first_name) {
+      return participant.profiles.first_name;
+    }
+    return "Неизвестный участник";
   };
 
   return (
@@ -489,6 +572,7 @@ export const ClubScheduleManagement: React.FC = () => {
                   <TableHead className="min-w-[150px]">Мероприятие</TableHead>
                   <TableHead className="min-w-[120px]">Место</TableHead>
                   <TableHead className="min-w-[120px]">Организатор</TableHead>
+                  <TableHead className="min-w-[100px]">Участники</TableHead>
                   <TableHead className="w-[100px]">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -517,6 +601,51 @@ export const ClubScheduleManagement: React.FC = () => {
                     </TableCell>
                     <TableCell>{item.location}</TableCell>
                     <TableCell>{item.instructor}</TableCell>
+                    <TableCell>
+                      <Sheet open={viewingParticipants === item.id} onOpenChange={(open) => !open && setViewingParticipants(null)}>
+                        <SheetTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewParticipants(item.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            {item.participants_count || 0}
+                          </Button>
+                        </SheetTrigger>
+                        <SheetContent className="w-full sm:max-w-md">
+                          <SheetHeader>
+                            <SheetTitle>Список участников</SheetTitle>
+                          </SheetHeader>
+                          <div className="mt-6 space-y-4">
+                            {participants.length === 0 ? (
+                              <p className="text-center text-muted-foreground py-8">
+                                Нет записавшихся участников
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {participants.map((participant, index) => (
+                                  <Card key={participant.id}>
+                                    <CardContent className="p-4">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="font-medium">
+                                            {index + 1}. {getParticipantName(participant)}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Записался: {format(new Date(participant.registered_at), 'dd.MM.yyyy HH:mm')}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </SheetContent>
+                      </Sheet>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
