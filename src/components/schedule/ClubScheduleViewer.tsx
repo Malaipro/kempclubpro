@@ -23,6 +23,10 @@ interface Schedule {
   max_participants: number | null;
   participants_count?: number;
   is_registered?: boolean;
+  instructor_id?: string | null;
+  ascetic_nutrition?: string;
+  nutrition?: string;
+  instructor_name?: string;
 }
 
 export function ClubScheduleViewer() {
@@ -43,6 +47,14 @@ export function ClubScheduleViewer() {
 
       if (error) throw error;
 
+      // Fetch trainers to map instructor names
+      const { data: trainersData } = await supabase
+        .from("trainers")
+        .select("id, name")
+        .eq("is_active", true);
+
+      const trainersMap = new Map((trainersData || []).map(t => [t.id, t.name]));
+
       // Fetch participants count and registration status for each schedule
       const schedulesWithParticipants = await Promise.all(
         (data || []).map(async (schedule) => {
@@ -62,10 +74,15 @@ export function ClubScheduleViewer() {
             isRegistered = !!regData;
           }
 
+          const [ascetic_nutrition = '', nutrition = ''] = (schedule.description || '').split(' | ');
+
           return {
             ...schedule,
             participants_count: count || 0,
             is_registered: isRegistered,
+            ascetic_nutrition: ascetic_nutrition || '-',
+            nutrition: nutrition || '-',
+            instructor_name: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-'
           };
         })
       );
@@ -94,15 +111,14 @@ export function ClubScheduleViewer() {
     return format(date, "d MMMM, EEEE", { locale: ru });
   };
 
-  const getActivityTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      bjj: "bg-blue-500",
-      kickboxing: "bg-red-500",
-      ofp: "bg-green-500",
-      theory: "bg-purple-500",
-      tactical: "bg-orange-500",
-    };
-    return colors[type] || "bg-gray-500";
+  const getActivityBadgeColor = (activity: string) => {
+    if (activity.includes('BJJ')) return 'bg-blue-100 text-blue-800';
+    if (activity.includes('ОФП')) return 'bg-purple-100 text-purple-800';
+    if (activity.includes('лекция')) return 'bg-orange-100 text-orange-800';
+    if (activity.includes('Кикбоксинг')) return 'bg-red-100 text-red-800';
+    if (activity.includes('нутрициологи')) return 'bg-green-100 text-green-800';
+    if (activity.includes('Тактическая')) return 'bg-orange-100 text-orange-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   const handleSubscribeCalendar = () => {
@@ -203,11 +219,13 @@ export function ClubScheduleViewer() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Смысл аскезы/Парадигма КЭМП</TableHead>
+                    <TableHead>Смысл аскезы/Нутрициология</TableHead>
                     <TableHead className="min-w-[100px]">Дата</TableHead>
                     <TableHead className="min-w-[100px]">День недели</TableHead>
                     <TableHead className="min-w-[120px]">Время</TableHead>
                     <TableHead className="min-w-[150px]">Мероприятие</TableHead>
-                    <TableHead className="min-w-[120px]">Место</TableHead>
+                    <TableHead>Лектор</TableHead>
                     <TableHead className="min-w-[100px]">Участники</TableHead>
                     {user && <TableHead className="w-[150px]">Запись</TableHead>}
                   </TableRow>
@@ -217,69 +235,22 @@ export function ClubScheduleViewer() {
                     <TableRow 
                       key={schedule.id}
                       style={{ 
-                        backgroundColor: `${schedule.color || '#10b981'}15`
+                        backgroundColor: `${schedule.color || '#10b981'}15`,
+                        borderLeftColor: schedule.color || '#10b981',
+                        borderLeftWidth: '4px'
                       }}
                     >
+                      <TableCell>{schedule.ascetic_nutrition}</TableCell>
+                      <TableCell>{schedule.nutrition}</TableCell>
+                      <TableCell>{format(parseISO(schedule.start_time), "dd.MM.yyyy")}</TableCell>
+                      <TableCell>{format(parseISO(schedule.start_time), "EEEE", { locale: ru })}</TableCell>
+                      <TableCell>{format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}</TableCell>
                       <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold font-mono text-sm"
-                        >
-                          {format(parseISO(schedule.start_time), "HH:mm")} - {format(parseISO(schedule.end_time), "HH:mm")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
+                        <Badge className={getActivityBadgeColor(schedule.activity_type)}>
                           {schedule.activity_type}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {schedule.location || '-'}
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{schedule.instructor_name}</TableCell>
                       <TableCell>
                         {schedule.participants_count || 0}
                         {schedule.max_participants && ` / ${schedule.max_participants}`}
