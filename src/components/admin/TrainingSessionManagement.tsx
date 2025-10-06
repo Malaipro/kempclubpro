@@ -94,7 +94,6 @@ export const TrainingSessionManagement: React.FC = () => {
           session_date: sessionDate.toISOString(),
           points_earned: points,
           verified: true,
-          verified_by: user.id,
           notes: notes || null,
         }]);
 
