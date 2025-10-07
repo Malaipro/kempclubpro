@@ -269,9 +269,12 @@ export const EnhancedParticipantManagement: React.FC = () => {
           approved_at: newApproved ? new Date().toISOString() : null,
           approved_by: newApproved && user ? user.id : null,
         })
-        .eq('id', p.id);
+        .eq('user_id', p.user_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error details:', error);
+        throw error;
+      }
 
       toast({
         title: newApproved ? 'Участник утвержден' : 'Утверждение снято',
