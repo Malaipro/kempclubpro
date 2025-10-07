@@ -1796,6 +1796,10 @@ export type Database = {
         Args: { phone_number: string }
         Returns: string
       }
+      recalculate_all_ranks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_participant_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["participant_status_type"]
