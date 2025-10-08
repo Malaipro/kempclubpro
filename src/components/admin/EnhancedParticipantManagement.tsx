@@ -262,14 +262,24 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const handleToggleApproval = async (p: Participant) => {
     try {
       const newApproved = !p.approved;
-      const { error } = await supabase
+      // Обновляем по надёжному ключу: сначала id профиля, если его нет — по user_id
+      let query = supabase
         .from('profiles')
         .update({
           approved: newApproved,
           approved_at: newApproved ? new Date().toISOString() : null,
           approved_by: newApproved && user ? user.id : null,
-        })
-        .eq('user_id', p.user_id);
+        });
+
+      if (p.id) {
+        query = query.eq('id', p.id);
+      } else if (p.user_id) {
+        query = query.eq('user_id', p.user_id);
+      } else {
+        throw new Error('Не найден идентификатор профиля для обновления');
+      }
+
+      const { error } = await query;
 
       if (error) {
         console.error('Update error details:', error);
