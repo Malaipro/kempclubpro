@@ -1717,6 +1717,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_approval: {
+        Args: { p_approved: boolean; p_user_id: string }
+        Returns: undefined
+      }
       auto_cleanup_contact_submissions: {
         Args: Record<PropertyKey, never>
         Returns: undefined

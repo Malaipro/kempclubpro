@@ -262,27 +262,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const handleToggleApproval = async (p: Participant) => {
     try {
       const newApproved = !p.approved;
-      // Обновляем по надёжному ключу: сначала id профиля, если его нет — по user_id
-      let query = supabase
-        .from('profiles')
-        .update({
-          approved: newApproved,
-          approved_at: newApproved ? new Date().toISOString() : null,
-          approved_by: newApproved && user ? user.id : null,
-        });
-
-      if (p.id) {
-        query = query.eq('id', p.id);
-      } else if (p.user_id) {
-        query = query.eq('user_id', p.user_id);
-      } else {
-        throw new Error('Не найден идентификатор профиля для обновления');
-      }
-
-      const { error } = await query;
+      
+      // Используем RPC для безопасного обновления с пересчётом рейтингов
+      const { error } = await supabase.rpc('admin_set_approval', {
+        p_user_id: p.user_id,
+        p_approved: newApproved
+      });
 
       if (error) {
-        console.error('Update error details:', error);
+        console.error('RPC error:', error);
         throw error;
       }
 
