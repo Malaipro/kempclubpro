@@ -51,30 +51,31 @@ export const ParticipantManagement: React.FC = () => {
     }
   };
 
-  const handleApproveParticipant = async (participantId: string) => {
+  const handleToggleApproval = async (userId: string, currentApproved: boolean) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          approved: true,
-          approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id
-        })
-        .eq('id', participantId);
+      const newApproved = !currentApproved;
+      
+      const { error } = await supabase.rpc('admin_set_approval', {
+        p_user_id: userId,
+        p_approved: newApproved
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
 
       toast({
         title: 'Успешно',
-        description: 'Участник утвержден',
+        description: newApproved ? 'Участник утвержден' : 'Утверждение отменено',
       });
 
       fetchParticipants();
     } catch (error) {
-      console.error('Error approving participant:', error);
+      console.error('Error toggling approval:', error);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось утвердить участника',
+        description: 'Не удалось обновить статус участника',
         variant: 'destructive',
       });
     }
@@ -214,16 +215,17 @@ export const ParticipantManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2 flex-wrap">
-                      {!participant.approved && (
-                        <Button 
-                          onClick={() => handleApproveParticipant(participant.id)}
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Утвердить
-                        </Button>
-                      )}
+                      <Button 
+                        onClick={() => handleToggleApproval(participant.user_id, participant.approved)}
+                        size="sm" 
+                        className={participant.approved 
+                          ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
+                          : "bg-green-600 hover:bg-green-700 text-white"
+                        }
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {participant.approved ? 'Отменить' : 'Утвердить'}
+                      </Button>
                       <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
                         Редактировать
                       </Button>
