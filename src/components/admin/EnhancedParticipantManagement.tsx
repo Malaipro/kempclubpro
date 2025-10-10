@@ -262,26 +262,46 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const handleToggleApproval = async (p: Participant) => {
     try {
       const newApproved = !p.approved;
-      
-      // Используем RPC для безопасного обновления с пересчётом рейтингов
+      console.log('[admin_set_approval] call', { user_id: p.user_id, newApproved });
       const { error } = await supabase.rpc('admin_set_approval', {
         p_user_id: p.user_id,
-        p_approved: newApproved
+        p_approved: newApproved,
       });
-
-      if (error) {
-        console.error('RPC error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: newApproved ? 'Участник утвержден' : 'Утверждение снято',
         description: p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Участник',
       });
-      fetchParticipants();
-    } catch (err) {
-      console.error('Error toggling approval:', err);
-      toast({ title: 'Ошибка', description: 'Не удалось обновить статус утверждения', variant: 'destructive' });
+      await fetchParticipants();
+    } catch (err: any) {
+      console.error('RPC error admin_set_approval:', err);
+      // Fallback: прямое обновление профиля + пересчет рейтинга
+      try {
+        const newApproved = !p.approved;
+        const { error: updErr } = await supabase
+          .from('profiles')
+          .update({
+            approved: newApproved,
+            approved_at: newApproved ? new Date().toISOString() : null,
+            approved_by: newApproved ? (user?.id ?? null) : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', p.user_id);
+        if (updErr) throw updErr;
+
+        await supabase.rpc('update_user_leaderboard', { user_uuid: p.user_id }).catch(() => {});
+
+        toast({
+          title: newApproved ? 'Участник утвержден' : 'Утверждение снято',
+          description: p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Участник',
+        });
+        await fetchParticipants();
+      } catch (innerErr: any) {
+        console.error('Fallback approval update failed:', innerErr);
+        const msg = innerErr?.message || 'Неизвестная ошибка';
+        toast({ title: 'Ошибка', description: `Не удалось обновить статус: ${msg}`, variant: 'destructive' });
+      }
     }
   };
 

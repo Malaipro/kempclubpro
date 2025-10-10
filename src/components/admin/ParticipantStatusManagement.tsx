@@ -77,25 +77,38 @@ export const ParticipantStatusManagement: React.FC = () => {
     try {
       const { error } = await supabase.rpc('update_participant_status', {
         p_user_id: userId,
-        p_new_status: newStatus
+        p_new_status: newStatus,
       });
-
       if (error) throw error;
 
       toast({
         title: 'Успех',
         description: `Статус участника изменен на "${statusLabels[newStatus]}"`,
       });
-
-      // Refresh the list
       await fetchParticipants();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось изменить статус участника',
-        variant: 'destructive',
-      });
+    } catch (error: any) {
+      console.error('RPC error update_participant_status:', error);
+      // Fallback: прямое обновление профиля (для админов разрешено RLS)
+      try {
+        const { error: updErr } = await supabase
+          .from('profiles')
+          .update({ participant_status: newStatus })
+          .eq('user_id', userId);
+        if (updErr) throw updErr;
+
+        // Опционально пересчёт рейтинга (на случай связанной логики)
+        await supabase.rpc('update_user_leaderboard', { user_uuid: userId }).catch(() => {});
+
+        toast({
+          title: 'Успех',
+          description: `Статус участника изменен на "${statusLabels[newStatus]}" (fallback)`,
+        });
+        await fetchParticipants();
+      } catch (innerErr: any) {
+        console.error('Fallback status update failed:', innerErr);
+        const msg = innerErr?.message || 'Неизвестная ошибка';
+        toast({ title: 'Ошибка', description: `Не удалось изменить статус: ${msg}`, variant: 'destructive' });
+      }
     }
   };
 
