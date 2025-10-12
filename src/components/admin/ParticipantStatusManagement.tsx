@@ -96,8 +96,8 @@ export const ParticipantStatusManagement: React.FC = () => {
           .eq('user_id', userId);
         if (updErr) throw updErr;
 
-        // Опционально пересчёт рейтинга (на случай связанной логики)
-        await supabase.rpc('update_user_leaderboard', { user_uuid: userId }).catch(() => {});
+        const { error: lbErr } = await supabase.rpc('update_user_leaderboard', { user_uuid: userId });
+        if (lbErr) console.warn('Leaderboard update warning:', lbErr);
 
         toast({
           title: 'Успех',

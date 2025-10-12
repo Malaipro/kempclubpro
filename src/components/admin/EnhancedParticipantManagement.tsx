@@ -290,7 +290,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
           .eq('user_id', p.user_id);
         if (updErr) throw updErr;
 
-        await supabase.rpc('update_user_leaderboard', { user_uuid: p.user_id }).catch(() => {});
+        const { error: lbErr } = await supabase.rpc('update_user_leaderboard', { user_uuid: p.user_id });
+        if (lbErr) console.warn('Leaderboard update warning:', lbErr);
 
         toast({
           title: newApproved ? 'Участник утвержден' : 'Утверждение снято',
