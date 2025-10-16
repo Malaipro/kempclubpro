@@ -573,9 +573,11 @@ export type Database = {
           bjj_points: number | null
           challenges_points: number | null
           id: string
+          kamp_pyramid_points: number | null
           kickboxing_points: number | null
           last_updated: string | null
           monthly_points: number | null
+          nutrition_points: number | null
           ofp_points: number | null
           rank_position: number | null
           tactical_points: number | null
@@ -587,9 +589,11 @@ export type Database = {
           bjj_points?: number | null
           challenges_points?: number | null
           id?: string
+          kamp_pyramid_points?: number | null
           kickboxing_points?: number | null
           last_updated?: string | null
           monthly_points?: number | null
+          nutrition_points?: number | null
           ofp_points?: number | null
           rank_position?: number | null
           tactical_points?: number | null
@@ -601,9 +605,11 @@ export type Database = {
           bjj_points?: number | null
           challenges_points?: number | null
           id?: string
+          kamp_pyramid_points?: number | null
           kickboxing_points?: number | null
           last_updated?: string | null
           monthly_points?: number | null
+          nutrition_points?: number | null
           ofp_points?: number | null
           rank_position?: number | null
           tactical_points?: number | null

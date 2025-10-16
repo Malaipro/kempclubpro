@@ -42,6 +42,8 @@ interface ParticipantDetails {
   ofp_points: number;
   theory_points: number;
   tactical_points: number;
+  kamp_pyramid_points: number;
+  nutrition_points: number;
   challenges_points: number;
   bjj_zakals: number;
   bjj_scars: number;
@@ -387,7 +389,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('leaderboard')
-        .select('bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, challenges_points')
+        .select('bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, kamp_pyramid_points, nutrition_points, challenges_points')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -400,6 +402,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
           ofp_points: data.ofp_points || 0,
           theory_points: data.theory_points || 0,
           tactical_points: data.tactical_points || 0,
+          kamp_pyramid_points: data.kamp_pyramid_points || 0,
+          nutrition_points: data.nutrition_points || 0,
           challenges_points: data.challenges_points || 0,
           bjj_zakals: data.bjj_points || 0,
           bjj_scars: Math.floor((data.bjj_points || 0) / 10),
@@ -853,10 +857,44 @@ export const EnhancedParticipantManagement: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      {details.kamp_pyramid_points > 0 && (
+                        <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                          <div className="flex items-start gap-2">
+                            <Target className="w-5 h-5 text-yellow-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">Пирамида КЭМП</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Баллы:</span>
+                                  <span className="font-semibold">{details.kamp_pyramid_points}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {details.nutrition_points > 0 && (
+                        <div className="p-3 bg-teal-500/10 rounded-lg border border-teal-500/30">
+                          <div className="flex items-start gap-2">
+                            <Book className="w-5 h-5 text-teal-400 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900 mb-1">Нутрициология</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Баллы:</span>
+                                  <span className="font-semibold">{details.nutrition_points}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {!details.bjj_points && !details.kickboxing_points && !details.ofp_points && 
-                     !details.theory_points && !details.tactical_points && (
+                     !details.theory_points && !details.tactical_points && !details.kamp_pyramid_points && !details.nutrition_points && (
                       <div className="text-center py-4 text-gray-400">
                         <Award className="w-12 h-12 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Активности пока не зафиксированы</p>
