@@ -172,6 +172,8 @@ export const TrainingSessionManagement: React.FC = () => {
               <SelectItem value="ofp">ОФП (1 балл)</SelectItem>
               <SelectItem value="theory">Теория (1 балл)</SelectItem>
               <SelectItem value="tactics">Тактика (1 балл)</SelectItem>
+              <SelectItem value="kamp_pyramid">Пирамида КЭМП (1 балл)</SelectItem>
+              <SelectItem value="nutrition">Нутрициология (1 балл)</SelectItem>
             </SelectContent>
           </Select>
         </div>
