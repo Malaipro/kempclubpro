@@ -18,6 +18,8 @@ interface Participant {
   ofp_points?: number;
   theory_points?: number;
   tactical_points?: number;
+  kamp_pyramid_points?: number;
+  nutrition_points?: number;
   totems?: Array<{
     name: string;
     discipline: string;
@@ -47,7 +49,7 @@ export const RegisteredParticipants: React.FC = () => {
         const userIds = publicProfiles?.map(p => p.user_id) || [];
         const { data: leaderboardData, error: leaderboardError } = await supabase
           .from('leaderboard')
-          .select('user_id, bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points')
+          .select('user_id, bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, kamp_pyramid_points, nutrition_points')
           .in('user_id', userIds);
 
         if (leaderboardError) throw leaderboardError;
@@ -88,6 +90,8 @@ export const RegisteredParticipants: React.FC = () => {
             ofp_points: leaderboardEntry?.ofp_points || 0,
             theory_points: leaderboardEntry?.theory_points || 0,
             tactical_points: leaderboardEntry?.tactical_points || 0,
+            kamp_pyramid_points: leaderboardEntry?.kamp_pyramid_points || 0,
+            nutrition_points: leaderboardEntry?.nutrition_points || 0,
             totems: userTotems,
             crash_tests: userCrashTests,
           };
@@ -172,6 +176,22 @@ export const RegisteredParticipants: React.FC = () => {
         label: `Тактика: ${participant.tactical_points}`, 
         icon: <Shield className="w-3 h-3" />,
         color: 'bg-orange-100 text-orange-800' 
+      });
+    }
+    
+    if (participant.kamp_pyramid_points && participant.kamp_pyramid_points > 0) {
+      badges.push({ 
+        label: `Пирамида КЭМП: ${participant.kamp_pyramid_points}`, 
+        icon: <Target className="w-3 h-3" />,
+        color: 'bg-yellow-100 text-yellow-800' 
+      });
+    }
+    
+    if (participant.nutrition_points && participant.nutrition_points > 0) {
+      badges.push({ 
+        label: `Нутрициология: ${participant.nutrition_points}`, 
+        icon: <Book className="w-3 h-3" />,
+        color: 'bg-teal-100 text-teal-800' 
       });
     }
 
