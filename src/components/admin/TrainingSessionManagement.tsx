@@ -27,6 +27,7 @@ export const TrainingSessionManagement: React.FC = () => {
   const [activityType, setActivityType] = useState<string>('bjj');
   const [sessionDate, setSessionDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState('');
+  const [pointsEarned, setPointsEarned] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
 
@@ -60,9 +61,6 @@ export const TrainingSessionManagement: React.FC = () => {
     }
   };
 
-  const getPointsForType = (type: string): number => {
-    return 1; // Все тренировки дают 1 балл
-  };
 
   const handleSubmit = async () => {
     if (!selectedUserId) {
@@ -83,8 +81,6 @@ export const TrainingSessionManagement: React.FC = () => {
         throw new Error('Пользователь не авторизован');
       }
 
-      const points = getPointsForType(sessionType);
-
       const { error } = await supabase
         .from('training_sessions')
         .insert([{
@@ -92,7 +88,7 @@ export const TrainingSessionManagement: React.FC = () => {
           session_type: sessionType,
           activity_type: activityType,
           session_date: sessionDate.toISOString(),
-          points_earned: points,
+          points_earned: pointsEarned,
           verified: true,
           notes: notes || null,
         }]);
@@ -110,6 +106,7 @@ export const TrainingSessionManagement: React.FC = () => {
       setActivityType('bjj');
       setSessionDate(new Date());
       setNotes('');
+      setPointsEarned(1);
 
     } catch (error: any) {
       console.error('Error adding training session:', error);
@@ -167,13 +164,34 @@ export const TrainingSessionManagement: React.FC = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bjj">БЖЖ (1 балл)</SelectItem>
-              <SelectItem value="kickboxing">Кикбоксинг (1 балл)</SelectItem>
-              <SelectItem value="ofp">ОФП (1 балл)</SelectItem>
-              <SelectItem value="theory">Теория (1 балл)</SelectItem>
-              <SelectItem value="tactics">Тактика (1 балл)</SelectItem>
-              <SelectItem value="kamp_pyramid">Пирамида КЭМП (1 балл)</SelectItem>
-              <SelectItem value="nutrition">Нутрициология (1 балл)</SelectItem>
+              <SelectItem value="bjj">БЖЖ</SelectItem>
+              <SelectItem value="kickboxing">Кикбоксинг</SelectItem>
+              <SelectItem value="ofp">ОФП</SelectItem>
+              <SelectItem value="theory">Теория</SelectItem>
+              <SelectItem value="tactics">Тактика</SelectItem>
+              <SelectItem value="kamp_pyramid">Пирамида КЭМП</SelectItem>
+              <SelectItem value="nutrition">Нутрициология</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Количество баллов</Label>
+          <Select value={pointsEarned.toString()} onValueChange={(value) => setPointsEarned(parseInt(value))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 балл</SelectItem>
+              <SelectItem value="2">2 балла</SelectItem>
+              <SelectItem value="3">3 балла</SelectItem>
+              <SelectItem value="4">4 балла</SelectItem>
+              <SelectItem value="5">5 баллов</SelectItem>
+              <SelectItem value="6">6 баллов</SelectItem>
+              <SelectItem value="7">7 баллов</SelectItem>
+              <SelectItem value="8">8 баллов</SelectItem>
+              <SelectItem value="9">9 баллов</SelectItem>
+              <SelectItem value="10">10 баллов</SelectItem>
             </SelectContent>
           </Select>
         </div>
