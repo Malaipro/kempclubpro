@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, Zap, Award } from 'lucide-react';
+import { Activity, Zap, Award, History } from 'lucide-react';
 import { TrainingSessionManagement } from './TrainingSessionManagement';
 import { CrashTestManagement } from './CrashTestManagement';
 import { TotemAssignment } from './TotemAssignment';
+import { TrainingSessionsList } from './TrainingSessionsList';
 
 export const ActivityManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('training');
@@ -16,10 +17,14 @@ export const ActivityManagement: React.FC = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-4 bg-muted/50">
           <TabsTrigger value="training" className="flex items-center gap-2 text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Activity className="w-4 h-4" />
             Тренировки
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2 text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <History className="w-4 h-4" />
+            История
           </TabsTrigger>
           <TabsTrigger value="crash" className="flex items-center gap-2 text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Zap className="w-4 h-4" />
@@ -33,6 +38,10 @@ export const ActivityManagement: React.FC = () => {
 
         <TabsContent value="training" className="mt-6">
           <TrainingSessionManagement />
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <TrainingSessionsList />
         </TabsContent>
 
         <TabsContent value="crash" className="mt-6">
