@@ -15,6 +15,8 @@ export const AchievementStats: React.FC = () => {
     isLoading
   } = useQuery({
     queryKey: ['achievement-stats'],
+    refetchInterval: 30000, // Обновление каждые 30 секунд
+    staleTime: 10000, // Данные считаются устаревшими через 10 секунд
     queryFn: async (): Promise<AchievementCounts> => {
       // Get approved participants first
       const {
