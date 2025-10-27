@@ -71,7 +71,10 @@ export const Trainers: React.FC = () => {
               e.currentTarget.src = '/placeholder.svg';
             }} />
               </div>
-              
+              <div className="p-2 md:p-6">
+                <span className="text-kamp-primary font-semibold text-xs md:text-sm">{trainer.role}</span>
+                <h3 className="text-base md:text-xl font-bold text-white mt-1">{trainer.name}</h3>
+              </div>
             </div>)}
         </div>
       </div>
