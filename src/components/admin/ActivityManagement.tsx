@@ -4,6 +4,7 @@ import { Activity, Zap, Award, History } from 'lucide-react';
 import { TrainingSessionManagement } from './TrainingSessionManagement';
 import { CrashTestManagement } from './CrashTestManagement';
 import { TotemAssignment } from './TotemAssignment';
+import { AssignedTotemsManagement } from './AssignedTotemsManagement';
 import { TrainingSessionsList } from './TrainingSessionsList';
 
 export const ActivityManagement: React.FC = () => {
@@ -48,8 +49,9 @@ export const ActivityManagement: React.FC = () => {
           <CrashTestManagement />
         </TabsContent>
 
-        <TabsContent value="totems" className="mt-6">
+        <TabsContent value="totems" className="mt-6 space-y-6">
           <TotemAssignment />
+          <AssignedTotemsManagement />
         </TabsContent>
       </Tabs>
     </div>
