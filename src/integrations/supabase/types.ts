@@ -100,7 +100,7 @@ export type Database = {
           created_at: string | null
           expires_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean | null
           last_activity: string | null
           session_token: string
@@ -111,7 +111,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean | null
           last_activity?: string | null
           session_token: string
@@ -122,7 +122,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean | null
           last_activity?: string | null
           session_token?: string
@@ -216,7 +216,7 @@ export type Database = {
         Row: {
           action: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           record_id: string | null
           table_name: string | null
           timestamp: string | null
@@ -226,7 +226,7 @@ export type Database = {
         Insert: {
           action: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name?: string | null
           timestamp?: string | null
@@ -236,7 +236,7 @@ export type Database = {
         Update: {
           action?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name?: string | null
           timestamp?: string | null
@@ -1727,10 +1727,7 @@ export type Database = {
         Args: { p_approved: boolean; p_user_id: string }
         Returns: undefined
       }
-      auto_cleanup_contact_submissions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      auto_cleanup_contact_submissions: { Args: never; Returns: undefined }
       calculate_cooper_fitness_level: {
         Args: { total_seconds: number }
         Returns: string
@@ -1739,22 +1736,10 @@ export type Database = {
         Args: { total_minutes: number }
         Returns: string
       }
-      cleanup_expired_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_audit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      decrypt_phone: {
-        Args: { encrypted_phone: string }
-        Returns: string
-      }
-      encrypt_phone: {
-        Args: { phone_text: string }
-        Returns: string
-      }
+      cleanup_expired_sessions: { Args: never; Returns: undefined }
+      cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      decrypt_phone: { Args: { encrypted_phone: string }; Returns: string }
+      encrypt_phone: { Args: { phone_text: string }; Returns: string }
       enhanced_contact_rate_limit: {
         Args: { p_ip_address?: unknown }
         Returns: boolean
@@ -1770,18 +1755,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      is_public_participant: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_public_participant: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_security_access: {
         Args: { p_action: string; p_record_id?: string; p_table_name?: string }
         Returns: undefined
@@ -1790,26 +1766,11 @@ export type Database = {
         Args: { details?: Json; event_type: string; user_id_param?: string }
         Returns: undefined
       }
-      mask_email_secure: {
-        Args: { email_address: string }
-        Returns: string
-      }
-      mask_participant_name: {
-        Args: { full_name: string }
-        Returns: string
-      }
-      mask_phone_number: {
-        Args: { phone_number: string }
-        Returns: string
-      }
-      mask_phone_secure: {
-        Args: { phone_number: string }
-        Returns: string
-      }
-      recalculate_all_ranks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      mask_email_secure: { Args: { email_address: string }; Returns: string }
+      mask_participant_name: { Args: { full_name: string }; Returns: string }
+      mask_phone_number: { Args: { phone_number: string }; Returns: string }
+      mask_phone_secure: { Args: { phone_number: string }; Returns: string }
+      recalculate_all_ranks: { Args: never; Returns: undefined }
       update_participant_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["participant_status_type"]
