@@ -17,7 +17,7 @@ export const ActivityManagement: React.FC = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-muted/50">
           <TabsTrigger value="training" className="flex items-center gap-2 text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Activity className="w-4 h-4" />
             Тренировки

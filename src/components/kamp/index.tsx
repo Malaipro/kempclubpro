@@ -18,32 +18,39 @@ export const KampSystem: React.FC = () => {
         </div>
 
         <Tabs defaultValue="instructions" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8">
-            <TabsTrigger value="instructions" className="flex items-center gap-2">
-              <Book className="w-4 h-4" />
-              Инструкция
-            </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Прогресс
-            </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Активности
-            </TabsTrigger>
-            <TabsTrigger value="ascetics" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Аскезы
-            </TabsTrigger>
-            <TabsTrigger value="participants" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Участники
-            </TabsTrigger>
-            <TabsTrigger value="manual" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Руководство
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto mb-8">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 min-w-max lg:min-w-0">
+              <TabsTrigger value="instructions" className="flex items-center gap-2 whitespace-nowrap">
+                <Book className="w-4 h-4" />
+                <span className="hidden sm:inline">Инструкция</span>
+                <span className="sm:hidden">Инстр.</span>
+              </TabsTrigger>
+              <TabsTrigger value="progress" className="flex items-center gap-2 whitespace-nowrap">
+                <Trophy className="w-4 h-4" />
+                <span className="hidden sm:inline">Прогресс</span>
+                <span className="sm:hidden">Прогр.</span>
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="flex items-center gap-2 whitespace-nowrap">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Активности</span>
+                <span className="sm:hidden">Актив.</span>
+              </TabsTrigger>
+              <TabsTrigger value="ascetics" className="flex items-center gap-2 whitespace-nowrap">
+                <Target className="w-4 h-4" />
+                Аскезы
+              </TabsTrigger>
+              <TabsTrigger value="participants" className="flex items-center gap-2 whitespace-nowrap">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Участники</span>
+                <span className="sm:hidden">Участ.</span>
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center gap-2 whitespace-nowrap">
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Руководство</span>
+                <span className="sm:hidden">Рук-во</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="instructions">
             <KampInstructions />

@@ -212,7 +212,38 @@ export const EnhancedAdminPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Mobile: Tabs Navigation */}
+      <div className="lg:hidden">
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 pb-2 min-w-max">
+            {availableTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <Button
+                  key={tab.id}
+                  variant={isActive ? 'secondary' : 'outline'}
+                  size="sm"
+                  className="whitespace-nowrap"
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+        <Card className="bg-card mt-4">
+          <CardContent className="p-4">
+            {renderTabContent()}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Desktop: Sidebar + Content */}
+      <div className="hidden lg:grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Navigation Sidebar */}
         <div className="lg:col-span-1">
           <Card className="bg-card">

@@ -89,10 +89,12 @@ export const Dashboard: React.FC = () => {
                   <h1 className={`${isMobile ? 'text-lg' : 'text-xl sm:text-2xl'} font-bold text-white truncate`}>
                     {isClubResident ? 'Мужской клуб' : 'Личный кабинет'}
                   </h1>
-                  <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} truncate`}>
-                    {displayName} • {participantData?.email || user.email}
-                    {isSuperAdmin && <span className="ml-2 text-kamp-accent font-semibold">(Супер админ)</span>}
-                    {isClubResident && <span className="ml-2 text-purple-400 font-semibold">(Резидент клуба)</span>}
+                  <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'}`}>
+                    <span className="truncate inline-block max-w-full">
+                      {displayName} • <span className="truncate">{participantData?.email || user.email}</span>
+                    </span>
+                    {isSuperAdmin && <span className="ml-2 text-kamp-accent font-semibold whitespace-nowrap">(Супер админ)</span>}
+                    {isClubResident && <span className="ml-2 text-purple-400 font-semibold whitespace-nowrap">(Резидент клуба)</span>}
                   </p>
                 </div>
               </div>
