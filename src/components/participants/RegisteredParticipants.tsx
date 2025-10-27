@@ -171,13 +171,11 @@ export const RegisteredParticipants: React.FC = () => {
       });
     }
     
-    if (participant.tactical_points && participant.tactical_points > 0) {
-      badges.push({ 
-        label: `Тактика: ${participant.tactical_points}`, 
-        icon: <Shield className="w-3 h-3" />,
-        color: 'bg-orange-100 text-orange-800' 
-      });
-    }
+    badges.push({ 
+      label: `Тактика: ${participant.tactical_points || 0}`, 
+      icon: <Shield className="w-3 h-3" />,
+      color: 'bg-orange-100 text-orange-800' 
+    });
     
     if (participant.kamp_pyramid_points && participant.kamp_pyramid_points > 0) {
       badges.push({ 
