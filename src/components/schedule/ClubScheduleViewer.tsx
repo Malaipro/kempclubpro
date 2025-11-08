@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarPlus, Clock, MapPin, Users, UserCheck } from "lucide-react";
+import { CalendarPlus, Clock, MapPin, Users, UserCheck, Calendar, Copy, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast as sonnerToast } from "sonner";
@@ -112,12 +113,11 @@ export function ClubScheduleViewer() {
   };
 
 
-  const handleSubscribeCalendar = () => {
-    const calendarUrl = `https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/calendar-feed?type=club`;
+  const calendarUrl = "https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/calendar-feed?type=club";
+
+  const handleCopyCalendarUrl = () => {
     navigator.clipboard.writeText(calendarUrl);
-    sonnerToast.success("Ссылка на календарь скопирована!", {
-      description: "Добавьте её в ваше календарное приложение",
-    });
+    sonnerToast.success("Ссылка скопирована в буфер обмена");
   };
 
   const handleRegister = async (scheduleId: string) => {
@@ -189,10 +189,85 @@ export function ClubScheduleViewer() {
           <h2 className="text-2xl font-bold">Расписание мужского клуба</h2>
           <p className="text-muted-foreground">Предстоящие мероприятия клуба</p>
         </div>
-        <Button onClick={handleSubscribeCalendar} variant="outline" size="sm" className="gap-2">
-          <CalendarPlus className="w-4 h-4" />
-          Подписаться на календарь
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Calendar className="w-4 h-4" />
+              Подписаться на календарь
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Подписка на календарь мужского клуба
+              </DialogTitle>
+              <DialogDescription>
+                Добавьте календарь событий клуба в Google Calendar, Apple Calendar или другое приложение
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Ссылка на календарь:</h4>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={calendarUrl}
+                    readOnly
+                    className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted"
+                  />
+                  <Button onClick={handleCopyCalendarUrl} size="sm" variant="outline">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Копировать
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Google Calendar
+                  </h4>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Откройте <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Calendar</a></li>
+                    <li>Нажмите на "+" рядом с "Другие календари"</li>
+                    <li>Выберите "Добавить по URL"</li>
+                    <li>Вставьте скопированную ссылку и нажмите "Добавить календарь"</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4" />
+                    Apple Calendar (iOS/macOS)
+                  </h4>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Откройте приложение "Календарь"</li>
+                    <li>Файл → Новая подписка на календарь (macOS) или Настройки → Календари → Добавить подписку (iOS)</li>
+                    <li>Вставьте скопированную ссылку</li>
+                    <li>Нажмите "Подписаться"</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Outlook / Другие приложения</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Найдите опцию "Добавить календарь по URL" или "Подписаться на календарь" и используйте ссылку выше
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Примечание:</strong> Календарь будет автоматически обновляться при добавлении новых событий администраторами. 
+                  Обновление может занять до 1 часа в зависимости от настроек вашего приложения.
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {schedules.length === 0 ? (
