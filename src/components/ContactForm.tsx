@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Менять дату следующего запуска КЭМП здесь
-export const FIXED_TARGET_DATE = new Date('2025-11-08T00:00:00');
+export const FIXED_TARGET_DATE = new Date('2025-11-10T00:00:00');
 
 // Declare Bitrix form interface for TypeScript
 declare global {
@@ -181,8 +181,8 @@ export const ContactForm: React.FC = () => {
         if (data && !error) {
           setStartDate(new Date(data.start_date));
         } else {
-          // Fallback date: 8 November 2025
-          setStartDate(new Date('2025-11-08T00:00:00'));
+          // Fallback date: 10 November 2025
+          setStartDate(new Date('2025-11-10T00:00:00'));
         }
       } catch (e) {
         console.error('Error fetching active stream for ContactForm:', e);
