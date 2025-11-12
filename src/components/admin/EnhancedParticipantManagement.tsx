@@ -9,12 +9,23 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+interface Stream {
+  id: string;
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date?: string;
+  is_active: boolean;
+  stream_type: string;
+}
 
 interface Participant {
   id: string;
@@ -27,6 +38,7 @@ interface Participant {
   telegram?: string;
   total_points: number;
   stream?: string;
+  current_stream_id?: string;
   status: 'registered' | 'active' | 'completed';
   height_cm?: number;
   weight_kg?: number;
@@ -57,9 +69,14 @@ interface ParticipantDetails {
 
 export const EnhancedParticipantManagement: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [activeStreamTab, setActiveStreamTab] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
+  const [transferringParticipant, setTransferringParticipant] = useState<Participant | null>(null);
+  const [targetStreamId, setTargetStreamId] = useState<string>('');
   const [expandedParticipants, setExpandedParticipants] = useState<Set<string>>(new Set());
   const [participantDetails, setParticipantDetails] = useState<Map<string, ParticipantDetails>>(new Map());
   const [formData, setFormData] = useState({
@@ -68,7 +85,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
     email: '',
     phone: '',
     telegram: '',
-    stream: '',
+    stream_id: '',
     password: '',
     height_cm: '',
     weight_kg: '',
@@ -81,14 +98,34 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    fetchStreams();
     fetchParticipants();
   }, []);
+
+  const fetchStreams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setStreams(data || []);
+      
+      // Set first stream as active by default
+      if (data && data.length > 0) {
+        setActiveStreamTab(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching streams:', error);
+    }
+  };
 
   const fetchParticipants = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-.select(`
+        .select(`
           id, 
           user_id, 
           display_name, 
@@ -103,7 +140,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
           date_of_birth,
           approved,
           approved_at,
-          approved_by
+          approved_by,
+          current_stream_id
         `)
         .order('display_name');
       
@@ -113,7 +151,6 @@ export const EnhancedParticipantManagement: React.FC = () => {
       const transformedData = data?.map(item => ({
         ...item,
         total_points: item.total_points || 0,
-        stream: '2-й поток',
         status: 'registered' as const
       })) || [];
 
@@ -157,6 +194,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
             height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
             weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
             date_of_birth: formData.date_of_birth?.toISOString().split('T')[0] || null,
+            current_stream_id: formData.stream_id || null,
           })
           .eq('id', editingParticipant.id);
 
@@ -181,6 +219,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
               height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
               weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
               date_of_birth: formData.date_of_birth ? formData.date_of_birth.toISOString().split('T')[0] : null,
+              current_stream_id: formData.stream_id || null,
              }
            }
          });
@@ -237,7 +276,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
       email: participant.email || '',
       phone: participant.phone || '',
       telegram: participant.telegram || '',
-      stream: participant.stream || '2-й поток',
+      stream_id: participant.current_stream_id || '',
       password: '',
       height_cm: participant.height_cm?.toString() || '',
       weight_kg: participant.weight_kg?.toString() || '',
@@ -253,13 +292,60 @@ export const EnhancedParticipantManagement: React.FC = () => {
       email: '',
       phone: '',
       telegram: '',
-      stream: '2-й поток',
+      stream_id: activeStreamTab !== 'all' ? activeStreamTab : (streams[0]?.id || ''),
       password: '',
       height_cm: '',
       weight_kg: '',
       date_of_birth: undefined,
     });
   };
+
+  const handleTransferParticipant = async () => {
+    if (!transferringParticipant || !targetStreamId) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите поток для переноса',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ current_stream_id: targetStreamId })
+        .eq('user_id', transferringParticipant.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успешно',
+        description: 'Участник перенесен в другой поток',
+      });
+
+      setTransferDialogOpen(false);
+      setTransferringParticipant(null);
+      setTargetStreamId('');
+      fetchParticipants();
+    } catch (error) {
+      console.error('Error transferring participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось перенести участника',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getStreamName = (streamId?: string) => {
+    if (!streamId) return 'Не указан';
+    const stream = streams.find(s => s.id === streamId);
+    return stream?.name || 'Неизвестный поток';
+  };
+
+  const filteredParticipants = activeStreamTab === 'all' 
+    ? participants 
+    : participants.filter(p => p.current_stream_id === activeStreamTab);
 
   const handleToggleApproval = async (p: Participant) => {
     try {
@@ -487,7 +573,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Управление участниками</h1>
-          <p className="text-muted-foreground">Добавляйте и редактируйте участников интенсивов</p>
+          <p className="text-muted-foreground">Добавляйте и редактируйте участников по потокам</p>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -618,13 +704,16 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
               <div>
                 <Label className="text-white">Поток</Label>
-                <Select value={formData.stream} onValueChange={(value) => setFormData(prev => ({ ...prev, stream: value }))}>
+                <Select value={formData.stream_id} onValueChange={(value) => setFormData(prev => ({ ...prev, stream_id: value }))}>
                   <SelectTrigger className="bg-white text-black">
                     <SelectValue placeholder="Выберите поток" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                    <SelectItem value="2-й поток" className="hover:bg-gray-100">2-й поток</SelectItem>
-                    <SelectItem value="1-й поток" className="hover:bg-gray-100">1-й поток</SelectItem>
+                    {streams.map(stream => (
+                      <SelectItem key={stream.id} value={stream.id} className="hover:bg-gray-100">
+                        {stream.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -665,8 +754,82 @@ export const EnhancedParticipantManagement: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
-        {participants.map((participant) => {
+      {/* Transfer Dialog */}
+      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+        <DialogContent className="max-w-md bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Перенести участника в другой поток
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <p className="text-white mb-2">
+                Участник: <span className="font-semibold">{transferringParticipant ? formatParticipantName(transferringParticipant) : ''}</span>
+              </p>
+              <p className="text-gray-400 text-sm">
+                Текущий поток: {transferringParticipant ? getStreamName(transferringParticipant.current_stream_id) : ''}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-white">Новый поток *</Label>
+              <Select value={targetStreamId} onValueChange={setTargetStreamId}>
+                <SelectTrigger className="bg-white text-black">
+                  <SelectValue placeholder="Выберите поток" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                  {streams
+                    .filter(s => s.id !== transferringParticipant?.current_stream_id)
+                    .map(stream => (
+                      <SelectItem key={stream.id} value={stream.id} className="hover:bg-gray-100">
+                        {stream.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleTransferParticipant}
+                className="bg-destructive hover:bg-destructive/90 text-white"
+              >
+                Перенести
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setTransferDialogOpen(false);
+                  setTransferringParticipant(null);
+                  setTargetStreamId('');
+                }}
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tabs for Streams */}
+      <Tabs value={activeStreamTab} onValueChange={setActiveStreamTab} className="w-full">
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${streams.length + 1}, minmax(0, 1fr))` }}>
+          <TabsTrigger value="all">Все участники</TabsTrigger>
+          {streams.map(stream => (
+            <TabsTrigger key={stream.id} value={stream.id}>
+              {stream.name}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* All participants */}
+        <TabsContent value="all" className="mt-6">
+          <div className="grid gap-4">
+            {participants.map((participant) => {
           const fullName = formatParticipantName(participant);
           const isExpanded = expandedParticipants.has(participant.user_id);
           const details = participantDetails.get(participant.user_id);
@@ -701,7 +864,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge variant="outline">{participant.stream}</Badge>
+                        <Badge variant="outline">{getStreamName(participant.current_stream_id)}</Badge>
                         {participant.approved && (<Badge className="bg-green-100 text-green-800">Утвержден</Badge>)}
                         {getStatusBadge(participant.status)}
                       </div>
@@ -715,6 +878,17 @@ export const EnhancedParticipantManagement: React.FC = () => {
                       title={isExpanded ? "Скрыть детали" : "Показать детали"}
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setTransferringParticipant(participant);
+                        setTransferDialogOpen(true);
+                      }}
+                      title="Перенести в другой поток"
+                    >
+                      <ArrowRightLeft className="w-4 h-4" />
                     </Button>
                     <Button 
                       variant="outline" 
@@ -906,7 +1080,246 @@ export const EnhancedParticipantManagement: React.FC = () => {
             </Card>
           );
         })}
-      </div>
+          </div>
+
+          {participants.length === 0 && (
+            <Card className="p-8">
+              <div className="text-center text-muted-foreground">
+                <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Нет участников</h3>
+                <p className="text-sm">Добавьте первого участника, чтобы начать</p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Stream specific tabs */}
+        {streams.map(stream => (
+          <TabsContent key={stream.id} value={stream.id} className="mt-6">
+            <div className="grid gap-4">
+              {filteredParticipants.map((participant) => {
+                const fullName = formatParticipantName(participant);
+                const isExpanded = expandedParticipants.has(participant.user_id);
+                const details = participantDetails.get(participant.user_id);
+                
+                return (
+                  <Card key={participant.id} className="p-4">
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <Avatar className="h-12 w-12 bg-destructive/10 flex-shrink-0">
+                            <AvatarFallback className="text-destructive font-medium">
+                              {getInitials(participant)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg text-foreground">
+                              {fullName}
+                            </h3>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                              <span>{participant.total_points} баллов</span>
+                              {participant.email && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate">{participant.email}</span>
+                                </>
+                              )}
+                              {participant.height_cm && participant.weight_kg && (
+                                <>
+                                  <span>•</span>
+                                  <span>{participant.height_cm}см, {participant.weight_kg}кг</span>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <Badge variant="outline">{getStreamName(participant.current_stream_id)}</Badge>
+                              {participant.approved && (<Badge className="bg-green-100 text-green-800">Утвержден</Badge>)}
+                              {getStatusBadge(participant.status)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => toggleExpand(participant.user_id)}
+                            title={isExpanded ? "Скрыть детали" : "Показать детали"}
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setTransferringParticipant(participant);
+                              setTransferDialogOpen(true);
+                            }}
+                            title="Перенести в другой поток"
+                          >
+                            <ArrowRightLeft className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleToggleApproval(participant)}
+                            title={participant.approved ? "Снять утверждение" : "Утвердить участника"}
+                          >
+                            {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEdit(participant)}
+                            title="Редактировать"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(participant);
+                              setResetPasswordDialog(true);
+                            }}
+                            title="Изменить пароль"
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive"
+                            title="Удалить"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {isExpanded && details && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                            <Award className="w-4 h-4 text-kamp-accent" />
+                            Детализация достижений КЭМП:
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {details.bjj_points > 0 && (
+                              <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                                <div className="flex items-start gap-2">
+                                  <Target className="w-5 h-5 text-blue-400 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 mb-1">БЖЖ</p>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Закалы:</span>
+                                        <span className="font-semibold">{details.bjj_zakals}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Шрамы:</span>
+                                        <span className="font-semibold text-red-600">{details.bjj_scars}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {details.kickboxing_points > 0 && (
+                              <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                                <div className="flex items-start gap-2">
+                                  <Zap className="w-5 h-5 text-red-400 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 mb-1">Кикбоксинг</p>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Закалы:</span>
+                                        <span className="font-semibold">{details.kick_zakals}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Шрамы:</span>
+                                        <span className="font-semibold text-red-600">{details.kick_scars}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {details.ofp_points > 0 && (
+                              <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                                <div className="flex items-start gap-2">
+                                  <Dumbbell className="w-5 h-5 text-green-400 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 mb-1">ОФП</p>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Закалы:</span>
+                                        <span className="font-semibold">{details.ofp_zakals}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Шрамы:</span>
+                                        <span className="font-semibold text-red-600">{details.ofp_scars}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {details.theory_points > 0 && (
+                              <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                                <div className="flex items-start gap-2">
+                                  <Book className="w-5 h-5 text-purple-400 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 mb-1">Теория</p>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Грани:</span>
+                                        <span className="font-semibold">{details.theory_grans}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {details.tactical_points > 0 && (
+                              <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                                <div className="flex items-start gap-2">
+                                  <Shield className="w-5 h-5 text-orange-400 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 mb-1">Тактика</p>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-600">Шрамы:</span>
+                                        <span className="font-semibold text-red-600">{details.tactical_scars}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {filteredParticipants.length === 0 && (
+              <Card className="p-8">
+                <div className="text-center text-muted-foreground">
+                  <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">Нет участников в этом потоке</h3>
+                  <p className="text-sm">Добавьте участников или перенесите из других потоков</p>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {participants.length === 0 && (
         <Card className="p-8">
