@@ -1066,6 +1066,7 @@ export type Database = {
           max_participants: number | null
           schedule_type: Database["public"]["Enums"]["schedule_type"]
           start_time: string
+          stream_id: string | null
           title: string
           updated_at: string
         }
@@ -1082,6 +1083,7 @@ export type Database = {
           max_participants?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time: string
+          stream_id?: string | null
           title: string
           updated_at?: string
         }
@@ -1098,6 +1100,7 @@ export type Database = {
           max_participants?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time?: string
+          stream_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -1107,6 +1110,13 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
             referencedColumns: ["id"]
           },
         ]

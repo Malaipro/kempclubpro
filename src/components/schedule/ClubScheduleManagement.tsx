@@ -35,6 +35,11 @@ interface Trainer {
   name: string;
 }
 
+interface Stream {
+  id: string;
+  name: string;
+}
+
 interface Participant {
   id: string;
   user_id: string;
@@ -49,6 +54,8 @@ interface Participant {
 export const ClubScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [currentStreamId, setCurrentStreamId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
@@ -60,22 +67,54 @@ export const ClubScheduleManagement: React.FC = () => {
     activity: '',
     instructor_id: '',
     location: '',
+    stream_id: '',
     color: '#10b981',
   });
   const { toast } = useToast();
 
   useEffect(() => {
+    fetchStreams();
     fetchTrainers();
-    fetchSchedules();
   }, []);
 
+  useEffect(() => {
+    if (currentStreamId) {
+      fetchSchedules();
+    }
+  }, [currentStreamId]);
+
+  const fetchStreams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .select('id, name')
+        .eq('is_active', true)
+        .eq('stream_type', 'intensive')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setStreams(data || []);
+      
+      // Set first active stream as current
+      if (data && data.length > 0 && !currentStreamId) {
+        setCurrentStreamId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching streams:', error);
+    }
+  };
+
   const fetchSchedules = async () => {
+    if (!currentStreamId) return;
+    
     try {
       const { data, error } = await supabase
         .from('schedules')
         .select('*')
         .eq('is_active', true)
         .eq('schedule_type', 'club')
+        .eq('stream_id', currentStreamId)
         .order('start_time', { ascending: true });
 
       if (error) throw error;
@@ -179,6 +218,7 @@ export const ClubScheduleManagement: React.FC = () => {
             activity_type: formData.activity,
             instructor_id: formData.instructor_id || null,
             location: formData.location || null,
+            stream_id: formData.stream_id || currentStreamId || null,
             color: formData.color,
             schedule_type: 'club',
           })
@@ -215,6 +255,7 @@ export const ClubScheduleManagement: React.FC = () => {
         activity: '',
         instructor_id: '',
         location: '',
+        stream_id: currentStreamId || '',
         color: '#10b981',
       });
     } catch (err) {
@@ -240,6 +281,7 @@ export const ClubScheduleManagement: React.FC = () => {
       activity: item.activity,
       instructor_id: item.instructor_id || '',
       location: item.location === '-' ? '' : item.location || '',
+      stream_id: currentStreamId || '',
       color: item.color || '#10b981',
     });
     setDialogOpen(true);
@@ -350,6 +392,18 @@ export const ClubScheduleManagement: React.FC = () => {
           <p className="text-muted-foreground">Управление расписанием клубных мероприятий</p>
         </div>
         <div className="flex gap-2">
+          <Select value={currentStreamId || ''} onValueChange={setCurrentStreamId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Выберите поток" />
+            </SelectTrigger>
+            <SelectContent>
+              {streams.map(stream => (
+                <SelectItem key={stream.id} value={stream.id}>
+                  {stream.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button onClick={handleSubscribeCalendar} variant="outline" size="sm">
             <CalendarPlus className="w-4 h-4 mr-2" />
             Подписка на календарь
@@ -365,6 +419,7 @@ export const ClubScheduleManagement: React.FC = () => {
                 activity: '',
                 instructor_id: '',
                 location: '',
+                stream_id: currentStreamId || '',
                 color: '#10b981',
               });
             }
