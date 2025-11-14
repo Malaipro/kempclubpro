@@ -32,9 +32,17 @@ interface Trainer {
   id: string;
   name: string;
 }
+
+interface Stream {
+  id: string;
+  name: string;
+}
+
 export const IntensiveScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [currentStreamId, setCurrentStreamId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -46,23 +54,60 @@ export const IntensiveScheduleManagement: React.FC = () => {
     end_time: '09:30',
     activity: '',
     instructor_id: '',
+    stream_id: '',
     color: '#6366f1'
   });
   const {
     toast
   } = useToast();
   useEffect(() => {
+    fetchStreams();
     fetchTrainers();
-    fetchSchedules();
   }, []);
+
+  useEffect(() => {
+    if (currentStreamId) {
+      fetchSchedules();
+    }
+  }, [currentStreamId]);
+  const fetchStreams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .select('id, name')
+        .eq('is_active', true)
+        .eq('stream_type', 'intensive')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setStreams(data || []);
+      
+      // Set first active stream as current
+      if (data && data.length > 0 && !currentStreamId) {
+        setCurrentStreamId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching streams:', error);
+    }
+  };
+
   const fetchSchedules = async () => {
+    if (!currentStreamId) return;
+    
     try {
       const {
         data,
         error
-      } = await supabase.from('schedules').select('*').eq('is_active', true).eq('schedule_type', 'intensive').order('start_time', {
-        ascending: true
-      });
+      } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('is_active', true)
+        .eq('schedule_type', 'intensive')
+        .eq('stream_id', currentStreamId)
+        .order('start_time', {
+          ascending: true
+        });
       if (error) throw error;
       const {
         data: trainersData
@@ -138,6 +183,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
           end_time: toISO(formData.date, formData.end_time),
           activity_type: formData.activity,
           instructor_id: formData.instructor_id || null,
+          stream_id: formData.stream_id || currentStreamId || null,
           color: formData.color,
           schedule_type: 'intensive'
         }).eq('id', editingId);
@@ -159,6 +205,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
           max_participants: null,
           is_active: true,
           instructor_id: formData.instructor_id || null,
+          stream_id: formData.stream_id || currentStreamId || null,
           color: formData.color,
           schedule_type: 'intensive'
         });
@@ -180,6 +227,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
         end_time: '09:30',
         activity: '',
         instructor_id: '',
+        stream_id: currentStreamId || '',
         color: '#6366f1'
       });
     } catch (err) {
@@ -205,6 +253,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
       end_time: endTime.slice(0, 5),
       activity: item.activity,
       instructor_id: item.instructor_id || '',
+      stream_id: currentStreamId || '',
       color: item.color || '#6366f1'
     });
     setDialogOpen(true);
@@ -255,6 +304,18 @@ export const IntensiveScheduleManagement: React.FC = () => {
           <p className="text-muted-foreground">Управление расписанием интенсивного потока</p>
         </div>
         <div className="flex gap-2">
+          <Select value={currentStreamId || ''} onValueChange={setCurrentStreamId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Выберите поток" />
+            </SelectTrigger>
+            <SelectContent>
+              {streams.map(stream => (
+                <SelectItem key={stream.id} value={stream.id}>
+                  {stream.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button onClick={handleSubscribeCalendar} variant="outline" size="sm">
             <CalendarPlus className="w-4 h-4 mr-2" />
             Подписка на календарь
@@ -272,6 +333,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
               end_time: '09:30',
               activity: '',
               instructor_id: '',
+              stream_id: currentStreamId || '',
               color: '#6366f1'
             });
           }
