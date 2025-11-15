@@ -69,6 +69,7 @@ export const Header: React.FC = () => {
     { id: 'program', label: 'Программа' },
     { id: 'trainers', label: 'Тренеры' },
     { id: 'leaderboard', label: 'Рейтинг' },
+    { id: 'club-residents', label: 'Резиденты клуба', href: '/club-residents' },
     { id: 'contact', label: 'Контакты' }
   ];
 

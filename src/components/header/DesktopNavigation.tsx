@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { MenuItem } from './types';
 
 interface DesktopNavigationProps {
@@ -15,13 +16,23 @@ export const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
   return (
     <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
       {menuItems.map((item) => (
-        <button
-          key={item.id}
-          onClick={() => scrollToSection(item.id)}
-          className="text-black font-medium hover:text-kamp-accent transition-colors text-xs lg:text-sm"
-        >
-          {item.label}
-        </button>
+        item.href ? (
+          <Link
+            key={item.id}
+            to={item.href}
+            className="text-black font-medium hover:text-kamp-accent transition-colors text-xs lg:text-sm"
+          >
+            {item.label}
+          </Link>
+        ) : (
+          <button
+            key={item.id}
+            onClick={() => scrollToSection(item.id)}
+            className="text-black font-medium hover:text-kamp-accent transition-colors text-xs lg:text-sm"
+          >
+            {item.label}
+          </button>
+        )
       ))}
       <button
         onClick={() => scrollToSection('contact')}
