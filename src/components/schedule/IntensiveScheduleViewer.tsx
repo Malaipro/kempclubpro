@@ -31,6 +31,26 @@ export function IntensiveScheduleViewer() {
 
   const fetchSchedules = async () => {
     try {
+      // Get current user's stream_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        sonnerToast.error("Необходима авторизация");
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('current_stream_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.current_stream_id) {
+        sonnerToast.error("Вы не привязаны к потоку. Обратитесь к администратору.");
+        setLoading(false);
+        return;
+      }
+
       // Get start of today in ISO format
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -40,6 +60,7 @@ export function IntensiveScheduleViewer() {
         .select("*")
         .eq("is_active", true)
         .eq("schedule_type", "intensive")
+        .eq("stream_id", profile.current_stream_id)
         .gte("start_time", today.toISOString())
         .order("start_time", { ascending: true });
 
