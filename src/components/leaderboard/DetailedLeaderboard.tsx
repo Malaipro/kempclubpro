@@ -83,11 +83,10 @@ export const DetailedLeaderboard: React.FC = () => {
 
       const adminUserIds = adminUsers?.map(u => u.user_id) || [];
 
-      // Используем profiles с фильтрацией по активным потокам
+      // Используем public_profiles с фильтрацией по активным потокам
       let query = supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id')
-        .eq('approved', true)
         .order('rank_position', { ascending: true })
         .limit(10);
 
