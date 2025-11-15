@@ -63,6 +63,14 @@ export const DetailedLeaderboard: React.FC = () => {
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
+      // Получаем активные потоки
+      const { data: activeStreams } = await supabase
+        .from('streams')
+        .select('id')
+        .eq('is_active', true);
+
+      const activeStreamIds = activeStreams?.map(s => s.id) || [];
+
       // Получаем список админов для исключения из общего рейтинга
       const { data: adminUsers, error: adminError } = await supabase
         .from('user_roles')
@@ -75,12 +83,18 @@ export const DetailedLeaderboard: React.FC = () => {
 
       const adminUserIds = adminUsers?.map(u => u.user_id) || [];
 
-      // Используем public_profiles для публичного доступа
+      // Используем profiles с фильтрацией по активным потокам
       let query = supabase
-        .from('public_profiles')
-        .select('*')
-        .order('total_points', { ascending: false })
+        .from('profiles')
+        .select('user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id')
+        .eq('approved', true)
+        .order('rank_position', { ascending: true })
         .limit(10);
+
+      // Фильтруем только участников из активных потоков
+      if (activeStreamIds.length > 0) {
+        query = query.in('current_stream_id', activeStreamIds);
+      }
 
       // В общем рейтинге исключаем админов
       if (adminUserIds.length > 0) {
