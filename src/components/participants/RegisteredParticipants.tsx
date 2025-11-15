@@ -36,12 +36,29 @@ export const RegisteredParticipants: React.FC = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        // Получаем участников вместе с их детализированными баллами из leaderboard
-        const { data: publicProfiles, error: profilesError } = await supabase
-          .from('public_profiles')
-          .select('*')
-          .order('total_points', { ascending: false })
+        // Получаем активные потоки
+        const { data: activeStreams } = await supabase
+          .from('streams')
+          .select('id')
+          .eq('is_active', true);
+
+        const activeStreamIds = activeStreams?.map(s => s.id) || [];
+
+        // Получаем участников только с активным статусом из активных потоков
+        let query = supabase
+          .from('profiles')
+          .select('id, user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id, participant_status')
+          .eq('approved', true)
+          .eq('participant_status', 'intensive_active')
+          .order('rank_position', { ascending: true })
           .limit(12);
+
+        // Фильтруем только участников из активных потоков
+        if (activeStreamIds.length > 0) {
+          query = query.in('current_stream_id', activeStreamIds);
+        }
+
+        const { data: publicProfiles, error: profilesError } = await query;
 
         if (profilesError) throw profilesError;
 
