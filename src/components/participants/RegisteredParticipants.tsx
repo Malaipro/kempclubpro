@@ -46,9 +46,8 @@ export const RegisteredParticipants: React.FC = () => {
 
         // Получаем участников только с активным статусом из активных потоков
         let query = supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id, participant_status')
-          .eq('approved', true)
           .eq('participant_status', 'intensive_active')
           .order('rank_position', { ascending: true })
           .limit(12);
