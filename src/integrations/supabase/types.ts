@@ -910,10 +910,14 @@ export type Database = {
       public_profiles: {
         Row: {
           created_at: string
+          current_stream_id: string | null
           display_name: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          participant_status:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           rank_position: number | null
           total_points: number | null
           updated_at: string
@@ -921,10 +925,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_stream_id?: string | null
           display_name?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          participant_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           rank_position?: number | null
           total_points?: number | null
           updated_at?: string
@@ -932,16 +940,27 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_stream_id?: string | null
           display_name?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          participant_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
           rank_position?: number | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "public_profiles_current_stream_id_fkey"
+            columns: ["current_stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "public_profiles_profiles_fk"
             columns: ["id"]
