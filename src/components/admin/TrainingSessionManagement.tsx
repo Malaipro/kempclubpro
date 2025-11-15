@@ -42,10 +42,26 @@ export const TrainingSessionManagement: React.FC = () => {
 
   const loadProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      // Получаем активные потоки
+      const { data: activeStreams } = await supabase
+        .from('streams')
+        .select('id')
+        .eq('is_active', true);
+
+      const activeStreamIds = activeStreams?.map(s => s.id) || [];
+
+      // Загружаем только участников из активных потоков
+      let query = supabase
         .from('profiles')
-        .select('user_id, display_name, first_name, last_name')
+        .select('user_id, display_name, first_name, last_name, current_stream_id')
         .order('display_name');
+
+      // Фильтруем только участников из активных потоков
+      if (activeStreamIds.length > 0) {
+        query = query.in('current_stream_id', activeStreamIds);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProfiles(data || []);
