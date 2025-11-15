@@ -19,6 +19,10 @@ interface Trainer {
 const getSafeUrl = (url?: string) => {
   if (!url) return '/placeholder.svg';
   try {
+    // Если путь начинается с /, добавляем полный домен для мобильных
+    if (url.startsWith('/')) {
+      return `${window.location.origin}${url}`;
+    }
     return url.startsWith('http://') ? url.replace('http://', 'https://') : url;
   } catch {
     return '/placeholder.svg';
@@ -66,10 +70,18 @@ export const Trainers: React.FC = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-8 mt-3 md:mt-16">
           {trainers.map(trainer => <div key={trainer.id} className="kamp-card overflow-hidden reveal-on-scroll hover-lift cursor-pointer bg-black border border-gray-800" onClick={() => setSelectedTrainer(trainer)}>
-              <div className={`${isMobile ? 'aspect-[3/4]' : 'aspect-[3/4]'} overflow-hidden`}>
-                <img src={getSafeUrl(trainer.image_url)} alt={trainer.name} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105" onError={e => {
-              e.currentTarget.src = '/placeholder.svg';
-            }} />
+              <div className={`${isMobile ? 'aspect-[3/4]' : 'aspect-[3/4]'} overflow-hidden bg-gray-900`}>
+                <Avatar className="w-full h-full rounded-none">
+                  <AvatarImage 
+                    src={getSafeUrl(trainer.image_url)} 
+                    alt={trainer.name}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
+                    loading="lazy"
+                  />
+                  <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-4xl font-bold text-gray-600">
+                    {trainer.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
               </div>
               <div className="p-2 md:p-6">
                 <span className="text-kamp-primary font-semibold text-xs md:text-sm">{trainer.role}</span>
@@ -87,11 +99,19 @@ export const Trainers: React.FC = () => {
               </button>
               
               <div className="flex flex-col md:flex-row">
-                <div className="w-full md:w-1/3">
+                <div className="w-full md:w-1/3 bg-gray-900">
                   <div className="h-48 md:h-full">
-                    <img src={getSafeUrl(selectedTrainer.image_url)} alt={selectedTrainer.name} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-full object-cover object-top" onError={e => {
-                  e.currentTarget.src = '/placeholder.svg';
-                }} />
+                    <Avatar className="w-full h-full rounded-none">
+                      <AvatarImage 
+                        src={getSafeUrl(selectedTrainer.image_url)} 
+                        alt={selectedTrainer.name}
+                        className="w-full h-full object-cover object-top"
+                        loading="lazy"
+                      />
+                      <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-6xl font-bold text-gray-600">
+                        {selectedTrainer.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                 </div>
                 <div className="w-full md:w-2/3 p-4 md:p-8 bg-black">
