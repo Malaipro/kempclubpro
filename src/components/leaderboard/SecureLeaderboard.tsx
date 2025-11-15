@@ -72,15 +72,14 @@ export const SecureLeaderboard: React.FC = () => {
           challenges_points,
           rank_position,
           last_updated,
-          profiles!inner(display_name, approved, current_stream_id)
+          public_profiles!inner(display_name, current_stream_id)
         `)
-        .eq('profiles.approved', true)
         .order('rank_position', { ascending: true })
         .limit(showPersonalOnly ? 1 : 10);
 
       // Фильтруем только участников из активных потоков
       if (activeStreamIds.length > 0 && !showPersonalOnly) {
-        query = query.in('profiles.current_stream_id', activeStreamIds);
+        query = query.in('public_profiles.current_stream_id', activeStreamIds);
       }
 
       if (showPersonalOnly && user) {
@@ -111,7 +110,7 @@ export const SecureLeaderboard: React.FC = () => {
         tactical_points: entry.tactical_points || 0,
         challenges_points: entry.challenges_points || 0,
         rank_position: entry.rank_position,
-        display_name: entry.profiles?.display_name || 'Участник',
+        display_name: entry.public_profiles?.display_name || 'Участник',
         last_updated: entry.last_updated
       })) || [];
 
