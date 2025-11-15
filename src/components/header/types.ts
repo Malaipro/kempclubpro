@@ -8,6 +8,7 @@ export interface NavigationItem {
 export interface MenuItem {
   id: string;
   label: string;
+  href?: string; // Опциональная ссылка на внешнюю страницу
 }
 
 export const navigationItems: NavigationItem[] = [
