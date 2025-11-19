@@ -24,6 +24,7 @@ interface CooperTestResult {
     display_name: string | null;
     first_name: string | null;
     last_name: string | null;
+    current_stream_id: string | null;
   } | null;
 }
 
@@ -34,6 +35,19 @@ export const CooperTestManagement: React.FC = () => {
 
   const fetchTestResults = async () => {
     try {
+      // Get the active stream
+      const { data: activeStream } = await supabase
+        .from('streams')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeStream) {
+        setTestResults([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('cooper_test_results')
         .select(`
@@ -41,13 +55,19 @@ export const CooperTestManagement: React.FC = () => {
           profiles:user_id (
             display_name,
             first_name,
-            last_name
+            last_name,
+            current_stream_id
           )
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTestResults((data as unknown) as CooperTestResult[] || []);
+      
+      // Filter by current active stream
+      const filteredResults = ((data as unknown) as CooperTestResult[] || [])
+        .filter(result => result.profiles?.current_stream_id === activeStream.id);
+      
+      setTestResults(filteredResults);
     } catch (error) {
       console.error('Error fetching Cooper test results:', error);
       toast({

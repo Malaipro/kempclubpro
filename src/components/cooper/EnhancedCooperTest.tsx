@@ -64,6 +64,19 @@ export const EnhancedCooperTest: React.FC = () => {
 
   const fetchTestResults = async () => {
     try {
+      // Get the active stream
+      const { data: activeStream } = await supabase
+        .from('streams')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeStream) {
+        setTestResults([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('cooper_test_results')
         .select('*')
@@ -71,18 +84,21 @@ export const EnhancedCooperTest: React.FC = () => {
 
       if (error) throw error;
       
-      // Fetch profiles separately to avoid relationship issues  
+      // Fetch profiles separately to avoid relationship issues, filtering by active stream
       const userIds = (data || []).map(result => result.user_id);
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, display_name, first_name, last_name')
-        .in('user_id', userIds);
+        .select('user_id, display_name, first_name, last_name, current_stream_id')
+        .in('user_id', userIds)
+        .eq('current_stream_id', activeStream.id);
 
-      // Merge profiles with results
-      const resultsWithProfiles = (data || []).map(result => ({
-        ...result,
-        profiles: profilesData?.find(p => p.user_id === result.user_id) || null
-      }));
+      // Merge profiles with results and filter by stream
+      const resultsWithProfiles = (data || [])
+        .map(result => ({
+          ...result,
+          profiles: profilesData?.find(p => p.user_id === result.user_id) || null
+        }))
+        .filter(result => result.profiles !== null);
 
       setTestResults(resultsWithProfiles);
     } catch (error) {
@@ -99,9 +115,22 @@ export const EnhancedCooperTest: React.FC = () => {
 
   const fetchParticipants = async () => {
     try {
+      // Get the active stream
+      const { data: activeStream } = await supabase
+        .from('streams')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeStream) {
+        setParticipants([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, display_name, first_name, last_name')
+        .eq('current_stream_id', activeStream.id)
         .order('display_name', { ascending: true });
 
       if (error) throw error;
