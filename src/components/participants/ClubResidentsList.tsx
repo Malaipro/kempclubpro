@@ -39,10 +39,10 @@ export const ClubResidentsList: React.FC = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        // Получаем резидентов клуба (все, независимо от статуса утверждения)
+        // Получаем резидентов клуба из публичной таблицы
         const { data: clubResidents, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, user_id, first_name, last_name, display_name, total_points, rank_position, club_joined_at')
+          .from('public_profiles')
+          .select('id, user_id, first_name, last_name, display_name, total_points, rank_position')
           .eq('participant_status', 'club_resident')
           .order('total_points', { ascending: false })
           .limit(50);
@@ -89,6 +89,7 @@ export const ClubResidentsList: React.FC = () => {
           
           return {
             ...profile,
+            club_joined_at: null, // public_profiles doesn't have this field
             bjj_points: leaderboardEntry?.bjj_points || 0,
             kickboxing_points: leaderboardEntry?.kickboxing_points || 0,
             ofp_points: leaderboardEntry?.ofp_points || 0,
