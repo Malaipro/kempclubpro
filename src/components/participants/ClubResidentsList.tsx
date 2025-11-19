@@ -39,11 +39,10 @@ export const ClubResidentsList: React.FC = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        // Получаем резидентов клуба
+        // Получаем резидентов клуба (все, независимо от статуса утверждения)
         const { data: clubResidents, error: profilesError } = await supabase
           .from('profiles')
           .select('id, user_id, first_name, last_name, display_name, total_points, rank_position, club_joined_at')
-          .eq('approved', true)
           .eq('participant_status', 'club_resident')
           .order('total_points', { ascending: false })
           .limit(50);
