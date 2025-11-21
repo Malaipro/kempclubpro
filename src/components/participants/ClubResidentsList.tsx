@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, Trophy, Star, TrendingUp, Target, Zap, Dumbbell, Book, Shield, ChevronDown, ChevronUp, Award, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Trophy, Star, TrendingUp, Target, Zap, Dumbbell, Book, Shield, ChevronDown, ChevronUp, Award, CheckCircle, XCircle, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Participant {
@@ -29,6 +29,12 @@ interface Participant {
     test_type: string;
     passed: boolean;
   }>;
+  cooper_test?: {
+    total_minutes: number | null;
+    total_seconds: number | null;
+    fitness_level: string | null;
+    test_date: string;
+  } | null;
 }
 
 export const ClubResidentsList: React.FC = () => {
@@ -81,11 +87,22 @@ export const ClubResidentsList: React.FC = () => {
 
         if (crashTestsError) console.error('Error fetching crash tests:', crashTestsError);
 
+        // Получаем последние результаты теста Купера для каждого участника
+        const { data: cooperTestsData, error: cooperTestsError } = await supabase
+          .from('cooper_test_results')
+          .select('user_id, total_minutes, total_seconds, fitness_level, test_date')
+          .eq('verified', true)
+          .in('user_id', userIds)
+          .order('test_date', { ascending: false });
+
+        if (cooperTestsError) console.error('Error fetching Cooper tests:', cooperTestsError);
+
         // Объединяем данные
         const enrichedParticipants = clubResidents?.map(profile => {
           const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          const latestCooperTest = cooperTestsData?.find(c => c.user_id === profile.user_id) || null;
           
           return {
             ...profile,
@@ -99,6 +116,7 @@ export const ClubResidentsList: React.FC = () => {
             nutrition_points: leaderboardEntry?.nutrition_points || 0,
             totems: userTotems,
             crash_tests: userCrashTests,
+            cooper_test: latestCooperTest,
           };
         }) || [];
 
@@ -154,6 +172,35 @@ export const ClubResidentsList: React.FC = () => {
       default:
         return <CheckCircle className="w-4 h-4 text-gray-500" />;
     }
+  };
+
+  const getFitnessLevelLabel = (level: string | null) => {
+    if (!level) return 'Нет данных';
+    switch (level.toLowerCase()) {
+      case 'excellent': return 'Отлично';
+      case 'good': return 'Хорошо';
+      case 'satisfactory': return 'Удовлетворительно';
+      case 'poor': return 'Плохо';
+      default: return level;
+    }
+  };
+
+  const getFitnessLevelColor = (level: string | null) => {
+    if (!level) return 'text-gray-400';
+    switch (level.toLowerCase()) {
+      case 'excellent': return 'text-green-600';
+      case 'good': return 'text-blue-600';
+      case 'satisfactory': return 'text-yellow-600';
+      case 'poor': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const formatCooperTime = (minutes: number | null, seconds: number | null) => {
+    if (minutes === null && seconds === null) return 'Нет данных';
+    const mins = minutes || 0;
+    const secs = seconds || 0;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatDate = (dateString?: string) => {
@@ -316,15 +363,45 @@ export const ClubResidentsList: React.FC = () => {
                                       <div className="font-bold text-foreground">{participant.tactical_points || 0}</div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                                    <TrendingUp className="w-5 h-5 text-orange-500" />
-                                    <div>
-                                      <div className="text-xs text-muted-foreground">Пирамида КЭМП</div>
-                                      <div className="font-bold text-foreground">{participant.kamp_pyramid_points || 0}</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                                   <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                     <TrendingUp className="w-5 h-5 text-orange-500" />
+                                     <div>
+                                       <div className="text-xs text-muted-foreground">Пирамида КЭМП</div>
+                                       <div className="font-bold text-foreground">{participant.kamp_pyramid_points || 0}</div>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+
+                               {/* Результаты теста Купера */}
+                               {participant.cooper_test && (
+                                 <div>
+                                   <h4 className="font-semibold mb-4 flex items-center gap-2 text-kamp-accent">
+                                     <Activity className="w-4 h-4" />
+                                     Тест Купера
+                                   </h4>
+                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                       <Activity className="w-5 h-5 text-blue-500" />
+                                       <div>
+                                         <div className="text-xs text-muted-foreground">Время</div>
+                                         <div className="font-bold text-foreground">
+                                           {formatCooperTime(participant.cooper_test.total_minutes, participant.cooper_test.total_seconds)}
+                                         </div>
+                                       </div>
+                                     </div>
+                                     <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                       <Target className="w-5 h-5 text-green-500" />
+                                       <div>
+                                         <div className="text-xs text-muted-foreground">Уровень</div>
+                                         <div className={`font-bold ${getFitnessLevelColor(participant.cooper_test.fitness_level)}`}>
+                                           {getFitnessLevelLabel(participant.cooper_test.fitness_level)}
+                                         </div>
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+                               )}
 
                               {/* Тотемы */}
                               {participant.totems && participant.totems.length > 0 && (
