@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 
 interface Stream {
   id: string;
@@ -1074,6 +1075,10 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         <p className="text-sm">Активности пока не зафиксированы</p>
                       </div>
                     )}
+
+                    <div className="mt-6">
+                      <CooperTestResults participantId={participant.user_id} />
+                    </div>
                   </div>
                 )}
               </CardContent>
