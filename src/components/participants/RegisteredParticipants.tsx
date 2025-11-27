@@ -28,7 +28,13 @@ interface Participant {
     test_type: string;
     passed: boolean;
   }>;
-  cooper_test?: {
+  cooper_test_before?: {
+    total_minutes: number | null;
+    total_seconds: number | null;
+    fitness_level: string | null;
+    test_date: string;
+  } | null;
+  cooper_test_after?: {
     total_minutes: number | null;
     total_seconds: number | null;
     fitness_level: string | null;
@@ -99,10 +105,10 @@ export const RegisteredParticipants: React.FC = () => {
 
         if (crashTestsError) console.error('Error fetching crash tests:', crashTestsError);
 
-        // Получаем последние результаты теста Купера для каждого участника
+        // Получаем результаты теста Купера для каждого участника (начало и конец)
         const { data: cooperTestsData, error: cooperTestsError } = await supabase
           .from('cooper_test_results')
-          .select('user_id, total_minutes, total_seconds, fitness_level, test_date')
+          .select('user_id, total_minutes, total_seconds, fitness_level, test_date, test_phase')
           .eq('verified', true)
           .in('user_id', userIds)
           .order('test_date', { ascending: false });
@@ -114,7 +120,11 @@ export const RegisteredParticipants: React.FC = () => {
           const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
-          const latestCooperTest = cooperTestsData?.find(c => c.user_id === profile.user_id) || null;
+          
+          // Получаем тесты "до" и "после"
+          const userCooperTests = cooperTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          const cooperTestBefore = userCooperTests.find(c => c.test_phase === 'before_stream') || null;
+          const cooperTestAfter = userCooperTests.find(c => c.test_phase === 'after_stream' || c.test_phase === 'during_stream') || null;
           
           return {
             ...profile,
@@ -127,7 +137,8 @@ export const RegisteredParticipants: React.FC = () => {
             nutrition_points: leaderboardEntry?.nutrition_points || 0,
             totems: userTotems,
             crash_tests: userCrashTests,
-            cooper_test: latestCooperTest,
+            cooper_test_before: cooperTestBefore,
+            cooper_test_after: cooperTestAfter,
           };
         }) || [];
 
@@ -385,33 +396,64 @@ export const RegisteredParticipants: React.FC = () => {
                                  </div>
 
                                  {/* Результаты теста Купера */}
-                                 {participant.cooper_test && (
+                                 {(participant.cooper_test_before || participant.cooper_test_after) && (
                                    <div>
                                      <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                                        <Activity className="w-4 h-4 text-blue-600" />
                                        Тест Купера:
                                      </p>
-                                     <div className="flex flex-wrap gap-2">
-                                       <Badge 
-                                         variant="secondary"
-                                         className="bg-blue-100 text-blue-800 flex items-center gap-1"
-                                       >
-                                         <Activity className="w-3 h-3" />
-                                         {formatCooperTime(participant.cooper_test.total_minutes, participant.cooper_test.total_seconds)}
-                                       </Badge>
-                                       {participant.cooper_test.fitness_level && (
-                                         <Badge 
-                                           variant="secondary"
-                                           className={`flex items-center gap-1 ${
-                                             participant.cooper_test.fitness_level.toLowerCase() === 'excellent' ? 'bg-green-100 text-green-800' :
-                                             participant.cooper_test.fitness_level.toLowerCase() === 'good' ? 'bg-blue-100 text-blue-800' :
-                                             participant.cooper_test.fitness_level.toLowerCase() === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                                             'bg-red-100 text-red-800'
-                                           }`}
-                                         >
-                                           <Target className="w-3 h-3" />
-                                           {getFitnessLevelLabel(participant.cooper_test.fitness_level)}
-                                         </Badge>
+                                     <div className="space-y-2">
+                                       {participant.cooper_test_before && (
+                                         <div className="flex flex-wrap gap-2 items-center">
+                                           <span className="text-xs text-gray-600 font-medium">Начало:</span>
+                                           <Badge 
+                                             variant="secondary"
+                                             className="bg-blue-100 text-blue-800 flex items-center gap-1"
+                                           >
+                                             <Activity className="w-3 h-3" />
+                                             {formatCooperTime(participant.cooper_test_before.total_minutes, participant.cooper_test_before.total_seconds)}
+                                           </Badge>
+                                           {participant.cooper_test_before.fitness_level && (
+                                             <Badge 
+                                               variant="secondary"
+                                               className={`flex items-center gap-1 ${
+                                                 participant.cooper_test_before.fitness_level.toLowerCase() === 'excellent' ? 'bg-green-100 text-green-800' :
+                                                 participant.cooper_test_before.fitness_level.toLowerCase() === 'good' ? 'bg-blue-100 text-blue-800' :
+                                                 participant.cooper_test_before.fitness_level.toLowerCase() === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
+                                                 'bg-red-100 text-red-800'
+                                               }`}
+                                             >
+                                               <Target className="w-3 h-3" />
+                                               {getFitnessLevelLabel(participant.cooper_test_before.fitness_level)}
+                                             </Badge>
+                                           )}
+                                         </div>
+                                       )}
+                                       {participant.cooper_test_after && (
+                                         <div className="flex flex-wrap gap-2 items-center">
+                                           <span className="text-xs text-gray-600 font-medium">Конец:</span>
+                                           <Badge 
+                                             variant="secondary"
+                                             className="bg-purple-100 text-purple-800 flex items-center gap-1"
+                                           >
+                                             <Activity className="w-3 h-3" />
+                                             {formatCooperTime(participant.cooper_test_after.total_minutes, participant.cooper_test_after.total_seconds)}
+                                           </Badge>
+                                           {participant.cooper_test_after.fitness_level && (
+                                             <Badge 
+                                               variant="secondary"
+                                               className={`flex items-center gap-1 ${
+                                                 participant.cooper_test_after.fitness_level.toLowerCase() === 'excellent' ? 'bg-green-100 text-green-800' :
+                                                 participant.cooper_test_after.fitness_level.toLowerCase() === 'good' ? 'bg-blue-100 text-blue-800' :
+                                                 participant.cooper_test_after.fitness_level.toLowerCase() === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
+                                                 'bg-red-100 text-red-800'
+                                               }`}
+                                             >
+                                               <Target className="w-3 h-3" />
+                                               {getFitnessLevelLabel(participant.cooper_test_after.fitness_level)}
+                                             </Badge>
+                                           )}
+                                         </div>
                                        )}
                                      </div>
                                    </div>
