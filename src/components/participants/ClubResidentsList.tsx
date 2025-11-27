@@ -370,38 +370,30 @@ export const ClubResidentsList: React.FC = () => {
                                        <div className="font-bold text-foreground">{participant.kamp_pyramid_points || 0}</div>
                                      </div>
                                    </div>
+                                   {participant.cooper_test && (
+                                     <>
+                                       <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                         <Activity className="w-5 h-5 text-blue-500" />
+                                         <div>
+                                           <div className="text-xs text-muted-foreground">Тест Купера</div>
+                                           <div className="font-bold text-foreground">
+                                             {formatCooperTime(participant.cooper_test.total_minutes, participant.cooper_test.total_seconds)}
+                                           </div>
+                                         </div>
+                                       </div>
+                                       <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                         <Target className="w-5 h-5 text-green-500" />
+                                         <div>
+                                           <div className="text-xs text-muted-foreground">Уровень физ. подготовки</div>
+                                           <div className={`font-bold ${getFitnessLevelColor(participant.cooper_test.fitness_level)}`}>
+                                             {getFitnessLevelLabel(participant.cooper_test.fitness_level)}
+                                           </div>
+                                         </div>
+                                       </div>
+                                     </>
+                                   )}
                                  </div>
                                </div>
-
-                               {/* Результаты теста Купера */}
-                               {participant.cooper_test && (
-                                 <div>
-                                   <h4 className="font-semibold mb-4 flex items-center gap-2 text-kamp-accent">
-                                     <Activity className="w-4 h-4" />
-                                     Тест Купера
-                                   </h4>
-                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                                       <Activity className="w-5 h-5 text-blue-500" />
-                                       <div>
-                                         <div className="text-xs text-muted-foreground">Время</div>
-                                         <div className="font-bold text-foreground">
-                                           {formatCooperTime(participant.cooper_test.total_minutes, participant.cooper_test.total_seconds)}
-                                         </div>
-                                       </div>
-                                     </div>
-                                     <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                                       <Target className="w-5 h-5 text-green-500" />
-                                       <div>
-                                         <div className="text-xs text-muted-foreground">Уровень</div>
-                                         <div className={`font-bold ${getFitnessLevelColor(participant.cooper_test.fitness_level)}`}>
-                                           {getFitnessLevelLabel(participant.cooper_test.fitness_level)}
-                                         </div>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 </div>
-                               )}
 
                               {/* Тотемы */}
                               {participant.totems && participant.totems.length > 0 && (
