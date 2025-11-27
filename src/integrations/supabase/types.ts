@@ -1785,6 +1785,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_club_resident: { Args: { _user_id: string }; Returns: boolean }
       is_public_participant: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_security_access: {
