@@ -11,6 +11,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,7 @@ interface ScheduleItem {
   instructor_id?: string | null;
   color?: string;
   location?: string;
+  description?: string;
   participants_count?: number;
 }
 
@@ -67,6 +69,7 @@ export const ClubScheduleManagement: React.FC = () => {
     activity: '',
     instructor_id: '',
     location: '',
+    description: '',
     stream_id: '',
     color: '#10b981',
   });
@@ -151,6 +154,7 @@ export const ClubScheduleManagement: React.FC = () => {
           instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
           instructor_id: schedule.instructor_id,
           location: schedule.location || '-',
+          description: schedule.description || '',
           color: schedule.color || '#10b981',
           participants_count: schedule.participants_count
         };
@@ -212,7 +216,7 @@ export const ClubScheduleManagement: React.FC = () => {
           .from('schedules')
           .update({
             title: formData.activity,
-            description: null,
+            description: formData.description || null,
             start_time: toISO(formData.date, formData.start_time),
             end_time: toISO(formData.date, formData.end_time),
             activity_type: formData.activity,
@@ -229,7 +233,7 @@ export const ClubScheduleManagement: React.FC = () => {
       } else {
         const { error } = await supabase.from('schedules').insert({
           title: formData.activity,
-          description: null,
+          description: formData.description || null,
           start_time: toISO(formData.date, formData.start_time),
           end_time: toISO(formData.date, formData.end_time),
           location: formData.location || null,
@@ -255,6 +259,7 @@ export const ClubScheduleManagement: React.FC = () => {
         activity: '',
         instructor_id: '',
         location: '',
+        description: '',
         stream_id: currentStreamId || '',
         color: '#10b981',
       });
@@ -281,6 +286,7 @@ export const ClubScheduleManagement: React.FC = () => {
       activity: item.activity,
       instructor_id: item.instructor_id || '',
       location: item.location === '-' ? '' : item.location || '',
+      description: item.description || '',
       stream_id: currentStreamId || '',
       color: item.color || '#10b981',
     });
@@ -419,6 +425,7 @@ export const ClubScheduleManagement: React.FC = () => {
                 activity: '',
                 instructor_id: '',
                 location: '',
+                description: '',
                 stream_id: currentStreamId || '',
                 color: '#10b981',
               });
@@ -431,7 +438,7 @@ export const ClubScheduleManagement: React.FC = () => {
               </Button>
             </DialogTrigger>
             
-            <DialogContent className="max-w-lg bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-white">
                   {editingId ? 'Редактировать мероприятие' : 'Добавить мероприятие'}
@@ -502,8 +509,21 @@ export const ClubScheduleManagement: React.FC = () => {
                       <SelectItem value="Совместный ужин">Совместный ужин</SelectItem>
                       <SelectItem value="Мастер-класс">Мастер-класс</SelectItem>
                       <SelectItem value="Выезд на природу">Выезд на природу</SelectItem>
+                      <SelectItem value="Семейное мероприятие">Семейное мероприятие</SelectItem>
+                      <SelectItem value="Выездное мероприятие">Выездное мероприятие</SelectItem>
+                      <SelectItem value="Лекции">Лекции</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label className="text-white">Описание мероприятия</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Опишите мероприятие подробнее..."
+                    className="bg-white text-black min-h-[100px]"
+                  />
                 </div>
 
                 <div>
