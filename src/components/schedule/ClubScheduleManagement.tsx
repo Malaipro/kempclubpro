@@ -184,7 +184,7 @@ export const ClubScheduleManagement: React.FC = () => {
             start_time: toISO(formData.date, formData.start_time),
             end_time: toISO(formData.date, formData.end_time),
             activity_type: formData.activity,
-            instructor_id: formData.instructor_id || null,
+            instructor_id: null,
             location: formData.location || null,
             stream_id: null,
             color: formData.color,
@@ -204,7 +204,7 @@ export const ClubScheduleManagement: React.FC = () => {
           activity_type: formData.activity,
           max_participants: null,
           is_active: true,
-          instructor_id: formData.instructor_id || null,
+          instructor_id: null,
           color: formData.color,
           schedule_type: 'club',
         });
@@ -248,7 +248,7 @@ export const ClubScheduleManagement: React.FC = () => {
       start_time: startTime,
       end_time: endTime,
       activity: item.activity,
-      instructor_id: item.instructor_id || '',
+      instructor_id: '',
       location: item.location === '-' ? '' : item.location || '',
       description: item.description || '',
       stream_id: '',
@@ -469,11 +469,11 @@ export const ClubScheduleManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label className="text-white">Описание мероприятия</Label>
+                  <Label className="text-white">Тема мероприятия</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Опишите мероприятие подробнее..."
+                    placeholder="Укажите тему мероприятия..."
                     className="bg-white text-black min-h-[100px]"
                   />
                 </div>
@@ -486,22 +486,6 @@ export const ClubScheduleManagement: React.FC = () => {
                     placeholder="Укажите место"
                     className="bg-white text-black"
                   />
-                </div>
-
-                <div>
-                  <Label className="text-white">Организатор/Тренер</Label>
-                  <Select value={formData.instructor_id} onValueChange={(value) => setFormData(prev => ({ ...prev, instructor_id: value }))}>
-                    <SelectTrigger className="bg-white text-black">
-                      <SelectValue placeholder="Выберите организатора" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                      {trainers.map((trainer) => (
-                        <SelectItem key={trainer.id} value={trainer.id}>
-                          {trainer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div>
@@ -598,7 +582,7 @@ export const ClubScheduleManagement: React.FC = () => {
                   <TableHead className="min-w-[100px]">Время</TableHead>
                   <TableHead className="min-w-[150px]">Мероприятие</TableHead>
                   <TableHead className="min-w-[120px]">Место</TableHead>
-                  <TableHead className="min-w-[120px]">Организатор</TableHead>
+                  <TableHead className="min-w-[200px]">Тема/Описание</TableHead>
                   <TableHead className="min-w-[100px]">Участники</TableHead>
                   <TableHead className="w-[100px]">Действия</TableHead>
                 </TableRow>
@@ -627,7 +611,7 @@ export const ClubScheduleManagement: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>{item.location}</TableCell>
-                    <TableCell>{item.instructor}</TableCell>
+                    <TableCell className="text-sm">{item.description || '-'}</TableCell>
                     <TableCell>
                       <Sheet open={viewingParticipants === item.id} onOpenChange={(open) => !open && setViewingParticipants(null)}>
                         <SheetTrigger asChild>
