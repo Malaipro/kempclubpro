@@ -7,7 +7,6 @@ import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalPr
 import { AccountSettings } from '@/components/profile';
 import { ScheduleTableView } from '@/components/schedule/ScheduleTableView';
 import { IntensiveScheduleViewer } from '@/components/schedule/IntensiveScheduleViewer';
-import { ClubScheduleViewer } from '@/components/schedule/ClubScheduleViewer';
 import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 import { Book, Trophy, FileText, User, Settings, Calendar, Activity } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
@@ -48,11 +47,7 @@ export const KampSystemUser: React.FC = () => {
               </TabsTrigger>
               <TabsTrigger value="intensive-schedule" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
                 <Calendar className="w-4 h-4" />
-                <span className="whitespace-nowrap">Интенсив</span>
-              </TabsTrigger>
-              <TabsTrigger value="club-schedule" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
-                <Calendar className="w-4 h-4" />
-                <span className="whitespace-nowrap">Клуб</span>
+                <span className="whitespace-nowrap">Расписание</span>
               </TabsTrigger>
               <TabsTrigger value="manual" className="flex flex-col items-center gap-1 text-xs px-3 py-2 min-w-[72px] flex-shrink-0">
                 <FileText className="w-4 h-4" />
@@ -83,10 +78,6 @@ export const KampSystemUser: React.FC = () => {
           
           <TabsContent value="intensive-schedule">
             <IntensiveScheduleViewer />
-          </TabsContent>
-          
-          <TabsContent value="club-schedule">
-            <ClubScheduleViewer />
           </TabsContent>
           
           <TabsContent value="manual">
