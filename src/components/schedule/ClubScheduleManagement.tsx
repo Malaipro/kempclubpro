@@ -28,6 +28,7 @@ interface ScheduleItem {
   instructor_id?: string | null;
   color?: string;
   location?: string;
+  theme?: string;
   description?: string;
   participants_count?: number;
 }
@@ -56,6 +57,7 @@ export const ClubScheduleManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [viewingDetails, setViewingDetails] = useState<ScheduleItem | null>(null);
   const [formData, setFormData] = useState({
     date: undefined as Date | undefined,
     start_time: '19:00',
@@ -63,6 +65,7 @@ export const ClubScheduleManagement: React.FC = () => {
     activity: '',
     instructor_id: '',
     location: '',
+    theme: '',
     description: '',
     stream_id: '',
     color: '#10b981',
@@ -109,6 +112,9 @@ export const ClubScheduleManagement: React.FC = () => {
         const startDate = new Date(schedule.start_time);
         const endDate = new Date(schedule.end_time);
         
+        // Parse theme and description from description field (format: "theme|||description")
+        const [theme = '', fullDescription = ''] = (schedule.description || '').split('|||');
+        
         return {
           id: schedule.id,
           date: format(startDate, 'dd.MM.yyyy'),
@@ -118,7 +124,8 @@ export const ClubScheduleManagement: React.FC = () => {
           instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
           instructor_id: schedule.instructor_id,
           location: schedule.location || '-',
-          description: schedule.description || '',
+          theme: theme,
+          description: fullDescription,
           color: schedule.color || '#10b981',
           participants_count: schedule.participants_count
         };
@@ -175,12 +182,17 @@ export const ClubScheduleManagement: React.FC = () => {
     };
 
     try {
+      // Combine theme and description with separator
+      const combinedDescription = formData.theme && formData.description 
+        ? `${formData.theme}|||${formData.description}`
+        : formData.theme || formData.description || null;
+
       if (editingId) {
         const { error } = await supabase
           .from('schedules')
           .update({
             title: formData.activity,
-            description: formData.description || null,
+            description: combinedDescription,
             start_time: toISO(formData.date, formData.start_time),
             end_time: toISO(formData.date, formData.end_time),
             activity_type: formData.activity,
@@ -197,7 +209,7 @@ export const ClubScheduleManagement: React.FC = () => {
       } else {
         const { error } = await supabase.from('schedules').insert({
           title: formData.activity,
-          description: formData.description || null,
+          description: combinedDescription,
           start_time: toISO(formData.date, formData.start_time),
           end_time: toISO(formData.date, formData.end_time),
           location: formData.location || null,
@@ -223,6 +235,7 @@ export const ClubScheduleManagement: React.FC = () => {
         activity: '',
         instructor_id: '',
         location: '',
+        theme: '',
         description: '',
         stream_id: '',
         color: '#10b981',
@@ -250,6 +263,7 @@ export const ClubScheduleManagement: React.FC = () => {
       activity: item.activity,
       instructor_id: '',
       location: item.location === '-' ? '' : item.location || '',
+      theme: item.theme || '',
       description: item.description || '',
       stream_id: '',
       color: item.color || '#10b981',
@@ -377,6 +391,7 @@ export const ClubScheduleManagement: React.FC = () => {
                 activity: '',
                 instructor_id: '',
                 location: '',
+                theme: '',
                 description: '',
                 stream_id: '',
                 color: '#10b981',
@@ -470,10 +485,20 @@ export const ClubScheduleManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-white">Тема мероприятия</Label>
+                  <Input
+                    value={formData.theme}
+                    onChange={(e) => setFormData(prev => ({ ...prev, theme: e.target.value }))}
+                    placeholder="Краткая тема мероприятия"
+                    className="bg-white text-black"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-white">Описание мероприятия</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Укажите тему мероприятия..."
+                    placeholder="Подробное описание мероприятия..."
                     className="bg-white text-black min-h-[100px]"
                   />
                 </div>
@@ -582,7 +607,7 @@ export const ClubScheduleManagement: React.FC = () => {
                   <TableHead className="min-w-[100px]">Время</TableHead>
                   <TableHead className="min-w-[150px]">Мероприятие</TableHead>
                   <TableHead className="min-w-[120px]">Место</TableHead>
-                  <TableHead className="min-w-[200px]">Тема/Описание</TableHead>
+                  <TableHead className="min-w-[200px]">Тема</TableHead>
                   <TableHead className="min-w-[100px]">Участники</TableHead>
                   <TableHead className="w-[100px]">Действия</TableHead>
                 </TableRow>
@@ -605,13 +630,19 @@ export const ClubScheduleManagement: React.FC = () => {
                           borderColor: item.color || '#10b981',
                           backgroundColor: 'transparent'
                         }}
-                        className="border font-semibold"
+                        className="border font-semibold cursor-pointer hover:opacity-80"
+                        onClick={() => setViewingDetails(item)}
                       >
                         {item.activity}
                       </Badge>
                     </TableCell>
                     <TableCell>{item.location}</TableCell>
-                    <TableCell className="text-sm">{item.description || '-'}</TableCell>
+                    <TableCell 
+                      className="text-sm cursor-pointer hover:text-primary"
+                      onClick={() => setViewingDetails(item)}
+                    >
+                      {item.theme || '-'}
+                    </TableCell>
                     <TableCell>
                       <Sheet open={viewingParticipants === item.id} onOpenChange={(open) => !open && setViewingParticipants(null)}>
                         <SheetTrigger asChild>
@@ -683,6 +714,67 @@ export const ClubScheduleManagement: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={!!viewingDetails} onOpenChange={(open) => !open && setViewingDetails(null)}>
+        <DialogContent className="max-w-2xl bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white text-2xl">Детали мероприятия</DialogTitle>
+          </DialogHeader>
+          {viewingDetails && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-1">Мероприятие</h3>
+                <Badge 
+                  style={{ 
+                    color: viewingDetails.color || '#10b981',
+                    borderColor: viewingDetails.color || '#10b981',
+                    backgroundColor: 'transparent'
+                  }}
+                  className="border font-semibold text-lg px-4 py-2"
+                >
+                  {viewingDetails.activity}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">Дата</h3>
+                  <p className="text-white">{viewingDetails.date}, {viewingDetails.dayOfWeek}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">Время</h3>
+                  <p className="text-white font-mono">{viewingDetails.time}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-1">Место проведения</h3>
+                <p className="text-white">{viewingDetails.location}</p>
+              </div>
+
+              {viewingDetails.theme && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">Тема</h3>
+                  <p className="text-white font-medium">{viewingDetails.theme}</p>
+                </div>
+              )}
+
+              {viewingDetails.description && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">Описание</h3>
+                  <p className="text-white whitespace-pre-wrap">{viewingDetails.description}</p>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-1">Участники</h3>
+                <p className="text-white">{viewingDetails.participants_count || 0} человек записано</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
