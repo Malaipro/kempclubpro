@@ -4,15 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Medal, Award, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-
-interface CooperTestResult {
-  test_date: string;
-  total_minutes: number | null;
-  total_seconds: number | null;
-  fitness_level: string | null;
-}
 
 interface DetailedLeaderboardEntry {
   id: string;
@@ -21,7 +13,6 @@ interface DetailedLeaderboardEntry {
   rank_position: number;
   display_name: string;
   last_updated: string;
-  cooper_test?: CooperTestResult | null;
 }
 
 export const DetailedLeaderboard: React.FC = () => {
@@ -118,23 +109,6 @@ export const DetailedLeaderboard: React.FC = () => {
 
       console.log('Leaderboard data:', data);
 
-      const userIds = (data || []).map((entry: any) => entry.user_id);
-      
-      // Fetch Cooper test results for these users
-      const { data: cooperData } = await supabase
-        .from('cooper_test_results')
-        .select('user_id, test_date, total_minutes, total_seconds, fitness_level')
-        .in('user_id', userIds)
-        .order('test_date', { ascending: false });
-
-      // Get the latest Cooper test for each user
-      const cooperByUser = new Map<string, CooperTestResult>();
-      cooperData?.forEach((test: any) => {
-        if (!cooperByUser.has(test.user_id)) {
-          cooperByUser.set(test.user_id, test);
-        }
-      });
-
       const detailedData = (data || []).map((entry: any) => ({
         id: entry.id,
         user_id: entry.user_id,
@@ -143,8 +117,7 @@ export const DetailedLeaderboard: React.FC = () => {
         display_name: entry.first_name && entry.last_name 
           ? `${entry.first_name} ${entry.last_name}`
           : entry.display_name || 'Участник',
-        last_updated: new Date().toISOString(),
-        cooper_test: cooperByUser.get(entry.user_id) || null
+        last_updated: new Date().toISOString()
       }));
 
       setLeaderboard(detailedData);
@@ -162,35 +135,6 @@ export const DetailedLeaderboard: React.FC = () => {
     if (position === 2) return <Medal className="w-5 h-5 text-gray-400" />;
     if (position === 3) return <Award className="w-5 h-5 text-amber-600" />;
     return <span className="w-5 h-5 flex items-center justify-center text-sm font-bold">{position}</span>;
-  };
-
-  const formatCooperTime = (minutes: number | null, seconds: number | null) => {
-    if (minutes === null || seconds === null) return null;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const getFitnessLevelLabel = (level: string | null) => {
-    if (!level) return null;
-    const labels: Record<string, string> = {
-      'excellent': 'Отлично',
-      'good': 'Хорошо',
-      'average': 'Средне',
-      'below_average': 'Ниже среднего',
-      'poor': 'Плохо'
-    };
-    return labels[level] || level;
-  };
-
-  const getFitnessLevelColor = (level: string | null) => {
-    if (!level) return 'bg-gray-100 text-gray-700';
-    const colors: Record<string, string> = {
-      'excellent': 'bg-green-100 text-green-700',
-      'good': 'bg-blue-100 text-blue-700',
-      'average': 'bg-yellow-100 text-yellow-700',
-      'below_average': 'bg-orange-100 text-orange-700',
-      'poor': 'bg-red-100 text-red-700'
-    };
-    return colors[level] || 'bg-gray-100 text-gray-700';
   };
 
   return (
@@ -260,24 +204,6 @@ export const DetailedLeaderboard: React.FC = () => {
                       <p className="text-sm text-gray-500">баллов</p>
                     </div>
                   </div>
-                  
-                  {entry.cooper_test && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Тест Купера:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">
-                            {formatCooperTime(entry.cooper_test.total_minutes, entry.cooper_test.total_seconds)}
-                          </span>
-                          {entry.cooper_test.fitness_level && (
-                            <Badge className={getFitnessLevelColor(entry.cooper_test.fitness_level)}>
-                              {getFitnessLevelLabel(entry.cooper_test.fitness_level)}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
