@@ -291,6 +291,7 @@ export function ClubScheduleViewer() {
                     <TableHead className="min-w-[100px]">День недели</TableHead>
                     <TableHead className="min-w-[120px]">Время</TableHead>
                     <TableHead className="min-w-[150px]">Мероприятие</TableHead>
+                    <TableHead className="min-w-[200px]">Описание</TableHead>
                     <TableHead>Лектор</TableHead>
                     <TableHead className="min-w-[100px]">Участники</TableHead>
                     {user && <TableHead className="w-[150px]">Запись</TableHead>}
@@ -375,6 +376,11 @@ export function ClubScheduleViewer() {
                         >
                           {schedule.activity_type}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {schedule.description || '-'}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge 
