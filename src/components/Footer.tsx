@@ -121,7 +121,13 @@ export const Footer: React.FC = () => {
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-3 pt-2 flex flex-col items-center">
+          <div className="border-t border-gray-800 mt-3 pt-2 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/10">
+              <div className="text-[8px] leading-tight text-center">
+                <div className="text-white/60">Номинант премии</div>
+                <div className="text-white/90 font-bold">РОССИЯ — СТРАНА ВОЗМОЖНОСТЕЙ</div>
+              </div>
+            </div>
             <p className="text-gray-500 text-[9px]">
               © {new Date().getFullYear()} КЭМП. Все права защищены.
             </p>
@@ -243,17 +249,25 @@ export const Footer: React.FC = () => {
           </div>
         </div>
         
-        <div className="border-t border-gray-800 mt-6 pt-4 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-gray-800 mt-6 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-xs">
             © {new Date().getFullYear()} КЭМП. Все права защищены.
           </p>
-          <div className="mt-2 md:mt-0 flex space-x-4">
-            <a href="#" className="text-gray-500 hover:text-gray-300 text-xs">
-              Политика конфиденциальности
-            </a>
-            <a href="#" className="text-gray-500 hover:text-gray-300 text-xs">
-              Условия использования
-            </a>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+              <div className="text-[10px] leading-tight">
+                <div className="text-white/60 font-medium">Номинант премии</div>
+                <div className="text-white/90 font-bold">РОССИЯ — СТРАНА ВОЗМОЖНОСТЕЙ</div>
+              </div>
+            </div>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-500 hover:text-gray-300 text-xs">
+                Политика конфиденциальности
+              </a>
+              <a href="#" className="text-gray-500 hover:text-gray-300 text-xs">
+                Условия использования
+              </a>
+            </div>
           </div>
         </div>
       </div>
