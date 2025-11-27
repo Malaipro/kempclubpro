@@ -143,7 +143,7 @@ export const PublicParticipantResults: React.FC = () => {
         let latest_cooper_time = undefined;
 
         if (cooperData && cooperData.length > 0) {
-          const beforeTest = cooperData.find(test => test.test_phase === 'before_stream');
+          const beforeTest = cooperData.find(test => test.test_phase === 'during_stream');
           const afterTest = cooperData.find(test => test.test_phase === 'after_stream');
           
           if (beforeTest && afterTest) {
@@ -208,7 +208,7 @@ export const PublicParticipantResults: React.FC = () => {
 
         if (!cooperData || cooperData.length === 0) return null;
 
-        const beforeTest = cooperData.find(test => test.test_phase === 'before_stream');
+        const beforeTest = cooperData.find(test => test.test_phase === 'during_stream');
         const afterTest = cooperData.find(test => test.test_phase === 'after_stream');
         const latestTest = cooperData.sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
 
@@ -515,13 +515,13 @@ export const PublicParticipantResults: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       {test.before_time && (
                         <div>
-                          <p className="text-gray-400">До потока</p>
+                          <p className="text-gray-400">Начало потока</p>
                           <p className="font-semibold text-white">{test.before_time}с</p>
                         </div>
                       )}
                       {test.after_time && (
                         <div>
-                          <p className="text-gray-400">После потока</p>
+                          <p className="text-gray-400">Конец потока</p>
                           <p className="font-semibold text-white">{test.after_time}с</p>
                         </div>
                       )}
