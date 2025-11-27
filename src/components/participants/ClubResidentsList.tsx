@@ -109,10 +109,10 @@ export const ClubResidentsList: React.FC = () => {
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
           
-          // Получаем тесты "до" и "после"
+          // Получаем тесты "начало" и "конец"
           const userCooperTests = cooperTestsData?.filter(c => c.user_id === profile.user_id) || [];
-          const cooperTestBefore = userCooperTests.find(c => c.test_phase === 'before_stream') || null;
-          const cooperTestAfter = userCooperTests.find(c => c.test_phase === 'after_stream' || c.test_phase === 'during_stream') || null;
+          const cooperTestBefore = userCooperTests.find(c => c.test_phase === 'during_stream') || null;
+          const cooperTestAfter = userCooperTests.find(c => c.test_phase === 'after_stream') || null;
           
           return {
             ...profile,
