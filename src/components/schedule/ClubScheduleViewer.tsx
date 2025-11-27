@@ -25,8 +25,8 @@ interface Schedule {
   participants_count?: number;
   is_registered?: boolean;
   instructor_id?: string | null;
-  ascetic_nutrition?: string;
-  nutrition?: string;
+  theme?: string;
+  fullDescription?: string;
   instructor_name?: string;
 }
 
@@ -34,6 +34,7 @@ export function ClubScheduleViewer() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState<string | null>(null);
+  const [viewingDetails, setViewingDetails] = useState<Schedule | null>(null);
   const { user } = useAuth();
 
   const fetchSchedules = async () => {
@@ -75,14 +76,14 @@ export function ClubScheduleViewer() {
             isRegistered = !!regData;
           }
 
-          const [ascetic_nutrition = '', nutrition = ''] = (schedule.description || '').split(' | ');
+          const [theme = '', fullDescription = ''] = (schedule.description || '').split('|||');
 
           return {
             ...schedule,
             participants_count: count || 0,
             is_registered: isRegistered,
-            ascetic_nutrition: ascetic_nutrition || '-',
-            nutrition: nutrition || '-',
+            theme: theme || '-',
+            fullDescription: fullDescription,
             instructor_name: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-'
           };
         })
@@ -285,13 +286,11 @@ export function ClubScheduleViewer() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Смысл аскезы/Парадигма КЭМП</TableHead>
-                    <TableHead>Смысл аскезы/Нутрициология</TableHead>
                     <TableHead className="min-w-[100px]">Дата</TableHead>
                     <TableHead className="min-w-[100px]">День недели</TableHead>
                     <TableHead className="min-w-[120px]">Время</TableHead>
                     <TableHead className="min-w-[150px]">Мероприятие</TableHead>
-                    <TableHead className="min-w-[200px]">Описание</TableHead>
+                    <TableHead className="min-w-[200px]">Тема</TableHead>
                     <TableHead>Лектор</TableHead>
                     <TableHead className="min-w-[100px]">Участники</TableHead>
                     {user && <TableHead className="w-[150px]">Запись</TableHead>}
@@ -299,101 +298,79 @@ export function ClubScheduleViewer() {
                 </TableHeader>
                 <TableBody>
                   {schedules.map((schedule) => (
-                    <TableRow 
-                      key={schedule.id}
-                      style={{ 
-                        backgroundColor: `${schedule.color || '#10b981'}15`
-                      }}
+                  <TableRow 
+                    key={schedule.id}
+                    style={{ 
+                      backgroundColor: `${schedule.color || '#10b981'}15`
+                    }}
+                  >
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: schedule.color || '#10b981',
+                          borderColor: schedule.color || '#10b981',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: schedule.color || '#10b981',
+                          borderColor: schedule.color || '#10b981',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: schedule.color || '#10b981',
+                          borderColor: schedule.color || '#10b981',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: schedule.color || '#10b981',
+                          borderColor: schedule.color || '#10b981',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold cursor-pointer hover:opacity-80"
+                        onClick={() => setViewingDetails(schedule)}
+                      >
+                        {schedule.activity_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell 
+                      className="text-sm cursor-pointer hover:text-primary"
+                      onClick={() => setViewingDetails(schedule)}
                     >
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {schedule.ascetic_nutrition}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {schedule.nutrition}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {schedule.activity_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
-                          {schedule.description || '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          style={{ 
-                            color: schedule.color || '#10b981',
-                            borderColor: schedule.color || '#10b981',
-                            backgroundColor: 'transparent'
-                          }}
-                          className="border font-semibold"
-                        >
-                          {schedule.instructor_name}
-                        </Badge>
-                      </TableCell>
+                      {schedule.theme}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        style={{ 
+                          color: schedule.color || '#10b981',
+                          borderColor: schedule.color || '#10b981',
+                          backgroundColor: 'transparent'
+                        }}
+                        className="border font-semibold"
+                      >
+                        {schedule.instructor_name}
+                      </Badge>
+                    </TableCell>
                       <TableCell>
                         {schedule.participants_count || 0}
                         {schedule.max_participants && ` / ${schedule.max_participants}`}
@@ -440,6 +417,105 @@ export function ClubScheduleViewer() {
           </CardContent>
         </Card>
       )}
+
+      {/* Details Dialog */}
+      <Dialog open={!!viewingDetails} onOpenChange={(open) => !open && setViewingDetails(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Детали мероприятия</DialogTitle>
+          </DialogHeader>
+          {viewingDetails && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Мероприятие</h3>
+                <Badge 
+                  style={{ 
+                    color: viewingDetails.color || '#10b981',
+                    borderColor: viewingDetails.color || '#10b981',
+                    backgroundColor: 'transparent'
+                  }}
+                  className="border font-semibold text-lg px-4 py-2"
+                >
+                  {viewingDetails.activity_type}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Дата</h3>
+                  <p>{format(parseISO(viewingDetails.start_time), "dd.MM.yyyy, EEEE", { locale: ru })}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Время</h3>
+                  <p className="font-mono">{format(parseISO(viewingDetails.start_time), "HH:mm")}-{format(parseISO(viewingDetails.end_time), "HH:mm")}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Место проведения</h3>
+                <p>{viewingDetails.location || '-'}</p>
+              </div>
+
+              {viewingDetails.instructor_name && viewingDetails.instructor_name !== '-' && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Лектор/Организатор</h3>
+                  <p>{viewingDetails.instructor_name}</p>
+                </div>
+              )}
+
+              {viewingDetails.theme && viewingDetails.theme !== '-' && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Тема</h3>
+                  <p className="font-medium">{viewingDetails.theme}</p>
+                </div>
+              )}
+
+              {viewingDetails.fullDescription && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Описание</h3>
+                  <p className="whitespace-pre-wrap">{viewingDetails.fullDescription}</p>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Участники</h3>
+                <p>{viewingDetails.participants_count || 0} человек записано</p>
+              </div>
+
+              {user && (
+                <div className="pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      if (viewingDetails.is_registered) {
+                        handleUnregister(viewingDetails.id);
+                      } else {
+                        handleRegister(viewingDetails.id);
+                      }
+                      setViewingDetails(null);
+                    }}
+                    disabled={
+                      registering === viewingDetails.id ||
+                      (!viewingDetails.is_registered &&
+                        viewingDetails.max_participants !== null &&
+                        (viewingDetails.participants_count || 0) >= viewingDetails.max_participants)
+                    }
+                    variant={viewingDetails.is_registered ? "outline" : "default"}
+                    className="w-full"
+                  >
+                    {registering === viewingDetails.id ? (
+                      "Загрузка..."
+                    ) : viewingDetails.is_registered ? (
+                      "Отменить запись"
+                    ) : (
+                      "Записаться на мероприятие"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
