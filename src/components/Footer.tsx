@@ -123,6 +123,11 @@ export const Footer: React.FC = () => {
           
           <div className="border-t border-gray-800 mt-3 pt-2 flex flex-col items-center gap-2">
             <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/10">
+              <img 
+                src="/lovable-uploads/russia-award-logo.jpg" 
+                alt="Премия Россия — страна возможностей" 
+                className="h-6 w-auto object-contain"
+              />
               <div className="text-[8px] leading-tight text-center">
                 <div className="text-white/60">Номинант премии</div>
                 <div className="text-white/90 font-bold">РОССИЯ — СТРАНА ВОЗМОЖНОСТЕЙ</div>
@@ -255,6 +260,11 @@ export const Footer: React.FC = () => {
           </p>
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+              <img 
+                src="/lovable-uploads/russia-award-logo.jpg" 
+                alt="Премия Россия — страна возможностей" 
+                className="h-8 w-auto object-contain"
+              />
               <div className="text-[10px] leading-tight">
                 <div className="text-white/60 font-medium">Номинант премии</div>
                 <div className="text-white/90 font-bold">РОССИЯ — СТРАНА ВОЗМОЖНОСТЕЙ</div>
