@@ -29,7 +29,13 @@ interface Participant {
     test_type: string;
     passed: boolean;
   }>;
-  cooper_test?: {
+  cooper_test_before?: {
+    total_minutes: number | null;
+    total_seconds: number | null;
+    fitness_level: string | null;
+    test_date: string;
+  } | null;
+  cooper_test_after?: {
     total_minutes: number | null;
     total_seconds: number | null;
     fitness_level: string | null;
@@ -87,10 +93,10 @@ export const ClubResidentsList: React.FC = () => {
 
         if (crashTestsError) console.error('Error fetching crash tests:', crashTestsError);
 
-        // Получаем последние результаты теста Купера для каждого участника
+        // Получаем результаты теста Купера для каждого участника (начало и конец)
         const { data: cooperTestsData, error: cooperTestsError } = await supabase
           .from('cooper_test_results')
-          .select('user_id, total_minutes, total_seconds, fitness_level, test_date')
+          .select('user_id, total_minutes, total_seconds, fitness_level, test_date, test_phase')
           .eq('verified', true)
           .in('user_id', userIds)
           .order('test_date', { ascending: false });
@@ -102,7 +108,11 @@ export const ClubResidentsList: React.FC = () => {
           const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
-          const latestCooperTest = cooperTestsData?.find(c => c.user_id === profile.user_id) || null;
+          
+          // Получаем тесты "до" и "после"
+          const userCooperTests = cooperTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          const cooperTestBefore = userCooperTests.find(c => c.test_phase === 'before_stream') || null;
+          const cooperTestAfter = userCooperTests.find(c => c.test_phase === 'after_stream' || c.test_phase === 'during_stream') || null;
           
           return {
             ...profile,
@@ -116,7 +126,8 @@ export const ClubResidentsList: React.FC = () => {
             nutrition_points: leaderboardEntry?.nutrition_points || 0,
             totems: userTotems,
             crash_tests: userCrashTests,
-            cooper_test: latestCooperTest,
+            cooper_test_before: cooperTestBefore,
+            cooper_test_after: cooperTestAfter,
           };
         }) || [];
 
@@ -370,26 +381,40 @@ export const ClubResidentsList: React.FC = () => {
                                        <div className="font-bold text-foreground">{participant.kamp_pyramid_points || 0}</div>
                                      </div>
                                    </div>
-                                   {participant.cooper_test && (
+                                   {(participant.cooper_test_before || participant.cooper_test_after) && (
                                      <>
-                                       <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                                         <Activity className="w-5 h-5 text-blue-500" />
-                                         <div>
-                                           <div className="text-xs text-muted-foreground">Тест Купера</div>
-                                           <div className="font-bold text-foreground">
-                                             {formatCooperTime(participant.cooper_test.total_minutes, participant.cooper_test.total_seconds)}
+                                       {participant.cooper_test_before && (
+                                         <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                           <Activity className="w-5 h-5 text-blue-500" />
+                                           <div>
+                                             <div className="text-xs text-muted-foreground">Тест Купера (начало)</div>
+                                             <div className="font-bold text-foreground">
+                                               {formatCooperTime(participant.cooper_test_before.total_minutes, participant.cooper_test_before.total_seconds)}
+                                               {participant.cooper_test_before.fitness_level && (
+                                                 <span className={`ml-2 text-xs ${getFitnessLevelColor(participant.cooper_test_before.fitness_level)}`}>
+                                                   ({getFitnessLevelLabel(participant.cooper_test_before.fitness_level)})
+                                                 </span>
+                                               )}
+                                             </div>
                                            </div>
                                          </div>
-                                       </div>
-                                       <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                                         <Target className="w-5 h-5 text-green-500" />
-                                         <div>
-                                           <div className="text-xs text-muted-foreground">Уровень физ. подготовки</div>
-                                           <div className={`font-bold ${getFitnessLevelColor(participant.cooper_test.fitness_level)}`}>
-                                             {getFitnessLevelLabel(participant.cooper_test.fitness_level)}
+                                       )}
+                                       {participant.cooper_test_after && (
+                                         <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                           <Target className="w-5 h-5 text-green-500" />
+                                           <div>
+                                             <div className="text-xs text-muted-foreground">Тест Купера (конец)</div>
+                                             <div className="font-bold text-foreground">
+                                               {formatCooperTime(participant.cooper_test_after.total_minutes, participant.cooper_test_after.total_seconds)}
+                                               {participant.cooper_test_after.fitness_level && (
+                                                 <span className={`ml-2 text-xs ${getFitnessLevelColor(participant.cooper_test_after.fitness_level)}`}>
+                                                   ({getFitnessLevelLabel(participant.cooper_test_after.fitness_level)})
+                                                 </span>
+                                               )}
+                                             </div>
                                            </div>
                                          </div>
-                                       </div>
+                                       )}
                                      </>
                                    )}
                                  </div>
