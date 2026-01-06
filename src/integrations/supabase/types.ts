@@ -908,9 +908,12 @@ export type Database = {
           join_date: string | null
           last_name: string | null
           leaderboard_visible: boolean | null
+          middle_name: string | null
           participant_status:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
+          personal_data_consent: boolean | null
+          personal_data_consent_date: string | null
           phone: string | null
           profile_private: boolean | null
           rank_position: number | null
@@ -942,9 +945,12 @@ export type Database = {
           join_date?: string | null
           last_name?: string | null
           leaderboard_visible?: boolean | null
+          middle_name?: string | null
           participant_status?:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
+          personal_data_consent?: boolean | null
+          personal_data_consent_date?: string | null
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
@@ -976,9 +982,12 @@ export type Database = {
           join_date?: string | null
           last_name?: string | null
           leaderboard_visible?: boolean | null
+          middle_name?: string | null
           participant_status?:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
+          personal_data_consent?: boolean | null
+          personal_data_consent_date?: string | null
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
