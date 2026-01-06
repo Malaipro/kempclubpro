@@ -123,11 +123,14 @@ serve(async (req) => {
 
     // Отправляем в Podpislon API
     // Документация: PUT https://podpislon.ru/integration/add-document
-    // Обязательные поля: phone, name, last_name, agreement, file (массив base64 PDF)
+    // Используем шаблон на стороне Podpislon (template_id)
     console.log('Sending request to Podpislon API...');
     console.log('Phone:', phoneNumber);
     console.log('Name:', fullName);
     console.log('Webhook URL:', webhookUrl);
+    
+    // ID шаблона из Podpislon (нужно указать реальный ID из личного кабинета Podpislon)
+    const templateId = Deno.env.get('PODPISLON_TEMPLATE_ID') || '';
     
     // Формируем тело запроса согласно API документации
     const requestBody: Record<string, unknown> = {
@@ -139,6 +142,12 @@ serve(async (req) => {
       // Передаём данные контакта для подстановки в шаблон
       contact: contactFields,
     };
+    
+    // Если указан ID шаблона, добавляем его
+    if (templateId) {
+      requestBody.template_id = templateId;
+      console.log('Using template_id:', templateId);
+    }
 
     // Если есть email, добавляем
     if (profile.email) {
