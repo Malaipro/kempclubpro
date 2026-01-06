@@ -6,14 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PodpislonWebhookPayload {
-  document_id?: string;
-  id?: string;
-  status: string; // sent, viewed, signed, cancelled
-  signed_at?: string;
-  viewed_at?: string;
-  signed_pdf_url?: string;
-}
+// Podpislon отправляет webhooks в формате application/x-www-form-urlencoded
+// События: DOCUMENT_OPENED (просмотрен), DOCUMENT_SIGNED (подписан)
+// Поля: EVENT, FILE_ID, COMPANY_ID, SIGNATURE, CONTACT (только для OPENED)
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -27,15 +22,66 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload = await req.json() as PodpislonWebhookPayload;
-    const documentId = payload.document_id || payload.id;
-    
-    console.log('Received webhook from Podpislon:', payload);
+    // Получаем данные в зависимости от Content-Type
+    const contentType = req.headers.get('content-type') || '';
+    let eventType: string | null = null;
+    let fileId: string | null = null;
+    let companyId: string | null = null;
+    let signature: string | null = null;
+    let contact: string | null = null;
 
-    if (!documentId) {
-      console.error('No document_id in webhook payload');
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Podpislon отправляет в формате form-urlencoded
+      const formData = await req.text();
+      const params = new URLSearchParams(formData);
+      
+      eventType = params.get('EVENT');
+      fileId = params.get('FILE_ID');
+      companyId = params.get('COMPANY_ID');
+      signature = params.get('SIGNATURE');
+      contact = params.get('CONTACT');
+      
+      console.log('Received form-urlencoded webhook:', {
+        EVENT: eventType,
+        FILE_ID: fileId,
+        COMPANY_ID: companyId,
+        SIGNATURE: signature ? '[HIDDEN]' : null,
+        CONTACT: contact,
+      });
+    } else if (contentType.includes('application/json')) {
+      // Fallback для JSON формата
+      const payload = await req.json();
+      console.log('Received JSON webhook:', payload);
+      
+      eventType = payload.EVENT || payload.event;
+      fileId = payload.FILE_ID || payload.file_id || payload.id || payload.document_id;
+      companyId = payload.COMPANY_ID || payload.company_id;
+      signature = payload.SIGNATURE || payload.signature;
+      contact = payload.CONTACT || payload.contact;
+    } else {
+      // Попробуем как text
+      const text = await req.text();
+      console.log('Received raw webhook:', text);
+      
+      // Попробуем распарсить как URL params
+      try {
+        const params = new URLSearchParams(text);
+        eventType = params.get('EVENT');
+        fileId = params.get('FILE_ID');
+        companyId = params.get('COMPANY_ID');
+        signature = params.get('SIGNATURE');
+        contact = params.get('CONTACT');
+      } catch {
+        console.error('Failed to parse webhook data');
+      }
+    }
+
+    console.log('Parsed webhook data:', { eventType, fileId, companyId });
+
+    if (!fileId) {
+      console.error('No FILE_ID in webhook payload');
       return new Response(
-        JSON.stringify({ error: 'Missing document_id' }),
+        JSON.stringify({ error: 'Missing FILE_ID' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -44,34 +90,37 @@ serve(async (req) => {
     const { data: contract, error: findError } = await supabase
       .from('contracts')
       .select('*')
-      .eq('podpislon_document_id', documentId)
+      .eq('podpislon_document_id', String(fileId))
       .single();
 
     if (findError || !contract) {
-      console.error('Contract not found for document_id:', documentId, findError);
+      console.error('Contract not found for FILE_ID:', fileId, findError);
+      // Возвращаем 200, чтобы Podpislon не повторял запрос
       return new Response(
-        JSON.stringify({ error: 'Contract not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, message: 'Contract not found but acknowledged' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Обновляем статус договора
+    // Определяем новый статус и обновляемые поля
     const updateData: Record<string, any> = {
-      status: payload.status,
       updated_at: new Date().toISOString(),
     };
 
-    if (payload.status === 'viewed' && payload.viewed_at) {
-      updateData.viewed_at = payload.viewed_at;
+    if (eventType === 'DOCUMENT_OPENED') {
+      updateData.status = 'viewed';
+      updateData.viewed_at = new Date().toISOString();
+      console.log('Document viewed:', contract.id);
+    } else if (eventType === 'DOCUMENT_SIGNED') {
+      updateData.status = 'signed';
+      updateData.signed_at = new Date().toISOString();
+      console.log('Document signed:', contract.id);
+    } else {
+      console.log('Unknown event type:', eventType);
+      // Всё равно отмечаем получение
     }
 
-    if (payload.status === 'signed') {
-      updateData.signed_at = payload.signed_at || new Date().toISOString();
-      if (payload.signed_pdf_url) {
-        updateData.signed_pdf_url = payload.signed_pdf_url;
-      }
-    }
-
+    // Обновляем статус договора
     const { error: updateError } = await supabase
       .from('contracts')
       .update(updateData)
@@ -85,7 +134,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Contract ${contract.id} updated to status: ${payload.status}`);
+    console.log(`Contract ${contract.id} updated to status: ${updateData.status || 'unchanged'}`);
 
     // Логируем в audit_log
     await supabase
@@ -97,6 +146,7 @@ serve(async (req) => {
         record_id: contract.id,
       });
 
+    // Podpislon ожидает успешный ответ
     return new Response(
       JSON.stringify({ success: true, message: 'Webhook processed' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -104,9 +154,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in podpislon-webhook:', error);
+    // Возвращаем 200, чтобы Podpislon не повторял запрос
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, error: error.message }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

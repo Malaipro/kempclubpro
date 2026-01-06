@@ -85,20 +85,19 @@ serve(async (req) => {
       );
     }
 
-    // Формируем данные для Podpislon API
-    const fullName = `${profile.last_name} ${profile.first_name}`.trim();
+    // Формируем данные для договора
+    const fullName = `${profile.last_name || ''} ${profile.first_name || ''}`.trim();
     const passport = `${contractData.passport_series} ${contractData.passport_number}`;
+    const issuedDate = new Date(contractData.passport_issued_date).toLocaleDateString('ru-RU');
+    const currentDate = new Date().toLocaleDateString('ru-RU');
     
     // Текст договора (шаблон)
-    const contractText = `
-ДОГОВОР ОКАЗАНИЯ УСЛУГ
+    const contractText = `ДОГОВОР ОКАЗАНИЯ УСЛУГ
 
-г. Москва                                              ${new Date().toLocaleDateString('ru-RU')}
+г. Москва                                              ${currentDate}
 
-${fullName}, паспорт ${passport}, выдан ${contractData.passport_issued_by} ${new Date(contractData.passport_issued_date).toLocaleDateString('ru-RU')}, 
-код подразделения ${contractData.passport_department_code || 'не указан'},
-зарегистрированный по адресу: ${contractData.registration_address},
-${contractData.inn ? `ИНН: ${contractData.inn},` : ''}
+${fullName}, паспорт ${passport}, выдан ${contractData.passport_issued_by} ${issuedDate}, ${contractData.passport_department_code ? `код подразделения ${contractData.passport_department_code},` : ''}
+зарегистрированный по адресу: ${contractData.registration_address},${contractData.inn ? ` ИНН: ${contractData.inn},` : ''}
 именуемый в дальнейшем «Заказчик», 
 
 и ИП Шакирзянов Дмитрий Ринатович, именуемый в дальнейшем «Исполнитель», заключили настоящий Договор о нижеследующем:
@@ -115,37 +114,64 @@ ${contractData.inn ? `ИНН: ${contractData.inn},` : ''}
 4. ПОДПИСИ СТОРОН
 
 Заказчик: ${fullName}
-Подпись: ____________________
-`.trim();
+Подпись: ____________________`;
+
+    // Формируем номер телефона (только цифры, с 7 в начале)
+    let phoneNumber = profile.phone.replace(/\D/g, '');
+    if (phoneNumber.startsWith('8')) {
+      phoneNumber = '7' + phoneNumber.slice(1);
+    } else if (!phoneNumber.startsWith('7')) {
+      phoneNumber = '7' + phoneNumber;
+    }
+
+    // Webhook URL для получения статусов
+    const webhookUrl = `${supabaseUrl}/functions/v1/podpislon-webhook`;
 
     // Отправляем в Podpislon API
+    // Документация: PUT https://podpislon.ru/integration/add-document
     console.log('Sending request to Podpislon API...');
+    console.log('Phone:', phoneNumber);
+    console.log('Webhook URL:', webhookUrl);
     
-    const podpislonResponse = await fetch('https://podpislon.ru/api/v1/documents/send', {
-      method: 'POST',
+    const podpislonResponse = await fetch('https://podpislon.ru/integration/add-document', {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${podpislonApiKey}`,
+        'X-Api-Key': podpislonApiKey,
       },
       body: JSON.stringify({
-        phone: profile.phone.replace(/\D/g, ''), // Только цифры
+        contact: phoneNumber,
+        name: fullName,
         text: contractText,
-        signer_name: fullName,
-        callback_url: `${supabaseUrl}/functions/v1/podpislon-webhook`,
+        webhook: webhookUrl,
+        // Опционально: можно добавить файл PDF в base64
+        // file: base64EncodedPdf,
       }),
     });
 
+    const responseText = await podpislonResponse.text();
+    console.log('Podpislon response status:', podpislonResponse.status);
+    console.log('Podpislon response:', responseText);
+
     if (!podpislonResponse.ok) {
-      const errorText = await podpislonResponse.text();
-      console.error('Podpislon API error:', errorText);
+      console.error('Podpislon API error:', responseText);
       return new Response(
-        JSON.stringify({ error: `Podpislon API error: ${errorText}` }),
+        JSON.stringify({ error: `Podpislon API error: ${responseText}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const podpislonResult = await podpislonResponse.json();
-    console.log('Podpislon response:', podpislonResult);
+    let podpislonResult;
+    try {
+      podpislonResult = JSON.parse(responseText);
+    } catch {
+      podpislonResult = { id: responseText };
+    }
+    
+    console.log('Podpislon parsed result:', podpislonResult);
+
+    // Получаем ID документа из ответа
+    const documentId = podpislonResult.id || podpislonResult.file_id || podpislonResult.FILE_ID || null;
 
     // Создаём запись в таблице contracts
     const { data: contract, error: contractError } = await supabase
@@ -153,7 +179,7 @@ ${contractData.inn ? `ИНН: ${contractData.inn},` : ''}
       .insert({
         user_id: userId,
         stream_id: streamId || null,
-        podpislon_document_id: podpislonResult.document_id || podpislonResult.id,
+        podpislon_document_id: documentId ? String(documentId) : null,
         status: 'sent',
         sent_at: new Date().toISOString(),
       })
@@ -174,8 +200,8 @@ ${contractData.inn ? `ИНН: ${contractData.inn},` : ''}
       JSON.stringify({ 
         success: true, 
         contractId: contract.id,
-        documentId: podpislonResult.document_id || podpislonResult.id,
-        message: 'Contract sent for signing'
+        documentId: documentId,
+        message: 'Contract sent for signing. SMS will be delivered to the participant.'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
