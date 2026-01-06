@@ -27,9 +27,3 @@ verify_jwt = false
 
 [functions.calendar-feed]
 verify_jwt = false
-
-[functions.podpislon-send]
-verify_jwt = false
-
-[functions.podpislon-webhook]
-verify_jwt = false
