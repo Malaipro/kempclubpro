@@ -12,7 +12,8 @@ import {
   UserCheck,
   Database,
   Target,
-  Calendar
+  Calendar,
+  FileSignature
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -30,6 +31,7 @@ import { CrashTestManagement } from '@/components/admin/CrashTestManagement';
 import { TrainingSessionManagement } from '@/components/admin/TrainingSessionManagement';
 import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
+import { ContractManagement } from '@/components/admin/ContractManagement';
 
 interface TabConfig {
   id: string;
@@ -109,6 +111,13 @@ const adminTabs: TabConfig[] = [
     icon: UserCheck,
     description: 'Управление согласиями на обработку данных',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'contracts', 
+    label: 'Договоры', 
+    icon: FileSignature,
+    description: 'Управление договорами и паспортными данными',
+    requiresSuperAdmin: true
   }
 ];
 
@@ -180,6 +189,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <SecurityAuditLog />;
       case 'testimonial-consent':
         return <TestimonialConsentManager />;
+      case 'contracts':
+        return <ContractManagement />;
       default:
         return (
           <div className="text-center py-8">

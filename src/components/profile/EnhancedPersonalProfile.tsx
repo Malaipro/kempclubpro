@@ -37,6 +37,7 @@ import { CooperTestResults } from '@/components/cooper/CooperTestResults';
 import { ParticipantAchievements } from './ParticipantAchievements';
 import { UserTotems } from './UserTotems';
 import { UserActivities } from '@/components/leaderboard/UserActivities';
+import { UserContracts } from './UserContracts';
 
 interface Profile {
   id: string;
@@ -403,6 +404,9 @@ export const EnhancedPersonalProfile: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Документы (договоры) */}
+      <UserContracts />
+      
       {/* Карточка достижений */}
       <ParticipantAchievements />
       
