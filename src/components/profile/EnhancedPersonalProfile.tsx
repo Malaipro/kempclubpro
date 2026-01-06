@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,7 +23,9 @@ import {
   Activity,
   CheckCircle,
   XCircle,
-  Zap
+  Zap,
+  FileText,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,7 +43,9 @@ interface Profile {
   user_id: string;
   first_name: string;
   last_name: string;
+  middle_name?: string;
   display_name: string;
+  email?: string;
   date_of_birth?: string;
   height_cm?: number;
   weight_kg?: number;
@@ -48,6 +53,20 @@ interface Profile {
   weight_after_stream?: number;
   phone?: string;
   telegram?: string;
+  personal_data_consent?: boolean;
+  personal_data_consent_date?: string;
+}
+
+interface ContractData {
+  id?: string;
+  user_id?: string;
+  passport_series?: string;
+  passport_number?: string;
+  passport_issued_by?: string;
+  passport_issued_date?: string;
+  passport_department_code?: string;
+  registration_address?: string;
+  inn?: string;
 }
 
 interface Habit {
@@ -81,6 +100,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [contractData, setContractData] = useState<ContractData>({});
   const [habits, setHabits] = useState<Habit[]>([]);
   const [cooperTests, setCooperTests] = useState<CooperTest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +110,8 @@ export const EnhancedPersonalProfile: React.FC = () => {
   const [profileForm, setProfileForm] = useState({
     first_name: '',
     last_name: '',
+    middle_name: '',
+    email: '',
     date_of_birth: null as Date | null,
     height_cm: '',
     weight_kg: '',
@@ -97,6 +119,18 @@ export const EnhancedPersonalProfile: React.FC = () => {
     weight_after_stream: '',
     phone: '',
     telegram: '',
+    personal_data_consent: false,
+    personal_data_consent_date: null as string | null,
+  });
+
+  const [contractForm, setContractForm] = useState({
+    passport_series: '',
+    passport_number: '',
+    passport_issued_by: '',
+    passport_issued_date: '',
+    passport_department_code: '',
+    registration_address: '',
+    inn: '',
   });
 
   const [habitForm, setHabitForm] = useState({
@@ -124,7 +158,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
       setProfile(profileData);
@@ -133,6 +167,8 @@ export const EnhancedPersonalProfile: React.FC = () => {
       setProfileForm({
         first_name: profileData?.first_name || '',
         last_name: profileData?.last_name || '',
+        middle_name: profileData?.middle_name || '',
+        email: profileData?.email || user.email || '',
         date_of_birth: profileData?.date_of_birth ? new Date(profileData.date_of_birth) : null,
         height_cm: profileData?.height_cm?.toString() || '',
         weight_kg: profileData?.weight_kg?.toString() || '',
@@ -140,7 +176,33 @@ export const EnhancedPersonalProfile: React.FC = () => {
         weight_after_stream: profileData?.weight_after_stream?.toString() || '',
         phone: profileData?.phone || '',
         telegram: profileData?.telegram || '',
+        personal_data_consent: profileData?.personal_data_consent || false,
+        personal_data_consent_date: profileData?.personal_data_consent_date || null,
       });
+
+      // Загружаем паспортные данные
+      const { data: contractDataResult, error: contractError } = await supabase
+        .from('contract_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (contractError && contractError.code !== 'PGRST116') {
+        console.error('Error loading contract data:', contractError);
+      }
+
+      if (contractDataResult) {
+        setContractData(contractDataResult);
+        setContractForm({
+          passport_series: contractDataResult.passport_series || '',
+          passport_number: contractDataResult.passport_number || '',
+          passport_issued_by: contractDataResult.passport_issued_by || '',
+          passport_issued_date: contractDataResult.passport_issued_date || '',
+          passport_department_code: contractDataResult.passport_department_code || '',
+          registration_address: contractDataResult.registration_address || '',
+          inn: contractDataResult.inn || '',
+        });
+      }
 
       // Загружаем привычки
       const { data: habitsData, error: habitsError } = await supabase
@@ -175,12 +237,15 @@ export const EnhancedPersonalProfile: React.FC = () => {
   };
 
   const handleProfileSave = async () => {
-    if (!user || !profile) return;
+    if (!user) return;
 
     try {
       const updateData = {
+        user_id: user.id,
         first_name: profileForm.first_name,
         last_name: profileForm.last_name,
+        middle_name: profileForm.middle_name,
+        email: profileForm.email,
         display_name: `${profileForm.first_name} ${profileForm.last_name}`,
         date_of_birth: profileForm.date_of_birth?.toISOString().split('T')[0] || null,
         height_cm: profileForm.height_cm ? parseInt(profileForm.height_cm) : null,
@@ -189,20 +254,39 @@ export const EnhancedPersonalProfile: React.FC = () => {
         weight_after_stream: profileForm.weight_after_stream ? parseInt(profileForm.weight_after_stream) : null,
         phone: profileForm.phone,
         telegram: profileForm.telegram,
+        personal_data_consent: profileForm.personal_data_consent,
+        personal_data_consent_date: profileForm.personal_data_consent ? (profileForm.personal_data_consent_date || new Date().toISOString()) : null,
       };
 
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update(updateData)
-        .eq('user_id', user.id);
+        .upsert(updateData);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Сохраняем паспортные данные
+      const contractDataToSave = {
+        user_id: user.id,
+        passport_series: contractForm.passport_series || null,
+        passport_number: contractForm.passport_number || null,
+        passport_issued_by: contractForm.passport_issued_by || null,
+        passport_issued_date: contractForm.passport_issued_date || null,
+        passport_department_code: contractForm.passport_department_code || null,
+        registration_address: contractForm.registration_address || null,
+        inn: contractForm.inn || null,
+      };
+
+      const { error: contractError } = await supabase
+        .from('contract_data')
+        .upsert(contractDataToSave, { onConflict: 'user_id' });
+
+      if (contractError) throw contractError;
 
       setEditingProfile(false);
       loadProfileData();
       toast({
-        title: 'Профиль обновлен',
-        description: 'Данные профиля успешно сохранены',
+        title: 'Данные сохранены',
+        description: 'Профиль и паспортные данные успешно сохранены',
       });
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -212,6 +296,14 @@ export const EnhancedPersonalProfile: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleConsentChange = (checked: boolean) => {
+    setProfileForm(prev => ({
+      ...prev,
+      personal_data_consent: checked,
+      personal_data_consent_date: checked ? new Date().toISOString() : null,
+    }));
   };
 
   const handleHabitSave = async () => {
@@ -384,103 +476,88 @@ export const EnhancedPersonalProfile: React.FC = () => {
             </CardHeader>
             <CardContent>
               {editingProfile ? (
-                <div className="space-y-4">
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label>Имя</Label>
-                      <Input
-                        value={profileForm.first_name}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, first_name: e.target.value }))}
-                        placeholder="Введите имя"
-                      />
-                    </div>
-                    <div>
-                      <Label>Фамилия</Label>
-                      <Input
-                        value={profileForm.last_name}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, last_name: e.target.value }))}
-                        placeholder="Введите фамилию"
-                      />
-                    </div>
-                  </div>
-
+                <div className="space-y-6">
+                  {/* ФИО */}
                   <div>
-                    <Label>Дата рождения</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {profileForm.date_of_birth
-                            ? format(profileForm.date_of_birth, "dd MMMM yyyy", { locale: ru })
-                            : "Выберите дату"
-                          }
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={profileForm.date_of_birth}
-                          onSelect={(date) => setProfileForm(prev => ({ ...prev, date_of_birth: date }))}
-                          disabled={(date) => date > new Date()}
-                          initialFocus
-                          className="pointer-events-auto"
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <User className="w-4 h-4 text-primary" />
+                      Личные данные
+                    </h3>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4`}>
+                      <div>
+                        <Label>Фамилия *</Label>
+                        <Input
+                          value={profileForm.last_name}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, last_name: e.target.value }))}
+                          placeholder="Иванов"
                         />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label>Рост (см)</Label>
-                      <Input
-                        type="number"
-                        value={profileForm.height_cm}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, height_cm: e.target.value }))}
-                        placeholder="170"
-                      />
-                    </div>
-                    <div>
-                      <Label>Текущий вес (кг)</Label>
-                      <Input
-                        type="number"
-                        value={profileForm.weight_kg}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, weight_kg: e.target.value }))}
-                        placeholder="70"
-                      />
+                      </div>
+                      <div>
+                        <Label>Имя *</Label>
+                        <Input
+                          value={profileForm.first_name}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, first_name: e.target.value }))}
+                          placeholder="Иван"
+                        />
+                      </div>
+                      <div>
+                        <Label>Отчество</Label>
+                        <Input
+                          value={profileForm.middle_name}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, middle_name: e.target.value }))}
+                          placeholder="Иванович"
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  {/* Контакты */}
                   <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
-                      <Label>Вес до потока (кг)</Label>
-                      <Input
-                        type="number"
-                        value={profileForm.weight_before_stream}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, weight_before_stream: e.target.value }))}
-                        placeholder="75"
-                      />
+                      <Label>Дата рождения</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {profileForm.date_of_birth
+                              ? format(profileForm.date_of_birth, "dd MMMM yyyy", { locale: ru })
+                              : "Выберите дату"
+                            }
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-white border border-gray-300 shadow-lg z-[9999]" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={profileForm.date_of_birth}
+                            onSelect={(date) => setProfileForm(prev => ({ ...prev, date_of_birth: date }))}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div>
-                      <Label>Вес после потока (кг)</Label>
-                      <Input
-                        type="number"
-                        value={profileForm.weight_after_stream}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, weight_after_stream: e.target.value }))}
-                        placeholder="70"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label>Телефон</Label>
+                      <Label>Телефон *</Label>
                       <Input
                         value={profileForm.phone}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
                         placeholder="+7 (999) 123-45-67"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                    <div>
+                      <Label>E-mail</Label>
+                      <Input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="example@mail.ru"
                       />
                     </div>
                     <div>
@@ -493,7 +570,161 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2`}>
+                  {/* Паспортные данные */}
+                  <div className="pt-4 border-t">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Паспортные данные (для договора)
+                    </h3>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                      <div>
+                        <Label>Серия паспорта</Label>
+                        <Input
+                          value={contractForm.passport_series}
+                          onChange={(e) => setContractForm(prev => ({ ...prev, passport_series: e.target.value }))}
+                          placeholder="1234"
+                          maxLength={4}
+                        />
+                      </div>
+                      <div>
+                        <Label>Номер паспорта</Label>
+                        <Input
+                          value={contractForm.passport_number}
+                          onChange={(e) => setContractForm(prev => ({ ...prev, passport_number: e.target.value }))}
+                          placeholder="567890"
+                          maxLength={6}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <Label>Кем выдан</Label>
+                      <Input
+                        value={contractForm.passport_issued_by}
+                        onChange={(e) => setContractForm(prev => ({ ...prev, passport_issued_by: e.target.value }))}
+                        placeholder="ГУ МВД России по г. Москве"
+                      />
+                    </div>
+
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mt-4`}>
+                      <div>
+                        <Label>Дата выдачи</Label>
+                        <Input
+                          type="date"
+                          value={contractForm.passport_issued_date}
+                          onChange={(e) => setContractForm(prev => ({ ...prev, passport_issued_date: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Код подразделения</Label>
+                        <Input
+                          value={contractForm.passport_department_code}
+                          onChange={(e) => setContractForm(prev => ({ ...prev, passport_department_code: e.target.value }))}
+                          placeholder="770-001"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <Label>Адрес по прописке</Label>
+                      <Input
+                        value={contractForm.registration_address}
+                        onChange={(e) => setContractForm(prev => ({ ...prev, registration_address: e.target.value }))}
+                        placeholder="г. Москва, ул. Примерная, д. 1, кв. 1"
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <Label>ИНН (при наличии)</Label>
+                      <Input
+                        value={contractForm.inn}
+                        onChange={(e) => setContractForm(prev => ({ ...prev, inn: e.target.value }))}
+                        placeholder="123456789012"
+                        maxLength={12}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Физические параметры */}
+                  <div className="pt-4 border-t">
+                    <h3 className="font-semibold mb-3">Физические параметры</h3>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                      <div>
+                        <Label>Рост (см)</Label>
+                        <Input
+                          type="number"
+                          value={profileForm.height_cm}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, height_cm: e.target.value }))}
+                          placeholder="170"
+                        />
+                      </div>
+                      <div>
+                        <Label>Текущий вес (кг)</Label>
+                        <Input
+                          type="number"
+                          value={profileForm.weight_kg}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, weight_kg: e.target.value }))}
+                          placeholder="70"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mt-4`}>
+                      <div>
+                        <Label>Вес до потока (кг)</Label>
+                        <Input
+                          type="number"
+                          value={profileForm.weight_before_stream}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, weight_before_stream: e.target.value }))}
+                          placeholder="75"
+                        />
+                      </div>
+                      <div>
+                        <Label>Вес после потока (кг)</Label>
+                        <Input
+                          type="number"
+                          value={profileForm.weight_after_stream}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, weight_after_stream: e.target.value }))}
+                          placeholder="70"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Согласие на обработку ПД */}
+                  <div className="pt-4 border-t">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      Согласия
+                    </h3>
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="personal_data_consent"
+                          checked={profileForm.personal_data_consent}
+                          onCheckedChange={handleConsentChange}
+                          className="mt-1"
+                        />
+                        <div>
+                          <Label htmlFor="personal_data_consent" className="text-sm font-medium cursor-pointer">
+                            Согласие на обработку персональных данных *
+                          </Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Я даю согласие на обработку моих персональных данных в соответствии с 
+                            Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» 
+                            для целей заключения и исполнения договора об оказании услуг.
+                          </p>
+                          {profileForm.personal_data_consent && profileForm.personal_data_consent_date && (
+                            <p className="text-xs text-green-600 mt-2">
+                              ✓ Согласие дано: {format(new Date(profileForm.personal_data_consent_date), "dd.MM.yyyy HH:mm")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 pt-4`}>
                     <Button onClick={handleProfileSave} className="bg-kamp-accent hover:bg-red-600 text-white font-bold shadow-lg">
                       Сохранить
                     </Button>
@@ -503,15 +734,20 @@ export const EnhancedPersonalProfile: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6`}>
                     <div>
-                      <h3 className="font-semibold mb-2">Личные данные</h3>
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <User className="w-4 h-4 text-primary" />
+                        Личные данные
+                      </h3>
                       <div className="space-y-2 text-sm">
-                        <p><span className="text-muted-foreground">Имя:</span> {profile?.first_name || 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Фамилия:</span> {profile?.last_name || 'Не указано'}</p>
+                        <p><span className="text-muted-foreground">Имя:</span> {profile?.first_name || 'Не указано'}</p>
+                        <p><span className="text-muted-foreground">Отчество:</span> {profile?.middle_name || 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Дата рождения:</span> {profile?.date_of_birth ? format(new Date(profile.date_of_birth), "dd.MM.yyyy") : 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Телефон:</span> {profile?.phone || 'Не указан'}</p>
+                        <p><span className="text-muted-foreground">E-mail:</span> {profile?.email || user?.email || 'Не указан'}</p>
                         <p><span className="text-muted-foreground">Telegram:</span> {profile?.telegram || 'Не указан'}</p>
                       </div>
                     </div>
@@ -525,6 +761,33 @@ export const EnhancedPersonalProfile: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Паспортные данные - только если заполнены */}
+                  {(contractData.passport_series || contractData.passport_number) && (
+                    <div className="pt-4 border-t">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-primary" />
+                        Паспортные данные
+                      </h3>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-muted-foreground">Серия и номер:</span> {contractData.passport_series} {contractData.passport_number}</p>
+                        {contractData.passport_issued_by && <p><span className="text-muted-foreground">Кем выдан:</span> {contractData.passport_issued_by}</p>}
+                        {contractData.passport_issued_date && <p><span className="text-muted-foreground">Дата выдачи:</span> {format(new Date(contractData.passport_issued_date), "dd.MM.yyyy")}</p>}
+                        {contractData.passport_department_code && <p><span className="text-muted-foreground">Код подразделения:</span> {contractData.passport_department_code}</p>}
+                        {contractData.registration_address && <p><span className="text-muted-foreground">Адрес прописки:</span> {contractData.registration_address}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Статус согласия */}
+                  {profile?.personal_data_consent && (
+                    <div className="pt-4 border-t">
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <Shield className="w-4 h-4" />
+                        <span>Согласие на обработку ПД получено {profile.personal_data_consent_date && format(new Date(profile.personal_data_consent_date), "dd.MM.yyyy")}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
