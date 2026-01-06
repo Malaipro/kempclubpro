@@ -102,14 +102,17 @@ serve(async (req) => {
     // Webhook URL для получения статусов
     const webhookUrl = `${supabaseUrl}/functions/v1/podpislon-webhook`;
 
-    // Формируем объект contact для подстановки в шаблон Podpislon
+    // Формируем полное ФИО
+    const fullName = `${profile.last_name || ''} ${profile.first_name || ''}`.trim();
+
+    // Формируем данные контакта для подстановки в шаблон Podpislon
     // Переменные в шаблоне: ${contact.lastname}, ${contact.firstname}, ${contact.secondname},
     // ${contact.passport_num}, ${contact.passport_org}, ${contact.passport_date},
     // ${contact.passport_address}, ${contact.phone}, ${contact.email}
-    const contactData = {
+    const contactFields = {
       lastname: profile.last_name || '',
       firstname: profile.first_name || '',
-      secondname: profile.display_name?.split(' ')[2] || '', // Отчество, если есть в display_name
+      secondname: '', // TODO: добавить поле middle_name в profiles
       passport_num: passportNum,
       passport_org: contractData.passport_issued_by || '',
       passport_date: passportDate,
@@ -120,24 +123,37 @@ serve(async (req) => {
 
     // Отправляем в Podpislon API
     // Документация: PUT https://podpislon.ru/integration/add-document
+    // Обязательные поля: phone, name, last_name, agreement, file (массив base64 PDF)
     console.log('Sending request to Podpislon API...');
     console.log('Phone:', phoneNumber);
-    console.log('Contact data:', JSON.stringify(contactData));
+    console.log('Name:', fullName);
     console.log('Webhook URL:', webhookUrl);
     
+    // Формируем тело запроса согласно API документации
+    const requestBody: Record<string, unknown> = {
+      phone: phoneNumber,
+      name: profile.first_name || '',
+      last_name: profile.last_name || '',
+      agreement: 'Y', // Обязательное согласие на обработку ПД
+      webhook: webhookUrl,
+      // Передаём данные контакта для подстановки в шаблон
+      contact: contactFields,
+    };
+
+    // Если есть email, добавляем
+    if (profile.email) {
+      requestBody.email = profile.email;
+    }
+
+    console.log('Request body:', JSON.stringify(requestBody));
+
     const podpislonResponse = await fetch('https://podpislon.ru/integration/add-document', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-Api-Key': podpislonApiKey,
       },
-      body: JSON.stringify({
-        contact: phoneNumber,
-        name: `${contactData.lastname} ${contactData.firstname} ${contactData.secondname}`.trim(),
-        // Передаём данные контакта для подстановки в шаблон
-        contact_data: contactData,
-        webhook: webhookUrl,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const responseText = await podpislonResponse.text();
