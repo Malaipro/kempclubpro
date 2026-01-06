@@ -25,7 +25,7 @@ import {
   Zap,
   FileSignature
 } from 'lucide-react';
-import { ContractDataForm, ContractStatus } from '@/components/contract';
+import { ContractWizard } from '@/components/contract';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -765,9 +765,8 @@ export const EnhancedPersonalProfile: React.FC = () => {
           <CooperTestResults />
         </TabsContent>
 
-        <TabsContent value="contract" className="mt-6 space-y-6">
-          <ContractStatus />
-          <ContractDataForm />
+        <TabsContent value="contract" className="mt-6">
+          <ContractWizard />
         </TabsContent>
       </Tabs>
     </div>
