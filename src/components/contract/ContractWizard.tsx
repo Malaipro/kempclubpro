@@ -4,13 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DatePickerWithInput } from '@/components/ui/date-picker-with-input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Calendar as CalendarIcon, 
   Save, 
   FileText, 
   AlertCircle,
@@ -448,34 +446,17 @@ export const ContractWizard: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Дата выдачи *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${errors.passport_issued_date ? 'border-destructive' : ''}`}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.passport_issued_date
-                          ? format(formData.passport_issued_date, "dd.MM.yyyy", { locale: ru })
-                          : "Выберите дату"
-                        }
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-background border shadow-lg z-50" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.passport_issued_date || undefined}
-                        onSelect={(date) => {
-                          setFormData(prev => ({ ...prev, passport_issued_date: date || null }));
-                          if (errors.passport_issued_date) {
-                            setErrors(prev => ({ ...prev, passport_issued_date: undefined }));
-                          }
-                        }}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerWithInput
+                    value={formData.passport_issued_date}
+                    onChange={(date) => {
+                      setFormData(prev => ({ ...prev, passport_issued_date: date }));
+                      if (errors.passport_issued_date) {
+                        setErrors(prev => ({ ...prev, passport_issued_date: undefined }));
+                      }
+                    }}
+                    disabled={(date) => date > new Date()}
+                    hasError={!!errors.passport_issued_date}
+                  />
                   {errors.passport_issued_date && (
                     <p className="text-sm text-destructive mt-1">{errors.passport_issued_date}</p>
                   )}
