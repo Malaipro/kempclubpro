@@ -85,37 +85,6 @@ serve(async (req) => {
       );
     }
 
-    // Формируем данные для договора
-    const fullName = `${profile.last_name || ''} ${profile.first_name || ''}`.trim();
-    const passport = `${contractData.passport_series} ${contractData.passport_number}`;
-    const issuedDate = new Date(contractData.passport_issued_date).toLocaleDateString('ru-RU');
-    const currentDate = new Date().toLocaleDateString('ru-RU');
-    
-    // Текст договора (шаблон)
-    const contractText = `ДОГОВОР ОКАЗАНИЯ УСЛУГ
-
-г. Москва                                              ${currentDate}
-
-${fullName}, паспорт ${passport}, выдан ${contractData.passport_issued_by} ${issuedDate}, ${contractData.passport_department_code ? `код подразделения ${contractData.passport_department_code},` : ''}
-зарегистрированный по адресу: ${contractData.registration_address},${contractData.inn ? ` ИНН: ${contractData.inn},` : ''}
-именуемый в дальнейшем «Заказчик», 
-
-и ИП Шакирзянов Дмитрий Ринатович, именуемый в дальнейшем «Исполнитель», заключили настоящий Договор о нижеследующем:
-
-1. ПРЕДМЕТ ДОГОВОРА
-1.1. Исполнитель обязуется оказать Заказчику услуги по проведению курса интенсива КЭМП.
-
-2. ПОРЯДОК ОКАЗАНИЯ УСЛУГ
-2.1. Услуги оказываются в соответствии с программой курса.
-
-3. СТОИМОСТЬ И ПОРЯДОК РАСЧЕТОВ
-3.1. Стоимость услуг определяется согласно выбранному тарифу.
-
-4. ПОДПИСИ СТОРОН
-
-Заказчик: ${fullName}
-Подпись: ____________________`;
-
     // Формируем номер телефона (только цифры, с 7 в начале)
     let phoneNumber = profile.phone.replace(/\D/g, '');
     if (phoneNumber.startsWith('8')) {
@@ -124,13 +93,36 @@ ${fullName}, паспорт ${passport}, выдан ${contractData.passport_issu
       phoneNumber = '7' + phoneNumber;
     }
 
+    // Формируем номер паспорта (серия + номер)
+    const passportNum = `${contractData.passport_series} ${contractData.passport_number}`;
+    
+    // Формируем дату выдачи паспорта
+    const passportDate = new Date(contractData.passport_issued_date).toLocaleDateString('ru-RU');
+
     // Webhook URL для получения статусов
     const webhookUrl = `${supabaseUrl}/functions/v1/podpislon-webhook`;
+
+    // Формируем объект contact для подстановки в шаблон Podpislon
+    // Переменные в шаблоне: ${contact.lastname}, ${contact.firstname}, ${contact.secondname},
+    // ${contact.passport_num}, ${contact.passport_org}, ${contact.passport_date},
+    // ${contact.passport_address}, ${contact.phone}, ${contact.email}
+    const contactData = {
+      lastname: profile.last_name || '',
+      firstname: profile.first_name || '',
+      secondname: profile.display_name?.split(' ')[2] || '', // Отчество, если есть в display_name
+      passport_num: passportNum,
+      passport_org: contractData.passport_issued_by || '',
+      passport_date: passportDate,
+      passport_address: contractData.registration_address || '',
+      phone: profile.phone || '',
+      email: profile.email || '',
+    };
 
     // Отправляем в Podpislon API
     // Документация: PUT https://podpislon.ru/integration/add-document
     console.log('Sending request to Podpislon API...');
     console.log('Phone:', phoneNumber);
+    console.log('Contact data:', JSON.stringify(contactData));
     console.log('Webhook URL:', webhookUrl);
     
     const podpislonResponse = await fetch('https://podpislon.ru/integration/add-document', {
@@ -141,11 +133,10 @@ ${fullName}, паспорт ${passport}, выдан ${contractData.passport_issu
       },
       body: JSON.stringify({
         contact: phoneNumber,
-        name: fullName,
-        text: contractText,
+        name: `${contactData.lastname} ${contactData.firstname} ${contactData.secondname}`.trim(),
+        // Передаём данные контакта для подстановки в шаблон
+        contact_data: contactData,
         webhook: webhookUrl,
-        // Опционально: можно добавить файл PDF в base64
-        // file: base64EncodedPdf,
       }),
     });
 
