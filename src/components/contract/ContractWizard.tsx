@@ -518,9 +518,10 @@ export const ContractWizard: React.FC = () => {
 
             <Button 
               onClick={handleSaveData} 
-              disabled={saving || !hasPhone}
+              disabled={saving}
               className="w-full"
               size="lg"
+              variant="default"
             >
               {saving ? (
                 <>Сохранение...</>
