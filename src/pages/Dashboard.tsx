@@ -12,10 +12,12 @@ import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalPr
 import { DetailedLeaderboard } from '@/components/leaderboard/DetailedLeaderboard';
 import { UserActivities } from '@/components/leaderboard/UserActivities';
 import { ClubResidentDashboard } from '@/components/club/ClubResidentDashboard';
+import { ProfileCompletionWizard } from '@/components/profile/ProfileCompletionWizard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Shield, Activity, Calendar, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -29,12 +31,17 @@ export const Dashboard: React.FC = () => {
   } = useRole();
   const isMobile = useIsMobile();
   const [participantData, setParticipantData] = useState<any>(null);
+  const [contractData, setContractData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('kamp');
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
   useEffect(() => {
     const loadParticipantData = async () => {
       if (!user) return;
@@ -48,15 +55,42 @@ export const Dashboard: React.FC = () => {
           return;
         }
         setParticipantData(data);
+
+        // Check if profile is complete (for non-admins)
+        const { data: contract } = await supabase
+          .from('contract_data')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setContractData(contract);
+
+        // Check if required fields are filled
+        const hasRequiredProfileFields = data?.first_name && 
+          data?.last_name && 
+          data?.phone && 
+          data?.date_of_birth &&
+          data?.personal_data_consent;
+
+        const hasRequiredContractFields = contract?.passport_series &&
+          contract?.passport_number &&
+          contract?.passport_issued_by &&
+          contract?.passport_issued_date &&
+          contract?.passport_department_code &&
+          contract?.registration_address;
+
+        setProfileComplete(!!(hasRequiredProfileFields && hasRequiredContractFields));
+        setCheckingProfile(false);
       } catch (error) {
         console.error('Error in loadParticipantData:', error);
+        setCheckingProfile(false);
       }
     };
     if (user) {
       loadParticipantData();
     }
   }, [user]);
-  if (loading || roleLoading) {
+  if (loading || roleLoading || checkingProfile) {
     return <Layout>
         <div className="kamp-section bg-black min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-kamp-accent"></div>
@@ -66,6 +100,22 @@ export const Dashboard: React.FC = () => {
   if (!user) {
     return null;
   }
+
+  // Show profile completion wizard for non-admins with incomplete profiles
+  if (!isSuperAdmin && profileComplete === false) {
+    return (
+      <Layout>
+        <ProfileCompletionWizard 
+          onComplete={() => {
+            setProfileComplete(true);
+            // Reload data
+            window.location.reload();
+          }} 
+        />
+      </Layout>
+    );
+  }
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
