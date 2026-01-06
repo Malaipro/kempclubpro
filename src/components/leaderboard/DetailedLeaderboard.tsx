@@ -82,10 +82,11 @@ export const DetailedLeaderboard: React.FC = () => {
 
       const adminUserIds = adminUsers?.map(u => u.user_id) || [];
 
-      // Используем public_profiles с фильтрацией по активным потокам
+      // Используем public_profiles с фильтрацией по активным потокам и статусу
       let query = supabase
         .from('public_profiles')
-        .select('user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id')
+        .select('user_id, first_name, last_name, display_name, total_points, rank_position, current_stream_id, participant_status')
+        .eq('participant_status', 'intensive_active') // Только активные участники интенсива
         .order('rank_position', { ascending: true })
         .limit(10);
 
