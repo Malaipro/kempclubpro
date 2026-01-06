@@ -60,6 +60,7 @@ export const ContractWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<Step>('data');
   const [contract, setContract] = useState<Contract | null>(null);
   const [hasPhone, setHasPhone] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [formData, setFormData] = useState<ContractFormData>({
     passport_series: '',
     passport_number: '',
@@ -69,7 +70,7 @@ export const ContractWizard: React.FC = () => {
     registration_address: '',
     inn: '',
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof ContractFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ContractFormData | 'phone', string>>>({});
 
   useEffect(() => {
     if (user) {
@@ -88,8 +89,8 @@ export const ContractWizard: React.FC = () => {
         .select('phone')
         .eq('user_id', user.id)
         .single();
-
       setHasPhone(!!profile?.phone);
+      setPhoneNumber(profile?.phone || '');
 
       // Загружаем данные для договора
       const { data: contractData } = await supabase
@@ -143,7 +144,14 @@ export const ContractWizard: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof ContractFormData, string>> = {};
+    const newErrors: Partial<Record<keyof ContractFormData | 'phone', string>> = {};
+
+    // Проверка телефона
+    if (!phoneNumber) {
+      newErrors.phone = 'Укажите номер телефона';
+    } else if (!/^[\d\s\+\-\(\)]{10,}$/.test(phoneNumber)) {
+      newErrors.phone = 'Некорректный формат телефона';
+    }
 
     if (!formData.passport_series) {
       newErrors.passport_series = 'Обязательное поле';
@@ -198,6 +206,17 @@ export const ContractWizard: React.FC = () => {
 
     setSaving(true);
     try {
+      // Сохраняем телефон в профиле
+      if (phoneNumber) {
+        const { error: phoneError } = await supabase
+          .from('profiles')
+          .update({ phone: phoneNumber })
+          .eq('user_id', user.id);
+        
+        if (phoneError) throw phoneError;
+        setHasPhone(true);
+      }
+
       const dataToSave = {
         user_id: user.id,
         passport_series: formData.passport_series,
@@ -344,21 +363,40 @@ export const ContractWizard: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {!hasPhone && (
-              <Alert variant="destructive">
-                <Phone className="h-4 w-4" />
-                <AlertDescription>
-                  Добавьте номер телефона в профиле — на него придёт SMS со ссылкой для подписания
-                </AlertDescription>
-              </Alert>
-            )}
-
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 Все поля, отмеченные *, обязательны для заполнения
               </AlertDescription>
             </Alert>
+
+            {/* Телефон */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Контактные данные</h3>
+              <div>
+                <Label>Номер телефона *</Label>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                      if (errors.phone) {
+                        setErrors(prev => ({ ...prev, phone: undefined }));
+                      }
+                    }}
+                    placeholder="+7 (999) 999-99-99"
+                    className={errors.phone ? 'border-destructive' : ''}
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                  На этот номер придёт SMS со ссылкой для подписания договора
+                </p>
+              </div>
+            </div>
 
             {/* Паспортные данные */}
             <div className="space-y-4">
