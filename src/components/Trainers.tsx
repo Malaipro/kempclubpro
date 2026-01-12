@@ -15,7 +15,7 @@ interface Trainer {
   sort_order: number;
 }
 
-// Ensure images work on mobile: force HTTPS, hide referrer, and provide a fallback
+// Ensure images work on mobile: force HTTPS, fix Imgur URLs, and provide a fallback
 const getSafeUrl = (url?: string) => {
   if (!url) return '/placeholder.svg';
   try {
@@ -23,6 +23,20 @@ const getSafeUrl = (url?: string) => {
     if (url.startsWith('/')) {
       return `${window.location.origin}${url}`;
     }
+    
+    // Fix Imgur URLs: convert https://imgur.com/ID to https://i.imgur.com/ID.jpeg
+    if (url.includes('imgur.com') && !url.includes('i.imgur.com')) {
+      const imgurMatch = url.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+      if (imgurMatch) {
+        const imageId = imgurMatch[1];
+        // Add extension if missing
+        const hasExtension = /\.(jpeg|jpg|png|gif|webp)$/i.test(url);
+        return hasExtension 
+          ? `https://i.imgur.com/${imageId}${url.match(/\.[a-z]+$/i)?.[0] || '.jpeg'}`
+          : `https://i.imgur.com/${imageId}.jpeg`;
+      }
+    }
+    
     return url.startsWith('http://') ? url.replace('http://', 'https://') : url;
   } catch {
     return '/placeholder.svg';
