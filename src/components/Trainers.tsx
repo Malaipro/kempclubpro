@@ -86,11 +86,13 @@ export const Trainers: React.FC = () => {
           {trainers.map(trainer => <div key={trainer.id} className="kamp-card overflow-hidden reveal-on-scroll hover-lift cursor-pointer bg-black border border-gray-800" onClick={() => setSelectedTrainer(trainer)}>
               <div className={`${isMobile ? 'aspect-[3/4]' : 'aspect-[3/4]'} overflow-hidden bg-gray-900`}>
                 <Avatar className="w-full h-full rounded-none">
-                  <AvatarImage 
+                <AvatarImage 
                     src={getSafeUrl(trainer.image_url)} 
                     alt={trainer.name}
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                   />
                   <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-4xl font-bold text-gray-600">
                     {trainer.name.split(' ').map(n => n[0]).join('')}
@@ -116,12 +118,14 @@ export const Trainers: React.FC = () => {
                 <div className="w-full md:w-1/3 bg-gray-900">
                   <div className="h-48 md:h-full">
                     <Avatar className="w-full h-full rounded-none">
-                      <AvatarImage 
-                        src={getSafeUrl(selectedTrainer.image_url)} 
-                        alt={selectedTrainer.name}
-                        className="w-full h-full object-cover object-top"
-                        loading="lazy"
-                      />
+                    <AvatarImage 
+                      src={getSafeUrl(selectedTrainer.image_url)} 
+                      alt={selectedTrainer.name}
+                      className="w-full h-full object-cover object-top"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                    />
                       <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-6xl font-bold text-gray-600">
                         {selectedTrainer.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
