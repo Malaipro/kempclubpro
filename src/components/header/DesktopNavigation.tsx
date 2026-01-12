@@ -34,13 +34,15 @@ export const DesktopNavigation: React.FC<DesktopNavigationProps> = ({
           </button>
         )
       ))}
-      <button
-        onClick={() => scrollToSection('contact')}
+      <a
+        href="https://t.me/Dmitriy116"
+        target="_blank"
+        rel="noopener noreferrer"
         className="flex items-center text-black font-medium hover:text-kamp-accent transition-colors text-xs lg:text-sm"
       >
         <MessageSquare size={14} className="mr-1" />
         Задать вопрос
-      </button>
+      </a>
     </nav>
   );
 };
