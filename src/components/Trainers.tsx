@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -15,32 +15,105 @@ interface Trainer {
   sort_order: number;
 }
 
-// Ensure images work on mobile: force HTTPS, fix Imgur URLs, and provide a fallback
-const getSafeUrl = (url?: string) => {
-  if (!url) return '/placeholder.svg';
+// Ensure images work on mobile: force HTTPS, handle relative paths, and make Imgur URLs resilient
+const IMGUR_EXTS = ['.jpeg', '.jpg', '.png', '.webp'] as const;
+
+type ImgurExt = (typeof IMGUR_EXTS)[number];
+
+const toHttps = (url: string) => (url.startsWith('http://') ? url.replace('http://', 'https://') : url);
+
+const absolutizeIfNeeded = (url: string) => (url.startsWith('/') ? `${window.location.origin}${url}` : url);
+
+const hasImageExtension = (pathname: string) => /\.(jpeg|jpg|png|gif|webp)$/i.test(pathname);
+
+const buildImgurCandidates = (rawUrl: string): string[] => {
   try {
-    // Если путь начинается с /, добавляем полный домен для мобильных
-    if (url.startsWith('/')) {
-      return `${window.location.origin}${url}`;
+    const u = new URL(rawUrl);
+    const host = u.hostname.toLowerCase();
+
+    const extractId = (pathname: string) => {
+      const clean = pathname.replace(/^\/+/, '').split('?')[0].split('#')[0];
+      if (!clean) return null;
+
+      // Handles: /ID, /gallery/ID, /a/ID, /ID.jpeg
+      const parts = clean.split('/').filter(Boolean);
+      const last = parts[parts.length - 1] ?? '';
+      const id = last.split('.')[0];
+      return id || null;
+    };
+
+    if (host === 'i.imgur.com') {
+      const id = extractId(u.pathname);
+      if (!id) return [rawUrl];
+
+      const extMatch = u.pathname.match(/\.(jpeg|jpg|png|gif|webp)$/i);
+      const ext = (extMatch?.[0]?.toLowerCase() as ImgurExt | undefined) ?? undefined;
+      const orderedExts: ImgurExt[] = ext
+        ? [ext, ...(IMGUR_EXTS.filter((e) => e !== ext) as ImgurExt[])]
+        : [...IMGUR_EXTS];
+
+      return orderedExts.map((e) => `https://i.imgur.com/${id}${e}`);
     }
-    
-    // Fix Imgur URLs: convert https://imgur.com/ID to https://i.imgur.com/ID.jpeg
-    if (url.includes('imgur.com') && !url.includes('i.imgur.com')) {
-      const imgurMatch = url.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-      if (imgurMatch) {
-        const imageId = imgurMatch[1];
-        // Add extension if missing
-        const hasExtension = /\.(jpeg|jpg|png|gif|webp)$/i.test(url);
-        return hasExtension 
-          ? `https://i.imgur.com/${imageId}${url.match(/\.[a-z]+$/i)?.[0] || '.jpeg'}`
-          : `https://i.imgur.com/${imageId}.jpeg`;
-      }
+
+    if (host.endsWith('imgur.com')) {
+      const match = u.pathname.match(/^\/(?:gallery\/|a\/)?([a-zA-Z0-9]+)(?:\.[a-zA-Z]+)?/);
+      const id = match?.[1] ?? extractId(u.pathname);
+      if (!id) return [rawUrl];
+      return IMGUR_EXTS.map((e) => `https://i.imgur.com/${id}${e}`);
     }
-    
-    return url.startsWith('http://') ? url.replace('http://', 'https://') : url;
+
+    return [rawUrl];
   } catch {
-    return '/placeholder.svg';
+    return [rawUrl];
   }
+};
+
+const getImageCandidates = (url?: string | null): string[] => {
+  if (!url) return [];
+  const normalized = toHttps(absolutizeIfNeeded(url));
+
+  // Imgur can be saved as https://i.imgur.com/<id> (no extension) or page URLs.
+  if (normalized.includes('imgur.com')) {
+    const candidates = buildImgurCandidates(normalized);
+
+    // If URL is already i.imgur.com and has an extension, keep it first.
+    // Otherwise, we’ll try common extensions.
+    return candidates;
+  }
+
+  // Non-imgur: keep as-is (but normalized)
+  return [normalized];
+};
+
+const TrainerAvatarImage: React.FC<{
+  src?: string | null;
+  alt: string;
+  className?: string;
+}> = ({ src, alt, className }) => {
+  const candidates = useMemo(() => getImageCandidates(src), [src]);
+  const candidatesKey = useMemo(() => candidates.join('|'), [candidates]);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    setIdx(0);
+  }, [candidatesKey]);
+
+  const currentSrc = candidates[idx];
+
+  if (!currentSrc) return null;
+
+  return (
+    <AvatarImage
+      src={currentSrc}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => {
+        setIdx((i) => (i + 1 < candidates.length ? i + 1 : i));
+      }}
+    />
+  );
 };
 export const Trainers: React.FC = () => {
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
@@ -86,13 +159,10 @@ export const Trainers: React.FC = () => {
           {trainers.map(trainer => <div key={trainer.id} className="kamp-card overflow-hidden reveal-on-scroll hover-lift cursor-pointer bg-black border border-gray-800" onClick={() => setSelectedTrainer(trainer)}>
               <div className={`${isMobile ? 'aspect-[3/4]' : 'aspect-[3/4]'} overflow-hidden bg-gray-900`}>
                 <Avatar className="w-full h-full rounded-none">
-                <AvatarImage 
-                    src={getSafeUrl(trainer.image_url)} 
+                <TrainerAvatarImage
+                    src={trainer.image_url}
                     alt={trainer.name}
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
                   />
                   <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-4xl font-bold text-gray-600">
                     {trainer.name.split(' ').map(n => n[0]).join('')}
@@ -118,13 +188,10 @@ export const Trainers: React.FC = () => {
                 <div className="w-full md:w-1/3 bg-gray-900">
                   <div className="h-48 md:h-full">
                     <Avatar className="w-full h-full rounded-none">
-                    <AvatarImage 
-                      src={getSafeUrl(selectedTrainer.image_url)} 
+                    <TrainerAvatarImage
+                      src={selectedTrainer.image_url}
                       alt={selectedTrainer.name}
                       className="w-full h-full object-cover object-top"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
                     />
                       <AvatarFallback className="w-full h-full rounded-none bg-gray-800 flex items-center justify-center text-6xl font-bold text-gray-600">
                         {selectedTrainer.name.split(' ').map(n => n[0]).join('')}
