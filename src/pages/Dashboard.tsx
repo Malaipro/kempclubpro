@@ -1,22 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Layout } from '@/components/Layout';
-import { KampSystemUser } from '@/components/kamp/KampSystemUser';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { CooperTestManagement } from '@/components/cooper/CooperTestManagement';
-import { ScheduleViewer } from '@/components/schedule/ScheduleViewer';
-import { EnhancedPersonalProfile } from '@/components/profile/EnhancedPersonalProfile';
-import { DetailedLeaderboard } from '@/components/leaderboard/DetailedLeaderboard';
-import { UserActivities } from '@/components/leaderboard/UserActivities';
-import { ClubResidentDashboard } from '@/components/club/ClubResidentDashboard';
 import { ProfileCompletionWizard } from '@/components/profile/ProfileCompletionWizard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Shield, Activity, Calendar, Trophy } from 'lucide-react';
+import { LogOut, User, Shield, Activity, Calendar, Trophy, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Ленивая загрузка компонентов для улучшения производительности
+const KampSystemUser = lazy(() => import('@/components/kamp/KampSystemUser').then(m => ({ default: m.KampSystemUser })));
+const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const CooperTestManagement = lazy(() => import('@/components/cooper/CooperTestManagement').then(m => ({ default: m.CooperTestManagement })));
+const ScheduleViewer = lazy(() => import('@/components/schedule/ScheduleViewer').then(m => ({ default: m.ScheduleViewer })));
+const EnhancedPersonalProfile = lazy(() => import('@/components/profile/EnhancedPersonalProfile').then(m => ({ default: m.EnhancedPersonalProfile })));
+const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
+const ClubResidentDashboard = lazy(() => import('@/components/club/ClubResidentDashboard').then(m => ({ default: m.ClubResidentDashboard })));
+
+// Компонент загрузки для Suspense
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="w-8 h-8 animate-spin text-kamp-accent" />
+  </div>
+);
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -46,23 +54,21 @@ export const Dashboard: React.FC = () => {
     const loadParticipantData = async () => {
       if (!user) return;
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
-        if (error) {
-          console.error('Error loading profile data:', error);
+        // Параллельная загрузка профиля и контрактных данных
+        const [profileResult, contractResult] = await Promise.all([
+          supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('contract_data').select('*').eq('user_id', user.id).maybeSingle()
+        ]);
+
+        if (profileResult.error) {
+          console.error('Error loading profile data:', profileResult.error);
           return;
         }
-        setParticipantData(data);
 
-        // Check if profile is complete (for non-admins)
-        const { data: contract } = await supabase
-          .from('contract_data')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
+        const data = profileResult.data;
+        const contract = contractResult.data;
+
+        setParticipantData(data);
         setContractData(contract);
 
         // Check if required fields are filled
@@ -90,6 +96,7 @@ export const Dashboard: React.FC = () => {
       loadParticipantData();
     }
   }, [user]);
+
   if (loading || roleLoading || checkingProfile) {
     return <Layout>
         <div className="kamp-section bg-black min-h-screen flex items-center justify-center">
@@ -160,64 +167,76 @@ export const Dashboard: React.FC = () => {
         {/* Dashboard Content */}
         <section className="kamp-section">
           <div className="kamp-container">
-            {isSuperAdmin ? <AdminDashboard /> : isClubResident ? <ClubResidentDashboard /> : <Tabs defaultValue="profile" className="w-full">
-                <div className="mb-6">
-                  <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
-                    <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                      <User className="w-4 h-4" />
-                      <span className="text-center">Профиль</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="kamp" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                      <Activity className="w-4 h-4" />
-                      <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП'}</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="leaderboard" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                      <Trophy className="w-4 h-4" />
-                      <span className="text-center">Рейтинг</span>
-                    </TabsTrigger>
-                    {!isMobile && <>
-                        
-                        <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+            <Suspense fallback={<LoadingFallback />}>
+              {isSuperAdmin ? <AdminDashboard /> : isClubResident ? <ClubResidentDashboard /> : <Tabs defaultValue="profile" className="w-full">
+                  <div className="mb-6">
+                    <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
+                      <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
+                        <User className="w-4 h-4" />
+                        <span className="text-center">Профиль</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="kamp" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
+                        <Activity className="w-4 h-4" />
+                        <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП'}</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="leaderboard" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
+                        <Trophy className="w-4 h-4" />
+                        <span className="text-center">Рейтинг</span>
+                      </TabsTrigger>
+                      {!isMobile && <>
+                          
+                          <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-center">Расписание</span>
+                          </TabsTrigger>
+                        </>}
+                    </TabsList>
+                    
+                    {isMobile && <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mt-2">
+                        <TabsTrigger value="cooper" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
+                          <Shield className="w-4 h-4" />
+                          <span className="text-center">Купер</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="schedule" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
                           <Calendar className="w-4 h-4" />
                           <span className="text-center">Расписание</span>
                         </TabsTrigger>
-                      </>}
-                  </TabsList>
-                  
-                  {isMobile && <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mt-2">
-                      <TabsTrigger value="cooper" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                        <Shield className="w-4 h-4" />
-                        <span className="text-center">Купер</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="schedule" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-center">Расписание</span>
-                      </TabsTrigger>
-                    </TabsList>}
-                </div>
-                
-                <TabsContent value="profile">
-                  <div className="space-y-6">
-                    <EnhancedPersonalProfile />
+                      </TabsList>}
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="kamp">
-                  <KampSystemUser />
-                </TabsContent>
-                
-                <TabsContent value="leaderboard">
-                  <DetailedLeaderboard />
-                </TabsContent>
-                
-                <TabsContent value="cooper">
-                  <CooperTestManagement />
-                </TabsContent>
-                
-                <TabsContent value="schedule">
-                  <ScheduleViewer isClubResident={isClubResident} />
-                </TabsContent>
-              </Tabs>}
+                  
+                  <TabsContent value="profile">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <div className="space-y-6">
+                        <EnhancedPersonalProfile />
+                      </div>
+                    </Suspense>
+                  </TabsContent>
+                  
+                  <TabsContent value="kamp">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <KampSystemUser />
+                    </Suspense>
+                  </TabsContent>
+                  
+                  <TabsContent value="leaderboard">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <DetailedLeaderboard />
+                    </Suspense>
+                  </TabsContent>
+                  
+                  <TabsContent value="cooper">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <CooperTestManagement />
+                    </Suspense>
+                  </TabsContent>
+                  
+                  <TabsContent value="schedule">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <ScheduleViewer isClubResident={isClubResident} />
+                    </Suspense>
+                  </TabsContent>
+                </Tabs>}
+            </Suspense>
           </div>
         </section>
       </div>
