@@ -133,7 +133,7 @@ export const PersonalProfile: React.FC = () => {
 
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert(profileDataToSave);
+        .upsert(profileDataToSave, { onConflict: 'user_id' });
 
       if (profileError) {
         console.error('Error saving profile:', profileError);

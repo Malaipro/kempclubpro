@@ -261,7 +261,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
 
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert(updateData);
+        .upsert(updateData, { onConflict: 'user_id' });
 
       if (profileError) throw profileError;
 
