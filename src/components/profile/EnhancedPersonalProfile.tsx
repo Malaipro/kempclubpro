@@ -154,14 +154,17 @@ export const EnhancedPersonalProfile: React.FC = () => {
     if (!user) return;
 
     try {
-      // Загружаем профиль
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Параллельная загрузка всех данных через Promise.all
+      const [profileResult, contractResult, habitsResult, cooperResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('contract_data').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('participant_habits').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('cooper_test_results').select('*').eq('user_id', user.id).order('test_date', { ascending: false })
+      ]);
 
-      if (profileError) throw profileError;
+      // Обрабатываем профиль
+      if (profileResult.error) throw profileResult.error;
+      const profileData = profileResult.data;
       setProfile(profileData);
       
       // Заполняем форму профиля
@@ -181,49 +184,31 @@ export const EnhancedPersonalProfile: React.FC = () => {
         personal_data_consent_date: profileData?.personal_data_consent_date || null,
       });
 
-      // Загружаем паспортные данные
-      const { data: contractDataResult, error: contractError } = await supabase
-        .from('contract_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (contractError && contractError.code !== 'PGRST116') {
-        console.error('Error loading contract data:', contractError);
+      // Обрабатываем паспортные данные
+      if (contractResult.error && contractResult.error.code !== 'PGRST116') {
+        console.error('Error loading contract data:', contractResult.error);
       }
 
-      if (contractDataResult) {
-        setContractData(contractDataResult);
+      if (contractResult.data) {
+        setContractData(contractResult.data);
         setContractForm({
-          passport_series: contractDataResult.passport_series || '',
-          passport_number: contractDataResult.passport_number || '',
-          passport_issued_by: contractDataResult.passport_issued_by || '',
-          passport_issued_date: contractDataResult.passport_issued_date || '',
-          passport_department_code: contractDataResult.passport_department_code || '',
-          registration_address: contractDataResult.registration_address || '',
-          inn: contractDataResult.inn || '',
+          passport_series: contractResult.data.passport_series || '',
+          passport_number: contractResult.data.passport_number || '',
+          passport_issued_by: contractResult.data.passport_issued_by || '',
+          passport_issued_date: contractResult.data.passport_issued_date || '',
+          passport_department_code: contractResult.data.passport_department_code || '',
+          registration_address: contractResult.data.registration_address || '',
+          inn: contractResult.data.inn || '',
         });
       }
 
-      // Загружаем привычки
-      const { data: habitsData, error: habitsError } = await supabase
-        .from('participant_habits')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Обрабатываем привычки
+      if (habitsResult.error) throw habitsResult.error;
+      setHabits(habitsResult.data || []);
 
-      if (habitsError) throw habitsError;
-      setHabits(habitsData || []);
-
-      // Загружаем тесты Купера
-      const { data: cooperData, error: cooperError } = await supabase
-        .from('cooper_test_results')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('test_date', { ascending: false });
-
-      if (cooperError) throw cooperError;
-      setCooperTests((cooperData as any) || []);
+      // Обрабатываем тесты Купера
+      if (cooperResult.error) throw cooperResult.error;
+      setCooperTests((cooperResult.data as any) || []);
 
     } catch (error) {
       console.error('Error loading profile data:', error);
