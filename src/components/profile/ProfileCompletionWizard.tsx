@@ -144,7 +144,7 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
           weight_kg: profileData.weight_kg ? parseInt(profileData.weight_kg) : null,
           personal_data_consent: true,
           personal_data_consent_date: new Date().toISOString(),
-        });
+        }, { onConflict: 'user_id' });
 
       if (profileError) throw profileError;
 
