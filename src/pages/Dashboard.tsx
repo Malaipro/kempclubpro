@@ -71,7 +71,19 @@ export const Dashboard: React.FC = () => {
         setParticipantData(data);
         setContractData(contract);
 
-        // Check if required fields are filled
+        // Club residents and alumni don't need to fill wizard - they already completed intensive
+        const isExistingMember = data?.participant_status === 'club_resident' || 
+          data?.participant_status === 'alumni' ||
+          data?.participant_status === 'intensive_completed';
+        
+        if (isExistingMember) {
+          // Existing members skip the wizard
+          setProfileComplete(true);
+          setCheckingProfile(false);
+          return;
+        }
+
+        // For new intensive participants, check if required fields are filled
         const hasRequiredProfileFields = data?.first_name && 
           data?.last_name && 
           data?.phone && 
@@ -89,6 +101,8 @@ export const Dashboard: React.FC = () => {
         setCheckingProfile(false);
       } catch (error) {
         console.error('Error in loadParticipantData:', error);
+        // On error, don't block existing users
+        setProfileComplete(true);
         setCheckingProfile(false);
       }
     };
