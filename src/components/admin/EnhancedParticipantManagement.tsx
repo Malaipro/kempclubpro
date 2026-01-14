@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -919,6 +919,18 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     </Button>
                     <Button 
                       variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // Открыть страницу профиля участника в новой вкладке
+                        window.open(`/admin/view-participant/${participant.user_id}`, '_blank');
+                      }}
+                      title="Просмотреть ЛК участника"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
                       size="sm" 
                       className="text-destructive hover:text-destructive"
                       title="Удалить"
@@ -1184,6 +1196,17 @@ export const EnhancedParticipantManagement: React.FC = () => {
                             title="Изменить пароль"
                           >
                             <Key className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              window.open(`/admin/view-participant/${participant.user_id}`, '_blank');
+                            }}
+                            title="Просмотреть ЛК участника"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <ExternalLink className="w-4 h-4" />
                           </Button>
                           <Button 
                             variant="outline" 
