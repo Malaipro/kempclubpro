@@ -108,16 +108,34 @@ export const Dashboard: React.FC = () => {
     return null;
   }
 
+  // Reload profile data after wizard completion
+  const reloadProfileData = async () => {
+    if (!user) return;
+    try {
+      const [profileResult, contractResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('contract_data').select('*').eq('user_id', user.id).maybeSingle()
+      ]);
+      
+      if (profileResult.data) {
+        setParticipantData(profileResult.data);
+      }
+      if (contractResult.data) {
+        setContractData(contractResult.data);
+      }
+      setProfileComplete(true);
+    } catch (error) {
+      console.error('Error reloading profile:', error);
+      setProfileComplete(true);
+    }
+  };
+
   // Show profile completion wizard for non-admins with incomplete profiles
   if (!isSuperAdmin && profileComplete === false) {
     return (
       <Layout>
         <ProfileCompletionWizard 
-          onComplete={() => {
-            setProfileComplete(true);
-            // Reload data
-            window.location.reload();
-          }} 
+          onComplete={reloadProfileData} 
         />
       </Layout>
     );
