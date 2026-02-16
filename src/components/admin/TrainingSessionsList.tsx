@@ -194,9 +194,8 @@ export const TrainingSessionsList: React.FC = () => {
 
   const getUserName = (session: TrainingSession) => {
     if (session.profiles) {
-      return session.profiles.display_name || 
-             `${session.profiles.first_name || ''} ${session.profiles.last_name || ''}`.trim() ||
-             'Без имени';
+      const fullName = `${session.profiles.first_name || ''} ${session.profiles.last_name || ''}`.trim();
+      return fullName || session.profiles.display_name || 'Без имени';
     }
     return 'Неизвестный участник';
   };
