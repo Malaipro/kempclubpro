@@ -1,0 +1,1 @@
+UPDATE trainers SET is_active = false WHERE id = '390034f6-085b-4275-b5d5-fee8a7e7a5ea';
