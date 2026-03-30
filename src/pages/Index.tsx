@@ -6,6 +6,7 @@ import { Hero } from '@/components/Hero';
 import { AboutUs } from '@/components/AboutUs';
 import { Program } from '@/components/Program';
 import { Trainers } from '@/components/Trainers';
+import { FounderInterview } from '@/components/FounderInterview';
 import { Leaderboard } from '@/components/leaderboard';
 import { AllParticipantsProgress } from '@/components/AllParticipantsProgress';
 import { RegisteredParticipants } from '@/components/participants';
