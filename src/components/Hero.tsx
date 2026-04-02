@@ -58,6 +58,15 @@ export const Hero: React.FC = () => {
               Программа клуба
             </button>
           </div>
+
+          <div className="flex flex-col items-center gap-1.5 pt-4">
+            <p className="text-white/60 text-xs md:text-sm">Номинант премии</p>
+            <img 
+              src="/lovable-uploads/russia-opportunities-logo.svg" 
+              alt="Россия — страна возможностей" 
+              className="h-10 md:h-14 object-contain"
+            />
+          </div>
         </div>
       </div>
     </VideoBackground>
