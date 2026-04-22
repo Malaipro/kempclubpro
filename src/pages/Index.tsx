@@ -41,6 +41,7 @@ const Index = () => {
       <Hero />
       <AboutUs />
       <Program />
+      <TrialTrainingCTA />
       <Trainers />
       <FounderInterview />
       <PhotoGallery />
