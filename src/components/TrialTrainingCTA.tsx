@@ -21,6 +21,31 @@ export const TrialTrainingCTA: React.FC = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const bitrixContainerRef = useRef<HTMLDivElement>(null);
+
+  // Подключение кнопки-формы Битрикс24
+  useEffect(() => {
+    const container = bitrixContainerRef.current;
+    if (!container) return;
+
+    // Очищаем контейнер от предыдущих вставок (на случай повторного маунта)
+    container.innerHTML = '';
+
+    const script = document.createElement('script');
+    script.setAttribute('data-b24-form', 'click/142/4lvzlj');
+    script.setAttribute('data-skip-moving', 'true');
+    script.innerHTML = `
+      (function(w,d,u){
+        var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
+        var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
+      })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_142.js');
+    `;
+    container.appendChild(script);
+
+    return () => {
+      if (container) container.innerHTML = '';
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
