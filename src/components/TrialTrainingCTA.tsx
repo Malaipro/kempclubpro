@@ -1,30 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 
 export const TrialTrainingCTA: React.FC = () => {
-  const bitrixContainerRef = useRef<HTMLDivElement>(null);
-
-  // Подключение кнопки-формы Битрикс24
+  // Загружаем loader Битрикс24 один раз
   useEffect(() => {
-    const container = bitrixContainerRef.current;
-    if (!container) return;
+    const LOADER_ID = 'b24-loader-142';
+    if (document.getElementById(LOADER_ID)) return;
 
-    container.innerHTML = '';
-
-    const script = document.createElement('script');
-    script.setAttribute('data-b24-form', 'click/142/4lvzlj');
-    script.setAttribute('data-skip-moving', 'true');
-    script.innerHTML = `
-      (function(w,d,u){
-        var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
-        var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
-      })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_142.js');
-    `;
-    container.appendChild(script);
-
-    return () => {
-      if (container) container.innerHTML = '';
-    };
+    const s = document.createElement('script');
+    s.id = LOADER_ID;
+    s.async = true;
+    s.src = `https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_142.js?${(Date.now() / 180000) | 0}`;
+    document.body.appendChild(s);
   }, []);
 
   return (
@@ -53,8 +40,13 @@ export const TrialTrainingCTA: React.FC = () => {
             Приходи на пробную тренировку и почувствуй атмосферу клуба. Никаких обязательств — только реальный опыт и знакомство с командой.
           </p>
 
-          {/* Кнопка-форма Битрикс24 */}
-          <div ref={bitrixContainerRef} className="bitrix-trial-button flex justify-center" />
+          {/* Маркер для кнопки-формы Битрикс24 — loader сам найдёт его и заменит на кнопку */}
+          <div
+            className="bitrix-trial-button flex justify-center"
+            dangerouslySetInnerHTML={{
+              __html: `<script data-b24-form="click/142/4lvzlj" data-skip-moving="true"></script>`,
+            }}
+          />
         </div>
       </div>
     </section>
