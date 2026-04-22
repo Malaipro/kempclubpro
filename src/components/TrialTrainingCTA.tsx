@@ -1,14 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export const TrialTrainingCTA: React.FC = () => {
-  const bitrixButtonRef = useRef<HTMLDivElement>(null);
+  const bitrixScriptAnchorRef = useRef<HTMLDivElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const container = bitrixButtonRef.current;
-    if (!container) return;
+    const anchor = bitrixScriptAnchorRef.current;
+    const button = triggerButtonRef.current;
+    if (!anchor || !button) return;
 
-    container.innerHTML = '';
+    const existingScript = anchor.querySelector('script[data-b24-form="click/142/4lvzlj"]');
+    if (existingScript) return;
 
     const script = document.createElement('script');
     script.type = 'text/javascript';
@@ -19,10 +23,11 @@ var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
 var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
 })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_142.js');`;
 
-    container.appendChild(script);
+    anchor.appendChild(script);
 
     return () => {
-      container.innerHTML = '';
+      const currentScript = anchor.querySelector('script[data-b24-form="click/142/4lvzlj"]');
+      currentScript?.remove();
     };
   }, []);
 
@@ -51,7 +56,16 @@ var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
             Приходи на пробную тренировку и почувствуй атмосферу клуба. Никаких обязательств — только реальный опыт и знакомство с командой.
           </p>
 
-          <div ref={bitrixButtonRef} className="flex justify-center" />
+          <div className="flex flex-col items-center gap-4">
+            <div ref={bitrixScriptAnchorRef} aria-hidden="true" />
+            <Button
+              ref={triggerButtonRef}
+              size="lg"
+              className="bg-background text-foreground hover:bg-background/90 font-bold text-base md:text-lg px-8 py-6 shadow-xl transition-all duration-300"
+            >
+              Записаться на пробную тренировку
+            </Button>
+          </div>
         </div>
       </div>
     </section>
