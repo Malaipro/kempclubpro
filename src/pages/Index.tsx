@@ -14,6 +14,7 @@ import { Achievements } from '@/components/achievements';
 import { Testimonials } from '@/components/Testimonials';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { ContactForm } from '@/components/ContactForm';
+import { TrialTrainingCTA } from '@/components/TrialTrainingCTA';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 
@@ -40,6 +41,7 @@ const Index = () => {
       <Hero />
       <AboutUs />
       <Program />
+      <TrialTrainingCTA />
       <Trainers />
       <FounderInterview />
       <PhotoGallery />
