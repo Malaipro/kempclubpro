@@ -214,7 +214,7 @@ export const Trainers: React.FC = () => {
                   
                   <div>
                     <h4 className="font-bold text-white text-sm md:text-base mb-1 md:mb-2">Профессиональный подход</h4>
-                    <p className="text-gray-300 text-xs md:text-sm">{selectedTrainer.bio}</p>
+                    <p className="text-gray-300 text-xs md:text-sm whitespace-pre-line">{selectedTrainer.bio}</p>
                   </div>
                 </div>
               </div>
