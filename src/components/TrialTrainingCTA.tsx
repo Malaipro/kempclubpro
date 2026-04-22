@@ -3,15 +3,15 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const TrialTrainingCTA: React.FC = () => {
-  const bitrixScriptAnchorRef = useRef<HTMLDivElement>(null);
+  const bitrixWrapperRef = useRef<HTMLDivElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const anchor = bitrixScriptAnchorRef.current;
+    const wrapper = bitrixWrapperRef.current;
     const button = triggerButtonRef.current;
-    if (!anchor || !button) return;
+    if (!wrapper || !button) return;
 
-    const existingScript = anchor.querySelector('script[data-b24-form="click/142/4lvzlj"]');
+    const existingScript = wrapper.querySelector('script[data-b24-form="click/142/4lvzlj"]');
     if (existingScript) return;
 
     const script = document.createElement('script');
@@ -23,11 +23,10 @@ var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
 var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
 })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_142.js');`;
 
-    anchor.appendChild(script);
+    wrapper.insertBefore(script, button);
 
     return () => {
-      const currentScript = anchor.querySelector('script[data-b24-form="click/142/4lvzlj"]');
-      currentScript?.remove();
+      script.remove();
     };
   }, []);
 
