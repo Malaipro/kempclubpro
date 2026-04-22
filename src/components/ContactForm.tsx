@@ -213,7 +213,7 @@ export const ContactForm: React.FC = () => {
       });
     }
   };
-const effectiveDate = (startDate && startDate.getTime() > Date.now()) ? startDate : FIXED_TARGET_DATE;
+const effectiveDate = FIXED_TARGET_DATE;
 const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
   return <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
       <div className="kamp-container">
