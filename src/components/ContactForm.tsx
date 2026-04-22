@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Менять дату следующего запуска КЭМП здесь
-export const FIXED_TARGET_DATE = new Date('2026-03-23T00:00:00');
+export const FIXED_TARGET_DATE = new Date('2026-05-18T00:00:00');
 
 // Declare Bitrix form interface for TypeScript
 declare global {
@@ -213,7 +213,7 @@ export const ContactForm: React.FC = () => {
       });
     }
   };
-const effectiveDate = (startDate && startDate.getTime() > Date.now()) ? startDate : FIXED_TARGET_DATE;
+const effectiveDate = FIXED_TARGET_DATE;
 const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
   return <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
       <div className="kamp-container">
