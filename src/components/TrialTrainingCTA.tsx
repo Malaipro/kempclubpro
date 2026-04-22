@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dumbbell, Sparkles } from 'lucide-react';
 import {
   Dialog,
