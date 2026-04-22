@@ -116,15 +116,20 @@ export const TrialTrainingCTA: React.FC = () => {
           </p>
 
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button
-                size="lg"
-                className="bg-kamp-accent hover:bg-kamp-accent/90 text-black font-bold text-base md:text-lg px-8 py-6 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
-              >
-                <Dumbbell className="w-5 h-5 mr-2" />
-                Записаться на пробную тренировку
-              </Button>
-            </DialogTrigger>
+            <div className="flex flex-col items-center gap-3">
+              {/* Контейнер для кнопки-формы Битрикс24 */}
+              <div ref={bitrixContainerRef} className="bitrix-trial-button" />
+
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="bg-kamp-accent hover:bg-kamp-accent/90 text-black font-bold text-base md:text-lg px-8 py-6 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
+                >
+                  <Dumbbell className="w-5 h-5 mr-2" />
+                  Записаться на пробную тренировку
+                </Button>
+              </DialogTrigger>
+            </div>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-xl">Запись на пробную тренировку</DialogTitle>
