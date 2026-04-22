@@ -55,8 +55,7 @@ var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
             Приходи на пробную тренировку и почувствуй атмосферу клуба. Никаких обязательств — только реальный опыт и знакомство с командой.
           </p>
 
-          <div className="flex flex-col items-center gap-4">
-            <div ref={bitrixScriptAnchorRef} aria-hidden="true" />
+          <div ref={bitrixWrapperRef} className="flex flex-col items-center gap-4">
             <Button
               ref={triggerButtonRef}
               size="lg"
