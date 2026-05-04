@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2 } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen } from 'lucide-react';
+import { HomeworkManagement } from './HomeworkManagement';
 import { ContentManager } from '@/components/cms/ContentManager';
 import { ActivityManagement } from './ActivityManagement';
 import { AsceticManagement } from '@/components/kamp/AsceticManagement';
@@ -59,6 +60,11 @@ export const AdminDashboard: React.FC = () => {
             <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Zap className="w-4 h-4" />
               <span className="whitespace-nowrap">Купер</span>
+            </TabsTrigger>
+            
+            <TabsTrigger value="homework" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <BookOpen className="w-4 h-4" />
+              <span className="whitespace-nowrap">ДЗ</span>
             </TabsTrigger>
             
             <TabsTrigger value="intensive-schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
@@ -135,6 +141,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="cooper" className="mt-0">
           <EnhancedCooperTest />
+        </TabsContent>
+
+        <TabsContent value="homework" className="mt-0">
+          <HomeworkManagement />
         </TabsContent>
         
         <TabsContent value="intensive-schedule" className="mt-0">
