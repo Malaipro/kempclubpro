@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2 } from 'lucide-react';
 import { ContentManager } from '@/components/cms/ContentManager';
 import { ActivityManagement } from './ActivityManagement';
 import { AsceticManagement } from '@/components/kamp/AsceticManagement';
@@ -16,6 +16,7 @@ import { ContentBlocksManagement } from './ContentBlocksManagement';
 import { InstructionsManagement } from './InstructionsManagement';
 import { SecurityEnhancements } from '@/components/security/SecurityEnhancements';
 import { ContractManagement } from './ContractManagement';
+import { ReferralsManagement } from './ReferralsManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
@@ -94,6 +95,11 @@ export const AdminDashboard: React.FC = () => {
               <FileSignature className="w-4 h-4" />
               <span className="whitespace-nowrap">Договоры</span>
             </TabsTrigger>
+
+            <TabsTrigger value="referrals" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Share2 className="w-4 h-4" />
+              <span className="whitespace-nowrap">Рефералы</span>
+            </TabsTrigger>
             
             <TabsTrigger value="security" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Shield className="w-4 h-4" />
@@ -161,6 +167,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="contracts" className="mt-0">
           <ContractManagement />
+        </TabsContent>
+
+        <TabsContent value="referrals" className="mt-0">
+          <ReferralsManagement />
         </TabsContent>
         
         <TabsContent value="security" className="mt-0">

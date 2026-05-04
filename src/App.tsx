@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
 import ClubResidents from "./pages/ClubResidents";
+import Join from "./pages/Join";
 
 // Lazy load admin pages
 const AdminViewParticipant = lazy(() => import("./pages/AdminViewParticipant"));
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/club-residents" element={<ClubResidents />} />
+            <Route path="/join" element={<Join />} />
             <Route path="/admin/view-participant/:userId" element={<AdminViewParticipant />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
