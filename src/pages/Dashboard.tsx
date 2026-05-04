@@ -8,7 +8,8 @@ import { ProfileCompletionWizard } from '@/components/profile/ProfileCompletionW
 import { WelcomeBanner } from '@/components/dashboard/WelcomeBanner';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Shield, Activity, Calendar, Trophy, Loader2 } from 'lucide-react';
+import { LogOut, User, Shield, Activity, Calendar, Trophy, Loader2, BookOpen } from 'lucide-react';
+import { HomeworkUserView } from '@/components/dashboard/HomeworkUserView';
 import { supabase } from '@/integrations/supabase/client';
 
 // Ленивая загрузка компонентов для улучшения производительности
@@ -232,7 +233,7 @@ export const Dashboard: React.FC = () => {
                         </>}
                     </TabsList>
                     
-                    {isMobile && <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mt-2">
+                    {isMobile && <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1 mt-2">
                         <TabsTrigger value="cooper" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
                           <Shield className="w-4 h-4" />
                           <span className="text-center">Купер</span>
@@ -240,6 +241,16 @@ export const Dashboard: React.FC = () => {
                         <TabsTrigger value="schedule" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
                           <Calendar className="w-4 h-4" />
                           <span className="text-center">Расписание</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="homework" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
+                          <BookOpen className="w-4 h-4" />
+                          <span className="text-center">ДЗ</span>
+                        </TabsTrigger>
+                      </TabsList>}
+                    {!isMobile && <TabsList className="grid w-full grid-cols-1 h-auto p-1 gap-1 mt-2">
+                        <TabsTrigger value="homework" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
+                          <BookOpen className="w-4 h-4" />
+                          <span className="text-center">Домашние задания</span>
                         </TabsTrigger>
                       </TabsList>}
                   </div>
@@ -274,6 +285,10 @@ export const Dashboard: React.FC = () => {
                     <Suspense fallback={<LoadingFallback />}>
                       <ScheduleViewer isClubResident={isClubResident} />
                     </Suspense>
+                  </TabsContent>
+
+                  <TabsContent value="homework">
+                    <HomeworkUserView />
                   </TabsContent>
                 </Tabs></>}
             </Suspense>
