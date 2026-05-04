@@ -347,6 +347,39 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string
+          source_id: string | null
+          source_type: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason: string
+          source_id?: string | null
+          source_type?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string
+          source_id?: string | null
+          source_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_rate_limit: {
         Row: {
           created_at: string | null
@@ -1037,6 +1070,8 @@ export type Database = {
           phone: string | null
           profile_private: boolean | null
           rank_position: number | null
+          referral_code: string | null
+          referral_coins: number
           stream_end_date: string | null
           stream_start_date: string | null
           telegram: string | null
@@ -1074,6 +1109,8 @@ export type Database = {
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
+          referral_code?: string | null
+          referral_coins?: number
           stream_end_date?: string | null
           stream_start_date?: string | null
           telegram?: string | null
@@ -1111,6 +1148,8 @@ export type Database = {
           phone?: string | null
           profile_private?: boolean | null
           rank_position?: number | null
+          referral_code?: string | null
+          referral_coins?: number
           stream_end_date?: string | null
           stream_start_date?: string | null
           telegram?: string | null
@@ -1230,6 +1269,81 @@ export type Database = {
           sort_order?: number | null
           updated_at?: string | null
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      referral_leads: {
+        Row: {
+          bonus_amount: number | null
+          bonus_awarded: boolean
+          comment: string | null
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          processed_by: string | null
+          referral_code: string
+          referrer_user_id: string
+          status: string
+          telegram: string | null
+        }
+        Insert: {
+          bonus_amount?: number | null
+          bonus_awarded?: boolean
+          comment?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          processed_by?: string | null
+          referral_code: string
+          referrer_user_id: string
+          status?: string
+          telegram?: string | null
+        }
+        Update: {
+          bonus_amount?: number | null
+          bonus_awarded?: boolean
+          comment?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          processed_by?: string | null
+          referral_code?: string
+          referrer_user_id?: string
+          status?: string
+          telegram?: string | null
+        }
+        Relationships: []
+      }
+      referral_settings: {
+        Row: {
+          bonus_amount: number
+          default_invite_text: string
+          enabled: boolean
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bonus_amount?: number
+          default_invite_text?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bonus_amount?: number
+          default_invite_text?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -2201,6 +2315,7 @@ export type Database = {
       }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      confirm_referral_lead: { Args: { _lead_id: string }; Returns: undefined }
       decrypt_phone: { Args: { encrypted_phone: string }; Returns: string }
       encrypt_phone: { Args: { phone_text: string }; Returns: string }
       enhanced_contact_rate_limit: {
@@ -2211,6 +2326,8 @@ export type Database = {
         Args: { p_action?: string; p_ip_address?: unknown }
         Returns: boolean
       }
+      ensure_referral_code: { Args: { _user_id: string }; Returns: string }
+      generate_referral_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
