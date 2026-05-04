@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_types: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          name: string
+          shape: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          description?: string | null
+          icon: string
+          id?: string
+          name: string
+          shape: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          name?: string
+          shape?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           badge_type: string
@@ -92,6 +122,36 @@ export type Database = {
           name?: string
           points?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_access_log: {
+        Row: {
+          accessed_at: string | null
+          action: string
+          admin_user_id: string | null
+          id: string
+          ip_address: unknown
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string | null
+          action: string
+          admin_user_id?: string | null
+          id?: string
+          ip_address?: unknown
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string | null
+          action?: string
+          admin_user_id?: string | null
+          id?: string
+          ip_address?: unknown
+          table_name?: string
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -284,6 +344,30 @@ export type Database = {
           points_reward?: number | null
           requirements?: Json | null
           start_date?: string | null
+        }
+        Relationships: []
+      }
+      contact_rate_limit: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          submission_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address: unknown
+          submission_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          submission_count?: number | null
+          window_start?: string | null
         }
         Relationships: []
       }
@@ -660,6 +744,42 @@ export type Database = {
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
+        }
+        Relationships: []
+      }
+      intensive_streams: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          is_current: boolean
+          name: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          is_current?: boolean
+          name: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1851,6 +1971,216 @@ export type Database = {
           },
         ]
       }
+      аскезы_участников: {
+        Row: {
+          completion_percentage: number | null
+          created_at: string
+          description: string | null
+          duration_days: number
+          end_date: string
+          id: string
+          is_completed: boolean | null
+          name: string
+          participant_id: string
+          start_date: string
+        }
+        Insert: {
+          completion_percentage?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          end_date: string
+          id?: string
+          is_completed?: boolean | null
+          name: string
+          participant_id: string
+          start_date: string
+        }
+        Update: {
+          completion_percentage?: number | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          end_date?: string
+          id?: string
+          is_completed?: boolean | null
+          name?: string
+          participant_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "аскезы_участников_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "участники"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      кэмп_активности: {
+        Row: {
+          activity_date: string
+          activity_type_new:
+            | Database["public"]["Enums"]["activity_type_new"]
+            | null
+          attendance_counted: boolean | null
+          auto_points: number | null
+          created_at: string
+          description: string | null
+          id: string
+          lecture_subtype: Database["public"]["Enums"]["lecture_subtype"] | null
+          multiplier: number | null
+          participant_id: string
+          points: number
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          shram_subtype: Database["public"]["Enums"]["shram_subtype"] | null
+          training_subtype:
+            | Database["public"]["Enums"]["training_subtype"]
+            | null
+          verified_by: string | null
+          zakal_subtype: Database["public"]["Enums"]["zakal_subtype"] | null
+        }
+        Insert: {
+          activity_date?: string
+          activity_type_new?:
+            | Database["public"]["Enums"]["activity_type_new"]
+            | null
+          attendance_counted?: boolean | null
+          auto_points?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lecture_subtype?:
+            | Database["public"]["Enums"]["lecture_subtype"]
+            | null
+          multiplier?: number | null
+          participant_id: string
+          points?: number
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          shram_subtype?: Database["public"]["Enums"]["shram_subtype"] | null
+          training_subtype?:
+            | Database["public"]["Enums"]["training_subtype"]
+            | null
+          verified_by?: string | null
+          zakal_subtype?: Database["public"]["Enums"]["zakal_subtype"] | null
+        }
+        Update: {
+          activity_date?: string
+          activity_type_new?:
+            | Database["public"]["Enums"]["activity_type_new"]
+            | null
+          attendance_counted?: boolean | null
+          auto_points?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lecture_subtype?:
+            | Database["public"]["Enums"]["lecture_subtype"]
+            | null
+          multiplier?: number | null
+          participant_id?: string
+          points?: number
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          shram_subtype?: Database["public"]["Enums"]["shram_subtype"] | null
+          training_subtype?:
+            | Database["public"]["Enums"]["training_subtype"]
+            | null
+          verified_by?: string | null
+          zakal_subtype?: Database["public"]["Enums"]["zakal_subtype"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "кэмп_активности_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "участники"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      тотемы_участников: {
+        Row: {
+          earned_at: string
+          id: string
+          participant_id: string
+          requirements_met: Json | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+        }
+        Insert: {
+          earned_at?: string
+          id?: string
+          participant_id: string
+          requirements_met?: Json | null
+          totem_type: Database["public"]["Enums"]["totem_type"]
+        }
+        Update: {
+          earned_at?: string
+          id?: string
+          participant_id?: string
+          requirements_met?: Json | null
+          totem_type?: Database["public"]["Enums"]["totem_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "тотемы_участников_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "участники"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      участники: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          email: string | null
+          height_cm: number | null
+          id: string
+          last_name: string | null
+          name: string
+          points: number
+          stream_id: string | null
+          user_id: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          email?: string | null
+          height_cm?: number | null
+          id?: string
+          last_name?: string | null
+          name: string
+          points?: number
+          stream_id?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          email?: string | null
+          height_cm?: number | null
+          id?: string
+          last_name?: string | null
+          name?: string
+          points?: number
+          stream_id?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "участники_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "intensive_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1942,12 +2272,31 @@ export type Database = {
         | "hero_race"
         | "tactics"
         | "ascetic_challenge"
+      activity_type_new:
+        | "training"
+        | "lecture"
+        | "homework"
+        | "crash_test_bjj"
+        | "crash_test_kick"
+        | "heroes_race"
+        | "tactics"
+        | "ascetic"
+      app_role: "admin" | "user"
+      lecture_subtype:
+        | "kemp"
+        | "nutrition"
+        | "psychology"
+        | "philosophy"
+        | "leadership"
+        | "tactics"
       participant_status_type:
         | "intensive_active"
         | "intensive_completed"
         | "club_resident"
         | "alumni"
+      reward_type: "zakal" | "gran" | "shram"
       schedule_type: "intensive" | "club"
+      shram_subtype: "bjj" | "kick" | "ofp" | "tactics"
       totem_type:
         | "snake"
         | "paw"
@@ -1959,7 +2308,9 @@ export type Database = {
         | "blade"
         | "lighthouse"
         | "bear"
+      training_subtype: "bjj" | "kick" | "ofp"
       user_role: "user" | "admin" | "super_admin" | "trainer"
+      zakal_subtype: "bjj" | "kick" | "ofp"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2099,13 +2450,34 @@ export const Constants = {
         "tactics",
         "ascetic_challenge",
       ],
+      activity_type_new: [
+        "training",
+        "lecture",
+        "homework",
+        "crash_test_bjj",
+        "crash_test_kick",
+        "heroes_race",
+        "tactics",
+        "ascetic",
+      ],
+      app_role: ["admin", "user"],
+      lecture_subtype: [
+        "kemp",
+        "nutrition",
+        "psychology",
+        "philosophy",
+        "leadership",
+        "tactics",
+      ],
       participant_status_type: [
         "intensive_active",
         "intensive_completed",
         "club_resident",
         "alumni",
       ],
+      reward_type: ["zakal", "gran", "shram"],
       schedule_type: ["intensive", "club"],
+      shram_subtype: ["bjj", "kick", "ofp", "tactics"],
       totem_type: [
         "snake",
         "paw",
@@ -2118,7 +2490,9 @@ export const Constants = {
         "lighthouse",
         "bear",
       ],
+      training_subtype: ["bjj", "kick", "ofp"],
       user_role: ["user", "admin", "super_admin", "trainer"],
+      zakal_subtype: ["bjj", "kick", "ofp"],
     },
   },
 } as const
