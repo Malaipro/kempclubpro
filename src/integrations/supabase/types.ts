@@ -1423,6 +1423,101 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_requests: {
+        Row: {
+          admin_comment: string | null
+          cost_coins: number
+          created_at: string
+          fulfilled_at: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reward_id: string
+          status: string
+          updated_at: string
+          user_comment: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          cost_coins: number
+          created_at?: string
+          fulfilled_at?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_id: string
+          status?: string
+          updated_at?: string
+          user_comment?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_comment?: string | null
+          cost_coins?: number
+          created_at?: string
+          fulfilled_at?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_id?: string
+          status?: string
+          updated_at?: string
+          user_comment?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_requests_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          cost_coins: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          stock: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cost_coins: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          stock?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cost_coins?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          stock?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_audit_log: {
         Row: {
           action: string
@@ -2392,6 +2487,10 @@ export type Database = {
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       confirm_referral_lead: { Args: { _lead_id: string }; Returns: undefined }
+      create_reward_request: {
+        Args: { p_reward_id: string; p_user_comment?: string }
+        Returns: string
+      }
       decrypt_phone: { Args: { encrypted_phone: string }; Returns: string }
       encrypt_phone: { Args: { phone_text: string }; Returns: string }
       enhanced_contact_rate_limit: {
@@ -2404,6 +2503,7 @@ export type Database = {
       }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
+      get_user_coin_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -2433,6 +2533,14 @@ export type Database = {
           p_admin_comment?: string
           p_status: string
           p_submission_id: string
+        }
+        Returns: undefined
+      }
+      review_reward_request: {
+        Args: {
+          p_admin_comment?: string
+          p_new_status: string
+          p_request_id: string
         }
         Returns: undefined
       }
