@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Shield, Archive, User, Share2 } from 'lucide-react';
+import { Calendar, Shield, Archive, User, Share2, Gift } from 'lucide-react';
 import { ClubScheduleViewer } from '@/components/schedule/ClubScheduleViewer';
 import { ClubRules } from './ClubRules';
 import { IntensiveArchive } from './IntensiveArchive';
 import { AccountSettings } from '@/components/profile/AccountSettings';
 import { ResidentReferrals } from '@/components/referrals/ResidentReferrals';
+import { RewardsShop } from './RewardsShop';
 
 export const ClubResidentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('schedule');
