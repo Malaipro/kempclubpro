@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Shield, Archive, User } from 'lucide-react';
+import { Calendar, Shield, Archive, User, Share2 } from 'lucide-react';
 import { ClubScheduleViewer } from '@/components/schedule/ClubScheduleViewer';
 import { ClubRules } from './ClubRules';
 import { IntensiveArchive } from './IntensiveArchive';
 import { AccountSettings } from '@/components/profile/AccountSettings';
+import { ResidentReferrals } from '@/components/referrals/ResidentReferrals';
 
 export const ClubResidentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -38,6 +39,14 @@ export const ClubResidentDashboard: React.FC = () => {
               <Archive className="w-4 h-4" />
               <span className="whitespace-nowrap">Архив</span>
             </TabsTrigger>
+
+            <TabsTrigger 
+              value="referrals" 
+              className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="whitespace-nowrap">Рефералы</span>
+            </TabsTrigger>
             
             <TabsTrigger 
               value="settings" 
@@ -60,6 +69,10 @@ export const ClubResidentDashboard: React.FC = () => {
         
         <TabsContent value="archive" className="mt-0">
           <IntensiveArchive />
+        </TabsContent>
+
+        <TabsContent value="referrals" className="mt-0">
+          <ResidentReferrals />
         </TabsContent>
         
         <TabsContent value="settings" className="mt-0">
