@@ -46,7 +46,7 @@ interface Submission {
   user_id: string;
   assignment_id: string | null;
   homework_type: string;
-  description: string | null;
+  content: string | null;
   status: string;
   admin_comment: string | null;
   points_earned: number;
@@ -283,7 +283,7 @@ export const HomeworkManagement: React.FC = () => {
                       {s.assignment && (
                         <p className="text-sm text-muted-foreground">Задание: <strong>{s.assignment.title}</strong></p>
                       )}
-                      {s.description && <p className="text-sm mt-2 whitespace-pre-wrap">{s.description}</p>}
+                      {s.content && <p className="text-sm mt-2 whitespace-pre-wrap">{s.content}</p>}
                       <p className="text-xs text-muted-foreground mt-2">
                         Отправлено: {new Date(s.created_at).toLocaleString('ru-RU')}
                         {s.reviewed_at && ` • Проверено: ${new Date(s.reviewed_at).toLocaleString('ru-RU')}`}
@@ -389,8 +389,8 @@ export const HomeworkManagement: React.FC = () => {
                 <strong>{participantName(reviewDialog.profile)}</strong>
                 {reviewDialog.assignment && <> — {reviewDialog.assignment.title}</>}
               </div>
-              {reviewDialog.description && (
-                <div className="p-3 bg-muted/50 rounded text-sm whitespace-pre-wrap">{reviewDialog.description}</div>
+              {reviewDialog.content && (
+                <div className="p-3 bg-muted/50 rounded text-sm whitespace-pre-wrap">{reviewDialog.content}</div>
               )}
               <div>
                 <Label>Комментарий (необязательно)</Label>

@@ -22,7 +22,7 @@ interface Assignment {
 interface Submission {
   id: string;
   assignment_id: string | null;
-  description: string | null;
+  content: string | null;
   status: string;
   admin_comment: string | null;
   points_earned: number;
@@ -60,7 +60,7 @@ export const HomeworkUserView: React.FC = () => {
     const existing = submissionFor(a.id);
     setExistingSubmission(existing);
     setDialogFor(a);
-    setText(existing?.status === 'rework' ? existing.description || '' : '');
+    setText(existing?.status === 'rework' ? existing.content || '' : '');
   };
 
   const submit = async () => {
@@ -75,7 +75,7 @@ export const HomeworkUserView: React.FC = () => {
       ({ error } = await supabase
         .from('homework_submissions')
         .update({
-          description: text.trim(),
+          content: text.trim(),
           status: 'submitted',
           admin_comment: null,
           reviewed_at: null,
@@ -89,7 +89,7 @@ export const HomeworkUserView: React.FC = () => {
         user_id: user.id,
         assignment_id: dialogFor.id,
         homework_type: 'assignment',
-        description: text.trim(),
+        content: text.trim(),
         status: 'submitted',
       }));
     }
@@ -152,10 +152,10 @@ export const HomeworkUserView: React.FC = () => {
                       <strong>Комментарий админа:</strong> {sub.admin_comment}
                     </div>
                   )}
-                  {sub?.description && sub.status !== 'rework' && (
+                  {sub?.content && sub.status !== 'rework' && (
                     <div className="mt-3 p-2 bg-muted/30 rounded text-sm">
                       <strong>Ваш ответ:</strong>
-                      <p className="whitespace-pre-wrap mt-1">{sub.description}</p>
+                      <p className="whitespace-pre-wrap mt-1">{sub.content}</p>
                     </div>
                   )}
                 </div>
