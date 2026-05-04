@@ -74,8 +74,8 @@ const Join: React.FC = () => {
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
-      parsed.error.errors.forEach(err => {
-        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+      (parsed.error as any).issues?.forEach((err: any) => {
+        if (err.path?.[0]) fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
       return;
