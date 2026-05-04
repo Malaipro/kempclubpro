@@ -741,44 +741,120 @@ export type Database = {
         }
         Relationships: []
       }
+      homework_assignments: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          id: string
+          is_active: boolean
+          points_reward: number
+          stream_id: string | null
+          target_user_id: string | null
+          theme: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          stream_id?: string | null
+          target_user_id?: string | null
+          theme?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          stream_id?: string | null
+          target_user_id?: string | null
+          theme?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_assignments_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homework_submissions: {
         Row: {
+          admin_comment: string | null
+          assignment_id: string | null
           content: string | null
           created_at: string
           homework_type: string
           id: string
           notes: string | null
           points_earned: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
           submitted_at: string
           user_id: string
           verified: boolean | null
           verified_by: string | null
         }
         Insert: {
+          admin_comment?: string | null
+          assignment_id?: string | null
           content?: string | null
           created_at?: string
           homework_type: string
           id?: string
           notes?: string | null
           points_earned?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           submitted_at?: string
           user_id: string
           verified?: boolean | null
           verified_by?: string | null
         }
         Update: {
+          admin_comment?: string | null
+          assignment_id?: string | null
           content?: string | null
           created_at?: string
           homework_type?: string
           id?: string
           notes?: string | null
           points_earned?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           submitted_at?: string
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "homework_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intensive_streams: {
         Row: {
@@ -2352,6 +2428,14 @@ export type Database = {
       mask_phone_number: { Args: { phone_number: string }; Returns: string }
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
       recalculate_all_ranks: { Args: never; Returns: undefined }
+      review_homework_submission: {
+        Args: {
+          p_admin_comment?: string
+          p_status: string
+          p_submission_id: string
+        }
+        Returns: undefined
+      }
       update_participant_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["participant_status_type"]
