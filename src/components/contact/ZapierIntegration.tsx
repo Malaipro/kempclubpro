@@ -40,7 +40,7 @@ export const ZapierIntegration: React.FC<ZapierIntegrationProps> = ({
         course: "male",
         source: "КЭМП - Клуб Эффективного Мужского Прогресса",
         timestamp: new Date().toISOString(),
-        website: "https://mcruh.ru",
+        website: "https://kempclub.pro",
         test: true
       };
 

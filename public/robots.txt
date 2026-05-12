@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Host: kempclub.pro
+Sitemap: https://kempclub.pro/sitemap.xml
