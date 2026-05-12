@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       course: 'male', // фиксированное значение для кэмп-клуба
       source: 'КЭМП - Клуб Эффективного Мужского Прогресса',
       timestamp: new Date().toISOString(),
-      website: 'https://mcruh.ru'
+      website: 'https://kempclub.pro'
     };
 
     console.log("Sending data to Zapier:", zapierData);
