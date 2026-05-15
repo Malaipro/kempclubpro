@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Менять дату следующего запуска КЭМП здесь
-export const FIXED_TARGET_DATE = new Date('2026-05-18T00:00:00');
+export const FIXED_TARGET_DATE = new Date('2026-06-01T00:00:00');
 
 // Declare Bitrix form interface for TypeScript
 declare global {
@@ -251,12 +251,12 @@ const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
               <div className={`flex-grow ${isMobile ? 'p-4' : 'p-8'}`}>
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
                 {isMobile ? (
-                  <p className="text-white/80 mb-4 text-sm">
-                    Интенсив начинается {formattedDate}! Записывайся сейчас — количество мест ограничено!
+                  <p className="text-white/80 mb-4 text-sm whitespace-pre-line">
+                    Интенсив начинается  1  июня {"\n"}2026! Записывайся сейчас — количество мест ограничено!
                   </p>
                 ) : (
-                  <p className="text-white/80 mb-8">
-                    Новый интенсив стартует {formattedDate}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
+                  <p className="text-white/80 mb-8 whitespace-pre-line">
+                    Новый интенсив стартует  1  июня {"\n"}2026! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
                   </p>
                 )}
 
