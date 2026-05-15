@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Менять дату следующего запуска КЭМП здесь
-export const FIXED_TARGET_DATE = new Date('2026-05-18T00:00:00');
+export const FIXED_TARGET_DATE = new Date('2026-06-01T00:00:00');
 
 // Declare Bitrix form interface for TypeScript
 declare global {
