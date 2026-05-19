@@ -1,17 +1,14 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /admin/
 
-Host: kempclub.pro
+User-agent: Yandex
+Allow: /
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /admin/
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&gclid&yclid&fbclid
+
 Sitemap: https://kempclub.pro/sitemap.xml
