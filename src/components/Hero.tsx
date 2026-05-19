@@ -36,7 +36,7 @@ export const Hero: React.FC = () => {
               src="/lovable-uploads/dc02efeb-43ee-450d-a695-096ffa5ee61c.png" 
               alt="КЭМП Logo" 
               className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain inline-block mr-3 md:mr-4"
-            />КЭМП — интенсив и клуб для тех, кто готов пройти испытания и стать 
+            />КЭМП — закрытый мужской клуб и интенсив для тех, кто готов пройти испытания и стать 
             <span className="text-gradient bg-gradient-to-r from-kamp-accent to-kamp-primary"> сильнее.</span>
           </h1>
           

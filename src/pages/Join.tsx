@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,6 +115,12 @@ const Join: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
+      <Helmet>
+        <title>Заявка в КЭМП — вступить в закрытый мужской клуб</title>
+        <meta name="description" content="Оставьте заявку на вступление в закрытый мужской клуб КЭМП по приглашению резидента. Дисциплина, выносливость, братство." />
+        <link rel="canonical" href="https://kempclub.pro/join" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
