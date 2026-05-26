@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="20" fill="#0a0a0a"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Montserrat, Arial, sans-serif" font-weight="800"
+        font-size="64" fill="#e8b84a" letter-spacing="-2">К</text>
+  <rect x="10" y="98" width="100" height="4" rx="2" fill="#e8b84a"/>
+</svg>
