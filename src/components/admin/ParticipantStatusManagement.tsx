@@ -23,7 +23,7 @@ interface Participant {
 
 const statusLabels: Record<ParticipantStatus, string> = {
   intensive_active: 'Активный участник',
-  intensive_completed: 'Завершил интенсив',
+  intensive_completed: 'Завершил интенсив (legacy)',
   club_resident: 'Резидент клуба',
   alumni: 'Выпускник'
 };
@@ -191,9 +191,12 @@ export const ParticipantStatusManagement: React.FC = () => {
                         <SelectItem value="intensive_active">
                           Активный участник
                         </SelectItem>
-                        <SelectItem value="intensive_completed">
-                          Завершил интенсив
-                        </SelectItem>
+                        {/* intensive_completed — legacy-статус: не предлагается для назначения */}
+                        {participant.participant_status === 'intensive_completed' && (
+                          <SelectItem value="intensive_completed" disabled>
+                            Завершил интенсив (legacy)
+                          </SelectItem>
+                        )}
                         <SelectItem value="club_resident">
                           Резидент клуба
                         </SelectItem>

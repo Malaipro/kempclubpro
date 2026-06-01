@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { ParticipantCoinsManager } from '@/components/admin/ParticipantCoinsManager';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
@@ -261,6 +262,10 @@ export default function AdminViewParticipant() {
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="w-4 h-4" />
               Документы
+            </TabsTrigger>
+            <TabsTrigger value="coins" className="gap-2">
+              <Coins className="w-4 h-4" />
+              Коины
             </TabsTrigger>
           </TabsList>
 
@@ -523,6 +528,11 @@ export default function AdminViewParticipant() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Coins Tab */}
+          <TabsContent value="coins">
+            {userId && <ParticipantCoinsManager userId={userId} />}
           </TabsContent>
         </Tabs>
       </div>
