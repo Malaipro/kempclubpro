@@ -54,7 +54,7 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
           .order('created_at', { ascending: false }),
       ]);
       if (txRes.error) throw txRes.error;
-      setBalance(balanceRes.data ?? 0);
+      setBalance((balanceRes.data as number) ?? 0);
       setTransactions(txRes.data || []);
     } catch (error) {
       console.error('Error loading coins:', error);
