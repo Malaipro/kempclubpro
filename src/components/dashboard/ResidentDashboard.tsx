@@ -63,7 +63,7 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ profile })
         </TabsContent>
 
         <TabsContent value="homework" className="mt-0">
-          <HomeworkUserView />
+          <HomeworkUserView archiveMode={isClubResident} />
         </TabsContent>
 
         <TabsContent value="materials" className="mt-0">
