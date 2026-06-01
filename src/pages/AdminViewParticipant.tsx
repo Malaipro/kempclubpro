@@ -7,11 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins, LayoutDashboard, Activity, Timer, ShieldAlert, Gift, UserPlus, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ParticipantCoinsManager } from '@/components/admin/ParticipantCoinsManager';
 import { ParticipantOverview } from '@/components/admin/ParticipantOverview';
+import { ParticipantHomeworkTab } from '@/components/admin/participant/ParticipantHomeworkTab';
+import { ParticipantActivityTab } from '@/components/admin/participant/ParticipantActivityTab';
+import { ParticipantTotemsTab } from '@/components/admin/participant/ParticipantTotemsTab';
+import { ParticipantCooperTab } from '@/components/admin/participant/ParticipantCooperTab';
+import { ParticipantCrashTestsTab } from '@/components/admin/participant/ParticipantCrashTestsTab';
+import { ParticipantRewardsTab } from '@/components/admin/participant/ParticipantRewardsTab';
+import { ParticipantReferralsTab } from '@/components/admin/participant/ParticipantReferralsTab';
+import { ParticipantAuditTab } from '@/components/admin/participant/ParticipantAuditTab';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
