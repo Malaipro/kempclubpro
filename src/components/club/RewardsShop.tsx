@@ -168,10 +168,16 @@ export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) =>
                   )}
                   <Button
                     className="w-full"
-                    disabled={noStock || !canAfford}
+                    disabled={!canRedeem || noStock || !canAfford}
                     onClick={() => setOrderDialog(r)}
                   >
-                    {noStock ? 'Закончилась' : !canAfford ? 'Недостаточно коинов' : 'Заказать'}
+                    {!canRedeem
+                      ? 'Только для резидентов'
+                      : noStock
+                      ? 'Закончилась'
+                      : !canAfford
+                      ? 'Недостаточно коинов'
+                      : 'Заказать'}
                   </Button>
                 </CardContent>
               </Card>
