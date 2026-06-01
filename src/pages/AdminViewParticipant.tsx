@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { ParticipantCoinsManager } from '@/components/admin/ParticipantCoinsManager';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
