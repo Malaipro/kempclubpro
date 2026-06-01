@@ -30,7 +30,12 @@ interface Submission {
   reviewed_at: string | null;
 }
 
-export const HomeworkUserView: React.FC = () => {
+interface HomeworkUserViewProps {
+  /** Для club_resident: read-only архив выполненных ДЗ без отправки новых ответов. */
+  archiveMode?: boolean;
+}
+
+export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode = false }) => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
