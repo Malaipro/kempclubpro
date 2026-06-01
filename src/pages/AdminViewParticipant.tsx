@@ -280,6 +280,38 @@ export default function AdminViewParticipant() {
               <Coins className="w-4 h-4" />
               Коины
             </TabsTrigger>
+            <TabsTrigger value="homework" className="gap-2">
+              <FileText className="w-4 h-4" />
+              ДЗ
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="gap-2">
+              <Activity className="w-4 h-4" />
+              Активность
+            </TabsTrigger>
+            <TabsTrigger value="totems" className="gap-2">
+              <Award className="w-4 h-4" />
+              Тотемы
+            </TabsTrigger>
+            <TabsTrigger value="cooper" className="gap-2">
+              <Timer className="w-4 h-4" />
+              Купер
+            </TabsTrigger>
+            <TabsTrigger value="crashtests" className="gap-2">
+              <ShieldAlert className="w-4 h-4" />
+              Краш-тесты
+            </TabsTrigger>
+            <TabsTrigger value="rewards" className="gap-2">
+              <Gift className="w-4 h-4" />
+              Награды
+            </TabsTrigger>
+            <TabsTrigger value="referrals" className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              Рефералы
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="gap-2">
+              <History className="w-4 h-4" />
+              Аудит
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -559,6 +591,46 @@ export default function AdminViewParticipant() {
           {/* Coins Tab */}
           <TabsContent value="coins">
             {userId && <ParticipantCoinsManager userId={userId} />}
+          </TabsContent>
+
+          {/* Homework Tab */}
+          <TabsContent value="homework">
+            {userId && <ParticipantHomeworkTab userId={userId} streamId={participant?.current_stream_id ?? null} />}
+          </TabsContent>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity">
+            {userId && <ParticipantActivityTab userId={userId} />}
+          </TabsContent>
+
+          {/* Totems Tab */}
+          <TabsContent value="totems">
+            {userId && <ParticipantTotemsTab userId={userId} onChanged={loadParticipantData} />}
+          </TabsContent>
+
+          {/* Cooper Tab */}
+          <TabsContent value="cooper">
+            {userId && <ParticipantCooperTab userId={userId} />}
+          </TabsContent>
+
+          {/* Crash Tests Tab */}
+          <TabsContent value="crashtests">
+            {userId && <ParticipantCrashTestsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Rewards Tab */}
+          <TabsContent value="rewards">
+            {userId && <ParticipantRewardsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals">
+            {userId && <ParticipantReferralsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit">
+            {userId && <ParticipantAuditTab userId={userId} />}
           </TabsContent>
         </Tabs>
       </div>
