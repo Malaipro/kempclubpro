@@ -245,8 +245,12 @@ export default function AdminViewParticipant() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="mb-6 flex-wrap h-auto">
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Обзор
+            </TabsTrigger>
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
               Профиль
