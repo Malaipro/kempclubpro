@@ -20,6 +20,7 @@ const ScheduleViewer = lazy(() => import('@/components/schedule/ScheduleViewer')
 const EnhancedPersonalProfile = lazy(() => import('@/components/profile/EnhancedPersonalProfile').then(m => ({ default: m.EnhancedPersonalProfile })));
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
 const ClubResidentDashboard = lazy(() => import('@/components/club/ClubResidentDashboard').then(m => ({ default: m.ClubResidentDashboard })));
+const ResidentDashboard = lazy(() => import('@/components/dashboard/ResidentDashboard').then(m => ({ default: m.ResidentDashboard })));
 
 // Компонент загрузки для Suspense
 const LoadingFallback = () => (
