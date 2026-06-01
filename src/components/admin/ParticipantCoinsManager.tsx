@@ -93,14 +93,14 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('admin_adjust_coins', {
+      const { data, error } = await (supabase.rpc as any)('admin_adjust_coins', {
         p_user_id: userId,
         p_amount: sign * parsed,
         p_reason: reason.trim(),
       });
       if (error) throw error;
 
-      setBalance(data ?? 0);
+      setBalance((data as number) ?? 0);
       setAmount('');
       setReason('');
       toast({
