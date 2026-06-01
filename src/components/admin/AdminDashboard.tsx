@@ -19,6 +19,7 @@ import { InstructionsManagement } from './InstructionsManagement';
 import { SecurityEnhancements } from '@/components/security/SecurityEnhancements';
 import { ContractManagement } from './ContractManagement';
 import { ReferralsManagement } from './ReferralsManagement';
+import { MaterialsManagement } from './MaterialsManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
@@ -102,6 +103,11 @@ export const AdminDashboard: React.FC = () => {
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Контент</span>
             </TabsTrigger>
+
+            <TabsTrigger value="materials" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <BookOpen className="w-4 h-4" />
+              <span className="whitespace-nowrap">Материалы</span>
+            </TabsTrigger>
             
             <TabsTrigger value="contracts" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileSignature className="w-4 h-4" />
@@ -179,6 +185,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="content" className="mt-0">
           <ContentBlocksManagement />
+        </TabsContent>
+
+        <TabsContent value="materials" className="mt-0">
+          <MaterialsManagement />
         </TabsContent>
         
         <TabsContent value="cms" className="mt-0">
