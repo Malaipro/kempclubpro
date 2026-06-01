@@ -20,6 +20,7 @@ const ScheduleViewer = lazy(() => import('@/components/schedule/ScheduleViewer')
 const EnhancedPersonalProfile = lazy(() => import('@/components/profile/EnhancedPersonalProfile').then(m => ({ default: m.EnhancedPersonalProfile })));
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
 const ClubResidentDashboard = lazy(() => import('@/components/club/ClubResidentDashboard').then(m => ({ default: m.ClubResidentDashboard })));
+const ResidentDashboard = lazy(() => import('@/components/dashboard/ResidentDashboard').then(m => ({ default: m.ResidentDashboard })));
 
 // Компонент загрузки для Suspense
 const LoadingFallback = () => (
@@ -202,95 +203,15 @@ export const Dashboard: React.FC = () => {
         <section className="kamp-section">
           <div className="kamp-container">
             <Suspense fallback={<LoadingFallback />}>
-              {isSuperAdmin ? <AdminDashboard /> : isClubResident ? <ClubResidentDashboard /> : <>
+              {isSuperAdmin ? <AdminDashboard /> : <>
                 {participantData?.participant_status === 'intensive_active' && (
                   <WelcomeBanner 
                     firstName={participantData?.first_name}
                     profileData={participantData}
                   />
                 )}
-                <Tabs defaultValue="profile" className="w-full">
-                  <div className="mb-6">
-                    <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} h-auto p-1 gap-1`}>
-                      <TabsTrigger value="profile" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                        <User className="w-4 h-4" />
-                        <span className="text-center">Профиль</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="kamp" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                        <Activity className="w-4 h-4" />
-                        <span className="text-center">{isMobile ? 'КЭМП' : 'КЭМП'}</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="leaderboard" className={`flex ${isMobile ? 'flex-col' : 'flex-col'} items-center gap-1 ${isMobile ? 'text-xs px-2 py-2' : 'text-xs px-2 py-3'}`}>
-                        <Trophy className="w-4 h-4" />
-                        <span className="text-center">Рейтинг</span>
-                      </TabsTrigger>
-                      {!isMobile && <>
-                          
-                          <TabsTrigger value="schedule" className="flex flex-col items-center gap-1 text-xs px-2 py-3">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-center">Расписание</span>
-                          </TabsTrigger>
-                        </>}
-                    </TabsList>
-                    
-                    {isMobile && <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1 mt-2">
-                        <TabsTrigger value="cooper" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                          <Shield className="w-4 h-4" />
-                          <span className="text-center">Купер</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="schedule" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-center">Расписание</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="homework" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                          <BookOpen className="w-4 h-4" />
-                          <span className="text-center">ДЗ</span>
-                        </TabsTrigger>
-                      </TabsList>}
-                    {!isMobile && <TabsList className="grid w-full grid-cols-1 h-auto p-1 gap-1 mt-2">
-                        <TabsTrigger value="homework" className="flex flex-row items-center gap-1 text-xs px-3 py-2">
-                          <BookOpen className="w-4 h-4" />
-                          <span className="text-center">Домашние задания</span>
-                        </TabsTrigger>
-                      </TabsList>}
-                  </div>
-                  
-                  <TabsContent value="profile">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <div className="space-y-6">
-                        <EnhancedPersonalProfile />
-                      </div>
-                    </Suspense>
-                  </TabsContent>
-                  
-                  <TabsContent value="kamp">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <KampSystemUser />
-                    </Suspense>
-                  </TabsContent>
-                  
-                  <TabsContent value="leaderboard">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <DetailedLeaderboard />
-                    </Suspense>
-                  </TabsContent>
-                  
-                  <TabsContent value="cooper">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <CooperTestManagement />
-                    </Suspense>
-                  </TabsContent>
-                  
-                  <TabsContent value="schedule">
-                    <Suspense fallback={<LoadingFallback />}>
-                      <ScheduleViewer isClubResident={isClubResident} />
-                    </Suspense>
-                  </TabsContent>
-
-                  <TabsContent value="homework">
-                    <HomeworkUserView />
-                  </TabsContent>
-                </Tabs></>}
+                <ResidentDashboard profile={participantData} />
+              </>}
             </Suspense>
           </div>
         </section>
