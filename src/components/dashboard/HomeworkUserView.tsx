@@ -122,6 +122,51 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
 
   if (loading) return <div className="text-muted-foreground p-6">Загрузка…</div>;
 
+  // Архивный режим для резидентов клуба: read-only история выполненных ДЗ
+  if (archiveMode) {
+    const assignmentTitle = (id: string | null) =>
+      assignments.find((a) => a.id === id)?.title || 'Задание интенсива';
+    if (submissions.length === 0 && assignments.length === 0) {
+      return (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">
+          Архив ДЗ пуст — у вас нет истории выполненных заданий интенсива
+        </CardContent></Card>
+      );
+    }
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-muted-foreground">
+          Архив домашних заданий интенсива (только просмотр). Новые задания доступны участникам активного интенсива.
+        </div>
+        {submissions.map((sub) => (
+          <Card key={sub.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h3 className="font-semibold">{assignmentTitle(sub.assignment_id)}</h3>
+                {statusBadge(sub.status)}
+                {sub.points_earned > 0 && <Badge variant="outline">{sub.points_earned} баллов</Badge>}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {new Date(sub.created_at).toLocaleDateString('ru-RU')}
+              </p>
+              {sub.content && (
+                <div className="mt-3 p-2 bg-muted/30 rounded text-sm">
+                  <strong>Ваш ответ:</strong>
+                  <p className="whitespace-pre-wrap mt-1">{sub.content}</p>
+                </div>
+              )}
+              {sub.admin_comment && (
+                <div className="mt-3 p-2 bg-muted/50 rounded text-sm">
+                  <strong>Комментарий админа:</strong> {sub.admin_comment}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   if (assignments.length === 0) {
     return (
       <Card><CardContent className="p-8 text-center text-muted-foreground">
@@ -129,6 +174,7 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
       </CardContent></Card>
     );
   }
+
 
   return (
     <div className="space-y-3">
