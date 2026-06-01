@@ -43,7 +43,12 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-gray-100 text-gray-800',
 };
 
-export const RewardsShop: React.FC = () => {
+interface RewardsShopProps {
+  /** Только club_resident может оформлять заявки. intensive_active видит каталог в режиме просмотра. */
+  canRedeem?: boolean;
+}
+
+export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -85,7 +90,7 @@ export const RewardsShop: React.FC = () => {
   }, [user?.id]);
 
   const handleOrder = async () => {
-    if (!orderDialog) return;
+    if (!orderDialog || !canRedeem) return;
     setSubmitting(true);
     try {
       const { error } = await supabase.rpc('create_reward_request', {
@@ -116,6 +121,14 @@ export const RewardsShop: React.FC = () => {
           Баланс: {balance}
         </Badge>
       </div>
+
+      {!canRedeem && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-3 text-sm text-muted-foreground">
+            Каталог наград доступен для просмотра. Оформлять заявки можно после перехода в статус резидента клуба. Коины продолжают начисляться и сохранятся.
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <div className="text-muted-foreground">Загрузка…</div>
@@ -155,10 +168,16 @@ export const RewardsShop: React.FC = () => {
                   )}
                   <Button
                     className="w-full"
-                    disabled={noStock || !canAfford}
+                    disabled={!canRedeem || noStock || !canAfford}
                     onClick={() => setOrderDialog(r)}
                   >
-                    {noStock ? 'Закончилась' : !canAfford ? 'Недостаточно коинов' : 'Заказать'}
+                    {!canRedeem
+                      ? 'Только для резидентов'
+                      : noStock
+                      ? 'Закончилась'
+                      : !canAfford
+                      ? 'Недостаточно коинов'
+                      : 'Заказать'}
                   </Button>
                 </CardContent>
               </Card>
