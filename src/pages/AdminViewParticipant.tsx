@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins } from 'lucide-react';
+import { ArrowLeft, User, Target, Award, FileText, Calendar, Loader2, Coins, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ParticipantCoinsManager } from '@/components/admin/ParticipantCoinsManager';
+import { ParticipantOverview } from '@/components/admin/ParticipantOverview';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
@@ -245,8 +246,12 @@ export default function AdminViewParticipant() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="mb-6 flex-wrap h-auto">
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Обзор
+            </TabsTrigger>
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
               Профиль
@@ -268,6 +273,19 @@ export default function AdminViewParticipant() {
               Коины
             </TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            {participant && (
+              <ParticipantOverview
+                userId={participant.user_id}
+                participant={participant as any}
+                streamName={streamName}
+                totems={totems}
+                onReload={loadParticipantData}
+              />
+            )}
+          </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
