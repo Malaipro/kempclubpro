@@ -90,7 +90,7 @@ export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) =>
   }, [user?.id]);
 
   const handleOrder = async () => {
-    if (!orderDialog) return;
+    if (!orderDialog || !canRedeem) return;
     setSubmitting(true);
     try {
       const { error } = await supabase.rpc('create_reward_request', {
