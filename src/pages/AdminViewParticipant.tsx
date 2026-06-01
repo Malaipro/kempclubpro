@@ -262,6 +262,10 @@ export default function AdminViewParticipant() {
               <FileText className="w-4 h-4" />
               Документы
             </TabsTrigger>
+            <TabsTrigger value="coins" className="gap-2">
+              <Coins className="w-4 h-4" />
+              Коины
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
