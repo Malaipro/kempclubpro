@@ -529,6 +529,11 @@ export default function AdminViewParticipant() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Coins Tab */}
+          <TabsContent value="coins">
+            {userId && <ParticipantCoinsManager userId={userId} />}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
