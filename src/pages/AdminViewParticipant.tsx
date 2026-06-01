@@ -274,6 +274,19 @@ export default function AdminViewParticipant() {
             </TabsTrigger>
           </TabsList>
 
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            {participant && (
+              <ParticipantOverview
+                userId={participant.user_id}
+                participant={participant as any}
+                streamName={streamName}
+                totems={totems}
+                onReload={loadParticipantData}
+              />
+            )}
+          </TabsContent>
+
           {/* Profile Tab */}
           <TabsContent value="profile">
             <div className="grid gap-6 md:grid-cols-2">
