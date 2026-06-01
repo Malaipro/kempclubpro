@@ -122,6 +122,14 @@ export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) =>
         </Badge>
       </div>
 
+      {!canRedeem && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-3 text-sm text-muted-foreground">
+            Каталог наград доступен для просмотра. Оформлять заявки можно после перехода в статус резидента клуба. Коины продолжают начисляться и сохранятся.
+          </CardContent>
+        </Card>
+      )}
+
       {loading ? (
         <div className="text-muted-foreground">Загрузка…</div>
       ) : rewards.length === 0 ? (
