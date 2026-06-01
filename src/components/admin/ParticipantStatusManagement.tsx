@@ -23,7 +23,7 @@ interface Participant {
 
 const statusLabels: Record<ParticipantStatus, string> = {
   intensive_active: 'Активный участник',
-  intensive_completed: 'Завершил интенсив',
+  intensive_completed: 'Завершил интенсив (legacy)',
   club_resident: 'Резидент клуба',
   alumni: 'Выпускник'
 };
