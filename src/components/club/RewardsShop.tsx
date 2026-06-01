@@ -43,7 +43,12 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-gray-100 text-gray-800',
 };
 
-export const RewardsShop: React.FC = () => {
+interface RewardsShopProps {
+  /** Только club_resident может оформлять заявки. intensive_active видит каталог в режиме просмотра. */
+  canRedeem?: boolean;
+}
+
+export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [rewards, setRewards] = useState<Reward[]>([]);
