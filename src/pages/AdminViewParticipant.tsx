@@ -595,7 +595,7 @@ export default function AdminViewParticipant() {
 
           {/* Homework Tab */}
           <TabsContent value="homework">
-            {userId && <ParticipantHomeworkTab userId={userId} />}
+            {userId && <ParticipantHomeworkTab userId={userId} streamId={participant?.current_stream_id ?? null} />}
           </TabsContent>
 
           {/* Activity Tab */}
