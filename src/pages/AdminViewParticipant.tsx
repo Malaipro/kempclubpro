@@ -592,6 +592,46 @@ export default function AdminViewParticipant() {
           <TabsContent value="coins">
             {userId && <ParticipantCoinsManager userId={userId} />}
           </TabsContent>
+
+          {/* Homework Tab */}
+          <TabsContent value="homework">
+            {userId && <ParticipantHomeworkTab userId={userId} />}
+          </TabsContent>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity">
+            {userId && <ParticipantActivityTab userId={userId} />}
+          </TabsContent>
+
+          {/* Totems Tab */}
+          <TabsContent value="totems">
+            {userId && <ParticipantTotemsTab userId={userId} onChanged={loadParticipantData} />}
+          </TabsContent>
+
+          {/* Cooper Tab */}
+          <TabsContent value="cooper">
+            {userId && <ParticipantCooperTab userId={userId} />}
+          </TabsContent>
+
+          {/* Crash Tests Tab */}
+          <TabsContent value="crashtests">
+            {userId && <ParticipantCrashTestsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Rewards Tab */}
+          <TabsContent value="rewards">
+            {userId && <ParticipantRewardsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals">
+            {userId && <ParticipantReferralsTab userId={userId} />}
+          </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit">
+            {userId && <ParticipantAuditTab userId={userId} />}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
