@@ -140,6 +140,52 @@ export interface AuditEntry {
   timestamp: string | null;
 }
 
+export interface CoinRule {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  coin_amount: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AwardCoinsResult {
+  awarded: boolean;
+  duplicate: boolean;
+  transaction_id: string | null;
+  balance: number;
+  rule_id: string | null;
+  amount: number;
+}
+
+// Telegram-ready: единая сводка по участнику (read-only).
+export interface ParticipantFullState {
+  found: boolean;
+  profile?: {
+    user_id: string;
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    telegram: string | null;
+    approved: boolean | null;
+  };
+  status?: string | null;
+  stream?: Record<string, unknown> | null;
+  coins_balance?: number;
+  total_points?: number;
+  rank_position?: number;
+  current_totem?: Record<string, unknown> | null;
+  totems_count?: number;
+  upcoming_homework?: Record<string, unknown> | null;
+  referrals_count?: number;
+  referrals_confirmed?: number;
+  reward_requests?: Record<string, unknown>[];
+  available_materials?: Record<string, unknown>[];
+}
+
 const currentUserId = async (): Promise<string | null> => {
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
@@ -449,5 +495,47 @@ export const participantService = {
       .limit(200);
     if (error) throw error;
     return (data as AuditEntry[]) || [];
+  },
+
+  // ---------- Правила коинов (справочник, D1) ----------
+  async listCoinRules(includeInactive = false): Promise<CoinRule[]> {
+    let query = (supabase.from('coin_rules' as any) as any).select('*').order('name', { ascending: true });
+    if (!includeInactive) query = query.eq('is_active', true);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data as CoinRule[]) || [];
+  },
+
+  async updateCoinRule(id: string, patch: Partial<Pick<CoinRule, 'name' | 'description' | 'coin_amount' | 'is_active'>>): Promise<void> {
+    const { error } = await (supabase.from('coin_rules' as any) as any).update(patch).eq('id', id);
+    if (error) throw error;
+  },
+
+  // Начисление коинов по правилу (с защитой от дублей через source_type + source_id).
+  async awardCoinsByRule(params: {
+    userId: string;
+    ruleCode: string;
+    sourceType?: string | null;
+    sourceId?: string | null;
+    reason?: string | null;
+    amountOverride?: number | null;
+  }): Promise<AwardCoinsResult> {
+    const { data, error } = await (supabase.rpc as any)('award_coins_by_rule', {
+      p_user_id: params.userId,
+      p_rule_code: params.ruleCode,
+      p_source_type: params.sourceType ?? null,
+      p_source_id: params.sourceId ?? null,
+      p_reason: params.reason ?? null,
+      p_amount_override: params.amountOverride ?? null,
+    });
+    if (error) throw error;
+    return data as AwardCoinsResult;
+  },
+
+  // ---------- Полное состояние участника (Telegram-ready, D1) ----------
+  async getParticipantFullState(userId: string): Promise<ParticipantFullState> {
+    const { data, error } = await (supabase.rpc as any)('get_participant_full_state', { p_user_id: userId });
+    if (error) throw error;
+    return data as ParticipantFullState;
   },
 };
