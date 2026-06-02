@@ -496,4 +496,46 @@ export const participantService = {
     if (error) throw error;
     return (data as AuditEntry[]) || [];
   },
+
+  // ---------- Правила коинов (справочник, D1) ----------
+  async listCoinRules(includeInactive = false): Promise<CoinRule[]> {
+    let query = supabase.from('coin_rules').select('*').order('name', { ascending: true });
+    if (!includeInactive) query = query.eq('is_active', true);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data as CoinRule[]) || [];
+  },
+
+  async updateCoinRule(id: string, patch: Partial<Pick<CoinRule, 'name' | 'description' | 'coin_amount' | 'is_active'>>): Promise<void> {
+    const { error } = await supabase.from('coin_rules').update(patch).eq('id', id);
+    if (error) throw error;
+  },
+
+  // Начисление коинов по правилу (с защитой от дублей через source_type + source_id).
+  async awardCoinsByRule(params: {
+    userId: string;
+    ruleCode: string;
+    sourceType?: string | null;
+    sourceId?: string | null;
+    reason?: string | null;
+    amountOverride?: number | null;
+  }): Promise<AwardCoinsResult> {
+    const { data, error } = await (supabase.rpc as any)('award_coins_by_rule', {
+      p_user_id: params.userId,
+      p_rule_code: params.ruleCode,
+      p_source_type: params.sourceType ?? null,
+      p_source_id: params.sourceId ?? null,
+      p_reason: params.reason ?? null,
+      p_amount_override: params.amountOverride ?? null,
+    });
+    if (error) throw error;
+    return data as AwardCoinsResult;
+  },
+
+  // ---------- Полное состояние участника (Telegram-ready, D1) ----------
+  async getParticipantFullState(userId: string): Promise<ParticipantFullState> {
+    const { data, error } = await (supabase.rpc as any)('get_participant_full_state', { p_user_id: userId });
+    if (error) throw error;
+    return data as ParticipantFullState;
+  },
 };
