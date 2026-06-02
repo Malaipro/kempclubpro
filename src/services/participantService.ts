@@ -499,7 +499,7 @@ export const participantService = {
 
   // ---------- Правила коинов (справочник, D1) ----------
   async listCoinRules(includeInactive = false): Promise<CoinRule[]> {
-    let query = supabase.from('coin_rules').select('*').order('name', { ascending: true });
+    let query = (supabase.from('coin_rules' as any) as any).select('*').order('name', { ascending: true });
     if (!includeInactive) query = query.eq('is_active', true);
     const { data, error } = await query;
     if (error) throw error;
@@ -507,7 +507,7 @@ export const participantService = {
   },
 
   async updateCoinRule(id: string, patch: Partial<Pick<CoinRule, 'name' | 'description' | 'coin_amount' | 'is_active'>>): Promise<void> {
-    const { error } = await supabase.from('coin_rules').update(patch).eq('id', id);
+    const { error } = await (supabase.from('coin_rules' as any) as any).update(patch).eq('id', id);
     if (error) throw error;
   },
 
