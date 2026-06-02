@@ -140,6 +140,52 @@ export interface AuditEntry {
   timestamp: string | null;
 }
 
+export interface CoinRule {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  coin_amount: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AwardCoinsResult {
+  awarded: boolean;
+  duplicate: boolean;
+  transaction_id: string | null;
+  balance: number;
+  rule_id: string | null;
+  amount: number;
+}
+
+// Telegram-ready: единая сводка по участнику (read-only).
+export interface ParticipantFullState {
+  found: boolean;
+  profile?: {
+    user_id: string;
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    telegram: string | null;
+    approved: boolean | null;
+  };
+  status?: string | null;
+  stream?: Record<string, unknown> | null;
+  coins_balance?: number;
+  total_points?: number;
+  rank_position?: number;
+  current_totem?: Record<string, unknown> | null;
+  totems_count?: number;
+  upcoming_homework?: Record<string, unknown> | null;
+  referrals_count?: number;
+  referrals_confirmed?: number;
+  reward_requests?: Record<string, unknown>[];
+  available_materials?: Record<string, unknown>[];
+}
+
 const currentUserId = async (): Promise<string | null> => {
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
