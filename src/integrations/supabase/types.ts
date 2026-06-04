@@ -347,6 +347,39 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_rules: {
+        Row: {
+          code: string
+          coin_amount: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          coin_amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          coin_amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coin_transactions: {
         Row: {
           amount: number
@@ -354,6 +387,7 @@ export type Database = {
           created_by: string | null
           id: string
           reason: string
+          rule_id: string | null
           source_id: string | null
           source_type: string | null
           user_id: string
@@ -364,6 +398,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           reason: string
+          rule_id?: string | null
           source_id?: string | null
           source_type?: string | null
           user_id: string
@@ -374,11 +409,20 @@ export type Database = {
           created_by?: string | null
           id?: string
           reason?: string
+          rule_id?: string | null
           source_id?: string | null
           source_type?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coin_transactions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "coin_rules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_rate_limit: {
         Row: {
@@ -987,6 +1031,63 @@ export type Database = {
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
+        }
+        Relationships: []
+      }
+      materials: {
+        Row: {
+          available_to: string
+          block_type: string
+          content: string | null
+          created_at: string
+          created_by: string | null
+          file_url: string | null
+          id: string
+          is_active: boolean
+          link_url: string | null
+          open_date: string | null
+          sort_order: number
+          status: string
+          stream_id: string | null
+          theme: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          available_to?: string
+          block_type?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          open_date?: string | null
+          sort_order?: number
+          status?: string
+          stream_id?: string | null
+          theme?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          available_to?: string
+          block_type?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          open_date?: string | null
+          sort_order?: number
+          status?: string
+          stream_id?: string | null
+          theme?: string | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2471,11 +2572,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_coins: {
+        Args: { p_amount: number; p_reason: string; p_user_id: string }
+        Returns: number
+      }
       admin_set_approval: {
         Args: { p_approved: boolean; p_user_id: string }
         Returns: undefined
       }
       auto_cleanup_contact_submissions: { Args: never; Returns: undefined }
+      award_coins_by_rule: {
+        Args: {
+          p_amount_override?: number
+          p_reason?: string
+          p_rule_code: string
+          p_source_id?: string
+          p_source_type?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       calculate_cooper_fitness_level: {
         Args: { total_seconds: number }
         Returns: string
@@ -2503,6 +2619,7 @@ export type Database = {
       }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
+      get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_user_coin_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
