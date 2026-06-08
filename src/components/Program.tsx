@@ -43,6 +43,7 @@ const programs = [
     title: 'Финальные испытания',
     description: 'Краш-тест по джиу-джитсу и кикбоксингу. Гонка Героев - итоговое испытание всех навыков. Проверка физической и психологической готовности.',
     image: finalTrialsImage,
+    imageWebp: finalTrialsImageWebp,
   },
   {
     id: 7,
