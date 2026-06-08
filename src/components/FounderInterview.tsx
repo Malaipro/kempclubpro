@@ -12,14 +12,17 @@ export const FounderInterview: React.FC = () => {
     <section className="relative w-full overflow-hidden bg-black">
       {/* Background image */}
       <div className="absolute inset-0">
-        <img
-          src={interviewPreview}
-          alt="Интервью основателя КЭМП на телеканале ТНВ"
-          className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}
-          loading="lazy"
-          width={1920}
-          height={864}
-        />
+        <picture>
+          <source srcSet={interviewPreviewWebp} type="image/webp" />
+          <img
+            src={interviewPreview}
+            alt="Интервью основателя КЭМП на телеканале ТНВ"
+            className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}
+            loading="lazy"
+            width={1920}
+            height={864}
+          />
+        </picture>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
       </div>
