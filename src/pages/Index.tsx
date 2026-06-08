@@ -1,22 +1,26 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Hero } from '@/components/Hero';
 import { AboutUs } from '@/components/AboutUs';
 import { Program } from '@/components/Program';
-import { Trainers } from '@/components/Trainers';
-import { FounderInterview } from '@/components/FounderInterview';
-import { Leaderboard } from '@/components/leaderboard';
-import { AllParticipantsProgress } from '@/components/AllParticipantsProgress';
-import { RegisteredParticipants } from '@/components/participants';
-import { Achievements } from '@/components/achievements';
-import { Testimonials } from '@/components/Testimonials';
-import { PhotoGallery } from '@/components/PhotoGallery';
-import { ContactForm } from '@/components/ContactForm';
-import { TrialTrainingCTA } from '@/components/TrialTrainingCTA';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
+
+// Below-the-fold sections are code-split to keep the initial bundle small
+const Trainers = lazy(() => import('@/components/Trainers').then(m => ({ default: m.Trainers })));
+const FounderInterview = lazy(() => import('@/components/FounderInterview').then(m => ({ default: m.FounderInterview })));
+const Leaderboard = lazy(() => import('@/components/leaderboard').then(m => ({ default: m.Leaderboard })));
+const AllParticipantsProgress = lazy(() => import('@/components/AllParticipantsProgress').then(m => ({ default: m.AllParticipantsProgress })));
+const RegisteredParticipants = lazy(() => import('@/components/participants').then(m => ({ default: m.RegisteredParticipants })));
+const Achievements = lazy(() => import('@/components/achievements').then(m => ({ default: m.Achievements })));
+const Testimonials = lazy(() => import('@/components/Testimonials').then(m => ({ default: m.Testimonials })));
+const PhotoGallery = lazy(() => import('@/components/PhotoGallery').then(m => ({ default: m.PhotoGallery })));
+const ContactForm = lazy(() => import('@/components/ContactForm').then(m => ({ default: m.ContactForm })));
+const TrialTrainingCTA = lazy(() => import('@/components/TrialTrainingCTA').then(m => ({ default: m.TrialTrainingCTA })));
+
+const SectionFallback = () => <div className="min-h-[200px]" aria-hidden="true" />;
 
 const Index = () => {
   useEffect(() => {
@@ -41,16 +45,18 @@ const Index = () => {
       <Hero />
       <AboutUs />
       <Program />
-      <TrialTrainingCTA />
-      <Trainers />
-      <FounderInterview />
-      <PhotoGallery />
-      <Testimonials />
-      <AllParticipantsProgress />
-      <Leaderboard />
-      <RegisteredParticipants />
-      <Achievements />
-      <ContactForm />
+      <Suspense fallback={<SectionFallback />}>
+        <TrialTrainingCTA />
+        <Trainers />
+        <FounderInterview />
+        <PhotoGallery />
+        <Testimonials />
+        <AllParticipantsProgress />
+        <Leaderboard />
+        <RegisteredParticipants />
+        <Achievements />
+        <ContactForm />
+      </Suspense>
       
       {/* Fixed Personal Cabinet Button */}
       <div className="fixed bottom-6 right-6 z-50">
