@@ -188,6 +188,9 @@ export const Testimonials: React.FC = () => {
                             src={getVideoEmbedUrl(testimonial.video_url) || ''}
                             className="w-full h-full object-cover"
                             muted={mutedStatus[testimonial.id]}
+                            preload="none"
+                            playsInline
+                            poster={testimonial.image_url || undefined}
                             onEnded={() => handleVideoEnd(testimonial.id)}
                             onClick={() => openVideoModal(testimonial.id)}
                             style={{ 
@@ -242,6 +245,8 @@ export const Testimonials: React.FC = () => {
                     <img 
                       src={testimonial.image_url}
                       alt={testimonial.display_name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                     />
                   </div>
