@@ -41,6 +41,8 @@ export const TotemIcon: React.FC<TotemIconProps> = ({ iconName, color = '#e60000
     <img 
       src={iconSrc} 
       alt={iconName || 'totem'} 
+      loading="lazy"
+      decoding="async"
       className={className}
       style={{ 
         filter: color !== '#e60000' ? `brightness(0) saturate(100%) hue-rotate(${getHueRotation(color)}deg)` : undefined 
