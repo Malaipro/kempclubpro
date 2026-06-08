@@ -2,7 +2,9 @@ import React, { useState, useRef } from 'react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import finalTrialsImage from '@/assets/final-trials.jpg';
+import finalTrialsImageWebp from '@/assets/final-trials.jpg?format=webp';
 import tacticalMedicineImage from '@/assets/tactical-medicine.jpg';
+import tacticalMedicineImageWebp from '@/assets/tactical-medicine.jpg?format=webp';
 
 const programs = [
   {
@@ -22,6 +24,7 @@ const programs = [
     title: 'Тактическая медицина и безопасность',
     description: '⚔️ Самооборона с разрешёнными средствами\n\n🚨 Практика в реальных сценариях (улица, авто, семья)\n\n❌ Что делать нельзя: правовые риски\n\n🩹 Первая помощь: жгуты, повязки, эвакуация\n\n🔫 Тактическая игра с пейнтболом: работа в команде',
     image: tacticalMedicineImage,
+    imageWebp: tacticalMedicineImageWebp,
   },
   {
     id: 4,
@@ -40,6 +43,7 @@ const programs = [
     title: 'Финальные испытания',
     description: 'Краш-тест по джиу-джитсу и кикбоксингу. Гонка Героев - итоговое испытание всех навыков. Проверка физической и психологической готовности.',
     image: finalTrialsImage,
+    imageWebp: finalTrialsImageWebp,
   },
   {
     id: 7,
@@ -48,6 +52,27 @@ const programs = [
     image: 'https://i.imgur.com/m3S48iw.jpeg',
   },
 ];
+
+interface ProgramImageProps {
+  src: string;
+  webp?: string;
+  alt: string;
+  className?: string;
+}
+
+const ProgramImage: React.FC<ProgramImageProps> = ({ src, webp, alt, className }) => (
+  <picture>
+    {webp && <source srcSet={webp} type="image/webp" />}
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={className}
+    />
+  </picture>
+);
+
 
 export const Program: React.FC = () => {
   const [activeProgram, setActiveProgram] = useState(programs[0]);
@@ -111,11 +136,10 @@ export const Program: React.FC = () => {
             <div ref={contentRef} className="pt-1 scroll-mt-16">
               <div className="bg-white rounded-xl shadow-soft overflow-hidden">
                 <div className="h-48 relative">
-                  <img 
-                    src={activeProgram.image} 
+                  <ProgramImage
+                    src={activeProgram.image}
+                    webp={(activeProgram as { imageWebp?: string }).imageWebp}
                     alt={activeProgram.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
@@ -158,11 +182,10 @@ export const Program: React.FC = () => {
             <div className="md:col-span-2">
               <div className="bg-white rounded-xl shadow-soft overflow-hidden h-full">
                 <div className="h-64 md:h-80 relative">
-                  <img 
-                    src={activeProgram.image} 
+                  <ProgramImage
+                    src={activeProgram.image}
+                    webp={(activeProgram as { imageWebp?: string }).imageWebp}
                     alt={activeProgram.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
