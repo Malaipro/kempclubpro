@@ -161,6 +161,8 @@ export const Program: React.FC = () => {
                   <img 
                     src={activeProgram.image} 
                     alt={activeProgram.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
