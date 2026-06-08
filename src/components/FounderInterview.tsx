@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Tv, ExternalLink } from 'lucide-react';
 import interviewPreview from '@/assets/interview-tnv-preview.jpg';
+import interviewPreviewWebp from '@/assets/interview-tnv-preview.jpg?format=webp';
 
 const VIDEO_URL = 'https://tnv.ru/tv-projects-item/7-dney-plyus/#video&id=536154&iblock_id=8&iblock_type=';
 
