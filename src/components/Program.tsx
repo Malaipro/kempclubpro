@@ -136,11 +136,10 @@ export const Program: React.FC = () => {
             <div ref={contentRef} className="pt-1 scroll-mt-16">
               <div className="bg-white rounded-xl shadow-soft overflow-hidden">
                 <div className="h-48 relative">
-                  <img 
-                    src={activeProgram.image} 
+                  <ProgramImage
+                    src={activeProgram.image}
+                    webp={(activeProgram as { imageWebp?: string }).imageWebp}
                     alt={activeProgram.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
