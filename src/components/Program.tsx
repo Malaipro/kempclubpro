@@ -2,7 +2,9 @@ import React, { useState, useRef } from 'react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import finalTrialsImage from '@/assets/final-trials.jpg';
+import finalTrialsImageWebp from '@/assets/final-trials.jpg?format=webp';
 import tacticalMedicineImage from '@/assets/tactical-medicine.jpg';
+import tacticalMedicineImageWebp from '@/assets/tactical-medicine.jpg?format=webp';
 
 const programs = [
   {
