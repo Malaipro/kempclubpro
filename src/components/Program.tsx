@@ -183,11 +183,10 @@ export const Program: React.FC = () => {
             <div className="md:col-span-2">
               <div className="bg-white rounded-xl shadow-soft overflow-hidden h-full">
                 <div className="h-64 md:h-80 relative">
-                  <img 
-                    src={activeProgram.image} 
+                  <ProgramImage
+                    src={activeProgram.image}
+                    webp={(activeProgram as { imageWebp?: string }).imageWebp}
                     alt={activeProgram.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out transform hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
