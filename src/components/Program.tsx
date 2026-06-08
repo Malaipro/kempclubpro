@@ -53,6 +53,27 @@ const programs = [
   },
 ];
 
+interface ProgramImageProps {
+  src: string;
+  webp?: string;
+  alt: string;
+  className?: string;
+}
+
+const ProgramImage: React.FC<ProgramImageProps> = ({ src, webp, alt, className }) => (
+  <picture>
+    {webp && <source srcSet={webp} type="image/webp" />}
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={className}
+    />
+  </picture>
+);
+
+
 export const Program: React.FC = () => {
   const [activeProgram, setActiveProgram] = useState(programs[0]);
   const contentRef = useRef<HTMLDivElement>(null);
