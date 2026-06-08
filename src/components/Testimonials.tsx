@@ -188,6 +188,9 @@ export const Testimonials: React.FC = () => {
                             src={getVideoEmbedUrl(testimonial.video_url) || ''}
                             className="w-full h-full object-cover"
                             muted={mutedStatus[testimonial.id]}
+                            preload="none"
+                            playsInline
+                            poster={testimonial.image_url || undefined}
                             onEnded={() => handleVideoEnd(testimonial.id)}
                             onClick={() => openVideoModal(testimonial.id)}
                             style={{ 
