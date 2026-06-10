@@ -1451,47 +1451,65 @@ export type Database = {
       }
       referral_leads: {
         Row: {
+          bitrix_deal_id: string | null
+          bitrix_lead_id: string | null
+          bitrix_status: string | null
+          bitrix_synced_at: string | null
           bonus_amount: number | null
           bonus_awarded: boolean
           comment: string | null
           confirmed_at: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
           phone: string | null
           processed_by: string | null
           referral_code: string
           referrer_user_id: string
+          reward_issued: boolean
           status: string
           telegram: string | null
         }
         Insert: {
+          bitrix_deal_id?: string | null
+          bitrix_lead_id?: string | null
+          bitrix_status?: string | null
+          bitrix_synced_at?: string | null
           bonus_amount?: number | null
           bonus_awarded?: boolean
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           phone?: string | null
           processed_by?: string | null
           referral_code: string
           referrer_user_id: string
+          reward_issued?: boolean
           status?: string
           telegram?: string | null
         }
         Update: {
+          bitrix_deal_id?: string | null
+          bitrix_lead_id?: string | null
+          bitrix_status?: string | null
+          bitrix_synced_at?: string | null
           bonus_amount?: number | null
           bonus_awarded?: boolean
           comment?: string | null
           confirmed_at?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           phone?: string | null
           processed_by?: string | null
           referral_code?: string
           referrer_user_id?: string
+          reward_issued?: boolean
           status?: string
           telegram?: string | null
         }
@@ -2575,6 +2593,22 @@ export type Database = {
       admin_adjust_coins: {
         Args: { p_amount: number; p_reason: string; p_user_id: string }
         Returns: number
+      }
+      admin_confirm_referral: { Args: { p_lead_id: string }; Returns: Json }
+      admin_list_coin_balances: {
+        Args: never
+        Returns: {
+          balance: number
+          display_name: string
+          email: string
+          first_name: string
+          last_name: string
+          last_tx_at: string
+          participant_status: string
+          stream_name: string
+          tx_count: number
+          user_id: string
+        }[]
       }
       admin_set_approval: {
         Args: { p_approved: boolean; p_user_id: string }

@@ -27,3 +27,5 @@ verify_jwt = false
 
 [functions.calendar-feed]
 verify_jwt = false
+[functions.bitrix-referral-webhook]
+verify_jwt = false

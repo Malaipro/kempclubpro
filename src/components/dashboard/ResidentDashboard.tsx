@@ -1,9 +1,10 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Home, User, BookOpen, FileText, Calendar, Activity, Gift, Share2 } from 'lucide-react';
+import { Loader2, Home, User, BookOpen, FileText, Calendar, Activity, Gift, Share2, Coins } from 'lucide-react';
 import { ResidentOverview } from './ResidentOverview';
 import { HomeworkUserView } from './HomeworkUserView';
 import { MaterialsViewer } from '@/components/materials/MaterialsViewer';
+import { MyCoins } from '@/components/coins/MyCoins';
 
 const EnhancedPersonalProfile = lazy(() => import('@/components/profile/EnhancedPersonalProfile').then(m => ({ default: m.EnhancedPersonalProfile })));
 const ScheduleViewer = lazy(() => import('@/components/schedule/ScheduleViewer').then(m => ({ default: m.ScheduleViewer })));
@@ -34,6 +35,7 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ profile })
     { value: 'materials', label: 'Материалы', icon: FileText },
     { value: 'schedule', label: 'Расписание', icon: Calendar },
     { value: 'progress', label: 'Прогресс', icon: Activity },
+    { value: 'coins', label: 'Мои коины', icon: Coins },
     { value: 'rewards', label: 'Награды', icon: Gift },
     { value: 'referrals', label: 'Рефералы', icon: Share2 },
   ];
@@ -80,6 +82,10 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ profile })
           <Suspense fallback={<LoadingFallback />}>
             <KampSystemUser />
           </Suspense>
+        </TabsContent>
+
+        <TabsContent value="coins" className="mt-0">
+          <MyCoins />
         </TabsContent>
 
         <TabsContent value="rewards" className="mt-0">

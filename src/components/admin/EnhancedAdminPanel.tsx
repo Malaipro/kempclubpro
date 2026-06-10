@@ -13,7 +13,8 @@ import {
   Database,
   Target,
   Calendar,
-  FileSignature
+  FileSignature,
+  Coins
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -32,6 +33,7 @@ import { TrainingSessionManagement } from '@/components/admin/TrainingSessionMan
 import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 import { ContractManagement } from '@/components/admin/ContractManagement';
+import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 
 interface TabConfig {
   id: string;
@@ -118,8 +120,16 @@ const adminTabs: TabConfig[] = [
     icon: FileSignature,
     description: 'Управление договорами и паспортными данными',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'coins', 
+    label: 'Коины', 
+    icon: Coins,
+    description: 'Балансы коинов, начисления и списания',
+    requiresSuperAdmin: true
   }
 ];
+
 
 export const EnhancedAdminPanel: React.FC = () => {
   const { isAdmin, isSuperAdmin, loading } = useRole();
@@ -191,6 +201,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <TestimonialConsentManager />;
       case 'contracts':
         return <ContractManagement />;
+      case 'coins':
+        return <AdminCoinsManagement />;
       default:
         return (
           <div className="text-center py-8">

@@ -125,7 +125,7 @@ export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) =>
       {!canRedeem && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="py-3 text-sm text-muted-foreground">
-            Каталог наград доступен для просмотра. Оформлять заявки можно после перехода в статус резидента клуба. Коины продолжают начисляться и сохранятся.
+            Тратить коины можно после перехода в резиденты клуба. Каталог доступен для просмотра, коины продолжают начисляться и сохранятся.
           </CardContent>
         </Card>
       )}

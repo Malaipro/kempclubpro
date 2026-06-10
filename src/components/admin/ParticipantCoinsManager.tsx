@@ -8,9 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Coins, Plus, Minus, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Coins, Plus, Minus, Loader2, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+
+interface CoinRule {
+  code: string;
+  name: string;
+  coin_amount: number;
+  is_active: boolean;
+}
 
 interface CoinTransaction {
   id: string;
@@ -42,20 +50,34 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
   const [reason, setReason] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Rule-based awarding
+  const [rules, setRules] = useState<CoinRule[]>([]);
+  const [ruleCode, setRuleCode] = useState<string>('');
+  const [ruleSourceType, setRuleSourceType] = useState<string>('');
+  const [ruleSourceId, setRuleSourceId] = useState<string>('');
+  const [ruleReason, setRuleReason] = useState<string>('');
+  const [ruleSubmitting, setRuleSubmitting] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [balanceRes, txRes] = await Promise.all([
+      const [balanceRes, txRes, rulesRes] = await Promise.all([
         supabase.rpc('get_user_coin_balance', { p_user_id: userId }),
         supabase
           .from('coin_transactions')
           .select('id, amount, reason, source_type, source_id, created_at, created_by')
           .eq('user_id', userId)
           .order('created_at', { ascending: false }),
+        supabase
+          .from('coin_rules')
+          .select('code, name, coin_amount, is_active')
+          .eq('is_active', true)
+          .order('name'),
       ]);
       if (txRes.error) throw txRes.error;
       setBalance((balanceRes.data as number) ?? 0);
       setTransactions(txRes.data || []);
+      setRules((rulesRes.data as CoinRule[]) || []);
     } catch (error) {
       console.error('Error loading coins:', error);
       toast({
@@ -122,6 +144,53 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
     }
   };
 
+  const handleAwardByRule = async () => {
+    if (!ruleCode) {
+      toast({ title: 'Выберите правило', variant: 'destructive' });
+      return;
+    }
+    setRuleSubmitting(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('award_coins_by_rule', {
+        p_user_id: userId,
+        p_rule_code: ruleCode,
+        p_source_type: ruleSourceType.trim() || null,
+        p_source_id: ruleSourceId.trim() || null,
+        p_reason: ruleReason.trim() || null,
+      });
+      if (error) throw error;
+
+      const result = data as { awarded: boolean; duplicate: boolean; balance: number; amount: number };
+      setBalance(result?.balance ?? balance);
+
+      if (result?.duplicate) {
+        toast({
+          title: 'Дубликат',
+          description: 'Начисление по этому источнику уже было выполнено. Повторно не начислено.',
+        });
+      } else {
+        toast({
+          title: 'Начислено по правилу',
+          description: `+${result?.amount ?? 0} коинов. Новый баланс: ${result?.balance ?? ''}`,
+        });
+        setRuleSourceId('');
+        setRuleReason('');
+      }
+      loadData();
+    } catch (error: any) {
+      console.error('Error awarding by rule:', error);
+      toast({
+        title: 'Ошибка',
+        description: error?.message || 'Не удалось начислить по правилу',
+        variant: 'destructive',
+      });
+    } finally {
+      setRuleSubmitting(false);
+    }
+  };
+
+
+
   return (
     <div className="space-y-6">
       {/* Balance + actions */}
@@ -181,6 +250,71 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Award by rule */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-primary" />
+            Начисление по правилу
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Правило</Label>
+              <Select value={ruleCode} onValueChange={setRuleCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите правило" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rules.map((r) => (
+                    <SelectItem key={r.code} value={r.code}>
+                      {r.name} (+{r.coin_amount})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-source-type">Источник (source_type)</Label>
+              <Input
+                id="rule-source-type"
+                value={ruleSourceType}
+                onChange={(e) => setRuleSourceType(e.target.value)}
+                placeholder="например, referral_lead"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-source-id">ID источника (source_id, опц.)</Label>
+              <Input
+                id="rule-source-id"
+                value={ruleSourceId}
+                onChange={(e) => setRuleSourceId(e.target.value)}
+                placeholder="UUID источника"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-reason">Причина (опц.)</Label>
+              <Input
+                id="rule-reason"
+                value={ruleReason}
+                onChange={(e) => setRuleReason(e.target.value)}
+                placeholder="По умолчанию — название правила"
+              />
+            </div>
+          </div>
+          <Button onClick={handleAwardByRule} disabled={ruleSubmitting} className="gap-2">
+            {ruleSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+            Начислить по правилу
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            При указании source_type и source_id повторное начисление по тому же источнику будет отклонено (защита от дублей).
+          </p>
+        </CardContent>
+      </Card>
+
+
 
       {/* Transactions journal */}
       <Card>
