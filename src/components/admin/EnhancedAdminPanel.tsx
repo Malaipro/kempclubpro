@@ -120,8 +120,16 @@ const adminTabs: TabConfig[] = [
     icon: FileSignature,
     description: 'Управление договорами и паспортными данными',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'coins', 
+    label: 'Коины', 
+    icon: Coins,
+    description: 'Балансы коинов, начисления и списания',
+    requiresSuperAdmin: true
   }
 ];
+
 
 export const EnhancedAdminPanel: React.FC = () => {
   const { isAdmin, isSuperAdmin, loading } = useRole();
