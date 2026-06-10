@@ -35,6 +35,7 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ profile })
     { value: 'materials', label: 'Материалы', icon: FileText },
     { value: 'schedule', label: 'Расписание', icon: Calendar },
     { value: 'progress', label: 'Прогресс', icon: Activity },
+    { value: 'coins', label: 'Мои коины', icon: Coins },
     { value: 'rewards', label: 'Награды', icon: Gift },
     { value: 'referrals', label: 'Рефералы', icon: Share2 },
   ];
