@@ -33,6 +33,7 @@ import { TrainingSessionManagement } from '@/components/admin/TrainingSessionMan
 import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveScheduleManagement';
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 import { ContractManagement } from '@/components/admin/ContractManagement';
+import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 
 interface TabConfig {
   id: string;
