@@ -84,6 +84,10 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ profile })
           </Suspense>
         </TabsContent>
 
+        <TabsContent value="coins" className="mt-0">
+          <MyCoins />
+        </TabsContent>
+
         <TabsContent value="rewards" className="mt-0">
           <Suspense fallback={<LoadingFallback />}>
             <RewardsShop canRedeem={isClubResident} />
