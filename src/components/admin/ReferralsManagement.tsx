@@ -128,13 +128,13 @@ export const ReferralsManagement: React.FC = () => {
     setActionId(lead.id);
     try {
       if (newStatus === 'confirmed') {
-        if (lead.bonus_awarded) {
+        if (lead.reward_issued || lead.bonus_awarded) {
           toast({ title: 'Бонус уже начислен', variant: 'destructive' });
           return;
         }
-        const { error } = await supabase.rpc('confirm_referral_lead' as any, { _lead_id: lead.id });
+        const { error } = await supabase.rpc('admin_confirm_referral' as any, { p_lead_id: lead.id });
         if (error) throw error;
-        toast({ title: 'Заявка подтверждена', description: 'Бонус начислен резиденту' });
+        toast({ title: 'Реферал подтверждён', description: 'Коины начислены по правилу referral_confirmed' });
       } else {
         const { error } = await (supabase as any)
           .from('referral_leads')
@@ -151,6 +151,7 @@ export const ReferralsManagement: React.FC = () => {
       setActionId(null);
     }
   };
+
 
   const saveSettings = async () => {
     if (!settingsId) return;
