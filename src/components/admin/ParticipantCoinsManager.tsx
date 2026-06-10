@@ -144,6 +144,53 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
     }
   };
 
+  const handleAwardByRule = async () => {
+    if (!ruleCode) {
+      toast({ title: 'Выберите правило', variant: 'destructive' });
+      return;
+    }
+    setRuleSubmitting(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('award_coins_by_rule', {
+        p_user_id: userId,
+        p_rule_code: ruleCode,
+        p_source_type: ruleSourceType.trim() || null,
+        p_source_id: ruleSourceId.trim() || null,
+        p_reason: ruleReason.trim() || null,
+      });
+      if (error) throw error;
+
+      const result = data as { awarded: boolean; duplicate: boolean; balance: number; amount: number };
+      setBalance(result?.balance ?? balance);
+
+      if (result?.duplicate) {
+        toast({
+          title: 'Дубликат',
+          description: 'Начисление по этому источнику уже было выполнено. Повторно не начислено.',
+        });
+      } else {
+        toast({
+          title: 'Начислено по правилу',
+          description: `+${result?.amount ?? 0} коинов. Новый баланс: ${result?.balance ?? ''}`,
+        });
+        setRuleSourceId('');
+        setRuleReason('');
+      }
+      loadData();
+    } catch (error: any) {
+      console.error('Error awarding by rule:', error);
+      toast({
+        title: 'Ошибка',
+        description: error?.message || 'Не удалось начислить по правилу',
+        variant: 'destructive',
+      });
+    } finally {
+      setRuleSubmitting(false);
+    }
+  };
+
+
+
   return (
     <div className="space-y-6">
       {/* Balance + actions */}
