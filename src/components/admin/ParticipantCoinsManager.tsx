@@ -50,20 +50,34 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
   const [reason, setReason] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Rule-based awarding
+  const [rules, setRules] = useState<CoinRule[]>([]);
+  const [ruleCode, setRuleCode] = useState<string>('');
+  const [ruleSourceType, setRuleSourceType] = useState<string>('');
+  const [ruleSourceId, setRuleSourceId] = useState<string>('');
+  const [ruleReason, setRuleReason] = useState<string>('');
+  const [ruleSubmitting, setRuleSubmitting] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [balanceRes, txRes] = await Promise.all([
+      const [balanceRes, txRes, rulesRes] = await Promise.all([
         supabase.rpc('get_user_coin_balance', { p_user_id: userId }),
         supabase
           .from('coin_transactions')
           .select('id, amount, reason, source_type, source_id, created_at, created_by')
           .eq('user_id', userId)
           .order('created_at', { ascending: false }),
+        supabase
+          .from('coin_rules')
+          .select('code, name, coin_amount, is_active')
+          .eq('is_active', true)
+          .order('name'),
       ]);
       if (txRes.error) throw txRes.error;
       setBalance((balanceRes.data as number) ?? 0);
       setTransactions(txRes.data || []);
+      setRules((rulesRes.data as CoinRule[]) || []);
     } catch (error) {
       console.error('Error loading coins:', error);
       toast({
