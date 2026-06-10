@@ -201,6 +201,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <TestimonialConsentManager />;
       case 'contracts':
         return <ContractManagement />;
+      case 'coins':
+        return <AdminCoinsManagement />;
       default:
         return (
           <div className="text-center py-8">
