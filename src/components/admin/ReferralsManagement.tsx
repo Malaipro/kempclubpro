@@ -13,7 +13,7 @@ import { Users, CheckCircle, XCircle, Clock, Settings, Coins, Save } from 'lucid
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type LeadStatus = 'new' | 'in_progress' | 'confirmed' | 'rejected';
+type LeadStatus = 'new' | 'in_progress' | 'contacted' | 'paid' | 'confirmed' | 'rejected' | 'rewarded';
 
 interface AdminLead {
   id: string;
@@ -22,10 +22,12 @@ interface AdminLead {
   name: string;
   phone: string | null;
   telegram: string | null;
+  email: string | null;
   comment: string | null;
   status: LeadStatus;
   bonus_awarded: boolean;
   bonus_amount: number | null;
+  reward_issued: boolean | null;
   created_at: string;
   confirmed_at: string | null;
   referrer_name?: string;
@@ -34,16 +36,23 @@ interface AdminLead {
 const STATUS_LABELS: Record<LeadStatus, string> = {
   new: 'Новая',
   in_progress: 'В работе',
+  contacted: 'Контакт установлен',
+  paid: 'Оплачено',
   confirmed: 'Подтверждена',
   rejected: 'Отклонена',
+  rewarded: 'Бонус начислен',
 };
 
 const STATUS_COLORS: Record<LeadStatus, string> = {
   new: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   in_progress: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+  contacted: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+  paid: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
   confirmed: 'bg-green-500/20 text-green-300 border-green-500/30',
   rejected: 'bg-red-500/20 text-red-300 border-red-500/30',
+  rewarded: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
 };
+
 
 export const ReferralsManagement: React.FC = () => {
   const { toast } = useToast();
