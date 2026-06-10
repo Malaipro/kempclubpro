@@ -251,6 +251,71 @@ export const ParticipantCoinsManager: React.FC<Props> = ({ userId }) => {
         </CardContent>
       </Card>
 
+      {/* Award by rule */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-primary" />
+            Начисление по правилу
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Правило</Label>
+              <Select value={ruleCode} onValueChange={setRuleCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите правило" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rules.map((r) => (
+                    <SelectItem key={r.code} value={r.code}>
+                      {r.name} (+{r.coin_amount})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-source-type">Источник (source_type)</Label>
+              <Input
+                id="rule-source-type"
+                value={ruleSourceType}
+                onChange={(e) => setRuleSourceType(e.target.value)}
+                placeholder="например, referral_lead"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-source-id">ID источника (source_id, опц.)</Label>
+              <Input
+                id="rule-source-id"
+                value={ruleSourceId}
+                onChange={(e) => setRuleSourceId(e.target.value)}
+                placeholder="UUID источника"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rule-reason">Причина (опц.)</Label>
+              <Input
+                id="rule-reason"
+                value={ruleReason}
+                onChange={(e) => setRuleReason(e.target.value)}
+                placeholder="По умолчанию — название правила"
+              />
+            </div>
+          </div>
+          <Button onClick={handleAwardByRule} disabled={ruleSubmitting} className="gap-2">
+            {ruleSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
+            Начислить по правилу
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            При указании source_type и source_id повторное начисление по тому же источнику будет отклонено (защита от дублей).
+          </p>
+        </CardContent>
+      </Card>
+
+
+
       {/* Transactions journal */}
       <Card>
         <CardHeader>
