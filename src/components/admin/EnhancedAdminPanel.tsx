@@ -13,7 +13,8 @@ import {
   Database,
   Target,
   Calendar,
-  FileSignature
+  FileSignature,
+  Coins
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
