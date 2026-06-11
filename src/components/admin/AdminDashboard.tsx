@@ -124,6 +124,11 @@ export const AdminDashboard: React.FC = () => {
               <Shield className="w-4 h-4" />
               <span className="whitespace-nowrap">Безопасн.</span>
             </TabsTrigger>
+
+            <TabsTrigger value="telegram-leads" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Send className="w-4 h-4" />
+              <span className="whitespace-nowrap">TG-заявки</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
