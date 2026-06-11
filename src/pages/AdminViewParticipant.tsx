@@ -428,6 +428,13 @@ export default function AdminViewParticipant() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Telegram block — только admin/super_admin */}
+              {(isAdmin || isSuperAdmin) && (
+                <div className="md:col-span-2">
+                  <TelegramLinkCard userId={participant.user_id} isAdmin />
+                </div>
+              )}
             </div>
           </TabsContent>
 
