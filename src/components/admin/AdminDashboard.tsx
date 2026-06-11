@@ -212,6 +212,10 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="security" className="mt-0">
           <SecurityEnhancements />
         </TabsContent>
+
+        <TabsContent value="telegram-leads" className="mt-0">
+          <TelegramLeadsManagement />
+        </TabsContent>
       </Tabs>
     </div>;
 };
