@@ -20,6 +20,7 @@ import { ParticipantCrashTestsTab } from '@/components/admin/participant/Partici
 import { ParticipantRewardsTab } from '@/components/admin/participant/ParticipantRewardsTab';
 import { ParticipantReferralsTab } from '@/components/admin/participant/ParticipantReferralsTab';
 import { ParticipantAuditTab } from '@/components/admin/participant/ParticipantAuditTab';
+import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
