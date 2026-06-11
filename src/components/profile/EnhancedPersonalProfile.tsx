@@ -38,6 +38,7 @@ import { ParticipantAchievements } from './ParticipantAchievements';
 import { UserTotems } from './UserTotems';
 import { UserActivities } from '@/components/leaderboard/UserActivities';
 import { UserContracts } from './UserContracts';
+import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
 
 interface Profile {
   id: string;
@@ -448,7 +449,8 @@ export const EnhancedPersonalProfile: React.FC = () => {
           </TabsList>
         )}
 
-        <TabsContent value="profile" className="mt-6">
+        <TabsContent value="profile" className="mt-6 space-y-6">
+          {user && <TelegramLinkCard userId={user.id} />}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

@@ -1252,6 +1252,14 @@ export type Database = {
           stream_end_date: string | null
           stream_start_date: string | null
           telegram: string | null
+          telegram_first_name: string | null
+          telegram_id: string | null
+          telegram_last_name: string | null
+          telegram_link_code: string | null
+          telegram_link_code_expires_at: string | null
+          telegram_linked_at: string | null
+          telegram_photo_url: string | null
+          telegram_username: string | null
           total_points: number | null
           updated_at: string
           user_id: string
@@ -1291,6 +1299,14 @@ export type Database = {
           stream_end_date?: string | null
           stream_start_date?: string | null
           telegram?: string | null
+          telegram_first_name?: string | null
+          telegram_id?: string | null
+          telegram_last_name?: string | null
+          telegram_link_code?: string | null
+          telegram_link_code_expires_at?: string | null
+          telegram_linked_at?: string | null
+          telegram_photo_url?: string | null
+          telegram_username?: string | null
           total_points?: number | null
           updated_at?: string
           user_id: string
@@ -1330,6 +1346,14 @@ export type Database = {
           stream_end_date?: string | null
           stream_start_date?: string | null
           telegram?: string | null
+          telegram_first_name?: string | null
+          telegram_id?: string | null
+          telegram_last_name?: string | null
+          telegram_link_code?: string | null
+          telegram_link_code_expires_at?: string | null
+          telegram_linked_at?: string | null
+          telegram_photo_url?: string | null
+          telegram_username?: string | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
@@ -2653,7 +2677,15 @@ export type Database = {
       }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
+      generate_telegram_link_code: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
+      get_participant_full_state_by_telegram: {
+        Args: { p_telegram_id: string }
+        Returns: Json
+      }
       get_user_coin_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
@@ -2666,6 +2698,17 @@ export type Database = {
       is_club_resident: { Args: { _user_id: string }; Returns: boolean }
       is_public_participant: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      link_telegram_profile: {
+        Args: {
+          p_link_code: string
+          p_telegram_first_name?: string
+          p_telegram_id: string
+          p_telegram_last_name?: string
+          p_telegram_photo_url?: string
+          p_telegram_username?: string
+        }
+        Returns: Json
+      }
       log_security_access: {
         Args: { p_action: string; p_record_id?: string; p_table_name?: string }
         Returns: undefined
@@ -2693,6 +2736,10 @@ export type Database = {
           p_new_status: string
           p_request_id: string
         }
+        Returns: undefined
+      }
+      unlink_telegram_profile: {
+        Args: { p_user_id: string }
         Returns: undefined
       }
       update_participant_status: {
