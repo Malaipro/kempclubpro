@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send } from 'lucide-react';
+import { TelegramLeadsManagement } from './TelegramLeadsManagement';
 import { HomeworkManagement } from './HomeworkManagement';
 import { RewardsManagement } from './RewardsManagement';
 import { ContentManager } from '@/components/cms/ContentManager';
@@ -123,6 +124,11 @@ export const AdminDashboard: React.FC = () => {
               <Shield className="w-4 h-4" />
               <span className="whitespace-nowrap">Безопасн.</span>
             </TabsTrigger>
+
+            <TabsTrigger value="telegram-leads" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Send className="w-4 h-4" />
+              <span className="whitespace-nowrap">TG-заявки</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -205,6 +211,10 @@ export const AdminDashboard: React.FC = () => {
         
         <TabsContent value="security" className="mt-0">
           <SecurityEnhancements />
+        </TabsContent>
+
+        <TabsContent value="telegram-leads" className="mt-0">
+          <TelegramLeadsManagement />
         </TabsContent>
       </Tabs>
     </div>;
