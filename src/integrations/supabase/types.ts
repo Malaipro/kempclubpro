@@ -1870,6 +1870,57 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_leads: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_phone: string | null
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          raw: Json | null
+          referral_code: string | null
+          status: string
+          telegram_first_name: string | null
+          telegram_id: string
+          telegram_last_name: string | null
+          telegram_username: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_phone?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          raw?: Json | null
+          referral_code?: string | null
+          status?: string
+          telegram_first_name?: string | null
+          telegram_id: string
+          telegram_last_name?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_phone?: string | null
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          raw?: Json | null
+          referral_code?: string | null
+          status?: string
+          telegram_first_name?: string | null
+          telegram_id?: string
+          telegram_last_name?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       testimonials: {
         Row: {
           consent_date: string | null
@@ -2698,6 +2749,17 @@ export type Database = {
       is_club_resident: { Args: { _user_id: string }; Returns: boolean }
       is_public_participant: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      link_or_create_telegram_profile: {
+        Args: {
+          p_phone?: string
+          p_referral_code?: string
+          p_telegram_first_name?: string
+          p_telegram_id: string
+          p_telegram_last_name?: string
+          p_telegram_username?: string
+        }
+        Returns: Json
+      }
       link_telegram_profile: {
         Args: {
           p_link_code: string
@@ -2721,6 +2783,7 @@ export type Database = {
       mask_participant_name: { Args: { full_name: string }; Returns: string }
       mask_phone_number: { Args: { phone_number: string }; Returns: string }
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
+      normalize_phone: { Args: { p_phone: string }; Returns: string }
       recalculate_all_ranks: { Args: never; Returns: undefined }
       review_homework_submission: {
         Args: {
