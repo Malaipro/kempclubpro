@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send } from 'lucide-react';
+import { TelegramLeadsManagement } from './TelegramLeadsManagement';
 import { HomeworkManagement } from './HomeworkManagement';
 import { RewardsManagement } from './RewardsManagement';
 import { ContentManager } from '@/components/cms/ContentManager';
