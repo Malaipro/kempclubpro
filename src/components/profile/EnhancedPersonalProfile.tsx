@@ -38,6 +38,7 @@ import { ParticipantAchievements } from './ParticipantAchievements';
 import { UserTotems } from './UserTotems';
 import { UserActivities } from '@/components/leaderboard/UserActivities';
 import { UserContracts } from './UserContracts';
+import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
 
 interface Profile {
   id: string;
