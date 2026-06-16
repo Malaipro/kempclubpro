@@ -14,6 +14,8 @@ import Join from "./pages/Join";
 
 // Lazy load admin pages
 const AdminViewParticipant = lazy(() => import("./pages/AdminViewParticipant"));
+// Lazy load Telegram Mini App — изолирован от основного приложения, без useAuth
+const TelegramApp = lazy(() => import("./pages/TelegramApp"));
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,7 @@ const App = () => (
             <Route path="/club-residents" element={<ClubResidents />} />
             <Route path="/join" element={<Join />} />
             <Route path="/admin/view-participant/:userId" element={<AdminViewParticipant />} />
+            <Route path="/telegram" element={<TelegramApp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
