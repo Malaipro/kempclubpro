@@ -1870,6 +1870,54 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_bot_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json | null
+          telegram_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          telegram_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          telegram_id?: string | null
+        }
+        Relationships: []
+      }
+      telegram_bot_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          referral_code: string | null
+          telegram_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referral_code?: string | null
+          telegram_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referral_code?: string | null
+          telegram_id?: string
+        }
+        Relationships: []
+      }
       telegram_leads: {
         Row: {
           created_at: string
