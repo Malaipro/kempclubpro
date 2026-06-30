@@ -140,38 +140,26 @@ export const TelegramLeadsManagement: React.FC = () => {
   const handleBind = useCallback(async () => {
     if (!selectedLead || !chosenProfile) return;
     setActing(true);
-    const { data: auth } = await supabase.auth.getUser();
-    const adminId = auth.user?.id ?? null;
-    const now = new Date().toISOString();
 
-    const { error: pErr } = await supabase
-      .from('profiles')
-      .update({
-        telegram_id: selectedLead.telegram_id,
-        telegram_username: selectedLead.telegram_username,
-        telegram_first_name: selectedLead.telegram_first_name,
-        telegram_last_name: selectedLead.telegram_last_name,
-        telegram_linked_at: now,
-        updated_at: now,
-      })
-      .eq('user_id', chosenProfile);
+    const { data, error } = await (supabase.rpc as any)('link_telegram_lead_to_profile', {
+      p_lead_id:    selectedLead.id,
+      p_profile_id: chosenProfile,
+    });
 
-    if (pErr) {
-      toast({ title: 'Ошибка привязки профиля', description: pErr.message, variant: 'destructive' });
+    if (error) {
+      toast({ title: 'Ошибка привязки', description: error.message, variant: 'destructive' });
       setActing(false);
       return;
     }
 
-    const { error: lErr } = await supabase
-      .from('telegram_leads')
-      .update({ status: 'linked', processed_by: adminId, processed_at: now, updated_at: now })
-      .eq('id', selectedLead.id);
+    const result = data as { referral_code: string | null; referral_award: { awarded: boolean; amount: number } | null };
+    const awardMsg = result.referral_award?.awarded
+      ? ` Рефереру начислено ${result.referral_award.amount} монет (код: ${result.referral_code}).`
+      : result.referral_code && !result.referral_award?.awarded
+        ? ` Реферальный код ${result.referral_code} — монеты уже были начислены ранее.`
+        : '';
 
-    if (lErr) {
-      toast({ title: 'Профиль привязан, но статус заявки не обновлён', description: lErr.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Заявка привязана к профилю' });
-    }
+    toast({ title: 'Заявка привязана к профилю', description: awardMsg || undefined });
     setActing(false);
     setSelectedLead(null);
     loadLeads();

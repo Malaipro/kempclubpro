@@ -55,47 +55,18 @@ const sanitizeInput = (input: string): string => {
     .trim();
 };
 
-// Rate limiting store (in production, use Redis or similar)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-const checkRateLimit = async (supabase: any, identifier: string, clientIP: string, maxRequests = 3, windowMs = 15 * 60 * 1000): Promise<boolean> => {
-  const now = Date.now();
-  const userLimit = rateLimitStore.get(identifier);
-  
-  // Clean old entries
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (now > value.resetTime) {
-      rateLimitStore.delete(key);
-    }
+// Rate limiting backed by contact_rate_limit table — survives cold starts and scales
+// across multiple edge function instances. Uses enhanced_contact_rate_limit RPC
+// which atomically increments submission_count within a sliding window.
+const checkRateLimit = async (supabase: any, clientIP: string): Promise<boolean> => {
+  const { data, error } = await supabase.rpc('enhanced_contact_rate_limit', {
+    p_ip_address: clientIP,
+  });
+  if (error) {
+    console.warn('DB rate limit check failed, failing secure:', error.message);
+    return false;
   }
-  
-  if (!userLimit || now > userLimit.resetTime) {
-    rateLimitStore.set(identifier, { count: 1, resetTime: now + windowMs });
-  } else {
-    if (userLimit.count >= maxRequests) {
-      // Use enhanced database rate limiting
-      try {
-        const { data: allowed } = await supabase.rpc('enhanced_rate_limit_check', {
-          p_ip_address: clientIP,
-          p_identifier: identifier,
-          p_max_requests: maxRequests,
-          p_window_minutes: Math.floor(windowMs / (1000 * 60))
-        });
-        
-        if (!allowed) {
-          return false;
-        }
-      } catch (error) {
-        console.warn('Database rate limit check failed:', error);
-        return false; // Fail secure
-      }
-      
-      return false;
-    }
-    userLimit.count++;
-  }
-  
-  return true;
+  return data === true;
 };
 
 serve(async (req) => {
@@ -118,7 +89,7 @@ serve(async (req) => {
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     
     // Enhanced rate limiting with database integration
-    if (!(await checkRateLimit(supabase, clientIP, clientIP, 3, 15 * 60 * 1000))) {
+    if (!(await checkRateLimit(supabase, clientIP))) {
       console.log(`Enhanced rate limit exceeded for IP: ${clientIP}`);
       
       // Log enhanced security event

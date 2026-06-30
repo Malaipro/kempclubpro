@@ -6,9 +6,12 @@ import { supabase } from '../db/supabase';
 export const stateRouter = Router();
 
 stateRouter.post('/', async (req: Request, res: Response) => {
-  const { initData, action = 'get_state' } = req.body as {
+  const { initData, action = 'get_state', schedule_id, from, days } = req.body as {
     initData?: string;
     action?: string;
+    schedule_id?: string;
+    from?: string;
+    days?: number;
   };
 
   // Базовая валидация тела запроса
@@ -53,6 +56,44 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     // RPC вернул null — telegram_id не привязан ни к одному профилю
     if (data === null || data === undefined) {
       res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, action, data });
+    return;
+  }
+
+  if (action === 'get_schedule') {
+    const { data, error } = await supabase.rpc('get_schedule_for_user', {
+      p_telegram_id: telegramId,
+      p_from: from ?? new Date().toISOString(),
+      p_days: days ?? 7,
+    });
+
+    if (error) {
+      console.error('[state/get_schedule] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, action, data });
+    return;
+  }
+
+  if (action === 'book_session') {
+    if (!schedule_id || typeof schedule_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_schedule_id' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('book_schedule_session', {
+      p_telegram_id: telegramId,
+      p_schedule_id: schedule_id,
+    });
+
+    if (error) {
+      console.error('[state/book_session] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
       return;
     }
 

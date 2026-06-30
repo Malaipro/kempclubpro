@@ -7,9 +7,12 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ParticipantFullState } from '@/services/participantService';
+import type { Section } from './TelegramAppShell';
 
 interface Props {
   data: ParticipantFullState;
+  activeSection: Section;
+  onNavigate: (section: Section) => void;
 }
 
 // ---------- Stat card ----------
@@ -40,15 +43,30 @@ interface SectionCardProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
-  // TODO: когда раздел будет готов — принимать onClick и убирать disabled
+  onClick?: () => void;
 }
 
-const SectionCard: React.FC<SectionCardProps> = ({ icon, label, active = false }) => {
+const SectionCard: React.FC<SectionCardProps> = ({ icon, label, active = false, onClick }) => {
   if (active) {
     return (
-      <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-kamp-primary bg-kamp-primary/10 px-2 py-3 text-center">
+      <div
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border border-kamp-primary bg-kamp-primary/10 px-2 py-3 text-center${onClick ? ' cursor-pointer' : ''}`}
+      >
         <div className="text-kamp-primary">{icon}</div>
         <span className="text-xs font-semibold text-kamp-primary leading-tight">{label}</span>
+      </div>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <div
+        onClick={onClick}
+        className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/40 px-2 py-3 text-center cursor-pointer hover:bg-muted/60 transition-colors"
+      >
+        <div className="text-muted-foreground">{icon}</div>
+        <span className="text-xs font-medium text-muted-foreground leading-tight">{label}</span>
       </div>
     );
   }
@@ -73,7 +91,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 // ---------- View ----------
 
-export const TelegramParticipantView: React.FC<Props> = ({ data }) => {
+export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate }) => {
   const {
     profile, status, coins_balance, total_points,
     rank_position, current_totem, totems_count,
@@ -156,9 +174,19 @@ export const TelegramParticipantView: React.FC<Props> = ({ data }) => {
           Разделы КЭМП
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SectionCard icon={<Home className="w-5 h-5" />} label="Главная" active />
+          <SectionCard
+            icon={<Home className="w-5 h-5" />}
+            label="Главная"
+            active={activeSection === 'home'}
+            onClick={() => onNavigate('home')}
+          />
           <SectionCard icon={<Activity className="w-5 h-5" />} label="Активности" />
-          <SectionCard icon={<Calendar className="w-5 h-5" />} label="Расписание" />
+          <SectionCard
+            icon={<Calendar className="w-5 h-5" />}
+            label="Расписание"
+            active={activeSection === 'schedule'}
+            onClick={() => onNavigate('schedule')}
+          />
           <SectionCard icon={<ClipboardList className="w-5 h-5" />} label="ДЗ" />
           <SectionCard icon={<BarChart2 className="w-5 h-5" />} label="Рейтинг" />
           {/* TODO: Нутрициолог — встроить отдельный модуль/бот, когда будет готов API */}

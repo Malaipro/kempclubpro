@@ -19,9 +19,18 @@ interface ImportMeta {
 }
 
 // Telegram Mini App WebApp SDK (загружается Telegram при открытии Mini App)
+interface TelegramBackButton {
+  isVisible: boolean;
+  show(): void;
+  hide(): void;
+  onClick(callback: () => void): void;
+  offClick(callback: () => void): void;
+}
+
 interface TelegramWebApp {
   initData: string;
   colorScheme: 'light' | 'dark';
+  BackButton: TelegramBackButton;
   ready(): void;
   close(): void;
 }

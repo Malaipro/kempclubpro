@@ -210,11 +210,11 @@ export const participantService = {
   },
 
   async adjustCoins(userId: string, amount: number, reason: string): Promise<number> {
-    const { data, error } = await (supabase.rpc as any)('admin_adjust_coins', {
+    const { data, error } = await supabase.rpc('admin_adjust_coins', {
       p_user_id: userId, p_amount: amount, p_reason: reason,
     });
     if (error) throw error;
-    return (data as number) ?? 0;
+    return data ?? 0;
   },
 
   // ---------- ДЗ ----------
@@ -499,7 +499,7 @@ export const participantService = {
 
   // ---------- Правила коинов (справочник, D1) ----------
   async listCoinRules(includeInactive = false): Promise<CoinRule[]> {
-    let query = (supabase.from('coin_rules' as any) as any).select('*').order('name', { ascending: true });
+    let query = supabase.from('coin_rules').select('*').order('name', { ascending: true });
     if (!includeInactive) query = query.eq('is_active', true);
     const { data, error } = await query;
     if (error) throw error;
@@ -507,7 +507,7 @@ export const participantService = {
   },
 
   async updateCoinRule(id: string, patch: Partial<Pick<CoinRule, 'name' | 'description' | 'coin_amount' | 'is_active'>>): Promise<void> {
-    const { error } = await (supabase.from('coin_rules' as any) as any).update(patch).eq('id', id);
+    const { error } = await supabase.from('coin_rules').update(patch).eq('id', id);
     if (error) throw error;
   },
 
@@ -520,13 +520,13 @@ export const participantService = {
     reason?: string | null;
     amountOverride?: number | null;
   }): Promise<AwardCoinsResult> {
-    const { data, error } = await (supabase.rpc as any)('award_coins_by_rule', {
+    const { data, error } = await supabase.rpc('award_coins_by_rule', {
       p_user_id: params.userId,
       p_rule_code: params.ruleCode,
-      p_source_type: params.sourceType ?? null,
-      p_source_id: params.sourceId ?? null,
-      p_reason: params.reason ?? null,
-      p_amount_override: params.amountOverride ?? null,
+      p_source_type: params.sourceType ?? undefined,
+      p_source_id: params.sourceId ?? undefined,
+      p_reason: params.reason ?? undefined,
+      p_amount_override: params.amountOverride ?? undefined,
     });
     if (error) throw error;
     return data as AwardCoinsResult;
@@ -534,7 +534,7 @@ export const participantService = {
 
   // ---------- Полное состояние участника (Telegram-ready, D1) ----------
   async getParticipantFullState(userId: string): Promise<ParticipantFullState> {
-    const { data, error } = await (supabase.rpc as any)('get_participant_full_state', { p_user_id: userId });
+    const { data, error } = await supabase.rpc('get_participant_full_state', { p_user_id: userId });
     if (error) throw error;
     return data as ParticipantFullState;
   },

@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { TelegramLoading } from './TelegramLoading';
 import { TelegramNoAccess, NoAccessReason } from './TelegramNoAccess';
 import { TelegramParticipantView } from './TelegramParticipantView';
+import { TelegramScheduleView } from './TelegramScheduleView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
   | { status: 'loading' }
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
+
+export type Section = 'home' | 'schedule';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL;
 
@@ -49,6 +52,7 @@ function toReason(msg: string): NoAccessReason {
 
 export const TelegramAppShell: React.FC = () => {
   const [state, setState] = useState<AppState>({ status: 'loading' });
+  const [activeSection, setActiveSection] = useState<Section>('home');
 
   useEffect(() => {
     const webapp = window.Telegram?.WebApp;
@@ -76,5 +80,16 @@ export const TelegramAppShell: React.FC = () => {
 
   if (state.status === 'loading') return <TelegramLoading />;
   if (state.status === 'error') return <TelegramNoAccess reason={state.reason} />;
-  return <TelegramParticipantView data={state.data} />;
+
+  if (activeSection === 'schedule') {
+    return <TelegramScheduleView onBack={() => setActiveSection('home')} />;
+  }
+
+  return (
+    <TelegramParticipantView
+      data={state.data}
+      activeSection={activeSection}
+      onNavigate={setActiveSection}
+    />
+  );
 };

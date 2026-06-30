@@ -65,10 +65,9 @@ export async function onContact(msg: TelegramMessage): Promise<void> {
     return;
   }
 
-  // Заявка создана / ожидает одобрения администратора
-  // TODO(referral): после одобрения заявки администратором вызвать
-  // award_coins_by_rule(user_id, 'referral_signup') для начисления коинов.
-  // referral_code сохранён в telegram_leads.referral_code через RPC.
+  // Заявка создана / ожидает одобрения администратора.
+  // Монеты рефереру начисляются атомарно в link_telegram_lead_to_profile (SQL)
+  // при привязке заявки администратором — через award_coins_by_rule('referral_telegram_signup').
   await logBotEvent({
     telegram_id: telegramId,
     event_type: 'application_created',
