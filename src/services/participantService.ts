@@ -529,13 +529,13 @@ export const participantService = {
       p_amount_override: params.amountOverride ?? undefined,
     });
     if (error) throw error;
-    return data as AwardCoinsResult;
+    return data as unknown as AwardCoinsResult;
   },
 
   // ---------- Полное состояние участника (Telegram-ready, D1) ----------
   async getParticipantFullState(userId: string): Promise<ParticipantFullState> {
     const { data, error } = await supabase.rpc('get_participant_full_state', { p_user_id: userId });
     if (error) throw error;
-    return data as ParticipantFullState;
+    return data as unknown as ParticipantFullState;
   },
 };
