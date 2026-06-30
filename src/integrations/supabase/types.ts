@@ -2749,6 +2749,10 @@ export type Database = {
         }
         Returns: Json
       }
+      book_schedule_session: {
+        Args: { p_schedule_id: string; p_telegram_id: string }
+        Returns: Json
+      }
       calculate_cooper_fitness_level: {
         Args: { total_seconds: number }
         Returns: string
@@ -2785,6 +2789,10 @@ export type Database = {
         Args: { p_telegram_id: string }
         Returns: Json
       }
+      get_schedule_for_user: {
+        Args: { p_days?: number; p_from?: string; p_telegram_id: string }
+        Returns: Json
+      }
       get_user_coin_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
@@ -2806,6 +2814,10 @@ export type Database = {
           p_telegram_last_name?: string
           p_telegram_username?: string
         }
+        Returns: Json
+      }
+      link_telegram_lead_to_profile: {
+        Args: { p_lead_id: string; p_profile_id: string }
         Returns: Json
       }
       link_telegram_profile: {
