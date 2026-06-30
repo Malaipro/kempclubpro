@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Allow uploads to testimonials" ON storage.objects;
