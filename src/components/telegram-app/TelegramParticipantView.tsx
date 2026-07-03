@@ -189,8 +189,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           />
           <SectionCard icon={<ClipboardList className="w-5 h-5" />} label="ДЗ" />
           <SectionCard icon={<BarChart2 className="w-5 h-5" />} label="Рейтинг" />
-          {/* TODO: Нутрициолог — встроить отдельный модуль/бот, когда будет готов API */}
-          <SectionCard icon={<Salad className="w-5 h-5" />} label="Нутрициолог" />
+          <SectionCard
+            icon={<Salad className="w-5 h-5" />}
+            label="Нутрициолог"
+            active={activeSection === 'nutrition'}
+            onClick={() => onNavigate('nutrition')}
+          />
           <SectionCard icon={<ScrollText className="w-5 h-5" />} label="Правила" />
           <SectionCard icon={<ShieldCheck className="w-5 h-5" />} label="Админ" />
         </div>

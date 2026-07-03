@@ -3,6 +3,7 @@ import { TelegramLoading } from './TelegramLoading';
 import { TelegramNoAccess, NoAccessReason } from './TelegramNoAccess';
 import { TelegramParticipantView } from './TelegramParticipantView';
 import { TelegramScheduleView } from './TelegramScheduleView';
+import { TelegramNutritionView } from './TelegramNutritionView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -10,7 +11,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule';
+export type Section = 'home' | 'schedule' | 'nutrition';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL;
 
@@ -83,6 +84,10 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'schedule') {
     return <TelegramScheduleView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'nutrition') {
+    return <TelegramNutritionView onBack={() => setActiveSection('home')} />;
   }
 
   return (

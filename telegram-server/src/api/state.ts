@@ -5,13 +5,63 @@ import { supabase } from '../db/supabase';
 
 export const stateRouter = Router();
 
+const NUTRITIONIST_MODEL = 'claude-sonnet-4-6';
+
+const NUTRITIONIST_SYSTEM_PROMPT = `Ты Макс — опытный нутрициолог, специализирующийся на питании для спорта и единоборств.
+Знаешь принципы построения рациона под тренировочные нагрузки, сушку, набор массы, сгонку веса перед соревнованиями и восстановление.
+Отвечай кратко и по делу, без воды и лишних вступлений. Только чистый текст, без markdown-разметки.`;
+
+interface ChatHistoryMessage {
+  role: string;
+  content: string;
+}
+
+async function callNutritionist(message: string, history: ChatHistoryMessage[]): Promise<string> {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (!apiKey) {
+    throw new Error('Missing ANTHROPIC_API_KEY');
+  }
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: NUTRITIONIST_MODEL,
+      max_tokens: 1024,
+      system: NUTRITIONIST_SYSTEM_PROMPT,
+      messages: [
+        ...history.map((h) => ({ role: h.role, content: h.content })),
+        { role: 'user', content: message },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Anthropic API error ${response.status}: ${errText}`);
+  }
+
+  const data = (await response.json()) as {
+    content: Array<{ type: string; text?: string }>;
+  };
+
+  const textBlock = data.content.find((block) => block.type === 'text');
+  return textBlock?.text ?? '';
+}
+
 stateRouter.post('/', async (req: Request, res: Response) => {
-  const { initData, action = 'get_state', schedule_id, from, days } = req.body as {
+  const { initData, action = 'get_state', schedule_id, from, days, message, history } = req.body as {
     initData?: string;
     action?: string;
     schedule_id?: string;
     from?: string;
     days?: number;
+    message?: string;
+    history?: ChatHistoryMessage[];
   };
 
   // Базовая валидация тела запроса
@@ -98,6 +148,22 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, action, data });
+    return;
+  }
+
+  if (action === 'nutrition_chat') {
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_message' });
+      return;
+    }
+
+    try {
+      const reply = await callNutritionist(message, Array.isArray(history) ? history : []);
+      res.json({ ok: true, data: { reply } });
+    } catch (err) {
+      console.error('[state/nutrition_chat] error:', err instanceof Error ? err.message : err);
+      res.status(500).json({ ok: false, error: 'nutrition_chat_error' });
+    }
     return;
   }
 
