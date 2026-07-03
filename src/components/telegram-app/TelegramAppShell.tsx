@@ -13,7 +13,7 @@ type AppState =
 
 export type Section = 'home' | 'schedule' | 'nutrition';
 
-const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL;
+const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
 async function fetchState(initData: string): Promise<ParticipantFullState> {
   const res = await fetch(`${SERVER_URL}/api/state`, {
