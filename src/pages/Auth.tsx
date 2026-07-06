@@ -99,7 +99,12 @@ export const Auth: React.FC = () => {
       if (error) {
         setFormErrors({ general: 'Неверный email или пароль' });
       } else {
-        navigate('/dashboard');
+        const next = resolveNext();
+        if (next.startsWith('/.')) {
+          window.location.href = next;
+        } else {
+          navigate(next);
+        }
       }
     } catch (e) {
       setFormErrors({ general: 'Ошибка входа. Попробуйте ещё раз.' });
