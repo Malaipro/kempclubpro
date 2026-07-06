@@ -21,10 +21,23 @@ export const Auth: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const { toast } = useToast();
 
+  // Where to go after login: honor a same-origin relative `next` (used by the
+  // OAuth consent flow), otherwise fall back to the dashboard.
+  const resolveNext = (): string => {
+    const raw = new URLSearchParams(window.location.search).get('next');
+    if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+    return '/dashboard';
+  };
+
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      const next = resolveNext();
+      if (next.startsWith('/.')) {
+        window.location.href = next;
+      } else {
+        navigate(next);
+      }
     }
   }, [user, navigate]);
 
@@ -86,7 +99,12 @@ export const Auth: React.FC = () => {
       if (error) {
         setFormErrors({ general: 'Неверный email или пароль' });
       } else {
-        navigate('/dashboard');
+        const next = resolveNext();
+        if (next.startsWith('/.')) {
+          window.location.href = next;
+        } else {
+          navigate(next);
+        }
       }
     } catch (e) {
       setFormErrors({ general: 'Ошибка входа. Попробуйте ещё раз.' });
