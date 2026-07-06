@@ -16,6 +16,8 @@ import Join from "./pages/Join";
 const AdminViewParticipant = lazy(() => import("./pages/AdminViewParticipant"));
 // Lazy load Telegram Mini App — изолирован от основного приложения, без useAuth
 const TelegramApp = lazy(() => import("./pages/TelegramApp"));
+// OAuth consent screen for MCP agent integrations
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,7 @@ const App = () => (
             <Route path="/join" element={<Join />} />
             <Route path="/admin/view-participant/:userId" element={<AdminViewParticipant />} />
             <Route path="/telegram" element={<TelegramApp />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
