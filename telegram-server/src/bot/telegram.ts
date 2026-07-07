@@ -65,7 +65,7 @@ export function removeKeyboard(chatId: number, text: string): Promise<void> {
 }
 
 export interface BroadcastButton {
-  text: string;
+  label: string;
   url: string;
 }
 
@@ -79,7 +79,7 @@ export function sendBroadcastMessage(
 ): Promise<void> {
   const reply_markup =
     buttons && buttons.length > 0
-      ? { inline_keyboard: buttons.map((b) => [{ text: b.text, url: b.url }]) }
+      ? { inline_keyboard: buttons.map((b) => [{ text: b.label, url: b.url }]) }
       : undefined;
 
   if (fileUrl) {
