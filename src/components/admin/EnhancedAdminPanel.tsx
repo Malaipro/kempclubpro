@@ -34,6 +34,7 @@ import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveSche
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 import { ContractManagement } from '@/components/admin/ContractManagement';
 import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
+import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 
 interface TabConfig {
   id: string;
