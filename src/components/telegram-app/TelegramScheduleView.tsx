@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, MapPin, User, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +37,6 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ok'; data: ScheduleResponse };
 
-type BookState = 'idle' | 'loading' | 'booked' | 'full' | 'error';
-
 interface Props {
   onBack: () => void;
 }
@@ -55,16 +53,28 @@ function fmt_date(iso: string): string {
   });
 }
 
-// ---------- BookButton ----------
+// Цветовая маркировка карточки по типу занятия
+function getActivityBorderColor(activityType: string, title: string): string {
+  const key = `${activityType} ${title}`.toLowerCase();
 
-interface BookButtonProps {
-  state: BookState;
-  isFull: boolean;
-  onBook: () => void;
+  if (key.includes('bjj') || key.includes('бжж')) return 'border-blue-500';
+  if (key.includes('kickbox') || key.includes('кикбокс')) return 'border-red-500';
+  if (key.includes('ofp') || key.includes('офп')) return 'border-orange-500';
+  if (key.includes('pyramid') || key.includes('пирамид') || key.includes('лекци')) return 'border-purple-500';
+  if (key.includes('nutrition') || key.includes('нутрициолог')) return 'border-green-500';
+  if (key.includes('tactic') || key.includes('тактик')) return 'border-yellow-500';
+  return 'border-gray-300';
 }
 
-const BookButton: React.FC<BookButtonProps> = ({ state, isFull, onBook }) => {
-  if (state === 'booked') {
+// ---------- BookingStatus ----------
+
+interface BookingStatusProps {
+  booked: boolean;
+  isFull: boolean;
+}
+
+const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull }) => {
+  if (booked) {
     return (
       <div className="mt-3 rounded-lg bg-green-600/10 border border-green-600/25 px-3 py-1.5 text-center">
         <span className="text-xs font-semibold text-green-500">Вы записаны</span>
@@ -72,7 +82,7 @@ const BookButton: React.FC<BookButtonProps> = ({ state, isFull, onBook }) => {
     );
   }
 
-  if (state === 'full' || (isFull && state === 'idle')) {
+  if (isFull) {
     return (
       <div className="mt-3 rounded-lg bg-muted/50 px-3 py-1.5 text-center">
         <span className="text-xs text-muted-foreground">Мест нет</span>
@@ -80,23 +90,13 @@ const BookButton: React.FC<BookButtonProps> = ({ state, isFull, onBook }) => {
     );
   }
 
-  return (
-    <Button
-      size="sm"
-      className="mt-3 w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-      disabled={state === 'loading'}
-      onClick={onBook}
-    >
-      {state === 'loading' ? 'Запись...' : state === 'error' ? 'Ошибка — повторить' : 'Записаться'}
-    </Button>
-  );
+  return null;
 };
 
 // ---------- View ----------
 
 export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
-  const [bookStates, setBookStates] = useState<Record<string, BookState>>({});
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -129,70 +129,12 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
         return body.data!;
       })
       .then((data) => {
-        const initial: Record<string, BookState> = {};
-        for (const item of data.schedule ?? []) {
-          initial[item.id] = item.booked ? 'booked' : 'idle';
-        }
-        setBookStates(initial);
         setLoadState({ status: 'ok', data });
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : 'Ошибка загрузки';
         setLoadState({ status: 'error', message: msg });
       });
-  }, []);
-
-  const book = useCallback(async (scheduleId: string) => {
-    const initData = window.Telegram?.WebApp?.initData;
-    if (!initData) return;
-
-    setBookStates((prev) => ({ ...prev, [scheduleId]: 'loading' }));
-
-    try {
-      const res = await fetch(`${SERVER_URL}/api/state`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, action: 'book_session', schedule_id: scheduleId }),
-      });
-      const body = await res.json() as {
-        ok: boolean;
-        data?: { booked: boolean; reason?: string };
-        error?: string;
-      };
-
-      if (!body.ok) {
-        setBookStates((prev) => ({ ...prev, [scheduleId]: 'error' }));
-        return;
-      }
-
-      const result = body.data;
-      if (result?.booked) {
-        setBookStates((prev) => ({ ...prev, [scheduleId]: 'booked' }));
-        // Обновляем счётчик локально чтобы не делать повторный запрос
-        setLoadState((prev) => {
-          if (prev.status !== 'ok') return prev;
-          return {
-            ...prev,
-            data: {
-              ...prev.data,
-              schedule: prev.data.schedule.map((s) =>
-                s.id === scheduleId
-                  ? { ...s, booked: true, booked_count: s.booked_count + 1 }
-                  : s
-              ),
-            },
-          };
-        });
-      } else if (result?.reason === 'already_booked') {
-        setBookStates((prev) => ({ ...prev, [scheduleId]: 'booked' }));
-      } else if (result?.reason === 'session_full') {
-        setBookStates((prev) => ({ ...prev, [scheduleId]: 'full' }));
-      } else {
-        setBookStates((prev) => ({ ...prev, [scheduleId]: 'error' }));
-      }
-    } catch {
-      setBookStates((prev) => ({ ...prev, [scheduleId]: 'error' }));
-    }
   }, []);
 
   // ---------- Render: loading ----------
@@ -249,13 +191,15 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
 
                 <div className="space-y-3">
                   {items.map((item) => {
-                    const bookState = bookStates[item.id] ?? 'idle';
                     const isFull =
                       item.max_participants !== null &&
                       item.booked_count >= item.max_participants;
 
                     return (
-                      <Card key={item.id}>
+                      <Card
+                        key={item.id}
+                        className={`border-l-4 ${getActivityBorderColor(item.activity_type, item.title)}`}
+                      >
                         <CardContent className="py-3 px-4">
 
                           {/* Title + badge */}
@@ -284,9 +228,6 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                               <span className="flex items-center gap-1.5">
                                 <User className="w-3 h-3 shrink-0" />
                                 {item.instructor.name}
-                                {item.instructor.role && (
-                                  <span className="opacity-60">· {item.instructor.role}</span>
-                                )}
                               </span>
                             )}
 
@@ -308,11 +249,7 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                             </p>
                           )}
 
-                          <BookButton
-                            state={bookState}
-                            isFull={isFull}
-                            onBook={() => book(item.id)}
-                          />
+                          <BookingStatus booked={item.booked} isFull={isFull} />
 
                         </CardContent>
                       </Card>
