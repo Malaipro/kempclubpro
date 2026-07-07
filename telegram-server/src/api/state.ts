@@ -54,7 +54,10 @@ async function callNutritionist(message: string, history: ChatHistoryMessage[]):
 }
 
 stateRouter.post('/', async (req: Request, res: Response) => {
-  const { initData, action = 'get_state', schedule_id, from, days, message, history, activity_type } = req.body as {
+  const {
+    initData, action = 'get_state', schedule_id, from, days, message, history,
+    activity_type, text, ascetic_id,
+  } = req.body as {
     initData?: string;
     action?: string;
     schedule_id?: string;
@@ -63,6 +66,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     message?: string;
     history?: ChatHistoryMessage[];
     activity_type?: string;
+    text?: string;
+    ascetic_id?: string;
   };
 
   // Базовая валидация тела запроса
@@ -172,6 +177,81 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     res.json({ ok: true, data });
     return;
   }
+
+  if (action === 'get_ascetics') {
+    const { data, error } = await supabase.rpc('get_ascetic_for_user', {
+      p_telegram_id: telegramId,
+    });
+
+    if (error) {
+      console.error('[state/get_ascetics] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.found) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'take_ascetic') {
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      res.status(400).json({ ok: false, error: 'missing_text' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('take_ascetic', {
+      p_telegram_id: telegramId,
+      p_text: text.trim(),
+    });
+
+    if (error) {
+      console.error('[state/take_ascetic] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'take_ascetic_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'checkin_ascetic') {
+    if (!ascetic_id || typeof ascetic_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_ascetic_id' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('checkin_ascetic', {
+      p_telegram_id: telegramId,
+      p_ascetic_id: ascetic_id,
+    });
+
+    if (error) {
+      console.error('[state/checkin_ascetic] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'checkin_ascetic_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  // TODO: напоминалки (например, ежедневный пуш "Не забудь отметить аскезу")
+  // — реализуем отдельно, требует Telegram push-уведомлений по расписанию.
 
   if (action === 'nutrition_chat') {
     if (!message || typeof message !== 'string') {

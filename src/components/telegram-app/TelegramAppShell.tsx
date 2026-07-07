@@ -5,6 +5,7 @@ import { TelegramParticipantView } from './TelegramParticipantView';
 import { TelegramScheduleView } from './TelegramScheduleView';
 import { TelegramNutritionView } from './TelegramNutritionView';
 import { TelegramActivitiesView } from './TelegramActivitiesView';
+import { TelegramAsceticsView } from './TelegramAsceticsView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -12,7 +13,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'activities';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -93,6 +94,10 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'activities') {
     return <TelegramActivitiesView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'ascetics') {
+    return <TelegramAsceticsView onBack={() => setActiveSection('home')} />;
   }
 
   return (
