@@ -53,17 +53,30 @@ function fmt_date(iso: string): string {
   });
 }
 
-// Цветовая маркировка карточки по типу занятия
-function getActivityBorderColor(activityType: string, title: string): string {
+// Цветовая маркировка карточки по типу занятия — один источник цвета для
+// полоски карточки (Tailwind-класс) и названия (inline color, тот же оттенок)
+const ACTIVITY_COLORS = {
+  bjj: { border: 'border-blue-500', hex: '#3b82f6' },
+  kickboxing: { border: 'border-red-500', hex: '#ef4444' },
+  ofp: { border: 'border-orange-500', hex: '#f97316' },
+  pyramid: { border: 'border-purple-500', hex: '#a855f7' },
+  nutrition: { border: 'border-green-500', hex: '#22c55e' },
+  tactics: { border: 'border-yellow-500', hex: '#eab308' },
+  default: { border: 'border-gray-300', hex: '#d1d5db' },
+} as const;
+
+type ActivityColorKey = keyof typeof ACTIVITY_COLORS;
+
+function getActivityColorKey(activityType: string, title: string): ActivityColorKey {
   const key = `${activityType} ${title}`.toLowerCase();
 
-  if (key.includes('bjj') || key.includes('бжж')) return 'border-blue-500';
-  if (key.includes('kickbox') || key.includes('кикбокс')) return 'border-red-500';
-  if (key.includes('ofp') || key.includes('офп')) return 'border-orange-500';
-  if (key.includes('pyramid') || key.includes('пирамид') || key.includes('лекци')) return 'border-purple-500';
-  if (key.includes('nutrition') || key.includes('нутрициолог')) return 'border-green-500';
-  if (key.includes('tactic') || key.includes('тактик')) return 'border-yellow-500';
-  return 'border-gray-300';
+  if (key.includes('bjj') || key.includes('бжж')) return 'bjj';
+  if (key.includes('kickbox') || key.includes('кикбокс')) return 'kickboxing';
+  if (key.includes('ofp') || key.includes('офп')) return 'ofp';
+  if (key.includes('pyramid') || key.includes('пирамид') || key.includes('лекци')) return 'pyramid';
+  if (key.includes('nutrition') || key.includes('нутрициолог')) return 'nutrition';
+  if (key.includes('tactic') || key.includes('тактик')) return 'tactics';
+  return 'default';
 }
 
 // ---------- BookingStatus ----------
@@ -195,16 +208,23 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                       item.max_participants !== null &&
                       item.booked_count >= item.max_participants;
 
+                    const activityColor = ACTIVITY_COLORS[getActivityColorKey(item.activity_type, item.title)];
+
                     return (
                       <Card
                         key={item.id}
-                        className={`border-l-4 ${getActivityBorderColor(item.activity_type, item.title)}`}
+                        className={`border-l-4 ${activityColor.border}`}
                       >
                         <CardContent className="py-3 px-4">
 
                           {/* Title + badge */}
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <p className="font-semibold text-sm leading-snug">{item.title}</p>
+                            <p
+                              className="font-semibold text-sm leading-snug"
+                              style={{ color: activityColor.hex }}
+                            >
+                              {item.title}
+                            </p>
                             <Badge variant="secondary" className="text-[10px] px-1.5 shrink-0">
                               {item.activity_type}
                             </Badge>
