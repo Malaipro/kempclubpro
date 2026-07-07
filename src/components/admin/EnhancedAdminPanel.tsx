@@ -14,7 +14,8 @@ import {
   Target,
   Calendar,
   FileSignature,
-  Coins
+  Coins,
+  Megaphone
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -34,6 +35,7 @@ import { IntensiveScheduleManagement } from '@/components/schedule/IntensiveSche
 import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManagement';
 import { ContractManagement } from '@/components/admin/ContractManagement';
 import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
+import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 
 interface TabConfig {
   id: string;
@@ -127,6 +129,13 @@ const adminTabs: TabConfig[] = [
     icon: Coins,
     description: 'Балансы коинов, начисления и списания',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'broadcasts', 
+    label: 'Рассылки', 
+    icon: Megaphone,
+    description: 'Массовые рассылки участникам',
+    requiresSuperAdmin: true
   }
 ];
 
@@ -203,6 +212,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <ContractManagement />;
       case 'coins':
         return <AdminCoinsManagement />;
+      case 'broadcasts':
+        return <BroadcastManagement />;
       default:
         return (
           <div className="text-center py-8">
