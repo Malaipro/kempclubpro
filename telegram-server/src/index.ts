@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { webhookRouter } from './bot/webhook';
 import { stateRouter } from './api/state';
+import { broadcastRouter } from './api/broadcast';
 
 const app = express();
 
@@ -40,6 +41,9 @@ const stateRateLimit = rateLimit({
   message: { ok: false, error: 'rate_limit_exceeded' },
 });
 app.use('/api/state', stateRateLimit, stateRouter);
+
+// Рассылки — вызывается сервером/крон-джобом с секретом, не браузером
+app.use('/api/broadcast', broadcastRouter);
 
 app.listen(config.server.port, () => {
   console.log(

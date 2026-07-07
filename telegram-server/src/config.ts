@@ -23,4 +23,7 @@ export const config = {
     miniAppUrl: requireEnv('MINI_APP_URL'),
     allowedOrigin: requireEnv('ALLOWED_ORIGIN'),
   },
+  broadcast: {
+    secret: requireEnv('BROADCAST_SECRET'),
+  },
 } as const;

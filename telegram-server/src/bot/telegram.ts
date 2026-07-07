@@ -63,3 +63,37 @@ export function removeKeyboard(chatId: number, text: string): Promise<void> {
     reply_markup: { remove_keyboard: true },
   });
 }
+
+export interface BroadcastButton {
+  text: string;
+  url: string;
+}
+
+// Рассылка: текст (+опционально фото) + inline-кнопки. chat_id — telegram_id
+// из profiles, хранится строкой, Telegram API принимает его как есть.
+export function sendBroadcastMessage(
+  telegramId: string,
+  text: string,
+  buttons?: BroadcastButton[] | null,
+  fileUrl?: string | null
+): Promise<void> {
+  const reply_markup =
+    buttons && buttons.length > 0
+      ? { inline_keyboard: buttons.map((b) => [{ text: b.text, url: b.url }]) }
+      : undefined;
+
+  if (fileUrl) {
+    return call('sendPhoto', {
+      chat_id: telegramId,
+      photo: fileUrl,
+      caption: text,
+      ...(reply_markup ? { reply_markup } : {}),
+    });
+  }
+
+  return call('sendMessage', {
+    chat_id: telegramId,
+    text,
+    ...(reply_markup ? { reply_markup } : {}),
+  });
+}
