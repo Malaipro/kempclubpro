@@ -129,6 +129,13 @@ const adminTabs: TabConfig[] = [
     icon: Coins,
     description: 'Балансы коинов, начисления и списания',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'broadcasts', 
+    label: 'Рассылки', 
+    icon: Megaphone,
+    description: 'Массовые рассылки участникам',
+    requiresSuperAdmin: true
   }
 ];
 
