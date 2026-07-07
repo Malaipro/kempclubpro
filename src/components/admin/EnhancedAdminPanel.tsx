@@ -14,7 +14,8 @@ import {
   Target,
   Calendar,
   FileSignature,
-  Coins
+  Coins,
+  Megaphone
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
