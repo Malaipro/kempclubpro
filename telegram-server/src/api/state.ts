@@ -54,7 +54,7 @@ async function callNutritionist(message: string, history: ChatHistoryMessage[]):
 }
 
 stateRouter.post('/', async (req: Request, res: Response) => {
-  const { initData, action = 'get_state', schedule_id, from, days, message, history } = req.body as {
+  const { initData, action = 'get_state', schedule_id, from, days, message, history, activity_type } = req.body as {
     initData?: string;
     action?: string;
     schedule_id?: string;
@@ -62,6 +62,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     days?: number;
     message?: string;
     history?: ChatHistoryMessage[];
+    activity_type?: string;
   };
 
   // Базовая валидация тела запроса
@@ -148,6 +149,27 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, action, data });
+    return;
+  }
+
+  if (action === 'check_in') {
+    if (!activity_type || typeof activity_type !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_activity_type' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('check_in_activity', {
+      p_telegram_id: telegramId,
+      p_activity_type: activity_type,
+    });
+
+    if (error) {
+      console.error('[state/check_in] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, data });
     return;
   }
 
