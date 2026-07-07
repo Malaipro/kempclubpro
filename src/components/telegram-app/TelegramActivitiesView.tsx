@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Swords, Flame, Dumbbell } from 'lucide-react';
+import { Swords, Flame, Dumbbell, Pyramid, Salad, Target } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempc
 
 // ---------- Types ----------
 
-type ActivityType = 'bjj' | 'kickboxing' | 'ofp';
+type ActivityType = 'bjj' | 'kickboxing' | 'ofp' | 'pyramid' | 'nutrition' | 'tactics';
 
 interface ActivityDef {
   type: ActivityType;
@@ -20,6 +20,9 @@ const ACTIVITIES: ActivityDef[] = [
   { type: 'bjj', title: 'BJJ', icon: <Swords className="w-5 h-5" /> },
   { type: 'kickboxing', title: 'Кикбоксинг', icon: <Flame className="w-5 h-5" /> },
   { type: 'ofp', title: 'ОФП', icon: <Dumbbell className="w-5 h-5" /> },
+  { type: 'pyramid', title: 'Пирамида КЭМП', icon: <Pyramid className="w-5 h-5" /> },
+  { type: 'nutrition', title: 'Нутрициология', icon: <Salad className="w-5 h-5" /> },
+  { type: 'tactics', title: 'Тактика', icon: <Target className="w-5 h-5" /> },
 ];
 
 type CheckInState = 'idle' | 'loading' | 'checked' | 'error';
@@ -62,11 +65,14 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({ state, onCheckIn }) => {
 
 // ---------- View ----------
 
-export const TelegramTrainingView: React.FC<Props> = ({ onBack }) => {
+export const TelegramActivitiesView: React.FC<Props> = ({ onBack }) => {
   const [checkInStates, setCheckInStates] = useState<Record<ActivityType, CheckInState>>({
     bjj: 'idle',
     kickboxing: 'idle',
     ofp: 'idle',
+    pyramid: 'idle',
+    nutrition: 'idle',
+    tactics: 'idle',
   });
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
@@ -120,7 +126,7 @@ export const TelegramTrainingView: React.FC<Props> = ({ onBack }) => {
 
       {/* Header */}
       <div className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-1">
-        <h1 className="text-white text-xl font-bold">Тренировки</h1>
+        <h1 className="text-white text-xl font-bold">Активности</h1>
         <p className="text-white/70 text-sm">Отметь своё присутствие</p>
       </div>
 

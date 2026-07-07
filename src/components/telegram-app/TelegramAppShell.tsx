@@ -4,7 +4,7 @@ import { TelegramNoAccess, NoAccessReason } from './TelegramNoAccess';
 import { TelegramParticipantView } from './TelegramParticipantView';
 import { TelegramScheduleView } from './TelegramScheduleView';
 import { TelegramNutritionView } from './TelegramNutritionView';
-import { TelegramTrainingView } from './TelegramTrainingView';
+import { TelegramActivitiesView } from './TelegramActivitiesView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -12,7 +12,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'training';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -91,8 +91,8 @@ export const TelegramAppShell: React.FC = () => {
     return <TelegramNutritionView onBack={() => setActiveSection('home')} />;
   }
 
-  if (activeSection === 'training') {
-    return <TelegramTrainingView onBack={() => setActiveSection('home')} />;
+  if (activeSection === 'activities') {
+    return <TelegramActivitiesView onBack={() => setActiveSection('home')} />;
   }
 
   return (
