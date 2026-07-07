@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Clock, MapPin, User, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
@@ -217,18 +216,13 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                       >
                         <CardContent className="py-3 px-4">
 
-                          {/* Title + badge */}
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <p
-                              className="font-semibold text-sm leading-snug"
-                              style={{ color: activityColor.hex }}
-                            >
-                              {item.title}
-                            </p>
-                            <Badge variant="secondary" className="text-[10px] px-1.5 shrink-0">
-                              {item.activity_type}
-                            </Badge>
-                          </div>
+                          {/* Title */}
+                          <p
+                            className="font-semibold text-sm leading-snug mb-2"
+                            style={{ color: activityColor.hex }}
+                          >
+                            {item.title}
+                          </p>
 
                           {/* Meta */}
                           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
