@@ -125,6 +125,48 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_checkins: {
+        Row: {
+          activity_type: string
+          checked_at: string
+          created_at: string
+          id: string
+          stream_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          checked_at?: string
+          created_at?: string
+          id?: string
+          stream_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          checked_at?: string
+          created_at?: string
+          id?: string
+          stream_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_checkins_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_checkins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       admin_access_log: {
         Row: {
           accessed_at: string | null
@@ -194,6 +236,7 @@ export type Database = {
       ascetic_activities: {
         Row: {
           activity_type: string
+          ascetic_type_id: string | null
           challenge_duration: number | null
           challenge_name: string | null
           completed_at: string
@@ -209,6 +252,7 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          ascetic_type_id?: string | null
           challenge_duration?: number | null
           challenge_name?: string | null
           completed_at?: string
@@ -224,6 +268,7 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          ascetic_type_id?: string | null
           challenge_duration?: number | null
           challenge_name?: string | null
           completed_at?: string
@@ -237,7 +282,15 @@ export type Database = {
           verified?: boolean | null
           verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ascetic_activities_ascetic_type_id_fkey"
+            columns: ["ascetic_type_id"]
+            isOneToOne: false
+            referencedRelation: "ascetic_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ascetic_types: {
         Row: {
@@ -2760,6 +2813,10 @@ export type Database = {
       calculate_cooper_fitness_level_minutes: {
         Args: { total_minutes: number }
         Returns: string
+      }
+      check_in_activity: {
+        Args: { p_activity_type: string; p_telegram_id: string }
+        Returns: Json
       }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
