@@ -358,6 +358,45 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_messages: {
+        Row: {
+          audience: string
+          buttons: Json
+          created_at: string
+          created_by: string | null
+          file_url: string | null
+          id: string
+          recipients_count: number
+          sent_at: string | null
+          status: string
+          text: string
+        }
+        Insert: {
+          audience?: string
+          buttons?: Json
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          recipients_count?: number
+          sent_at?: string | null
+          status?: string
+          text: string
+        }
+        Update: {
+          audience?: string
+          buttons?: Json
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          recipients_count?: number
+          sent_at?: string | null
+          status?: string
+          text?: string
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           challenge_type: string
