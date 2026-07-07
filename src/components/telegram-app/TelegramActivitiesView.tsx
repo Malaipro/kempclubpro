@@ -126,7 +126,7 @@ export const TelegramActivitiesView: React.FC<Props> = ({ onBack }) => {
 
       {/* Header */}
       <div className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-1">
-        <h1 className="text-white text-xl font-bold">Активности</h1>
+        <h1 className="text-white text-xl font-bold">Отметки</h1>
         <p className="text-white/70 text-sm">Отметь своё присутствие</p>
       </div>
 
