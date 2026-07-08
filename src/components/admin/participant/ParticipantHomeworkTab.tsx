@@ -57,14 +57,25 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setForm(emptyForm); setFile(null); setOpen(true); };
   const openEdit = (a: HomeworkAssignment) => {
     setForm({
       id: a.id, title: a.title, theme: a.theme || '', content: a.content,
       deadline: a.deadline ? a.deadline.slice(0, 16) : '', points_reward: a.points_reward,
+      file_url: a.file_url || '',
     });
+    setFile(null);
     setOpen(true);
   };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    if (f && f.size > 20 * 1024 * 1024) {
+      toast({ title: 'Файл слишком большой (макс. 20 МБ)', variant: 'destructive' }); return;
+    }
+    setFile(f);
+  };
+
 
   const save = async () => {
     if (!form.title.trim() || !form.content.trim()) {
