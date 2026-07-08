@@ -45,6 +45,9 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
   const [dialogFor, setDialogFor] = useState<Assignment | null>(null);
   const [text, setText] = useState('');
   const [existingSubmission, setExistingSubmission] = useState<Submission | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     if (!user) return;
