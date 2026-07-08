@@ -31,6 +31,7 @@ export interface HomeworkSubmission {
   verified: boolean | null;
   submitted_at: string;
   reviewed_at: string | null;
+  file_url: string | null;
 }
 
 export interface HomeworkAssignment {
