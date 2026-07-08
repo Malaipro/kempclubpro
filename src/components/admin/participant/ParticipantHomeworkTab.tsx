@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   rework: 'На доработку',
 };
 
-const emptyForm = { id: '', title: '', theme: '', content: '', deadline: '', points_reward: 10 };
+const emptyForm = { id: '', title: '', theme: '', content: '', deadline: '', points_reward: 10, file_url: '' };
 
 export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) => {
   const { toast } = useToast();
