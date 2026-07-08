@@ -149,13 +149,14 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         <CardContent>
           {submissions.length === 0 ? <p className="text-muted-foreground text-center py-6">Работ пока нет</p> : (
             <div className="overflow-x-auto"><Table>
-              <TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Статус</TableHead><TableHead>Баллы</TableHead><TableHead>Комментарий</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Статус</TableHead><TableHead>Баллы</TableHead><TableHead>Файл</TableHead><TableHead>Комментарий</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
               <TableBody>
                 {submissions.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="text-sm">{format(new Date(s.submitted_at), 'dd.MM.yyyy HH:mm', { locale: ru })}</TableCell>
                     <TableCell><Badge variant={s.status === 'accepted' ? 'default' : s.status === 'rework' ? 'destructive' : 'secondary'}>{STATUS_LABELS[s.status] || s.status}</Badge></TableCell>
                     <TableCell>{s.points_earned}</TableCell>
+                    <TableCell>{s.file_url ? <HomeworkFileLink path={s.file_url} /> : '—'}</TableCell>
                     <TableCell className="text-sm max-w-xs truncate">{s.admin_comment || '—'}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="icon" variant="ghost" title="Принять" onClick={() => review(s.id, 'accepted')}><Check className="w-4 h-4 text-green-600" /></Button>
