@@ -29,6 +29,7 @@ interface Submission {
   points_earned: number;
   created_at: string;
   reviewed_at: string | null;
+  file_url: string | null;
 }
 
 interface HomeworkUserViewProps {
