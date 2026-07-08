@@ -101,7 +101,7 @@ export const TelegramNutritionView: React.FC<Props> = ({ onBack }) => {
         {messages.length === 0 && (
           <Card>
             <CardContent className="py-3 px-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-foreground leading-relaxed">
                 Привет! Я Макс — твой персональный нутрициолог по питанию для спорта и единоборств.
                 Спроси меня о рационе, сушке, наборе массы, сгонке веса перед соревнованиями или восстановлении.
               </p>
@@ -138,7 +138,7 @@ export const TelegramNutritionView: React.FC<Props> = ({ onBack }) => {
           <div className="flex justify-start">
             <Card className="max-w-[85%]">
               <CardContent className="py-2.5 px-3.5">
-                <p className="text-sm text-muted-foreground">Макс печатает...</p>
+                <p className="text-sm text-foreground">Макс печатает...</p>
               </CardContent>
             </Card>
           </div>

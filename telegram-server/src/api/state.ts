@@ -56,7 +56,7 @@ async function callNutritionist(message: string, history: ChatHistoryMessage[]):
 stateRouter.post('/', async (req: Request, res: Response) => {
   const {
     initData, action = 'get_state', schedule_id, from, days, message, history,
-    activity_type, text, ascetic_id,
+    activity_type, text, ascetic_id, assignment_id, content,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -68,6 +68,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     activity_type?: string;
     text?: string;
     ascetic_id?: string;
+    assignment_id?: string;
+    content?: string;
   };
 
   // Базовая валидация тела запроса
@@ -252,6 +254,57 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
   // TODO: напоминалки (например, ежедневный пуш "Не забудь отметить аскезу")
   // — реализуем отдельно, требует Telegram push-уведомлений по расписанию.
+
+  if (action === 'get_homework') {
+    const { data, error } = await supabase.rpc('get_homework_for_user', {
+      p_telegram_id: telegramId,
+    });
+
+    if (error) {
+      console.error('[state/get_homework] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.found) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'submit_homework') {
+    if (!assignment_id || typeof assignment_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_assignment_id' });
+      return;
+    }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      res.status(400).json({ ok: false, error: 'missing_content' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('submit_homework', {
+      p_telegram_id: telegramId,
+      p_assignment_id: assignment_id,
+      p_content: content.trim(),
+    });
+
+    if (error) {
+      console.error('[state/submit_homework] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'submit_homework_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
 
   if (action === 'nutrition_chat') {
     if (!message || typeof message !== 'string') {
