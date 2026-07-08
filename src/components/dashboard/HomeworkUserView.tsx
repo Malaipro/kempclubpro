@@ -284,10 +284,33 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
               <Label>Ваш ответ</Label>
               <Textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder="Опишите выполнение, добавьте ссылки…" />
             </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={onPickFile}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="w-4 h-4 mr-1" />Прикрепить фото/файл
+              </Button>
+              {file && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="truncate max-w-[240px]">{file.name}</span>
+                  <button type="button" onClick={() => setFile(null)} className="text-muted-foreground hover:text-destructive">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Изображения или PDF, до 20 МБ</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogFor(null)}>Отмена</Button>
-            <Button onClick={submit}><Send className="w-4 h-4 mr-1" />Отправить</Button>
+            <Button onClick={submit} disabled={uploading}>
+              <Send className="w-4 h-4 mr-1" />{uploading ? 'Отправка…' : 'Отправить'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
