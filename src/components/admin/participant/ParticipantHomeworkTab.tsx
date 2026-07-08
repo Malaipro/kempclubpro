@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileText, Plus, Loader2, Pencil, Trash2, Check, RotateCcw } from 'lucide-react';
+import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
