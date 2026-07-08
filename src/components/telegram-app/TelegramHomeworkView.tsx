@@ -18,6 +18,8 @@ interface HomeworkItem {
   content: string;
   deadline: string | null;
   points_reward: number;
+  file_url: string | null;
+  file_signed_url?: string | null;
   status: SubmissionStatus | null;
   submission_content: string | null;
   admin_comment: string | null;
