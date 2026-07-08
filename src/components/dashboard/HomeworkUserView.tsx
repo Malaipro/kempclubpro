@@ -194,6 +194,12 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
                   <p className="whitespace-pre-wrap mt-1">{sub.content}</p>
                 </div>
               )}
+              {sub.file_url && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Paperclip className="w-3 h-3" />Прикреплённый файл:</p>
+                  <HomeworkFileLink path={sub.file_url} />
+                </div>
+              )}
               {sub.admin_comment && (
                 <div className="mt-3 p-2 bg-muted/50 rounded text-sm">
                   <strong>Комментарий админа:</strong> {sub.admin_comment}
