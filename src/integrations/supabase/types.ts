@@ -244,8 +244,10 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          last_checkin_date: string | null
           notes: string | null
           points_earned: number | null
+          streak: number
           user_id: string
           verified: boolean | null
           verified_by: string | null
@@ -260,8 +262,10 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          last_checkin_date?: string | null
           notes?: string | null
           points_earned?: number | null
+          streak?: number
           user_id: string
           verified?: boolean | null
           verified_by?: string | null
@@ -276,8 +280,10 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          last_checkin_date?: string | null
           notes?: string | null
           points_earned?: number | null
+          streak?: number
           user_id?: string
           verified?: boolean | null
           verified_by?: string | null
@@ -2857,6 +2863,10 @@ export type Database = {
         Args: { p_activity_type: string; p_telegram_id: string }
         Returns: Json
       }
+      checkin_ascetic: {
+        Args: { p_ascetic_id: string; p_telegram_id: string }
+        Returns: Json
+      }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       confirm_referral_lead: { Args: { _lead_id: string }; Returns: undefined }
@@ -2880,6 +2890,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      get_ascetic_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_participant_full_state_by_telegram: {
         Args: { p_telegram_id: string }
@@ -2956,6 +2967,10 @@ export type Database = {
           p_request_id: string
         }
         Returns: undefined
+      }
+      take_ascetic: {
+        Args: { p_telegram_id: string; p_text: string }
+        Returns: Json
       }
       unlink_telegram_profile: {
         Args: { p_user_id: string }
