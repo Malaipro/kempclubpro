@@ -2891,6 +2891,7 @@ export type Database = {
         Returns: Json
       }
       get_ascetic_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_participant_full_state_by_telegram: {
         Args: { p_telegram_id: string }
@@ -2967,6 +2968,14 @@ export type Database = {
           p_request_id: string
         }
         Returns: undefined
+      }
+      submit_homework: {
+        Args: {
+          p_assignment_id: string
+          p_content: string
+          p_telegram_id: string
+        }
+        Returns: Json
       }
       take_ascetic: {
         Args: { p_telegram_id: string; p_text: string }
