@@ -164,7 +164,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         <CardContent>
           {assignments.length === 0 ? <p className="text-muted-foreground text-center py-6">Назначенных ДЗ нет</p> : (
             <div className="overflow-x-auto"><Table>
-              <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Назначено</TableHead><TableHead>Срок</TableHead><TableHead>Баллы</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Назначено</TableHead><TableHead>Срок</TableHead><TableHead>Баллы</TableHead><TableHead>Файл</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
               <TableBody>
                 {assignments.map((a) => (
                   <TableRow key={a.id}>
@@ -172,6 +172,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
                     <TableCell className="text-sm">{format(new Date(a.created_at), 'dd.MM.yyyy', { locale: ru })}</TableCell>
                     <TableCell className="text-sm">{a.deadline ? format(new Date(a.deadline), 'dd.MM.yyyy', { locale: ru }) : '—'}</TableCell>
                     <TableCell>{a.points_reward}</TableCell>
+                    <TableCell>{a.file_url ? <HomeworkFileLink path={a.file_url} /> : '—'}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Pencil className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => remove(a.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
