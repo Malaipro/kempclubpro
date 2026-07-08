@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Clock, Send, CheckCircle, RotateCcw } from 'lucide-react';
+import { Clock, Send, CheckCircle, RotateCcw, Paperclip, X } from 'lucide-react';
+import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
 
 interface Assignment {
   id: string;
