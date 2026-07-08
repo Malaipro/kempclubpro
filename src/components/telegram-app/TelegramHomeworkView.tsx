@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Clock, CheckCircle, RotateCcw, Send, ClipboardList } from 'lucide-react';
+import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ interface HomeworkItem {
   content: string;
   deadline: string | null;
   points_reward: number;
+  file_url: string | null;
+  file_signed_url?: string | null;
   status: SubmissionStatus | null;
   submission_content: string | null;
   admin_comment: string | null;
@@ -222,6 +224,27 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                     <Clock className="w-3 h-3" /> До {new Date(item.deadline).toLocaleString('ru-RU')}
                   </p>
                 )}
+
+                {item.file_signed_url && (
+                  <div>
+                    {/\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(item.file_url ?? '') ? (
+                      <a href={item.file_signed_url} target="_blank" rel="noopener noreferrer">
+                        <img src={item.file_signed_url} alt="Файл задания" className="max-h-48 rounded border object-cover" />
+                      </a>
+                    ) : (
+                      <a
+                        href={item.file_signed_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-kamp-primary underline"
+                      >
+                        <FileText className="w-4 h-4" /> Открыть файл задания
+                      </a>
+                    )}
+                  </div>
+                )}
+
+
 
                 {item.admin_comment && (
                   <div className="p-2 bg-muted/50 rounded text-sm">

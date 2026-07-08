@@ -271,7 +271,18 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    res.json({ ok: true, data });
+    // Подписываем ссылки на прикреплённые к заданиям файлы (приватный bucket)
+    const homework = Array.isArray(data.homework) ? data.homework : [];
+    for (const hw of homework) {
+      if (hw && typeof hw.file_url === 'string' && hw.file_url) {
+        const { data: signed } = await supabase.storage
+          .from('homework-files')
+          .createSignedUrl(hw.file_url, 60 * 60);
+        hw.file_signed_url = signed?.signedUrl ?? null;
+      }
+    }
+
+    res.json({ ok: true, data: { ...data, homework } });
     return;
   }
 

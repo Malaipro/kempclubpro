@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { participantService, HomeworkSubmission, HomeworkAssignment } from '@/services/participantService';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   rework: 'На доработку',
 };
 
-const emptyForm = { id: '', title: '', theme: '', content: '', deadline: '', points_reward: 10 };
+const emptyForm = { id: '', title: '', theme: '', content: '', deadline: '', points_reward: 10, file_url: '' };
 
 export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) => {
   const { toast } = useToast();
@@ -35,6 +36,8 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,14 +57,25 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setForm(emptyForm); setFile(null); setOpen(true); };
   const openEdit = (a: HomeworkAssignment) => {
     setForm({
       id: a.id, title: a.title, theme: a.theme || '', content: a.content,
       deadline: a.deadline ? a.deadline.slice(0, 16) : '', points_reward: a.points_reward,
+      file_url: a.file_url || '',
     });
+    setFile(null);
     setOpen(true);
   };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    if (f && f.size > 20 * 1024 * 1024) {
+      toast({ title: 'Файл слишком большой (макс. 20 МБ)', variant: 'destructive' }); return;
+    }
+    setFile(f);
+  };
+
 
   const save = async () => {
     if (!form.title.trim() || !form.content.trim()) {
@@ -69,10 +83,21 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
     }
     setSaving(true);
     try {
+      let filePath: string | null = form.file_url || null;
+      if (file) {
+        const ext = file.name.split('.').pop() || 'bin';
+        const path = `assignments/${userId}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('homework-files')
+          .upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        filePath = path;
+      }
       const payload = {
         title: form.title.trim(), content: form.content.trim(), theme: form.theme || null,
         deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
         points_reward: Number(form.points_reward) || 10,
+        file_url: filePath,
       };
       if (form.id) {
         await participantService.updateHomeworkAssignment(form.id, payload);
@@ -80,7 +105,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         await participantService.createHomeworkAssignment({ ...payload, target_user_id: userId, stream_id: streamId });
       }
       toast({ title: 'Готово', description: 'ДЗ сохранено' });
-      setOpen(false); load();
+      setOpen(false); setFile(null); load();
     } catch (e: any) {
       toast({ title: 'Ошибка', description: e?.message || 'Не удалось сохранить', variant: 'destructive' });
     } finally { setSaving(false); }
@@ -116,6 +141,21 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
                   <div><Label>Срок сдачи</Label><Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></div>
                   <div><Label>Баллы</Label><Input type="number" value={form.points_reward} onChange={(e) => setForm({ ...form, points_reward: Number(e.target.value) })} /></div>
                 </div>
+                <div>
+                  <Label>Прикрепить файл к заданию</Label>
+                  <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPickFile} />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Выбрать файл</Button>
+                    {file ? (
+                      <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                    ) : form.file_url ? (
+                      <HomeworkFileLink path={form.file_url} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Не выбран</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Изображения или PDF, до 20 МБ</p>
+                </div>
               </div>
               <DialogFooter><Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Сохранить</Button></DialogFooter>
             </DialogContent>
@@ -124,7 +164,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         <CardContent>
           {assignments.length === 0 ? <p className="text-muted-foreground text-center py-6">Назначенных ДЗ нет</p> : (
             <div className="overflow-x-auto"><Table>
-              <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Назначено</TableHead><TableHead>Срок</TableHead><TableHead>Баллы</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Название</TableHead><TableHead>Назначено</TableHead><TableHead>Срок</TableHead><TableHead>Баллы</TableHead><TableHead>Файл</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
               <TableBody>
                 {assignments.map((a) => (
                   <TableRow key={a.id}>
@@ -132,6 +172,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
                     <TableCell className="text-sm">{format(new Date(a.created_at), 'dd.MM.yyyy', { locale: ru })}</TableCell>
                     <TableCell className="text-sm">{a.deadline ? format(new Date(a.deadline), 'dd.MM.yyyy', { locale: ru }) : '—'}</TableCell>
                     <TableCell>{a.points_reward}</TableCell>
+                    <TableCell>{a.file_url ? <HomeworkFileLink path={a.file_url} /> : '—'}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Pencil className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => remove(a.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
