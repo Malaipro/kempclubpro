@@ -83,10 +83,21 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
     }
     setSaving(true);
     try {
+      let filePath: string | null = form.file_url || null;
+      if (file) {
+        const ext = file.name.split('.').pop() || 'bin';
+        const path = `assignments/${userId}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('homework-files')
+          .upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        filePath = path;
+      }
       const payload = {
         title: form.title.trim(), content: form.content.trim(), theme: form.theme || null,
         deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
         points_reward: Number(form.points_reward) || 10,
+        file_url: filePath,
       };
       if (form.id) {
         await participantService.updateHomeworkAssignment(form.id, payload);
@@ -94,7 +105,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         await participantService.createHomeworkAssignment({ ...payload, target_user_id: userId, stream_id: streamId });
       }
       toast({ title: 'Готово', description: 'ДЗ сохранено' });
-      setOpen(false); load();
+      setOpen(false); setFile(null); load();
     } catch (e: any) {
       toast({ title: 'Ошибка', description: e?.message || 'Не удалось сохранить', variant: 'destructive' });
     } finally { setSaving(false); }
