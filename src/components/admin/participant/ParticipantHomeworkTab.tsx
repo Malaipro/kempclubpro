@@ -141,6 +141,21 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
                   <div><Label>Срок сдачи</Label><Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></div>
                   <div><Label>Баллы</Label><Input type="number" value={form.points_reward} onChange={(e) => setForm({ ...form, points_reward: Number(e.target.value) })} /></div>
                 </div>
+                <div>
+                  <Label>Прикрепить файл к заданию</Label>
+                  <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPickFile} />
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Выбрать файл</Button>
+                    {file ? (
+                      <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                    ) : form.file_url ? (
+                      <HomeworkFileLink path={form.file_url} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Не выбран</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Изображения или PDF, до 20 МБ</p>
+                </div>
               </div>
               <DialogFooter><Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Сохранить</Button></DialogFooter>
             </DialogContent>
