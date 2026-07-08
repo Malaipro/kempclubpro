@@ -225,6 +225,27 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                   </p>
                 )}
 
+                {item.file_signed_url && (
+                  <div>
+                    {/\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(item.file_url ?? '') ? (
+                      <a href={item.file_signed_url} target="_blank" rel="noopener noreferrer">
+                        <img src={item.file_signed_url} alt="Файл задания" className="max-h-48 rounded border object-cover" />
+                      </a>
+                    ) : (
+                      <a
+                        href={item.file_signed_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-kamp-primary underline"
+                      >
+                        <FileText className="w-4 h-4" /> Открыть файл задания
+                      </a>
+                    )}
+                  </div>
+                )}
+
+
+
                 {item.admin_comment && (
                   <div className="p-2 bg-muted/50 rounded text-sm">
                     <strong>Комментарий:</strong> {item.admin_comment}
