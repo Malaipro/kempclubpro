@@ -244,7 +244,7 @@ export const participantService = {
 
   async createHomeworkAssignment(payload: {
     title: string; content: string; theme?: string | null; deadline?: string | null;
-    points_reward?: number; target_user_id: string; stream_id?: string | null;
+    points_reward?: number; target_user_id: string; stream_id?: string | null; file_url?: string | null;
   }): Promise<void> {
     const createdBy = await currentUserId();
     const { error } = await supabase.from('homework_assignments').insert([{
@@ -255,6 +255,7 @@ export const participantService = {
       points_reward: payload.points_reward ?? 10,
       target_user_id: payload.target_user_id,
       stream_id: payload.stream_id || null,
+      file_url: payload.file_url || null,
       is_active: true,
       created_by: createdBy,
     }]);
