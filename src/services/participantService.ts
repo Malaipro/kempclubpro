@@ -44,6 +44,7 @@ export interface HomeworkAssignment {
   is_active: boolean;
   target_user_id: string | null;
   stream_id: string | null;
+  file_url: string | null;
   created_at: string;
 }
 
