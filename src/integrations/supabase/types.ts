@@ -889,6 +889,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           deadline: string | null
+          file_url: string | null
           id: string
           is_active: boolean
           points_reward: number
@@ -903,6 +904,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deadline?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean
           points_reward?: number
@@ -917,6 +919,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deadline?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean
           points_reward?: number
