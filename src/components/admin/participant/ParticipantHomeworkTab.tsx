@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileText, Plus, Loader2, Pencil, Trash2, Check, RotateCcw } from 'lucide-react';
+import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -148,13 +149,14 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         <CardContent>
           {submissions.length === 0 ? <p className="text-muted-foreground text-center py-6">Работ пока нет</p> : (
             <div className="overflow-x-auto"><Table>
-              <TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Статус</TableHead><TableHead>Баллы</TableHead><TableHead>Комментарий</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Дата</TableHead><TableHead>Статус</TableHead><TableHead>Баллы</TableHead><TableHead>Файл</TableHead><TableHead>Комментарий</TableHead><TableHead className="text-right">Действия</TableHead></TableRow></TableHeader>
               <TableBody>
                 {submissions.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="text-sm">{format(new Date(s.submitted_at), 'dd.MM.yyyy HH:mm', { locale: ru })}</TableCell>
                     <TableCell><Badge variant={s.status === 'accepted' ? 'default' : s.status === 'rework' ? 'destructive' : 'secondary'}>{STATUS_LABELS[s.status] || s.status}</Badge></TableCell>
                     <TableCell>{s.points_earned}</TableCell>
+                    <TableCell>{s.file_url ? <HomeworkFileLink path={s.file_url} /> : '—'}</TableCell>
                     <TableCell className="text-sm max-w-xs truncate">{s.admin_comment || '—'}</TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <Button size="icon" variant="ghost" title="Принять" onClick={() => review(s.id, 'accepted')}><Check className="w-4 h-4 text-green-600" /></Button>

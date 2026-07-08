@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Clock, Send, CheckCircle, RotateCcw } from 'lucide-react';
+import { Clock, Send, CheckCircle, RotateCcw, Paperclip, X } from 'lucide-react';
+import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
 
 interface Assignment {
   id: string;
@@ -28,6 +29,7 @@ interface Submission {
   points_earned: number;
   created_at: string;
   reviewed_at: string | null;
+  file_url: string | null;
 }
 
 interface HomeworkUserViewProps {
@@ -43,6 +45,9 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
   const [dialogFor, setDialogFor] = useState<Assignment | null>(null);
   const [text, setText] = useState('');
   const [existingSubmission, setExistingSubmission] = useState<Submission | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     if (!user) return;
@@ -66,6 +71,16 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
     setExistingSubmission(existing);
     setDialogFor(a);
     setText(existing?.status === 'rework' ? existing.content || '' : '');
+    setFile(null);
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    if (f && f.size > 20 * 1024 * 1024) {
+      toast.error('Файл слишком большой (макс. 20 МБ)');
+      return;
+    }
+    setFile(f);
   };
 
   const submit = async () => {
@@ -74,6 +89,25 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
       toast.error('Введите ответ');
       return;
     }
+
+    setUploading(true);
+
+    // Загрузка файла (если выбран) в приватный bucket homework-files
+    let filePath: string | null = existingSubmission?.file_url || null;
+    if (file) {
+      const ext = file.name.split('.').pop() || 'bin';
+      const path = `${user.id}/${dialogFor.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('homework-files')
+        .upload(path, file, { upsert: true });
+      if (upErr) {
+        setUploading(false);
+        toast.error('Ошибка загрузки файла: ' + upErr.message);
+        return;
+      }
+      filePath = path;
+    }
+
     let error;
     if (existingSubmission && existingSubmission.status === 'rework') {
       // Update existing rework submission to resubmit
@@ -87,6 +121,7 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
           reviewed_by: null,
           verified: false,
           points_earned: 0,
+          file_url: filePath,
         })
         .eq('id', existingSubmission.id));
     } else {
@@ -96,8 +131,10 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
         homework_type: 'assignment',
         content: text.trim(),
         status: 'submitted',
+        file_url: filePath,
       }));
     }
+    setUploading(false);
     if (error) {
       toast.error(error.message);
       return;
@@ -105,8 +142,10 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
     toast.success('Ответ отправлен');
     setDialogFor(null);
     setText('');
+    setFile(null);
     load();
   };
+
 
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; cls: string; icon: any }> = {
@@ -153,6 +192,12 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
                 <div className="mt-3 p-2 bg-muted/30 rounded text-sm">
                   <strong>Ваш ответ:</strong>
                   <p className="whitespace-pre-wrap mt-1">{sub.content}</p>
+                </div>
+              )}
+              {sub.file_url && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Paperclip className="w-3 h-3" />Прикреплённый файл:</p>
+                  <HomeworkFileLink path={sub.file_url} />
                 </div>
               )}
               {sub.admin_comment && (
@@ -209,6 +254,12 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
                       <p className="whitespace-pre-wrap mt-1">{sub.content}</p>
                     </div>
                   )}
+                  {sub?.file_url && sub.status !== 'rework' && (
+                    <div className="mt-3">
+                      <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Paperclip className="w-3 h-3" />Прикреплённый файл:</p>
+                      <HomeworkFileLink path={sub.file_url} />
+                    </div>
+                  )}
                 </div>
                 {canSubmit && (
                   <Button size="sm" onClick={() => openSubmit(a)}>
@@ -233,10 +284,33 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
               <Label>Ваш ответ</Label>
               <Textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder="Опишите выполнение, добавьте ссылки…" />
             </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={onPickFile}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="w-4 h-4 mr-1" />Прикрепить фото/файл
+              </Button>
+              {file && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="truncate max-w-[240px]">{file.name}</span>
+                  <button type="button" onClick={() => setFile(null)} className="text-muted-foreground hover:text-destructive">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Изображения или PDF, до 20 МБ</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogFor(null)}>Отмена</Button>
-            <Button onClick={submit}><Send className="w-4 h-4 mr-1" />Отправить</Button>
+            <Button onClick={submit} disabled={uploading}>
+              <Send className="w-4 h-4 mr-1" />{uploading ? 'Отправка…' : 'Отправить'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

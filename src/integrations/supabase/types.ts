@@ -942,6 +942,7 @@ export type Database = {
           assignment_id: string | null
           content: string | null
           created_at: string
+          file_url: string | null
           homework_type: string
           id: string
           notes: string | null
@@ -959,6 +960,7 @@ export type Database = {
           assignment_id?: string | null
           content?: string | null
           created_at?: string
+          file_url?: string | null
           homework_type: string
           id?: string
           notes?: string | null
@@ -976,6 +978,7 @@ export type Database = {
           assignment_id?: string | null
           content?: string | null
           created_at?: string
+          file_url?: string | null
           homework_type?: string
           id?: string
           notes?: string | null
