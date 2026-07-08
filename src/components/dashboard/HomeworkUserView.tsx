@@ -71,6 +71,16 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
     setExistingSubmission(existing);
     setDialogFor(a);
     setText(existing?.status === 'rework' ? existing.content || '' : '');
+    setFile(null);
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    if (f && f.size > 20 * 1024 * 1024) {
+      toast.error('Файл слишком большой (макс. 20 МБ)');
+      return;
+    }
+    setFile(f);
   };
 
   const submit = async () => {
@@ -79,6 +89,25 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
       toast.error('Введите ответ');
       return;
     }
+
+    setUploading(true);
+
+    // Загрузка файла (если выбран) в приватный bucket homework-files
+    let filePath: string | null = existingSubmission?.file_url || null;
+    if (file) {
+      const ext = file.name.split('.').pop() || 'bin';
+      const path = `${user.id}/${dialogFor.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('homework-files')
+        .upload(path, file, { upsert: true });
+      if (upErr) {
+        setUploading(false);
+        toast.error('Ошибка загрузки файла: ' + upErr.message);
+        return;
+      }
+      filePath = path;
+    }
+
     let error;
     if (existingSubmission && existingSubmission.status === 'rework') {
       // Update existing rework submission to resubmit
@@ -92,6 +121,7 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
           reviewed_by: null,
           verified: false,
           points_earned: 0,
+          file_url: filePath,
         })
         .eq('id', existingSubmission.id));
     } else {
@@ -101,8 +131,10 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
         homework_type: 'assignment',
         content: text.trim(),
         status: 'submitted',
+        file_url: filePath,
       }));
     }
+    setUploading(false);
     if (error) {
       toast.error(error.message);
       return;
@@ -110,8 +142,10 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
     toast.success('Ответ отправлен');
     setDialogFor(null);
     setText('');
+    setFile(null);
     load();
   };
+
 
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; cls: string; icon: any }> = {
