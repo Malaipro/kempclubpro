@@ -56,7 +56,8 @@ async function callNutritionist(message: string, history: ChatHistoryMessage[]):
 stateRouter.post('/', async (req: Request, res: Response) => {
   const {
     initData, action = 'get_state', schedule_id, from, days, message, history,
-    activity_type, text, ascetic_id, assignment_id, content,
+    activity_type, text, ascetic_id, assignment_id, content, file_url,
+    file_name, file_base64,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -70,6 +71,9 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     ascetic_id?: string;
     assignment_id?: string;
     content?: string;
+    file_url?: string;
+    file_name?: string;
+    file_base64?: string;
   };
 
   // Базовая валидация тела запроса
@@ -291,7 +295,10 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       res.status(400).json({ ok: false, error: 'missing_assignment_id' });
       return;
     }
-    if (!content || typeof content !== 'string' || !content.trim()) {
+
+    const hasContent = typeof content === 'string' && content.trim().length > 0;
+    const hasFile = typeof file_url === 'string' && file_url.trim().length > 0;
+    if (!hasContent && !hasFile) {
       res.status(400).json({ ok: false, error: 'missing_content' });
       return;
     }
@@ -299,7 +306,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     const { data, error } = await supabase.rpc('submit_homework', {
       p_telegram_id: telegramId,
       p_assignment_id: assignment_id,
-      p_content: content.trim(),
+      p_content: hasContent ? content!.trim() : '',
+      p_file_url: hasFile ? file_url!.trim() : null,
     });
 
     if (error) {
@@ -314,6 +322,45 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'upload_homework_file') {
+    if (!file_base64 || typeof file_base64 !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_file' });
+      return;
+    }
+
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(file_base64, 'base64');
+    } catch {
+      res.status(400).json({ ok: false, error: 'invalid_file' });
+      return;
+    }
+
+    if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) {
+      res.status(400).json({ ok: false, error: 'file_too_large' });
+      return;
+    }
+
+    // Имя: только безопасные символы, сохраняем расширение
+    const rawName = typeof file_name === 'string' && file_name.trim() ? file_name.trim() : 'file';
+    const safeName = rawName.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_').slice(-80);
+    const path = `submissions/${telegramId}/${Date.now()}-${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('homework')
+      .upload(path, buffer, { upsert: false });
+
+    if (uploadError) {
+      console.error('[state/upload_homework_file] upload error:', uploadError.message);
+      res.status(500).json({ ok: false, error: 'upload_failed' });
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('homework').getPublicUrl(path);
+    res.json({ ok: true, data: { file_url: urlData.publicUrl } });
     return;
   }
 

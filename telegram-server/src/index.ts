@@ -8,7 +8,8 @@ import { broadcastRouter } from './api/broadcast';
 
 const app = express();
 
-app.use(express.json());
+// 15mb — файлы ДЗ из Mini App приходят как base64 в JSON (до 10 МБ бинарно)
+app.use(express.json({ limit: '15mb' }));
 
 // Trust Nginx X-Forwarded-For so rate limiting keys by real client IP, not 127.0.0.1
 app.set('trust proxy', 1);

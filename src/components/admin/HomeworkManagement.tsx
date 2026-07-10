@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
 
 interface Stream {
   id: string;
@@ -39,6 +39,7 @@ interface Assignment {
   points_reward: number;
   is_active: boolean;
   created_at: string;
+  file_url: string | null;
 }
 
 interface Submission {
@@ -47,6 +48,7 @@ interface Submission {
   assignment_id: string | null;
   homework_type: string;
   content: string | null;
+  file_url: string | null;
   status: string;
   admin_comment: string | null;
   points_earned: number;
@@ -65,6 +67,7 @@ const emptyForm = {
   target_user_id: '',
   points_reward: 10,
   is_active: true,
+  file_url: '',
 };
 
 export const HomeworkManagement: React.FC = () => {
@@ -79,6 +82,8 @@ export const HomeworkManagement: React.FC = () => {
   const [form, setForm] = useState({ ...emptyForm });
   const [reviewDialog, setReviewDialog] = useState<Submission | null>(null);
   const [reviewComment, setReviewComment] = useState('');
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -122,6 +127,7 @@ export const HomeworkManagement: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyForm });
+    setAssignmentFile(null);
     setDialogOpen(true);
   };
 
@@ -136,7 +142,9 @@ export const HomeworkManagement: React.FC = () => {
       target_user_id: a.target_user_id || '',
       points_reward: a.points_reward,
       is_active: a.is_active,
+      file_url: a.file_url || '',
     });
+    setAssignmentFile(null);
     setDialogOpen(true);
   };
 
@@ -149,6 +157,24 @@ export const HomeworkManagement: React.FC = () => {
       toast.error('Выберите поток или участника');
       return;
     }
+
+    setSaving(true);
+
+    // Загрузка прикреплённого файла в бакет homework
+    let fileUrl: string | null = form.file_url || null;
+    if (assignmentFile) {
+      const path = `assignments/${Date.now()}-${assignmentFile.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
+      const { error: uploadError } = await supabase.storage
+        .from('homework')
+        .upload(path, assignmentFile);
+      if (uploadError) {
+        setSaving(false);
+        toast.error('Ошибка загрузки файла: ' + uploadError.message);
+        return;
+      }
+      fileUrl = supabase.storage.from('homework').getPublicUrl(path).data.publicUrl;
+    }
+
     const payload = {
       title: form.title.trim(),
       theme: form.theme.trim() || null,
@@ -159,10 +185,12 @@ export const HomeworkManagement: React.FC = () => {
       points_reward: Number(form.points_reward) || 10,
       is_active: form.is_active,
       created_by: user?.id,
+      file_url: fileUrl,
     };
     const { error } = editing
-      ? await supabase.from('homework_assignments').update(payload).eq('id', editing.id)
-      : await supabase.from('homework_assignments').insert(payload);
+      ? await (supabase as any).from('homework_assignments').update(payload).eq('id', editing.id)
+      : await (supabase as any).from('homework_assignments').insert(payload);
+    setSaving(false);
     if (error) {
       toast.error('Ошибка: ' + error.message);
       return;
@@ -249,6 +277,11 @@ export const HomeworkManagement: React.FC = () => {
                       </div>
                       {a.theme && <p className="text-sm text-muted-foreground mt-1">{a.theme}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{a.content}</p>
+                      {a.file_url && (
+                        <a href={a.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                          <Paperclip className="w-3 h-3" /> Файл к заданию
+                        </a>
+                      )}
                       {a.deadline && (
                         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                           <Clock className="w-3 h-3" /> До {new Date(a.deadline).toLocaleString('ru-RU')}
@@ -284,6 +317,11 @@ export const HomeworkManagement: React.FC = () => {
                         <p className="text-sm text-muted-foreground">Задание: <strong>{s.assignment.title}</strong></p>
                       )}
                       {s.content && <p className="text-sm mt-2 whitespace-pre-wrap">{s.content}</p>}
+                      {s.file_url && (
+                        <a href={s.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                          <Paperclip className="w-3 h-3" /> Прикреплённый файл
+                        </a>
+                      )}
                       <p className="text-xs text-muted-foreground mt-2">
                         Отправлено: {new Date(s.created_at).toLocaleString('ru-RU')}
                         {s.reviewed_at && ` • Проверено: ${new Date(s.reviewed_at).toLocaleString('ru-RU')}`}
@@ -360,6 +398,34 @@ export const HomeworkManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Файл к заданию</Label>
+              {assignmentFile ? (
+                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
+                  <span className="truncate flex items-center gap-1">
+                    <Paperclip className="w-3.5 h-3.5 shrink-0" />{assignmentFile.name}
+                  </span>
+                  <button type="button" onClick={() => setAssignmentFile(null)} aria-label="Убрать файл">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : form.file_url ? (
+                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
+                  <a href={form.file_url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
+                    <Paperclip className="w-3.5 h-3.5 shrink-0" /> Текущий файл
+                  </a>
+                  <button type="button" onClick={() => setForm({ ...form, file_url: '' })} aria-label="Убрать файл">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Input
+                  type="file"
+                  className="mt-1"
+                  onChange={(e) => setAssignmentFile(e.target.files?.[0] ?? null)}
+                />
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <input
                 id="is_active"
@@ -372,7 +438,9 @@ export const HomeworkManagement: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Отмена</Button>
-            <Button onClick={saveAssignment}>{editing ? 'Сохранить' : 'Создать'}</Button>
+            <Button onClick={saveAssignment} disabled={saving}>
+              {saving ? 'Сохраняем...' : editing ? 'Сохранить' : 'Создать'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -391,6 +459,11 @@ export const HomeworkManagement: React.FC = () => {
               </div>
               {reviewDialog.content && (
                 <div className="p-3 bg-muted/50 rounded text-sm whitespace-pre-wrap">{reviewDialog.content}</div>
+              )}
+              {reviewDialog.file_url && (
+                <a href={reviewDialog.file_url} target="_blank" rel="noreferrer" className="text-sm text-primary underline flex items-center gap-1 w-fit">
+                  <Paperclip className="w-3.5 h-3.5" /> Прикреплённый файл
+                </a>
               )}
               <div>
                 <Label>Комментарий (необязательно)</Label>
