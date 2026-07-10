@@ -350,7 +350,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     const path = `submissions/${telegramId}/${Date.now()}-${safeName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('homework')
+      .from('homework-files')
       .upload(path, buffer, { upsert: false });
 
     if (uploadError) {
@@ -359,7 +359,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from('homework').getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from('homework-files').getPublicUrl(path);
     res.json({ ok: true, data: { file_url: urlData.publicUrl } });
     return;
   }

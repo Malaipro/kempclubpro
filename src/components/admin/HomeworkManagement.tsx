@@ -160,19 +160,19 @@ export const HomeworkManagement: React.FC = () => {
 
     setSaving(true);
 
-    // Загрузка прикреплённого файла в бакет homework
+    // Загрузка прикреплённого файла в бакет homework-files
     let fileUrl: string | null = form.file_url || null;
     if (assignmentFile) {
       const path = `assignments/${Date.now()}-${assignmentFile.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
       const { error: uploadError } = await supabase.storage
-        .from('homework')
+        .from('homework-files')
         .upload(path, assignmentFile);
       if (uploadError) {
         setSaving(false);
         toast.error('Ошибка загрузки файла: ' + uploadError.message);
         return;
       }
-      fileUrl = supabase.storage.from('homework').getPublicUrl(path).data.publicUrl;
+      fileUrl = supabase.storage.from('homework-files').getPublicUrl(path).data.publicUrl;
     }
 
     const payload = {
