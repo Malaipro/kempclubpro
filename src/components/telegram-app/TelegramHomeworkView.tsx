@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, FileText } from 'lucide-react';
+import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, Paperclip, X, AlertTriangle, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface HomeworkItem {
   file_signed_url?: string | null;
   status: SubmissionStatus | null;
   submission_content: string | null;
+  submission_file_url: string | null;
   admin_comment: string | null;
 }
 
@@ -43,6 +44,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
   const [openId, setOpenId] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [file, setFile] = useState<File | null>(null);
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -88,16 +90,47 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
   const openSubmit = useCallback((item: HomeworkItem) => {
     setOpenId(item.id);
     setText(item.status === 'rework' ? item.submission_content ?? '' : '');
+    setFile(null);
     setSubmitState('idle');
   }, []);
 
   const submit = useCallback(async (assignmentId: string) => {
     const initData = window.Telegram?.WebApp?.initData;
-    if (!initData || !text.trim() || submitState === 'loading') return;
+    if (!initData || (!text.trim() && !file) || submitState === 'loading') return;
 
     setSubmitState('loading');
 
     try {
+      // 1. Если прикреплён файл — сначала загружаем его через сервер
+      let fileUrl: string | null = null;
+      if (file) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+          reader.onerror = () => reject(new Error('file_read_error'));
+          reader.readAsDataURL(file);
+        });
+
+        const uploadRes = await fetch(`${SERVER_URL}/api/state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData,
+            action: 'upload_homework_file',
+            file_name: file.name,
+            file_base64: base64,
+          }),
+        });
+
+        const uploadBody = await uploadRes.json() as { ok: boolean; data?: { file_url: string } };
+        if (!uploadBody.ok || !uploadBody.data) {
+          setSubmitState('error');
+          return;
+        }
+        fileUrl = uploadBody.data.file_url;
+      }
+
+      // 2. Отправляем ответ
       const res = await fetch(`${SERVER_URL}/api/state`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,6 +139,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
           action: 'submit_homework',
           assignment_id: assignmentId,
           content: text.trim(),
+          file_url: fileUrl,
         }),
       });
 
@@ -123,18 +157,25 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
           ...prev,
           data: prev.data.map((item) =>
             item.id === assignmentId
-              ? { ...item, status: body.data!.status, submission_content: submittedText, admin_comment: null }
+              ? {
+                  ...item,
+                  status: body.data!.status,
+                  submission_content: submittedText || null,
+                  submission_file_url: fileUrl,
+                  admin_comment: null,
+                }
               : item
           ),
         };
       });
       setOpenId(null);
       setText('');
+      setFile(null);
       setSubmitState('idle');
     } catch {
       setSubmitState('error');
     }
-  }, [text, submitState]);
+  }, [text, file, submitState]);
 
   // ---------- Render: loading ----------
   if (loadState.status === 'loading') {
@@ -182,6 +223,29 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
     return null;
   };
 
+  const formatDeadline = (deadline: string) =>
+    `Срок: ${new Date(deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`;
+
+  const deadlineBadge = (item: HomeworkItem) => {
+    if (!item.deadline || item.status === 'accepted') return null;
+    const diffMs = new Date(item.deadline).getTime() - Date.now();
+    if (diffMs < 0) {
+      return (
+        <Badge variant="outline" className="bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40">
+          <AlertTriangle className="w-3 h-3 mr-1" />Просрочено
+        </Badge>
+      );
+    }
+    if (diffMs < 2 * 24 * 60 * 60 * 1000) {
+      return (
+        <Badge variant="outline" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/40">
+          <Clock className="w-3 h-3 mr-1" />Скоро дедлайн
+        </Badge>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
 
@@ -209,21 +273,21 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
             <Card key={item.id}>
               <CardContent className="py-4 px-4 space-y-2">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <h3 className="text-sm font-semibold">{item.title}</h3>
+                  <div>
+                    <h3 className="text-sm font-semibold">{item.title}</h3>
+                    {item.deadline && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDeadline(item.deadline)}</p>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge variant="outline">{item.points_reward} баллов</Badge>
                     {statusBadge(item.status)}
+                    {deadlineBadge(item)}
                   </div>
                 </div>
 
                 {item.theme && <p className="text-xs text-muted-foreground">{item.theme}</p>}
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.content}</p>
-
-                {item.deadline && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> До {new Date(item.deadline).toLocaleString('ru-RU')}
-                  </p>
-                )}
 
                 {item.file_signed_url && (
                   <div>
@@ -232,19 +296,14 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                         <img src={item.file_signed_url} alt="Файл задания" className="max-h-48 rounded border object-cover" />
                       </a>
                     ) : (
-                      <a
-                        href={item.file_signed_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-kamp-primary underline"
-                      >
-                        <FileText className="w-4 h-4" /> Открыть файл задания
-                      </a>
+                      <Button variant="outline" size="sm" className="w-fit" asChild>
+                        <a href={item.file_signed_url} target="_blank" rel="noopener noreferrer">
+                          <FileText className="w-3.5 h-3.5 mr-1" /> Открыть файл задания
+                        </a>
+                      </Button>
                     )}
                   </div>
                 )}
-
-
 
                 {item.admin_comment && (
                   <div className="p-2 bg-muted/50 rounded text-sm">
@@ -252,10 +311,22 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                   </div>
                 )}
 
-                {item.submission_content && item.status !== 'rework' && (
+                {(item.submission_content || item.submission_file_url) && item.status !== 'rework' && (
                   <div className="p-2 bg-muted/30 rounded text-sm">
                     <strong>Твой ответ:</strong>
-                    <p className="whitespace-pre-wrap mt-1">{item.submission_content}</p>
+                    {item.submission_content && (
+                      <p className="whitespace-pre-wrap mt-1">{item.submission_content}</p>
+                    )}
+                    {item.submission_file_url && (
+                      <a
+                        href={item.submission_file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-kamp-primary underline flex items-center gap-1 w-fit mt-1"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" /> Прикреплённый файл
+                      </a>
+                    )}
                   </div>
                 )}
 
@@ -279,20 +350,54 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                       rows={4}
                       disabled={submitState === 'loading'}
                     />
+
+                    {file ? (
+                      <div className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
+                        <span className="truncate flex items-center gap-1">
+                          <Paperclip className="w-3 h-3 shrink-0" />{file.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFile(null)}
+                          disabled={submitState === 'loading'}
+                          aria-label="Убрать файл"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer w-fit">
+                        <Paperclip className="w-3 h-3" /> Прикрепить файл (до 10 МБ)
+                        <input
+                          type="file"
+                          className="hidden"
+                          disabled={submitState === 'loading'}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            if (f && f.size > 10 * 1024 * 1024) {
+                              e.target.value = '';
+                              return;
+                            }
+                            setFile(f);
+                          }}
+                        />
+                      </label>
+                    )}
+
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex-1"
                         disabled={submitState === 'loading'}
-                        onClick={() => { setOpenId(null); setText(''); setSubmitState('idle'); }}
+                        onClick={() => { setOpenId(null); setText(''); setFile(null); setSubmitState('idle'); }}
                       >
                         Отмена
                       </Button>
                       <Button
                         size="sm"
                         className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                        disabled={!text.trim() || submitState === 'loading'}
+                        disabled={(!text.trim() && !file) || submitState === 'loading'}
                         onClick={() => void submit(item.id)}
                       >
                         {submitState === 'loading' ? 'Отправляем...' : submitState === 'error' ? 'Ошибка — повторить' : 'Подтвердить'}
