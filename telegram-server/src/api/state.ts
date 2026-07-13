@@ -521,6 +521,24 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    if (Array.isArray(data.levels)) {
+      await Promise.all(
+        data.levels.map(async (level: { presentation_url: string | null }) => {
+          if (level.presentation_url) {
+            const { data: signed, error: signErr } = await supabase.storage
+              .from('pyramid-materials')
+              .createSignedUrl(level.presentation_url, 3600);
+            if (signErr) {
+              console.error('[state/get_pyramid] sign error:', signErr.message);
+              level.presentation_url = null;
+            } else {
+              level.presentation_url = signed?.signedUrl ?? null;
+            }
+          }
+        })
+      );
+    }
+
     res.json({ ok: true, data });
     return;
   }
