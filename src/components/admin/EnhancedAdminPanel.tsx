@@ -15,7 +15,8 @@ import {
   Calendar,
   FileSignature,
   Coins,
-  Megaphone
+  Megaphone,
+  Triangle
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -36,6 +37,7 @@ import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManage
 import { ContractManagement } from '@/components/admin/ContractManagement';
 import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
+import { PyramidManagement } from '@/components/admin/PyramidManagement';
 
 interface TabConfig {
   id: string;
@@ -136,6 +138,13 @@ const adminTabs: TabConfig[] = [
     icon: Megaphone,
     description: 'Массовые рассылки участникам',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'pyramid', 
+    label: 'Пирамида КЭМП', 
+    icon: Triangle,
+    description: 'Уровни пирамиды и презентации',
+    requiresSuperAdmin: true
   }
 ];
 
@@ -214,6 +223,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <AdminCoinsManagement />;
       case 'broadcasts':
         return <BroadcastManagement />;
+      case 'pyramid':
+        return <PyramidManagement />;
       default:
         return (
           <div className="text-center py-8">
