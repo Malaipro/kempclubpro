@@ -223,6 +223,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <AdminCoinsManagement />;
       case 'broadcasts':
         return <BroadcastManagement />;
+      case 'pyramid':
+        return <PyramidManagement />;
       default:
         return (
           <div className="text-center py-8">
