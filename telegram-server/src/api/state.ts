@@ -57,7 +57,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
   const {
     initData, action = 'get_state', schedule_id, from, days, message, history,
     activity_type, text, ascetic_id, assignment_id, content, file_url,
-    file_name, file_base64,
+    file_name, file_base64, weight, height, birth_date,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -74,6 +74,9 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     file_url?: string;
     file_name?: string;
     file_base64?: string;
+    weight?: number;
+    height?: number;
+    birth_date?: string;
   };
 
   // Базовая валидация тела запроса
@@ -381,6 +384,108 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'get_profile') {
+    const { data, error } = await supabase.rpc('get_profile_for_user', {
+      p_telegram_id: telegramId,
+    });
+
+    if (error) {
+      console.error('[state/get_profile] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.found) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'update_profile') {
+    const hasWeight = weight !== undefined && weight !== null && !Number.isNaN(Number(weight));
+    const hasHeight = height !== undefined && height !== null && !Number.isNaN(Number(height));
+    const hasBirthDate = typeof birth_date === 'string' && birth_date.trim().length > 0;
+
+    const { data, error } = await supabase.rpc('update_profile_for_user', {
+      p_telegram_id: telegramId,
+      p_weight_kg: hasWeight ? Math.round(Number(weight)) : null,
+      p_height_cm: hasHeight ? Math.round(Number(height)) : null,
+      p_date_of_birth: hasBirthDate ? birth_date!.trim() : null,
+    });
+
+    if (error) {
+      console.error('[state/update_profile] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'update_profile_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'upload_avatar') {
+    if (!file_base64 || typeof file_base64 !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_file' });
+      return;
+    }
+
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(file_base64, 'base64');
+    } catch {
+      res.status(400).json({ ok: false, error: 'invalid_file' });
+      return;
+    }
+
+    if (buffer.length === 0 || buffer.length > 5 * 1024 * 1024) {
+      res.status(400).json({ ok: false, error: 'file_too_large' });
+      return;
+    }
+
+    const rawName = typeof file_name === 'string' && file_name.trim() ? file_name.trim() : 'avatar.jpg';
+    const safeName = rawName.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_').slice(-80);
+    const path = `${telegramId}/${Date.now()}-${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, buffer, { upsert: false });
+
+    if (uploadError) {
+      console.error('[state/upload_avatar] upload error:', uploadError.message);
+      res.status(500).json({ ok: false, error: 'upload_failed' });
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+
+    const { data, error } = await supabase.rpc('update_avatar_for_user', {
+      p_telegram_id: telegramId,
+      p_avatar_url: urlData.publicUrl,
+    });
+
+    if (error) {
+      console.error('[state/upload_avatar] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'update_avatar_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data: { avatar_url: urlData.publicUrl } });
     return;
   }
 

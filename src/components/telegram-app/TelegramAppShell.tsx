@@ -8,6 +8,7 @@ import { TelegramActivitiesView } from './TelegramActivitiesView';
 import { TelegramAsceticsView } from './TelegramAsceticsView';
 import { TelegramHomeworkView } from './TelegramHomeworkView';
 import { TelegramRatingView } from './TelegramRatingView';
+import { TelegramProfileView } from './TelegramProfileView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -108,6 +109,10 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'rating') {
     return <TelegramRatingView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'profile') {
+    return <TelegramProfileView onBack={() => setActiveSection('home')} />;
   }
 
   return (
