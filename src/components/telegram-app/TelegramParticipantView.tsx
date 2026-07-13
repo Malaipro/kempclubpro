@@ -108,7 +108,10 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
     <div className="min-h-screen bg-background pb-8">
 
       {/* ── Header ── */}
-      <div className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-2">
+      <div
+        className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-2 cursor-pointer"
+        onClick={() => onNavigate('profile')}
+      >
         <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
@@ -209,7 +212,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             active={activeSection === 'homework'}
             onClick={() => onNavigate('homework')}
           />
-          <SectionCard icon={<BarChart2 className="w-5 h-5" />} label="Рейтинг" />
+          <SectionCard
+            icon={<BarChart2 className="w-5 h-5" />}
+            label="Рейтинг"
+            active={activeSection === 'rating'}
+            onClick={() => onNavigate('rating')}
+          />
           <SectionCard
             icon={<Salad className="w-5 h-5" />}
             label="Нутрициолог"
