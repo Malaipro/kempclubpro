@@ -135,17 +135,13 @@ export const TelegramPyramidView: React.FC<Props> = ({ onBack }) => {
           }
 
           return (
-            <a
+            <Card
               key={level.id}
-              href={level.presentation_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
+              className="cursor-pointer hover:bg-muted/40 transition-colors"
+              onClick={() => window.Telegram?.WebApp?.openLink(level.presentation_url!)}
             >
-              <Card className="cursor-pointer hover:bg-muted/40 transition-colors">
-                {content}
-              </Card>
-            </a>
+              {content}
+            </Card>
           );
         })}
 

@@ -33,6 +33,7 @@ interface TelegramWebApp {
   BackButton: TelegramBackButton;
   ready(): void;
   close(): void;
+  openLink(url: string): void;
 }
 
 interface Window {
