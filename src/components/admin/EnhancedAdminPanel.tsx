@@ -15,7 +15,8 @@ import {
   Calendar,
   FileSignature,
   Coins,
-  Megaphone
+  Megaphone,
+  Triangle
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -36,6 +37,7 @@ import { ClubScheduleManagement } from '@/components/schedule/ClubScheduleManage
 import { ContractManagement } from '@/components/admin/ContractManagement';
 import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
+import { PyramidManagement } from '@/components/admin/PyramidManagement';
 
 interface TabConfig {
   id: string;
