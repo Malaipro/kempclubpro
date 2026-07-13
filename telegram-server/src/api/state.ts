@@ -324,6 +324,22 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Начисление монет за сдачу ДЗ — если правила нет/неактивно, просто
+    // пропускаем начисление, не проваливая сам ответ на submit_homework.
+    if (data.user_id && data.submission_id) {
+      const { error: awardError } = await supabase.rpc('award_coins_by_rule', {
+        p_user_id: data.user_id,
+        p_rule_code: 'homework_submission',
+        p_source_type: 'homework_submission',
+        p_source_id: data.submission_id,
+        p_reason: 'Сдача ДЗ',
+      });
+
+      if (awardError) {
+        console.warn('[state/submit_homework] award_coins_by_rule skipped:', awardError.message);
+      }
+    }
+
     res.json({ ok: true, data });
     return;
   }
