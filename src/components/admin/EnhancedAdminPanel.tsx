@@ -138,6 +138,13 @@ const adminTabs: TabConfig[] = [
     icon: Megaphone,
     description: 'Массовые рассылки участникам',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'pyramid', 
+    label: 'Пирамида КЭМП', 
+    icon: Triangle,
+    description: 'Уровни пирамиды и презентации',
+    requiresSuperAdmin: true
   }
 ];
 
