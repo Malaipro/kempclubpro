@@ -98,7 +98,8 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
     upcoming_homework, referrals_count,
   } = data;
 
-  const displayName = profile?.display_name ?? profile?.first_name ?? 'Участник';
+  const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
+  const displayName = profile?.display_name || fullName || 'Участник';
   const statusLabel = status ? (STATUS_LABELS[status] ?? status) : null;
   const totem = current_totem as { name?: string; discipline?: string } | null;
   const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
@@ -108,8 +109,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
 
       {/* ── Header ── */}
       <div className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-2">
-        <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-          <span className="text-white text-2xl font-black">K</span>
+        <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-2xl font-black">K</span>
+          )}
         </div>
         <h1 className="text-white text-xl font-bold text-center">{displayName}</h1>
         {statusLabel && (
