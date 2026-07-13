@@ -1577,6 +1577,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pyramid_levels: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_unlocked: boolean
+          level_number: number
+          presentation_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_unlocked?: boolean
+          level_number: number
+          presentation_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_unlocked?: boolean
+          level_number?: number
+          presentation_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       referral_leads: {
         Row: {
           bitrix_deal_id: string | null
@@ -2903,6 +2933,9 @@ export type Database = {
         Args: { p_telegram_id: string }
         Returns: Json
       }
+      get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_pyramid_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_schedule_for_user: {
         Args: { p_days?: number; p_from?: string; p_telegram_id: string }
         Returns: Json
@@ -2975,14 +3008,24 @@ export type Database = {
         }
         Returns: undefined
       }
-      submit_homework: {
-        Args: {
-          p_assignment_id: string
-          p_content: string
-          p_telegram_id: string
-        }
-        Returns: Json
-      }
+      submit_homework:
+        | {
+            Args: {
+              p_assignment_id: string
+              p_content: string
+              p_telegram_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_assignment_id: string
+              p_content: string
+              p_file_url?: string
+              p_telegram_id: string
+            }
+            Returns: Json
+          }
       take_ascetic: {
         Args: { p_telegram_id: string; p_text: string }
         Returns: Json
@@ -2991,12 +3034,25 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      update_avatar_for_user: {
+        Args: { p_avatar_url: string; p_telegram_id: string }
+        Returns: Json
+      }
       update_participant_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["participant_status_type"]
           p_user_id: string
         }
         Returns: undefined
+      }
+      update_profile_for_user: {
+        Args: {
+          p_date_of_birth: string
+          p_height_cm: number
+          p_telegram_id: string
+          p_weight_kg: number
+        }
+        Returns: Json
       }
       update_user_leaderboard: {
         Args: { user_uuid: string }
