@@ -505,6 +505,26 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+  if (action === 'get_pyramid') {
+    const { data, error } = await supabase.rpc('get_pyramid_for_user', {
+      p_telegram_id: telegramId,
+    });
+
+    if (error) {
+      console.error('[state/get_pyramid] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.found) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
   if (action === 'nutrition_chat') {
     if (!message || typeof message !== 'string') {
       res.status(400).json({ ok: false, error: 'missing_message' });

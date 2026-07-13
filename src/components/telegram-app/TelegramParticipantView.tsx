@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
-  Salad, ScrollText, ShieldCheck, Home, Flame,
+  Salad, ScrollText, ShieldCheck, Home, Flame, Pyramid,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -223,6 +223,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             label="Нутрициолог"
             active={activeSection === 'nutrition'}
             onClick={() => onNavigate('nutrition')}
+          />
+          <SectionCard
+            icon={<Pyramid className="w-5 h-5" />}
+            label="Пирамида КЭМП"
+            active={activeSection === 'pyramid'}
+            onClick={() => onNavigate('pyramid')}
           />
           <SectionCard icon={<ScrollText className="w-5 h-5" />} label="Правила" />
           <SectionCard icon={<ShieldCheck className="w-5 h-5" />} label="Админ" />
