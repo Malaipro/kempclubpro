@@ -232,6 +232,10 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="pyramid" className="mt-0">
           <PyramidManagement />
         </TabsContent>
+
+        <TabsContent value="journal" className="mt-0">
+          <JournalManagement />
+        </TabsContent>
       </Tabs>
     </div>;
 };
