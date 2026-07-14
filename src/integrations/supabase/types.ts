@@ -1117,7 +1117,7 @@ export type Database = {
       journal_entries: {
         Row: {
           created_at: string
-          day_type: Database["public"]["Enums"]["journal_day_type"]
+          day_type: string
           entry_date: string
           id: string
           updated_at: string
@@ -1125,7 +1125,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          day_type: Database["public"]["Enums"]["journal_day_type"]
+          day_type: string
           entry_date: string
           id?: string
           updated_at?: string
@@ -1133,7 +1133,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          day_type?: Database["public"]["Enums"]["journal_day_type"]
+          day_type?: string
           entry_date?: string
           id?: string
           updated_at?: string
@@ -1144,7 +1144,7 @@ export type Database = {
       journal_prompts: {
         Row: {
           created_at: string
-          day_type: Database["public"]["Enums"]["journal_day_type"]
+          day_type: string
           id: string
           is_active: boolean
           question_text: string
@@ -1153,7 +1153,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          day_type: Database["public"]["Enums"]["journal_day_type"]
+          day_type: string
           id?: string
           is_active?: boolean
           question_text: string
@@ -1162,7 +1162,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          day_type?: Database["public"]["Enums"]["journal_day_type"]
+          day_type?: string
           id?: string
           is_active?: boolean
           question_text?: string
@@ -3059,6 +3059,10 @@ export type Database = {
       }
       get_ascetic_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_journal_for_user: {
+        Args: { p_date?: string; p_telegram_id: string }
+        Returns: Json
+      }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_participant_full_state_by_telegram: {
         Args: { p_telegram_id: string }
@@ -3138,6 +3142,16 @@ export type Database = {
           p_request_id: string
         }
         Returns: undefined
+      }
+      save_journal_entry: {
+        Args: {
+          p_answers: Json
+          p_day_type: string
+          p_emotions: Json
+          p_entry_date: string
+          p_telegram_id: string
+        }
+        Returns: Json
       }
       submit_homework:
         | {

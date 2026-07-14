@@ -154,7 +154,7 @@ const PromptsSection: React.FC = () => {
 
   const grouped = useMemo(() => {
     const g: Record<DayType, Prompt[]> = { weekday: [], saturday: [], sunday: [] };
-    prompts.forEach(p => g[p.day_type].push(p));
+    prompts.forEach(p => { if (g[p.day_type]) g[p.day_type].push(p); });
     return g;
   }, [prompts]);
 
