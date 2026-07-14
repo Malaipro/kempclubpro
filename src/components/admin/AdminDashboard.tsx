@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen } from 'lucide-react';
+import { JournalManagement } from './JournalManagement';
 import { PyramidManagement } from './PyramidManagement';
 import { TelegramLeadsManagement } from './TelegramLeadsManagement';
 import { HomeworkManagement } from './HomeworkManagement';
@@ -135,6 +136,11 @@ export const AdminDashboard: React.FC = () => {
               <Triangle className="w-4 h-4" />
               <span className="whitespace-nowrap">Пирамида</span>
             </TabsTrigger>
+
+            <TabsTrigger value="journal" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <NotebookPen className="w-4 h-4" />
+              <span className="whitespace-nowrap">Ежедневник</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -225,6 +231,10 @@ export const AdminDashboard: React.FC = () => {
 
         <TabsContent value="pyramid" className="mt-0">
           <PyramidManagement />
+        </TabsContent>
+
+        <TabsContent value="journal" className="mt-0">
+          <JournalManagement />
         </TabsContent>
       </Tabs>
     </div>;
