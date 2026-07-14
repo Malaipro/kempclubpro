@@ -10,6 +10,7 @@ import { TelegramHomeworkView } from './TelegramHomeworkView';
 import { TelegramRatingView } from './TelegramRatingView';
 import { TelegramProfileView } from './TelegramProfileView';
 import { TelegramPyramidView } from './TelegramPyramidView';
+import { TelegramJournalView } from './TelegramJournalView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -17,7 +18,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -118,6 +119,10 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'pyramid') {
     return <TelegramPyramidView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'journal') {
+    return <TelegramJournalView onBack={() => setActiveSection('home')} />;
   }
 
   return (

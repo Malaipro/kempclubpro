@@ -3,6 +3,7 @@ import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
   Salad, ScrollText, ShieldCheck, Home, Flame, Pyramid,
+  NotebookPen,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -229,6 +230,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             label="Пирамида КЭМП"
             active={activeSection === 'pyramid'}
             onClick={() => onNavigate('pyramid')}
+          />
+          <SectionCard
+            icon={<NotebookPen className="w-5 h-5" />}
+            label="Ежедневник"
+            active={activeSection === 'journal'}
+            onClick={() => onNavigate('journal')}
           />
           <SectionCard icon={<ScrollText className="w-5 h-5" />} label="Правила" />
           <SectionCard icon={<ShieldCheck className="w-5 h-5" />} label="Админ" />

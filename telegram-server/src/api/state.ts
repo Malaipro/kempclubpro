@@ -58,6 +58,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     initData, action = 'get_state', schedule_id, from, days, message, history,
     activity_type, text, ascetic_id, assignment_id, content, file_url,
     file_name, file_base64, weight, height, birth_date,
+    entry_date, day_type, emotions, answers,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -77,6 +78,10 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     weight?: number;
     height?: number;
     birth_date?: string;
+    entry_date?: string;
+    day_type?: string;
+    emotions?: Array<{ name: string; intensity: number }>;
+    answers?: Array<{ prompt_id: string; text: string }>;
   };
 
   // Базовая валидация тела запроса
@@ -537,6 +542,63 @@ stateRouter.post('/', async (req: Request, res: Response) => {
           }
         })
       );
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'get_journal') {
+    const hasDate = typeof entry_date === 'string' && entry_date.trim().length > 0;
+
+    const { data, error } = await supabase.rpc('get_journal_for_user', {
+      p_telegram_id: telegramId,
+      ...(hasDate ? { p_date: entry_date!.trim() } : {}),
+    });
+
+    if (error) {
+      console.error('[state/get_journal] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.found) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'save_journal') {
+    if (!entry_date || typeof entry_date !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_entry_date' });
+      return;
+    }
+
+    if (!day_type || typeof day_type !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_day_type' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('save_journal_entry', {
+      p_telegram_id: telegramId,
+      p_entry_date: entry_date,
+      p_day_type: day_type,
+      p_emotions: Array.isArray(emotions) ? emotions : [],
+      p_answers: Array.isArray(answers) ? answers : [],
+    });
+
+    if (error) {
+      console.error('[state/save_journal] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error ?? 'save_journal_failed' });
+      return;
     }
 
     res.json({ ok: true, data });
