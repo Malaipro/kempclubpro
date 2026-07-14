@@ -16,7 +16,8 @@ import {
   FileSignature,
   Coins,
   Megaphone,
-  Triangle
+  Triangle,
+  BookOpen
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -38,6 +39,7 @@ import { ContractManagement } from '@/components/admin/ContractManagement';
 import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 import { PyramidManagement } from '@/components/admin/PyramidManagement';
+import { JournalManagement } from '@/components/admin/JournalManagement';
 
 interface TabConfig {
   id: string;
@@ -145,6 +147,13 @@ const adminTabs: TabConfig[] = [
     icon: Triangle,
     description: 'Уровни пирамиды и презентации',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'journal', 
+    label: 'Ежедневник', 
+    icon: BookOpen,
+    description: 'Вопросы и записи участников',
+    requiresSuperAdmin: true
   }
 ];
 
@@ -225,6 +234,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <BroadcastManagement />;
       case 'pyramid':
         return <PyramidManagement />;
+      case 'journal':
+        return <JournalManagement />;
       default:
         return (
           <div className="text-center py-8">
