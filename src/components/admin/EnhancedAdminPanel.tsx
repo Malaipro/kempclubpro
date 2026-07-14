@@ -16,7 +16,8 @@ import {
   FileSignature,
   Coins,
   Megaphone,
-  Triangle
+  Triangle,
+  BookOpen
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
