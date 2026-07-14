@@ -1040,6 +1040,137 @@ export type Database = {
         }
         Relationships: []
       }
+      journal_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          entry_id: string
+          id: string
+          prompt_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          entry_id: string
+          id?: string
+          prompt_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          entry_id?: string
+          id?: string
+          prompt_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_answers_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_answers_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "journal_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_emotions: {
+        Row: {
+          created_at: string
+          emotion_name: string
+          entry_id: string
+          id: string
+          intensity: number
+        }
+        Insert: {
+          created_at?: string
+          emotion_name: string
+          entry_id: string
+          id?: string
+          intensity?: number
+        }
+        Update: {
+          created_at?: string
+          emotion_name?: string
+          entry_id?: string
+          id?: string
+          intensity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_emotions_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          day_type: Database["public"]["Enums"]["journal_day_type"]
+          entry_date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_type: Database["public"]["Enums"]["journal_day_type"]
+          entry_date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_type?: Database["public"]["Enums"]["journal_day_type"]
+          entry_date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      journal_prompts: {
+        Row: {
+          created_at: string
+          day_type: Database["public"]["Enums"]["journal_day_type"]
+          id: string
+          is_active: boolean
+          question_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_type: Database["public"]["Enums"]["journal_day_type"]
+          id?: string
+          is_active?: boolean
+          question_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_type?: Database["public"]["Enums"]["journal_day_type"]
+          id?: string
+          is_active?: boolean
+          question_text?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           bjj_points: number | null
@@ -3094,6 +3225,7 @@ export type Database = {
         | "tactics"
         | "ascetic"
       app_role: "admin" | "user"
+      journal_day_type: "weekday" | "saturday" | "sunday"
       lecture_subtype:
         | "kemp"
         | "nutrition"
@@ -3273,6 +3405,7 @@ export const Constants = {
         "ascetic",
       ],
       app_role: ["admin", "user"],
+      journal_day_type: ["weekday", "saturday", "sunday"],
       lecture_subtype: [
         "kemp",
         "nutrition",
