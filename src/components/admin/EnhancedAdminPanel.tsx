@@ -147,6 +147,13 @@ const adminTabs: TabConfig[] = [
     icon: Triangle,
     description: 'Уровни пирамиды и презентации',
     requiresSuperAdmin: true
+  },
+  { 
+    id: 'journal', 
+    label: 'Ежедневник', 
+    icon: BookOpen,
+    description: 'Вопросы и записи участников',
+    requiresSuperAdmin: true
   }
 ];
 
