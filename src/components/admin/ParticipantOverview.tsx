@@ -427,6 +427,35 @@ export const ParticipantOverview: React.FC<Props> = ({
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Coaching type */}
+          <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Sparkles className="w-4 h-4" />Тип ведения
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Тип ведения</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as 'standard' | 'personal')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Стандарт</SelectItem>
+                    <SelectItem value="personal">Личное ведение</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Определяет уровень сопровождения участника. Отображается меткой в панели и разделе «Ежедневник».
+                </p>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCoachingChange} disabled={savingCoaching}>
+                  {savingCoaching && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Сохранить
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
