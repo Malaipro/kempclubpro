@@ -75,14 +75,8 @@ export const TelegramAppShell: React.FC = () => {
     console.log('initDataUnsafe:', JSON.stringify(webapp.initDataUnsafe));
     console.log('start_param:', webapp.initDataUnsafe?.start_param);
 
-    // start_param в initDataUnsafe заполняется Telegram только для настоящих
-    // t.me deep link'ов (?startapp=/?startattach=). Кнопка web_app с произвольным
-    // url открывается как есть — свой query-параметр Telegram не парсит и не
-    // прокидывает в initDataUnsafe, поэтому проверяем ещё и location.search.
-    const startParamFromUrl = new URLSearchParams(window.location.search).get('startapp');
-    console.log('startapp (url query):', startParamFromUrl);
-
-    if (webapp.initDataUnsafe?.start_param === 'journal' || startParamFromUrl === 'journal') {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'journal') {
       setActiveSection('journal');
     }
 
