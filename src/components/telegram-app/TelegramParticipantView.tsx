@@ -99,8 +99,18 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
     upcoming_homework, referrals_count,
   } = data;
 
-  const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
-  const displayName = profile?.display_name || fullName || 'Участник';
+  console.log('[TelegramParticipantView] data:', data);
+  console.log('[TelegramParticipantView] profile:', profile);
+  const anyData = data as any;
+  const fullName = [
+    profile?.first_name ?? anyData?.first_name,
+    profile?.last_name ?? anyData?.last_name,
+  ].filter(Boolean).join(' ');
+  const displayName =
+    profile?.display_name ||
+    anyData?.display_name ||
+    fullName ||
+    'Участник';
   const statusLabel = status ? (STATUS_LABELS[status] ?? status) : null;
   const totem = current_totem as { name?: string; discipline?: string } | null;
   const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
@@ -120,7 +130,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             <span className="text-white text-2xl font-black">K</span>
           )}
         </div>
-        <h1 className="text-white text-xl font-bold text-center">{displayName}</h1>
+        <h1 className="text-white text-xl font-bold text-center break-all">{profile?.display_name || profile?.first_name || JSON.stringify(profile)?.slice(0, 50) || 'нет данных'}</h1>
         {statusLabel && (
           <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
             {statusLabel}
