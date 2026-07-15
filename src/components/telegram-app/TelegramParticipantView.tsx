@@ -99,8 +99,18 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
     upcoming_homework, referrals_count,
   } = data;
 
-  const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
-  const displayName = profile?.display_name || fullName || 'Участник';
+  console.log('[TelegramParticipantView] data:', data);
+  console.log('[TelegramParticipantView] profile:', profile);
+  const anyData = data as any;
+  const fullName = [
+    profile?.first_name ?? anyData?.first_name,
+    profile?.last_name ?? anyData?.last_name,
+  ].filter(Boolean).join(' ');
+  const displayName =
+    profile?.display_name ||
+    anyData?.display_name ||
+    fullName ||
+    'Участник';
   const statusLabel = status ? (STATUS_LABELS[status] ?? status) : null;
   const totem = current_totem as { name?: string; discipline?: string } | null;
   const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
