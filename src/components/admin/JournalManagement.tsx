@@ -35,7 +35,12 @@ interface EntryRow {
   entry_date: string;
   day_type: DayType;
   created_at: string;
-  profile?: { display_name: string | null; first_name: string | null; last_name: string | null } | null;
+  profile?: {
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    coaching_type?: 'standard' | 'personal' | null;
+  } | null;
 }
 
 const dayLabel: Record<DayType, string> = {
@@ -264,10 +269,11 @@ const EntryViewer: React.FC<{ entryId: string | null; onClose: () => void }> = (
 
 const EntriesSection: React.FC = () => {
   const [entries, setEntries] = useState<EntryRow[]>([]);
-  const [profiles, setProfiles] = useState<Array<{ user_id: string; display_name: string | null }>>([]);
+  const [profiles, setProfiles] = useState<Array<{ user_id: string; display_name: string | null; coaching_type?: 'standard' | 'personal' | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [userFilter, setUserFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
+  const [coachingFilter, setCoachingFilter] = useState<'all' | 'standard' | 'personal'>('all');
   const [viewingId, setViewingId] = useState<string | null>(null);
 
   const load = async () => {
@@ -280,16 +286,19 @@ const EntriesSection: React.FC = () => {
     if (userFilter !== 'all') q = q.eq('user_id', userFilter);
     if (dateFilter) q = q.eq('entry_date', dateFilter);
     const { data } = await q;
-    const rows = (data as EntryRow[]) || [];
+    let rows = (data as EntryRow[]) || [];
 
     const userIds = Array.from(new Set(rows.map(r => r.user_id)));
     if (userIds.length > 0) {
       const { data: profs } = await supabase
         .from('profiles')
-        .select('user_id, display_name, first_name, last_name')
+        .select('user_id, display_name, first_name, last_name, coaching_type')
         .in('user_id', userIds);
       const map = new Map((profs || []).map((p: any) => [p.user_id, p]));
       rows.forEach(r => { r.profile = map.get(r.user_id) as any; });
+    }
+    if (coachingFilter !== 'all') {
+      rows = rows.filter(r => (r.profile?.coaching_type || 'standard') === coachingFilter);
     }
     setEntries(rows);
     setLoading(false);
@@ -299,14 +308,15 @@ const EntriesSection: React.FC = () => {
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, coaching_type')
         .order('display_name', { ascending: true })
         .limit(500);
       setProfiles((data as any) || []);
     })();
   }, []);
 
-  useEffect(() => { load(); }, [userFilter, dateFilter]);
+  useEffect(() => { load(); }, [userFilter, dateFilter, coachingFilter]);
+
 
   const nameOf = (r: EntryRow) =>
     r.profile?.display_name ||
