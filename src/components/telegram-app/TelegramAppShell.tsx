@@ -72,14 +72,6 @@ export const TelegramAppShell: React.FC = () => {
 
     webapp.ready();
 
-    console.log('initDataUnsafe:', JSON.stringify(webapp.initDataUnsafe));
-    console.log('start_param:', webapp.initDataUnsafe?.start_param);
-
-    const hash = window.location.hash.replace('#', '');
-    if (hash === 'journal') {
-      setActiveSection('journal');
-    }
-
     const initData = webapp.initData;
     if (!initData) {
       setState({ status: 'error', reason: 'missing_init_data' });
