@@ -3,12 +3,15 @@ import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
   Salad, ScrollText, ShieldCheck, Home, Flame, Pyramid,
-  NotebookPen,
+  NotebookPen, Share2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { ParticipantFullState } from '@/services/participantService';
 import type { Section } from './TelegramAppShell';
+
+const BOT_USERNAME = 'kempclub_bot';
 
 interface Props {
   data: ParticipantFullState;
@@ -105,6 +108,21 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
   const totem = current_totem as { name?: string; discipline?: string } | null;
   const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
 
+  const referralCode = profile?.referral_code;
+  const referralLink = referralCode ? `https://t.me/${BOT_USERNAME}?start=${referralCode}` : null;
+
+  const handleShareReferral = () => {
+    if (!referralLink) return;
+
+    const webapp = window.Telegram?.WebApp;
+    if (webapp) {
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к КЭМП!')}`;
+      webapp.openTelegramLink(shareUrl);
+    } else {
+      navigator.clipboard.writeText(referralLink).catch(() => {});
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
 
@@ -139,6 +157,24 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           <StatCard icon={<Users className="w-4 h-4" />} label="Рефералы" value={referrals_count} />
         )}
       </div>
+
+      {/* ── Referral ── */}
+      {referralCode && (
+        <div className="px-4 pt-3">
+          <Card>
+            <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground mb-1">Реферальный код</p>
+                <p className="font-semibold truncate">{referralCode}</p>
+              </div>
+              <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={handleShareReferral}>
+                <Share2 className="w-4 h-4" />
+                Поделиться
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ── Totem ── */}
       {totem?.name && (

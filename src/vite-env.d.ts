@@ -38,6 +38,7 @@ interface TelegramWebApp {
   ready(): void;
   close(): void;
   openLink(url: string): void;
+  openTelegramLink(url: string): void;
 }
 
 interface Window {

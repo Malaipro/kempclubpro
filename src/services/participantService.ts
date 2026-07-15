@@ -173,6 +173,7 @@ export interface ParticipantFullState {
     avatar_url: string | null;
     telegram: string | null;
     approved: boolean | null;
+    referral_code: string | null;
   };
   status?: string | null;
   stream?: Record<string, unknown> | null;
