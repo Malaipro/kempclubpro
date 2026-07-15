@@ -222,6 +222,28 @@ export const ParticipantOverview: React.FC<Props> = ({
   const [coinSign, setCoinSign] = useState<1 | -1>(1);
   const [savingCoins, setSavingCoins] = useState(false);
 
+  const [coachingOpen, setCoachingOpen] = useState(false);
+  const [coachingType, setCoachingType] = useState<'standard' | 'personal'>(
+    (participant.coaching_type as 'standard' | 'personal') || 'standard',
+  );
+  const [savingCoaching, setSavingCoaching] = useState(false);
+
+  const handleCoachingChange = async () => {
+    setSavingCoaching(true);
+    try {
+      const { error } = await supabase.from('profiles')
+        .update({ coaching_type: coachingType } as any).eq('user_id', userId);
+      if (error) throw error;
+      toast({ title: 'Готово', description: `Тип ведения: ${coachingType === 'personal' ? 'Личное' : 'Стандарт'}` });
+      setCoachingOpen(false);
+      onReload();
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось обновить', variant: 'destructive' });
+    } finally {
+      setSavingCoaching(false);
+    }
+  };
+
   const handleCoins = async () => {
     const parsed = parseInt(coinAmount, 10);
     if (!parsed || parsed <= 0) {
