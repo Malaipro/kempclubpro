@@ -1461,6 +1461,7 @@ export type Database = {
           approved_by: string | null
           avatar_url: string | null
           club_joined_at: string | null
+          coaching_type: string
           created_at: string
           current_stream_id: string | null
           date_of_birth: string | null
@@ -1508,6 +1509,7 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           club_joined_at?: string | null
+          coaching_type?: string
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null
@@ -1555,6 +1557,7 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           club_joined_at?: string | null
+          coaching_type?: string
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null

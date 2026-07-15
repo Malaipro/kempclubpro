@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS coaching_type TEXT NOT NULL DEFAULT 'standard' CHECK (coaching_type IN ('standard', 'personal'));

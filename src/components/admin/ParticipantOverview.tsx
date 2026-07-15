@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   User, Mail, Phone, Send, Coins, Trophy, Users, Award, Calendar, FileText,
-  Gift, UserCheck, Loader2, Plus, Minus, Target,
+  Gift, UserCheck, Loader2, Plus, Minus, Target, Sparkles,
 } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -35,6 +36,7 @@ interface ParticipantLike {
   rank_position: number | null;
   created_at?: string | null;
   join_date?: string | null;
+  coaching_type?: 'standard' | 'personal' | null;
 }
 
 interface TotemLike {
@@ -220,6 +222,28 @@ export const ParticipantOverview: React.FC<Props> = ({
   const [coinSign, setCoinSign] = useState<1 | -1>(1);
   const [savingCoins, setSavingCoins] = useState(false);
 
+  const [coachingOpen, setCoachingOpen] = useState(false);
+  const [coachingType, setCoachingType] = useState<'standard' | 'personal'>(
+    (participant.coaching_type as 'standard' | 'personal') || 'standard',
+  );
+  const [savingCoaching, setSavingCoaching] = useState(false);
+
+  const handleCoachingChange = async () => {
+    setSavingCoaching(true);
+    try {
+      const { error } = await supabase.from('profiles')
+        .update({ coaching_type: coachingType } as any).eq('user_id', userId);
+      if (error) throw error;
+      toast({ title: 'Готово', description: `Тип ведения: ${coachingType === 'personal' ? 'Личное' : 'Стандарт'}` });
+      setCoachingOpen(false);
+      onReload();
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось обновить', variant: 'destructive' });
+    } finally {
+      setSavingCoaching(false);
+    }
+  };
+
   const handleCoins = async () => {
     const parsed = parseInt(coinAmount, 10);
     if (!parsed || parsed <= 0) {
@@ -263,10 +287,13 @@ export const ParticipantOverview: React.FC<Props> = ({
       {/* Header summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 flex-wrap">
             <User className="w-5 h-5 text-primary" />
             {fullName}
             <Badge variant="secondary">{STATUS_LABELS[participant.participant_status || ''] || participant.participant_status || '—'}</Badge>
+            {participant.coaching_type === 'personal' && (
+              <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/40">Личное ведение</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -396,6 +423,35 @@ export const ParticipantOverview: React.FC<Props> = ({
               <DialogFooter>
                 <Button onClick={handleCoins} disabled={savingCoins}>
                   {savingCoins && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Выполнить
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Coaching type */}
+          <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Sparkles className="w-4 h-4" />Тип ведения
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Тип ведения</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <Select value={coachingType} onValueChange={(v) => setCoachingType(v as 'standard' | 'personal')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Стандарт</SelectItem>
+                    <SelectItem value="personal">Личное ведение</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Определяет уровень сопровождения участника. Отображается меткой в панели и разделе «Ежедневник».
+                </p>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCoachingChange} disabled={savingCoaching}>
+                  {savingCoaching && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Сохранить
                 </Button>
               </DialogFooter>
             </DialogContent>
