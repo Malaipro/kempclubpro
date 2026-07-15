@@ -29,6 +29,10 @@ interface TelegramBackButton {
 
 interface TelegramWebApp {
   initData: string;
+  initDataUnsafe: {
+    start_param?: string;
+    [key: string]: unknown;
+  };
   colorScheme: 'light' | 'dark';
   BackButton: TelegramBackButton;
   ready(): void;
