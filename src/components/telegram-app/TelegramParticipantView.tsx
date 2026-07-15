@@ -130,7 +130,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             <span className="text-white text-2xl font-black">K</span>
           )}
         </div>
-        <h1 className="text-white text-xl font-bold text-center break-all">{profile?.display_name || profile?.first_name || JSON.stringify(profile)?.slice(0, 50) || 'нет данных'}</h1>
+        <h1 className="text-white text-xl font-bold text-center">{displayName}</h1>
         {statusLabel && (
           <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
             {statusLabel}
