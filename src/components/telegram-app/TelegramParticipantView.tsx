@@ -84,10 +84,10 @@ const SectionCard: React.FC<SectionCardProps> = ({ icon, label, active = false, 
 // ---------- Data ----------
 
 const STATUS_LABELS: Record<string, string> = {
-  active: 'Активный',
+  intensive_active: 'Интенсив',
+  intensive_completed: 'Интенсив завершён',
   club_resident: 'Резидент клуба',
-  graduated: 'Выпускник',
-  inactive: 'Неактивный',
+  alumni: 'Выпускник',
 };
 
 // ---------- View ----------
@@ -140,7 +140,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
 
       {/* ── Stats grid ── */}
       <div className="px-4 pt-4 grid grid-cols-2 gap-3">
-        <StatCard icon={<Coins className="w-4 h-4" />} label="Монеты" value={coins_balance ?? 0} />
+        <StatCard icon={<Coins className="w-4 h-4" />} label="Коины" value={coins_balance ?? 0} />
         <StatCard icon={<Trophy className="w-4 h-4" />} label="Очки" value={total_points ?? 0} />
         {rank_position != null && (
           <StatCard icon={<Star className="w-4 h-4" />} label="Место в рейтинге" value={`#${rank_position}`} />
