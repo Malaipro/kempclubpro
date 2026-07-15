@@ -90,7 +90,7 @@ serve(async (req) => {
           text,
           reply_markup: {
             inline_keyboard: [[
-              { text: 'Открыть ежедневник', url: miniAppUrl },
+              { text: 'Открыть ежедневник', web_app: { url: miniAppUrl } },
             ]],
           },
         }),
