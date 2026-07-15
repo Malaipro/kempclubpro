@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.mcp]
 verify_jwt = false
+
+[functions.send-journal-reminders]
+verify_jwt = false
