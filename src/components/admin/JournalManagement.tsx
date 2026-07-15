@@ -326,7 +326,7 @@ const EntriesSection: React.FC = () => {
   return (
     <div className="space-y-4">
       <Card className="bg-card">
-        <CardContent className="p-4 grid gap-3 md:grid-cols-3">
+        <CardContent className="p-4 grid gap-3 md:grid-cols-4">
           <div>
             <Label>Участник</Label>
             <Select value={userFilter} onValueChange={setUserFilter}>
@@ -336,6 +336,7 @@ const EntriesSection: React.FC = () => {
                 {profiles.map(p => (
                   <SelectItem key={p.user_id} value={p.user_id}>
                     {p.display_name || p.user_id.slice(0, 8)}
+                    {p.coaching_type === 'personal' ? ' · Личное' : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -345,8 +346,19 @@ const EntriesSection: React.FC = () => {
             <Label>Дата</Label>
             <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
           </div>
+          <div>
+            <Label>Тип ведения</Label>
+            <Select value={coachingFilter} onValueChange={(v) => setCoachingFilter(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="standard">Стандарт</SelectItem>
+                <SelectItem value="personal">Личное ведение</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-end">
-            <Button variant="outline" onClick={() => { setUserFilter('all'); setDateFilter(''); }}>
+            <Button variant="outline" onClick={() => { setUserFilter('all'); setDateFilter(''); setCoachingFilter('all'); }}>
               Сбросить
             </Button>
           </div>
@@ -363,7 +375,12 @@ const EntriesSection: React.FC = () => {
             <div key={r.id} className="flex items-center gap-3 p-3 rounded border bg-card">
               <div className="text-sm font-mono">{r.entry_date}</div>
               <Badge variant="outline">{dayLabel[r.day_type]}</Badge>
-              <div className="flex-1 truncate">{nameOf(r)}</div>
+              <div className="flex-1 truncate flex items-center gap-2">
+                <span className="truncate">{nameOf(r)}</span>
+                {r.profile?.coaching_type === 'personal' && (
+                  <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/40 shrink-0">Личное</Badge>
+                )}
+              </div>
               <Button size="sm" variant="ghost" onClick={() => setViewingId(r.id)}>
                 <Eye className="w-4 h-4 mr-1" />Открыть
               </Button>
