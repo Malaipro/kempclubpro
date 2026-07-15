@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   User, Mail, Phone, Send, Coins, Trophy, Users, Award, Calendar, FileText,
-  Gift, UserCheck, Loader2, Plus, Minus, Target,
+  Gift, UserCheck, Loader2, Plus, Minus, Target, Sparkles,
 } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -35,6 +36,7 @@ interface ParticipantLike {
   rank_position: number | null;
   created_at?: string | null;
   join_date?: string | null;
+  coaching_type?: 'standard' | 'personal' | null;
 }
 
 interface TotemLike {
@@ -263,10 +265,13 @@ export const ParticipantOverview: React.FC<Props> = ({
       {/* Header summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 flex-wrap">
             <User className="w-5 h-5 text-primary" />
             {fullName}
             <Badge variant="secondary">{STATUS_LABELS[participant.participant_status || ''] || participant.participant_status || '—'}</Badge>
+            {participant.coaching_type === 'personal' && (
+              <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/40">Личное ведение</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
