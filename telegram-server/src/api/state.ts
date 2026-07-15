@@ -123,13 +123,14 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // RPC вернул null — telegram_id не привязан ни к одному профилю
-    if (data === null || data === undefined) {
+    // RPC возвращает { linked: bool, state: ParticipantFullState } — telegram_id
+    // не привязан ни к одному профилю, если linked === false (или data пустой)
+    if (!data || !data.linked) {
       res.json({ ok: false, error: 'not_linked' });
       return;
     }
 
-    res.json({ ok: true, action, data });
+    res.json({ ok: true, action, data: data.state });
     return;
   }
 
