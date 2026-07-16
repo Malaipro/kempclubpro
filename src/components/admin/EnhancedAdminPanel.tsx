@@ -17,7 +17,8 @@ import {
   Coins,
   Megaphone,
   Triangle,
-  BookOpen
+  BookOpen,
+  Inbox
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
