@@ -53,14 +53,16 @@ interface Props {
   onReload: () => void;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  intensive_active: 'Активный участник',
-  club_resident: 'Резидент клуба',
-  alumni: 'Выпускник',
-  intensive_completed: 'Завершил интенсив (legacy)',
-};
+import {
+  PARTICIPANT_STATUS_META,
+  MAIN_PARTICIPANT_STATUSES,
+  LEGACY_PARTICIPANT_STATUSES,
+  getParticipantStatusLabel,
+} from '@/constants/participantStatus';
 
-const SELECTABLE_STATUSES = ['intensive_active', 'club_resident', 'alumni'];
+// Все статусы отдаются в селект: 5 основных первыми, затем legacy.
+// Legacy можно оставить проставленным, но не рекомендуется назначать заново.
+const STATUS_OPTIONS = [...MAIN_PARTICIPANT_STATUSES, ...LEGACY_PARTICIPANT_STATUSES];
 
 export const ParticipantOverview: React.FC<Props> = ({
   userId, participant, streamName, totems, onReload,
@@ -146,7 +148,7 @@ export const ParticipantOverview: React.FC<Props> = ({
         p_user_id: userId, p_new_status: newStatus as any,
       });
       if (error) throw error;
-      toast({ title: 'Готово', description: `Статус: ${STATUS_LABELS[newStatus]}` });
+      toast({ title: 'Готово', description: `Статус: ${getParticipantStatusLabel(newStatus)}` });
       setStatusOpen(false);
       onReload(); loadData();
     } catch (error: any) {
@@ -155,7 +157,7 @@ export const ParticipantOverview: React.FC<Props> = ({
         const { error: updErr } = await supabase.from('profiles')
           .update({ participant_status: newStatus as any }).eq('user_id', userId);
         if (updErr) throw updErr;
-        toast({ title: 'Готово', description: `Статус: ${STATUS_LABELS[newStatus]} (fallback)` });
+        toast({ title: 'Готово', description: `Статус: ${getParticipantStatusLabel(newStatus)} (fallback)` });
         setStatusOpen(false);
         onReload(); loadData();
       } catch (inner: any) {
@@ -290,7 +292,7 @@ export const ParticipantOverview: React.FC<Props> = ({
           <CardTitle className="flex items-center gap-2 flex-wrap">
             <User className="w-5 h-5 text-primary" />
             {fullName}
-            <Badge variant="secondary">{STATUS_LABELS[participant.participant_status || ''] || participant.participant_status || '—'}</Badge>
+            <Badge variant="secondary">{getParticipantStatusLabel(participant.participant_status)}</Badge>
             {participant.coaching_type === 'personal' && (
               <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/40">Личное ведение</Badge>
             )}
@@ -332,8 +334,14 @@ export const ParticipantOverview: React.FC<Props> = ({
                 <Select value={newStatus} onValueChange={setNewStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {SELECTABLE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        <span className="flex items-center gap-2">
+                          <s.icon className="w-4 h-4" />
+                          {s.label}
+                          {s.legacy ? <span className="text-xs text-muted-foreground">(legacy)</span> : null}
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
