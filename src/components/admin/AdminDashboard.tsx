@@ -28,7 +28,7 @@ import { MaterialsManagement } from './MaterialsManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('kamp');
+  const [activeTab, setActiveTab] = useState('applications');
   return <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Navigation Tabs */}
