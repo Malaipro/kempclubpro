@@ -25,21 +25,24 @@ const statusLabels: Record<ParticipantStatus, string> = {
   intensive_active: 'Активный участник',
   intensive_completed: 'Завершил интенсив (legacy)',
   club_resident: 'Резидент клуба',
-  alumni: 'Выпускник'
+  alumni: 'Выпускник',
+  inactive: 'Неактивен (слился)'
 };
 
 const statusIcons: Record<ParticipantStatus, React.ReactNode> = {
   intensive_active: <Users className="w-4 h-4" />,
   intensive_completed: <UserCheck className="w-4 h-4" />,
   club_resident: <UserCog className="w-4 h-4" />,
-  alumni: <GraduationCap className="w-4 h-4" />
+  alumni: <GraduationCap className="w-4 h-4" />,
+  inactive: <UserX className="w-4 h-4" />
 };
 
 const statusColors: Record<ParticipantStatus, string> = {
   intensive_active: 'bg-blue-100 text-blue-800',
   intensive_completed: 'bg-green-100 text-green-800',
   club_resident: 'bg-purple-100 text-purple-800',
-  alumni: 'bg-gray-100 text-gray-800'
+  alumni: 'bg-gray-100 text-gray-800',
+  inactive: 'bg-red-100 text-red-800'
 };
 
 export const ParticipantStatusManagement: React.FC = () => {
