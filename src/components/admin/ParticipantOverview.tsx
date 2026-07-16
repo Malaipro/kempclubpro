@@ -292,7 +292,7 @@ export const ParticipantOverview: React.FC<Props> = ({
           <CardTitle className="flex items-center gap-2 flex-wrap">
             <User className="w-5 h-5 text-primary" />
             {fullName}
-            <Badge variant="secondary">{STATUS_LABELS[participant.participant_status || ''] || participant.participant_status || '—'}</Badge>
+            <Badge variant="secondary">{getParticipantStatusLabel(participant.participant_status)}</Badge>
             {participant.coaching_type === 'personal' && (
               <Badge className="bg-amber-500/20 text-amber-600 border border-amber-500/40">Личное ведение</Badge>
             )}
