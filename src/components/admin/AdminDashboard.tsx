@@ -34,6 +34,11 @@ export const AdminDashboard: React.FC = () => {
         {/* Navigation Tabs */}
         <div className="mb-6 overflow-x-auto">
           <TabsList className="flex w-max min-w-full h-auto p-1 gap-1 bg-muted/50">
+            <TabsTrigger value="applications" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Inbox className="w-4 h-4" />
+              <span className="whitespace-nowrap">Заявки</span>
+            </TabsTrigger>
+
             <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
