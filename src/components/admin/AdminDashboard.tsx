@@ -252,6 +252,12 @@ export const AdminDashboard: React.FC = () => {
 
         <TabsContent value="journal" className="mt-0">
           <JournalManagement />
+        <TabsContent value="journal" className="mt-0">
+          <JournalManagement />
+        </TabsContent>
+
+        <TabsContent value="broadcasts" className="mt-0">
+          <BroadcastManagement />
         </TabsContent>
       </Tabs>
     </div>;
