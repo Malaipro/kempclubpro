@@ -3289,6 +3289,9 @@ export type Database = {
         | "club_resident"
         | "alumni"
         | "inactive"
+        | "intensive_failed"
+        | "trial_visit"
+        | "intensive_dropped"
       reward_type: "zakal" | "gran" | "shram"
       schedule_type: "intensive" | "club"
       shram_subtype: "bjj" | "kick" | "ofp" | "tactics"
@@ -3471,6 +3474,9 @@ export const Constants = {
         "club_resident",
         "alumni",
         "inactive",
+        "intensive_failed",
+        "trial_visit",
+        "intensive_dropped",
       ],
       reward_type: ["zakal", "gran", "shram"],
       schedule_type: ["intensive", "club"],
