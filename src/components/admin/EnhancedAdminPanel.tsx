@@ -52,6 +52,12 @@ interface TabConfig {
 }
 
 const adminTabs: TabConfig[] = [
+  {
+    id: 'applications',
+    label: 'Заявки',
+    icon: Inbox,
+    description: 'Заявки с сайта и зачисление в поток'
+  },
   { 
     id: 'participants', 
     label: 'Участники', 
