@@ -17,7 +17,7 @@ import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip } from 'lucide-react'
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-type Audience = 'intensive' | 'resident' | 'all';
+type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
 interface BroadcastButton {
   label: string;
@@ -39,6 +39,7 @@ interface BroadcastMessage {
 const audienceLabels: Record<Audience, string> = {
   intensive: 'Все интенсив',
   resident: 'Все резиденты',
+  alumni: 'Все выпускники',
   all: 'Все сразу',
 };
 
