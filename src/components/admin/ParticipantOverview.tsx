@@ -157,7 +157,7 @@ export const ParticipantOverview: React.FC<Props> = ({
         const { error: updErr } = await supabase.from('profiles')
           .update({ participant_status: newStatus as any }).eq('user_id', userId);
         if (updErr) throw updErr;
-        toast({ title: 'Готово', description: `Статус: ${STATUS_LABELS[newStatus]} (fallback)` });
+        toast({ title: 'Готово', description: `Статус: ${getParticipantStatusLabel(newStatus)} (fallback)` });
         setStatusOpen(false);
         onReload(); loadData();
       } catch (inner: any) {
