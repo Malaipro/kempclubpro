@@ -25,7 +25,8 @@ export type ParticipantStatus =
   | 'trial_visit'
   | 'intensive_dropped'
   | 'intensive_completed'
-  | 'alumni';
+  | 'alumni'
+  | 'inactive';
 
 export interface ParticipantStatusMeta {
   value: ParticipantStatus;
