@@ -69,16 +69,32 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
     .map((p) => p.telegram_id as string | null)
     .filter((id): id is string => !!id);
 
-  // 3. Рассылаем каждому
+  // 3. Готовим ссылку на файл: полный URL используем как есть,
+  // относительный путь — превращаем в подписанную ссылку (bucket приватный)
+  let fileUrl: string | null = broadcast.file_url;
+  if (fileUrl && !/^https?:\/\//i.test(fileUrl)) {
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from('broadcasts')
+      .createSignedUrl(fileUrl, 3600);
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error('[broadcast] signed url error:', signedUrlError?.message);
+      fileUrl = null;
+    } else {
+      fileUrl = signedUrlData.signedUrl;
+    }
+  }
+
+  // 4. Рассылаем каждому
   await Promise.all(
     recipients.map((telegramId) =>
-      sendBroadcastMessage(telegramId, broadcast.text, broadcast.buttons, broadcast.file_url)
+      sendBroadcastMessage(telegramId, broadcast.text, broadcast.buttons, fileUrl)
     )
   );
 
   const sentCount = recipients.length;
 
-  // 4. Обновляем статус рассылки
+  // 5. Обновляем статус рассылки
   const { error: updateError } = await supabase
     .from('broadcast_messages')
     .update({
@@ -92,6 +108,6 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
     console.error('[broadcast] update error:', updateError.message);
   }
 
-  // 5. Ответ
+  // 6. Ответ
   res.json({ ok: true, sent: sentCount });
 });
