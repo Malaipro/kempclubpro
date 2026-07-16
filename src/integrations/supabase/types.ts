@@ -403,6 +403,39 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcasts: {
+        Row: {
+          audience_cnt: number
+          created_at: string
+          created_by: string
+          filter_json: Json | null
+          id: string
+          message_text: string
+          sent_cnt: number | null
+          status: string
+        }
+        Insert: {
+          audience_cnt: number
+          created_at?: string
+          created_by: string
+          filter_json?: Json | null
+          id?: string
+          message_text: string
+          sent_cnt?: number | null
+          status?: string
+        }
+        Update: {
+          audience_cnt?: number
+          created_at?: string
+          created_by?: string
+          filter_json?: Json | null
+          id?: string
+          message_text?: string
+          sent_cnt?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           challenge_type: string
@@ -1479,6 +1512,116 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      participant_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          note: string
+          profile_user_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          note: string
+          profile_user_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          profile_user_id?: string
+        }
+        Relationships: []
+      }
+      participant_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["participant_status_type"]
+          old_status:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
+          profile_user_id: string
+          stream_id: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status: Database["public"]["Enums"]["participant_status_type"]
+          old_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
+          profile_user_id: string
+          stream_id?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["participant_status_type"]
+          old_status?:
+            | Database["public"]["Enums"]["participant_status_type"]
+            | null
+          profile_user_id?: string
+          stream_id?: string | null
+        }
+        Relationships: []
+      }
+      participant_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profile_tags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          profile_user_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          profile_user_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          profile_user_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "participant_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
