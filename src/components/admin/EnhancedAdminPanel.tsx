@@ -41,6 +41,7 @@ import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 import { PyramidManagement } from '@/components/admin/PyramidManagement';
 import { JournalManagement } from '@/components/admin/JournalManagement';
+import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
 
 interface TabConfig {
   id: string;
