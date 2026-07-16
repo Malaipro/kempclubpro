@@ -8,7 +8,7 @@ import { Users, UserCheck, UserCog, GraduationCap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type ParticipantStatus = 'intensive_active' | 'intensive_completed' | 'club_resident' | 'alumni';
+type ParticipantStatus = 'intensive_active' | 'intensive_completed' | 'club_resident' | 'alumni' | 'inactive';
 
 interface Participant {
   id: string;
