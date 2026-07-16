@@ -21,6 +21,7 @@ import { ParticipantRewardsTab } from '@/components/admin/participant/Participan
 import { ParticipantReferralsTab } from '@/components/admin/participant/ParticipantReferralsTab';
 import { ParticipantAuditTab } from '@/components/admin/participant/ParticipantAuditTab';
 import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
+import { getParticipantStatusLabel } from '@/constants/participantStatus';
 
 // Lazy load heavy components
 const DetailedLeaderboard = lazy(() => import('@/components/leaderboard/DetailedLeaderboard').then(m => ({ default: m.DetailedLeaderboard })));
@@ -184,15 +185,7 @@ export default function AdminViewParticipant() {
       .join(' ') || participant.display_name || 'Участник';
   };
 
-  const getStatusLabel = (status: string | null) => {
-    switch (status) {
-      case 'intensive_active': return 'Активный участник интенсива';
-      case 'intensive_completed': return 'Завершил интенсив';
-      case 'club_resident': return 'Резидент клуба';
-      case 'alumni': return 'Выпускник';
-      default: return 'Не указан';
-    }
-  };
+  const getStatusLabel = (status: string | null) => getParticipantStatusLabel(status);
 
   const formatCooperTime = (minutes: number | null, seconds: number | null) => {
     if (minutes === null && seconds === null) return 'Не указано';
