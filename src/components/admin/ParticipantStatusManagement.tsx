@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserCheck, UserCog, GraduationCap } from 'lucide-react';
+import { Users, UserCheck, UserCog, GraduationCap, UserX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type ParticipantStatus = 'intensive_active' | 'intensive_completed' | 'club_resident' | 'alumni';
+type ParticipantStatus = 'intensive_active' | 'intensive_completed' | 'club_resident' | 'alumni' | 'inactive';
 
 interface Participant {
   id: string;
@@ -25,21 +25,24 @@ const statusLabels: Record<ParticipantStatus, string> = {
   intensive_active: 'Активный участник',
   intensive_completed: 'Завершил интенсив (legacy)',
   club_resident: 'Резидент клуба',
-  alumni: 'Выпускник'
+  alumni: 'Выпускник',
+  inactive: 'Неактивен (слился)'
 };
 
 const statusIcons: Record<ParticipantStatus, React.ReactNode> = {
   intensive_active: <Users className="w-4 h-4" />,
   intensive_completed: <UserCheck className="w-4 h-4" />,
   club_resident: <UserCog className="w-4 h-4" />,
-  alumni: <GraduationCap className="w-4 h-4" />
+  alumni: <GraduationCap className="w-4 h-4" />,
+  inactive: <UserX className="w-4 h-4" />
 };
 
 const statusColors: Record<ParticipantStatus, string> = {
   intensive_active: 'bg-blue-100 text-blue-800',
   intensive_completed: 'bg-green-100 text-green-800',
   club_resident: 'bg-purple-100 text-purple-800',
-  alumni: 'bg-gray-100 text-gray-800'
+  alumni: 'bg-gray-100 text-gray-800',
+  inactive: 'bg-red-100 text-red-800'
 };
 
 export const ParticipantStatusManagement: React.FC = () => {
@@ -202,6 +205,9 @@ export const ParticipantStatusManagement: React.FC = () => {
                         </SelectItem>
                         <SelectItem value="alumni">
                           Выпускник
+                        </SelectItem>
+                        <SelectItem value="inactive">
+                          Неактивен (слился)
                         </SelectItem>
                       </SelectContent>
                     </Select>

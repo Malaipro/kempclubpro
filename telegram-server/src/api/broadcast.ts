@@ -16,7 +16,8 @@ interface BroadcastMessageRow {
 const AUDIENCE_STATUSES: Record<string, string[]> = {
   intensive: ['intensive_active'],
   resident: ['club_resident'],
-  all: ['intensive_active', 'club_resident'],
+  alumni: ['alumni'],
+  all: ['intensive_active', 'club_resident', 'alumni'],
 };
 
 broadcastRouter.post('/', async (req: Request, res: Response) => {
@@ -57,6 +58,7 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
     .from('profiles')
     .select('telegram_id')
     .in('participant_status', statuses)
+    .eq('approved', true)
     .not('telegram_id', 'is', null);
 
   if (profilesError) {
