@@ -104,25 +104,39 @@ export const BroadcastManagement: React.FC = () => {
 
       const { data: userData } = await supabase.auth.getUser();
 
-      const { error } = await (supabase as any)
+      const { data: inserted, error } = await (supabase as any)
         .from('broadcast_messages')
         .insert({
           text: text.trim(),
           audience,
           buttons: validButtons,
           file_url: fileUrl,
-          status: 'sent',
-          sent_at: new Date().toISOString(),
+          status: 'draft',
           recipients_count: 0,
           created_by: userData?.user?.id ?? null,
-        });
+        })
+        .select('id')
+        .single();
       if (error) throw error;
 
-      toast({ title: 'Рассылка создана', description: 'Запись сохранена (без реальной отправки)' });
+      const broadcastId = inserted?.id;
+      if (!broadcastId) throw new Error('Не удалось получить id рассылки');
+
+      const { data: sendData, error: sendError } = await supabase.functions.invoke(
+        'send-broadcast',
+        { body: { broadcastId } }
+      );
+      if (sendError) throw sendError;
+      if (sendData && (sendData as any).ok === false) {
+        throw new Error((sendData as any).error || 'Ошибка отправки');
+      }
+
+      const sent = (sendData as any)?.data?.sent ?? (sendData as any)?.sent ?? 0;
+      toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
       resetForm();
       loadHistory();
     } catch (e: any) {
-      toast({ title: 'Ошибка', description: e?.message || 'Не удалось создать рассылку', variant: 'destructive' });
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось отправить рассылку', variant: 'destructive' });
     } finally {
       setSending(false);
     }
