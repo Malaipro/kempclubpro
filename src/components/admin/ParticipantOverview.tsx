@@ -53,14 +53,16 @@ interface Props {
   onReload: () => void;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  intensive_active: 'Активный участник',
-  club_resident: 'Резидент клуба',
-  alumni: 'Выпускник',
-  intensive_completed: 'Завершил интенсив (legacy)',
-};
+import {
+  PARTICIPANT_STATUS_META,
+  MAIN_PARTICIPANT_STATUSES,
+  LEGACY_PARTICIPANT_STATUSES,
+  getParticipantStatusLabel,
+} from '@/constants/participantStatus';
 
-const SELECTABLE_STATUSES = ['intensive_active', 'club_resident', 'alumni'];
+// Все статусы отдаются в селект: 5 основных первыми, затем legacy.
+// Legacy можно оставить проставленным, но не рекомендуется назначать заново.
+const STATUS_OPTIONS = [...MAIN_PARTICIPANT_STATUSES, ...LEGACY_PARTICIPANT_STATUSES];
 
 export const ParticipantOverview: React.FC<Props> = ({
   userId, participant, streamName, totems, onReload,
