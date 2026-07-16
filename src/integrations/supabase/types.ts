@@ -548,8 +548,9 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
-          course: string
+          course: string | null
           created_at: string
+          enrolled_user_id: string | null
           id: string
           message: string | null
           name: string
@@ -557,11 +558,17 @@ export type Database = {
           processed: boolean | null
           processed_at: string | null
           processed_by: string | null
+          ref_code: string | null
+          referral_code: string | null
+          referrer_user_id: string | null
           social: string | null
+          status: string
+          stream_id: string | null
         }
         Insert: {
-          course: string
+          course?: string | null
           created_at?: string
+          enrolled_user_id?: string | null
           id?: string
           message?: string | null
           name: string
@@ -569,11 +576,17 @@ export type Database = {
           processed?: boolean | null
           processed_at?: string | null
           processed_by?: string | null
+          ref_code?: string | null
+          referral_code?: string | null
+          referrer_user_id?: string | null
           social?: string | null
+          status?: string
+          stream_id?: string | null
         }
         Update: {
-          course?: string
+          course?: string | null
           created_at?: string
+          enrolled_user_id?: string | null
           id?: string
           message?: string | null
           name?: string
@@ -581,9 +594,22 @@ export type Database = {
           processed?: boolean | null
           processed_at?: string | null
           processed_by?: string | null
+          ref_code?: string | null
+          referral_code?: string | null
+          referrer_user_id?: string | null
           social?: string | null
+          status?: string
+          stream_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contact_submissions_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_blocks: {
         Row: {
@@ -3054,8 +3080,15 @@ export type Database = {
         Args: { p_action?: string; p_ip_address?: unknown }
         Returns: boolean
       }
+      enroll_application: {
+        Args: {
+          p_stream_id: string
+          p_submission_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
-      generate_referral_code: { Args: never; Returns: string }
       generate_telegram_link_code: {
         Args: { p_user_id: string }
         Returns: Json
