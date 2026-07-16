@@ -175,6 +175,7 @@ export const BroadcastManagement: React.FC = () => {
               <SelectContent>
                 <SelectItem value="intensive">Все интенсив</SelectItem>
                 <SelectItem value="resident">Все резиденты</SelectItem>
+                <SelectItem value="alumni">Все выпускники</SelectItem>
                 <SelectItem value="all">Все сразу</SelectItem>
               </SelectContent>
             </Select>
