@@ -311,12 +311,12 @@ const EnrollDialog: React.FC<{ submission: Submission | null; onClose: () => voi
             <div>
               <label className="text-sm font-medium mb-1 block">Поток</label>
               <Select value={streamId} onValueChange={setStreamId}>
-                <SelectTrigger><SelectValue placeholder="Выберите активный поток" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Выберите поток" /></SelectTrigger>
                 <SelectContent>
-                  {streams.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground">Нет активных потоков</div>}
+                  {streams.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground">Нет потоков</div>}
                   {streams.map(s => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {format(new Date(s.start_date), 'd MMM yyyy', { locale: ru })}
+                      {s.name} · {format(new Date(s.start_date), 'd MMM yyyy', { locale: ru })}{s.is_active ? ' · активный' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
