@@ -184,15 +184,7 @@ export default function AdminViewParticipant() {
       .join(' ') || participant.display_name || 'Участник';
   };
 
-  const getStatusLabel = (status: string | null) => {
-    switch (status) {
-      case 'intensive_active': return 'Активный участник интенсива';
-      case 'intensive_completed': return 'Завершил интенсив';
-      case 'club_resident': return 'Резидент клуба';
-      case 'alumni': return 'Выпускник';
-      default: return 'Не указан';
-    }
-  };
+  const getStatusLabel = (status: string | null) => getParticipantStatusLabel(status);
 
   const formatCooperTime = (minutes: number | null, seconds: number | null) => {
     if (minutes === null && seconds === null) return 'Не указано';
