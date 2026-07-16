@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen } from 'lucide-react';
 import { JournalManagement } from './JournalManagement';
+import { ApplicationsManagement } from './ApplicationsManagement';
+import { Inbox } from 'lucide-react';
 import { PyramidManagement } from './PyramidManagement';
 import { TelegramLeadsManagement } from './TelegramLeadsManagement';
 import { HomeworkManagement } from './HomeworkManagement';
@@ -26,12 +28,17 @@ import { MaterialsManagement } from './MaterialsManagement';
 import { KampSystem } from '@/components/kamp';
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('kamp');
+  const [activeTab, setActiveTab] = useState('applications');
   return <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Navigation Tabs */}
         <div className="mb-6 overflow-x-auto">
           <TabsList className="flex w-max min-w-full h-auto p-1 gap-1 bg-muted/50">
+            <TabsTrigger value="applications" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Inbox className="w-4 h-4" />
+              <span className="whitespace-nowrap">Заявки</span>
+            </TabsTrigger>
+
             <TabsTrigger value="kamp" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
@@ -145,6 +152,10 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
+        <TabsContent value="applications" className="mt-0">
+          <ApplicationsManagement />
+        </TabsContent>
+
         <TabsContent value="kamp" className="mt-0">
           <KampSystem />
         </TabsContent>
