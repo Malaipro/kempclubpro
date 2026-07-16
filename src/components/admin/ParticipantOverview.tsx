@@ -148,7 +148,7 @@ export const ParticipantOverview: React.FC<Props> = ({
         p_user_id: userId, p_new_status: newStatus as any,
       });
       if (error) throw error;
-      toast({ title: 'Готово', description: `Статус: ${STATUS_LABELS[newStatus]}` });
+      toast({ title: 'Готово', description: `Статус: ${getParticipantStatusLabel(newStatus)}` });
       setStatusOpen(false);
       onReload(); loadData();
     } catch (error: any) {
