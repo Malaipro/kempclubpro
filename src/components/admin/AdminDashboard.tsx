@@ -152,6 +152,10 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
+        <TabsContent value="applications" className="mt-0">
+          <ApplicationsManagement />
+        </TabsContent>
+
         <TabsContent value="kamp" className="mt-0">
           <KampSystem />
         </TabsContent>
