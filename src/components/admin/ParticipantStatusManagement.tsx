@@ -206,6 +206,9 @@ export const ParticipantStatusManagement: React.FC = () => {
                         <SelectItem value="alumni">
                           Выпускник
                         </SelectItem>
+                        <SelectItem value="inactive">
+                          Неактивен (слился)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
