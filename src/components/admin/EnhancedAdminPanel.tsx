@@ -204,6 +204,8 @@ export const EnhancedAdminPanel: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'applications':
+        return <ApplicationsManagement />;
       case 'participants':
         return <EnhancedParticipantManagement />;
       case 'testimonials':
