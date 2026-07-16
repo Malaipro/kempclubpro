@@ -16,7 +16,8 @@ interface BroadcastMessageRow {
 const AUDIENCE_STATUSES: Record<string, string[]> = {
   intensive: ['intensive_active'],
   resident: ['club_resident'],
-  all: ['intensive_active', 'club_resident'],
+  alumni: ['alumni'],
+  all: ['intensive_active', 'club_resident', 'alumni'],
 };
 
 broadcastRouter.post('/', async (req: Request, res: Response) => {

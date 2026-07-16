@@ -1,0 +1,1 @@
+ALTER TYPE public.participant_status_type ADD VALUE IF NOT EXISTS 'inactive';
