@@ -246,11 +246,10 @@ const EnrollDialog: React.FC<{ submission: Submission | null; onClose: () => voi
   }, [submission]);
 
   const { data: streams = [] } = useQuery({
-    queryKey: ['streams_active'],
+    queryKey: ['streams_all'],
     queryFn: async () => {
       const { data, error } = await supabase.from('streams')
         .select('id,name,start_date,is_active')
-        .eq('is_active', true)
         .order('start_date', { ascending: false });
       if (error) throw error;
       return (data || []) as Stream[];
