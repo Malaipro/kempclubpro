@@ -113,6 +113,15 @@ export const PARTICIPANT_STATUS_META: Record<ParticipantStatus, ParticipantStatu
     order: 7,
     legacy: true,
   },
+  inactive: {
+    value: 'inactive',
+    label: 'Неактивен (слился)',
+    shortLabel: 'Неактивен',
+    icon: UserX,
+    badgeClass: 'bg-muted text-muted-foreground hover:bg-muted/90',
+    order: 8,
+    legacy: true,
+  },
 };
 
 /** Все статусы, отсортированные по order (5 основных, затем legacy). */
