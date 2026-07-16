@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, UserCheck, UserCog, GraduationCap, UserX } from 'lucide-react';
+import { UserCog } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-type ParticipantStatus = 'intensive_active' | 'intensive_completed' | 'club_resident' | 'alumni' | 'inactive';
+import {
+  PARTICIPANT_STATUSES,
+  PARTICIPANT_STATUS_META,
+  getParticipantStatusMeta,
+  type ParticipantStatus,
+} from '@/constants/participantStatus';
 
 interface Participant {
   id: string;
@@ -20,30 +23,6 @@ interface Participant {
   intensive_completed_at: string | null;
   club_joined_at: string | null;
 }
-
-const statusLabels: Record<ParticipantStatus, string> = {
-  intensive_active: 'Активный участник',
-  intensive_completed: 'Завершил интенсив (legacy)',
-  club_resident: 'Резидент клуба',
-  alumni: 'Выпускник',
-  inactive: 'Неактивен (слился)'
-};
-
-const statusIcons: Record<ParticipantStatus, React.ReactNode> = {
-  intensive_active: <Users className="w-4 h-4" />,
-  intensive_completed: <UserCheck className="w-4 h-4" />,
-  club_resident: <UserCog className="w-4 h-4" />,
-  alumni: <GraduationCap className="w-4 h-4" />,
-  inactive: <UserX className="w-4 h-4" />
-};
-
-const statusColors: Record<ParticipantStatus, string> = {
-  intensive_active: 'bg-blue-100 text-blue-800',
-  intensive_completed: 'bg-green-100 text-green-800',
-  club_resident: 'bg-purple-100 text-purple-800',
-  alumni: 'bg-gray-100 text-gray-800',
-  inactive: 'bg-red-100 text-red-800'
-};
 
 export const ParticipantStatusManagement: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -63,7 +42,7 @@ export const ParticipantStatusManagement: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setParticipants(data || []);
+      setParticipants((data || []) as Participant[]);
     } catch (error) {
       console.error('Error fetching participants:', error);
       toast({
@@ -77,6 +56,7 @@ export const ParticipantStatusManagement: React.FC = () => {
   };
 
   const handleStatusChange = async (userId: string, newStatus: ParticipantStatus) => {
+    const label = PARTICIPANT_STATUS_META[newStatus]?.label ?? newStatus;
     try {
       const { error } = await supabase.rpc('update_participant_status', {
         p_user_id: userId,
@@ -84,14 +64,10 @@ export const ParticipantStatusManagement: React.FC = () => {
       });
       if (error) throw error;
 
-      toast({
-        title: 'Успех',
-        description: `Статус участника изменен на "${statusLabels[newStatus]}"`,
-      });
+      toast({ title: 'Успех', description: `Статус участника изменён на «${label}»` });
       await fetchParticipants();
     } catch (error: any) {
       console.error('RPC error update_participant_status:', error);
-      // Fallback: прямое обновление профиля (для админов разрешено RLS)
       try {
         const { error: updErr } = await supabase
           .from('profiles')
@@ -102,23 +78,23 @@ export const ParticipantStatusManagement: React.FC = () => {
         const { error: lbErr } = await supabase.rpc('update_user_leaderboard', { user_uuid: userId });
         if (lbErr) console.warn('Leaderboard update warning:', lbErr);
 
-        toast({
-          title: 'Успех',
-          description: `Статус участника изменен на "${statusLabels[newStatus]}" (fallback)`,
-        });
+        toast({ title: 'Успех', description: `Статус участника изменён на «${label}» (fallback)` });
         await fetchParticipants();
       } catch (innerErr: any) {
         console.error('Fallback status update failed:', innerErr);
-        const msg = innerErr?.message || 'Неизвестная ошибка';
-        toast({ title: 'Ошибка', description: `Не удалось изменить статус: ${msg}`, variant: 'destructive' });
+        toast({
+          title: 'Ошибка',
+          description: `Не удалось изменить статус: ${innerErr?.message || 'Неизвестная ошибка'}`,
+          variant: 'destructive',
+        });
       }
     }
   };
 
   const getDisplayName = (participant: Participant) => {
-    return participant.display_name || 
-           `${participant.first_name || ''} ${participant.last_name || ''}`.trim() || 
-           'Без имени';
+    return participant.display_name ||
+      `${participant.first_name || ''} ${participant.last_name || ''}`.trim() ||
+      'Без имени';
   };
 
   if (loading) {
@@ -159,61 +135,56 @@ export const ParticipantStatusManagement: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {participants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell className="font-medium">
-                    {getDisplayName(participant)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[participant.participant_status]}>
-                      <span className="flex items-center gap-1">
-                        {statusIcons[participant.participant_status]}
-                        {statusLabels[participant.participant_status]}
-                      </span>
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {participant.intensive_completed_at
-                      ? new Date(participant.intensive_completed_at).toLocaleDateString('ru-RU')
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {participant.club_joined_at
-                      ? new Date(participant.club_joined_at).toLocaleDateString('ru-RU')
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={participant.participant_status}
-                      onValueChange={(value) => handleStatusChange(participant.user_id, value as ParticipantStatus)}
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="intensive_active">
-                          Активный участник
-                        </SelectItem>
-                        {/* intensive_completed — legacy-статус: не предлагается для назначения */}
-                        {participant.participant_status === 'intensive_completed' && (
-                          <SelectItem value="intensive_completed" disabled>
-                            Завершил интенсив (legacy)
-                          </SelectItem>
-                        )}
-                        <SelectItem value="club_resident">
-                          Резидент клуба
-                        </SelectItem>
-                        <SelectItem value="alumni">
-                          Выпускник
-                        </SelectItem>
-                        <SelectItem value="inactive">
-                          Неактивен (слился)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {participants.map((participant) => {
+                const meta = getParticipantStatusMeta(participant.participant_status);
+                const Icon = meta?.icon;
+                return (
+                  <TableRow key={participant.id}>
+                    <TableCell className="font-medium">{getDisplayName(participant)}</TableCell>
+                    <TableCell>
+                      <Badge className={meta?.badgeClass}>
+                        <span className="flex items-center gap-1">
+                          {Icon ? <Icon className="w-4 h-4" /> : null}
+                          {meta?.label ?? participant.participant_status ?? '—'}
+                        </span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {participant.intensive_completed_at
+                        ? new Date(participant.intensive_completed_at).toLocaleDateString('ru-RU')
+                        : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {participant.club_joined_at
+                        ? new Date(participant.club_joined_at).toLocaleDateString('ru-RU')
+                        : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={participant.participant_status}
+                        onValueChange={(value) => handleStatusChange(participant.user_id, value as ParticipantStatus)}
+                      >
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PARTICIPANT_STATUSES.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              <span className="flex items-center gap-2">
+                                <s.icon className="w-4 h-4" />
+                                {s.label}
+                                {s.legacy ? (
+                                  <span className="text-xs text-muted-foreground">(legacy)</span>
+                                ) : null}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
