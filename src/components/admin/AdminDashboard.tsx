@@ -149,6 +149,11 @@ export const AdminDashboard: React.FC = () => {
               <NotebookPen className="w-4 h-4" />
               <span className="whitespace-nowrap">Ежедневник</span>
             </TabsTrigger>
+
+            <TabsTrigger value="broadcasts" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Megaphone className="w-4 h-4" />
+              <span className="whitespace-nowrap">Рассылки</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
