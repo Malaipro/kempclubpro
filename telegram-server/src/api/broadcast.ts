@@ -58,6 +58,7 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
     .from('profiles')
     .select('telegram_id')
     .in('participant_status', statuses)
+    .eq('approved', true)
     .not('telegram_id', 'is', null);
 
   if (profilesError) {
