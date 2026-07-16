@@ -1,0 +1,2 @@
+INSERT INTO public.streams (name, description, start_date, end_date, stream_type, is_active, max_participants)
+VALUES ('7-й поток', 'Седьмой интенсив КЭМП', '2026-08-11', '2026-10-19', 'intensive', false, 20);
