@@ -334,8 +334,14 @@ export const ParticipantOverview: React.FC<Props> = ({
                 <Select value={newStatus} onValueChange={setNewStatus}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {SELECTABLE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        <span className="flex items-center gap-2">
+                          <s.icon className="w-4 h-4" />
+                          {s.label}
+                          {s.legacy ? <span className="text-xs text-muted-foreground">(legacy)</span> : null}
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
