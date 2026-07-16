@@ -17,7 +17,8 @@ import {
   Coins,
   Megaphone,
   Triangle,
-  BookOpen
+  BookOpen,
+  Inbox
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -40,6 +41,7 @@ import { AdminCoinsManagement } from '@/components/admin/AdminCoinsManagement';
 import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 import { PyramidManagement } from '@/components/admin/PyramidManagement';
 import { JournalManagement } from '@/components/admin/JournalManagement';
+import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
 
 interface TabConfig {
   id: string;
@@ -50,6 +52,12 @@ interface TabConfig {
 }
 
 const adminTabs: TabConfig[] = [
+  {
+    id: 'applications',
+    label: 'Заявки',
+    icon: Inbox,
+    description: 'Заявки с сайта и зачисление в поток'
+  },
   { 
     id: 'participants', 
     label: 'Участники', 
@@ -196,6 +204,8 @@ export const EnhancedAdminPanel: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'applications':
+        return <ApplicationsManagement />;
       case 'participants':
         return <EnhancedParticipantManagement />;
       case 'testimonials':

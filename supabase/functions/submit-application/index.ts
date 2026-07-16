@@ -105,6 +105,7 @@ serve(async (req) => {
       social,
       message,
       ref_code: refCode,
+      referral_code: refCode,
       referrer_user_id: referrerUserId,
       status: 'new',
     })
