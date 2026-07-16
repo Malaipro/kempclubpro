@@ -6,167 +6,45 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { captureRefFromUrl, getStoredRefCode } from '@/lib/refCapture';
+import { Loader2, Send, CheckCircle2 } from 'lucide-react';
 
 // Менять дату следующего запуска КЭМП здесь
 export const FIXED_TARGET_DATE = new Date('2026-08-03T00:00:00');
 
-// Declare Bitrix form interface for TypeScript
-declare global {
-  interface Window {
-    B24Form?: {
-      init: (config: {
-        id: number;
-        type: string;
-        container: string;
-      }) => void;
-    };
-  }
-}
+const SUBMIT_URL = 'https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/submit-application';
+
+const formatPhone = (raw: string) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 11);
+  if (!digits) return '';
+  const d = digits.startsWith('8') ? '7' + digits.slice(1) : digits.startsWith('7') ? digits : '7' + digits;
+  const p = d.padEnd(11, '_').slice(0, 11);
+  const parts = ['+7'];
+  if (p[1] !== '_') parts.push(' (' + p.slice(1, 4).replace(/_/g, ''));
+  if (p[4] !== '_') parts.push(') ' + p.slice(4, 7).replace(/_/g, ''));
+  if (p[7] !== '_') parts.push('-' + p.slice(7, 9).replace(/_/g, ''));
+  if (p[9] !== '_') parts.push('-' + p.slice(9, 11).replace(/_/g, ''));
+  return parts.join('');
+};
+
 export const ContactForm: React.FC = () => {
   const isMobile = useIsMobile();
   const [startDate, setStartDate] = useState<Date | null>(null);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [social, setSocial] = useState('');
+  const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState(''); // honeypot
+  const [refCode, setRefCode] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
   useEffect(() => {
-    const loadBitrixForm = () => {
-      // Проверяем, что форма еще не загружена
-      if (document.querySelector(`[data-b24-form="inline/134/km4hms"]`)) {
-        return;
-      }
-      try {
-        // Создаем скрипт точно как предоставил пользователь
-        const script = document.createElement('script');
-        script.setAttribute('data-b24-form', 'inline/134/km4hms');
-        script.setAttribute('data-skip-moving', 'true');
-        script.innerHTML = `
-          (function(w,d,u){
-            var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);
-            var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);
-          })(window,document,'https://cdn-ru.bitrix24.ru/b23536290/crm/form/loader_134.js');
-        `;
-
-        // Обработка ошибок загрузки
-        script.onerror = () => {
-          console.error('Failed to load Bitrix24 form script');
-          showFallbackForm();
-        };
-        script.onload = () => {
-          console.log('Bitrix24 form loaded successfully');
-        };
-        const container = document.getElementById('bitrix-form-container');
-        if (container) {
-          container.innerHTML = '';
-          container.appendChild(script);
-        }
-      } catch (error) {
-        console.error('Error creating Bitrix24 form script:', error);
-        showFallbackForm();
-      }
-    };
-    const showFallbackForm = () => {
-      const container = document.getElementById('bitrix-form-container');
-      if (container) {
-        container.innerHTML = `
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <h4 class="text-white text-lg font-semibold mb-4">Заявка на участие в КЭМП</h4>
-            <form id="fallback-contact-form" class="space-y-4">
-              <div>
-                <label class="block text-gray-300 text-sm font-medium mb-2">Имя *</label>
-                <input type="text" name="name" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Ваше имя">
-              </div>
-              <div>
-                <label class="block text-gray-300 text-sm font-medium mb-2">Телефон *</label>
-                <input type="tel" name="phone" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="+7 (999) 123-45-67">
-              </div>
-              <div>
-                <label class="block text-gray-300 text-sm font-medium mb-2">Интенсив *</label>
-                <select name="course" required class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500">
-                  <option value="">Выберите интенсив</option>
-                  <option value="intensive-1">1-й интенсив КЭМП</option>
-                  <option value="intensive-2">2-й интенсив КЭМП</option>
-                  <option value="intensive-3">3-й интенсив КЭМП</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-gray-300 text-sm font-medium mb-2">Социальные сети</label>
-                <input type="text" name="social" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Instagram, VK или другое">
-              </div>
-              <div>
-                <label class="block text-gray-300 text-sm font-medium mb-2">Сообщение</label>
-                <textarea name="message" rows="3" class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Расскажите о себе и ваших целях"></textarea>
-              </div>
-              <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-md transition-colors">
-                Отправить заявку
-              </button>
-            </form>
-            <div class="mt-6 pt-4 border-t border-gray-600">
-              <p class="text-gray-400 text-sm mb-2">Или свяжитесь с нами напрямую:</p>
-              <div class="space-y-1">
-                <p class="text-gray-300 text-sm">WhatsApp: <a href="https://wa.me/79673785151" class="text-red-400 hover:underline">+7 967 378 51 51</a></p>
-                <p class="text-gray-300 text-sm">Telegram: <a href="https://t.me/Dmitriy116" class="text-red-400 hover:underline">@Dmitriy116</a></p>
-              </div>
-            </div>
-          </div>
-        `;
-
-        // Добавляем обработчик формы
-        const fallbackForm = document.getElementById('fallback-contact-form');
-        if (fallbackForm) {
-          fallbackForm.addEventListener('submit', handleFallbackFormSubmit);
-        }
-      }
-    };
-    const handleFallbackFormSubmit = async (e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
-      try {
-        // Здесь можно добавить отправку на сервер или в Supabase
-        const response = await fetch('/api/contact', {
-          method: 'POST',
-          body: formData
-        });
-        if (response.ok) {
-          const container = document.getElementById('bitrix-form-container');
-          if (container) {
-            container.innerHTML = `
-              <div class="text-center text-green-400 p-8">
-                <div class="text-4xl mb-4">✓</div>
-                <h4 class="text-xl font-semibold mb-2">Заявка отправлена!</h4>
-                <p class="text-gray-300">Мы свяжемся с вами в ближайшее время</p>
-              </div>
-            `;
-          }
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        alert('Произошла ошибка при отправке. Попробуйте связаться с нами напрямую.');
-      }
-    };
-
-    // Задержка для предотвращения спам-загрузок
-    const timeoutId = setTimeout(loadBitrixForm, 100);
-
-    // Очистка при размонтировании компонента
-    return () => {
-      clearTimeout(timeoutId);
-      const scripts = document.querySelectorAll(`[data-b24-form="inline/134/km4hms"]`);
-      scripts.forEach(script => {
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      });
-
-      // Очистка глобальных переменных Bitrix24
-      if (window.B24Form) {
-        try {
-          delete window.B24Form;
-        } catch (e) {
-          // Игнорируем ошибки при очистке
-        }
-      }
-    };
+    captureRefFromUrl();
+    setRefCode(getStoredRefCode());
   }, []);
 
-  // Fetch active stream date and subscribe to realtime updates
   useEffect(() => {
     const fetchActiveStream = async () => {
       try {
@@ -177,94 +55,215 @@ export const ContactForm: React.FC = () => {
           .order('start_date', { ascending: true })
           .limit(1)
           .maybeSingle();
-
-        if (data && !error) {
-          setStartDate(new Date(data.start_date));
-        } else {
-          // Fallback date: 10 November 2025
-          setStartDate(new Date('2025-11-10T00:00:00'));
-        }
+        if (data && !error) setStartDate(new Date(data.start_date));
+        else setStartDate(new Date('2025-11-10T00:00:00'));
       } catch (e) {
-        console.error('Error fetching active stream for ContactForm:', e);
+        console.error('Error fetching active stream:', e);
       }
     };
-
     fetchActiveStream();
-
     const channel = supabase
       .channel('streams-contactform')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'streams' },
-        () => fetchActiveStream()
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'streams' }, () => fetchActiveStream())
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
   const scrollToContactForm = () => {
-    const contactFormElement = document.getElementById('contact-form');
-    if (contactFormElement) {
-      contactFormElement.scrollIntoView({
-        behavior: 'smooth'
+    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    const trimmedName = name.trim();
+    const digits = phone.replace(/\D/g, '');
+    if (trimmedName.length < 2) {
+      toast.error('Введите имя');
+      return;
+    }
+    if (digits.length < 11) {
+      toast.error('Введите корректный телефон');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(SUBMIT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: trimmedName,
+          phone: '+' + digits,
+          social: social.trim() || undefined,
+          message: message.trim() || undefined,
+          ref_code: refCode || undefined,
+          website, // honeypot
+        }),
       });
+
+      if (res.status === 429) {
+        toast.error('Слишком много попыток. Попробуйте позже.');
+        return;
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.error === 'name_and_phone_required'
+          ? 'Заполните имя и телефон'
+          : 'Не удалось отправить заявку. Попробуйте позже.');
+        return;
+      }
+      setSuccess(true);
+      setName(''); setPhone(''); setSocial(''); setMessage('');
+      toast.success('Заявка принята. Свяжемся в ближайшее время.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Ошибка сети. Проверьте соединение.');
+    } finally {
+      setSubmitting(false);
     }
   };
-const effectiveDate = FIXED_TARGET_DATE;
-const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
-  return <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
+
+  const effectiveDate = FIXED_TARGET_DATE;
+  const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
+
+  return (
+    <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
       <div className="kamp-container">
         <div className="section-heading reveal-on-scroll">
           <span className="inline-block text-kamp-primary font-semibold mb-2">Записаться в клуб</span>
           <h2 className="text-white">Готов проверить себя?</h2>
           <p className="text-gray-300">
-            Заполни форму ниже, и мы свяжемся с тобой для уточнения деталей. 
+            Заполни форму ниже, и мы свяжемся с тобой для уточнения деталей.
             Количество мест ограничено, не упусти свой шанс.
           </p>
         </div>
 
         <div className="mt-6 md:mt-16 grid grid-cols-1 gap-6 md:gap-12">
-          {/* Contact Form */}
           <div className="reveal-on-scroll order-2 md:order-1">
             <div id="contact-form" className={`bg-[#111] rounded-xl shadow-soft ${isMobile ? 'p-4' : 'p-8'} border border-gray-800`}>
               <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white mb-4 md:mb-6`}>Оставить заявку</h3>
-              
-              {/* Безопасный контейнер для Битрикс формы */}
-              <div id="bitrix-form-container" className="bitrix-form-container min-h-[600px] flex items-center justify-center">
-                <div className="text-gray-400 text-center">
-                  <div className="animate-spin w-6 h-6 border-2 border-kamp-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                  <p className="text-sm">Загрузка формы...</p>
+
+              {success ? (
+                <div className="text-center py-10">
+                  <CheckCircle2 className="w-14 h-14 text-kamp-accent mx-auto mb-4" />
+                  <h4 className="text-xl font-semibold text-white mb-2">Заявка принята</h4>
+                  <p className="text-gray-300 mb-6">Свяжемся с тобой в ближайшее время.</p>
+                  <button
+                    type="button"
+                    onClick={() => setSuccess(false)}
+                    className="text-kamp-accent hover:text-kamp-primary text-sm underline"
+                  >
+                    Отправить ещё одну заявку
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Имя *</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      maxLength={100}
+                      required
+                      className="w-full px-3 py-2.5 bg-black border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kamp-primary focus:border-transparent"
+                      placeholder="Как к тебе обращаться"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Телефон *</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
+                      inputMode="tel"
+                      required
+                      className="w-full px-3 py-2.5 bg-black border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kamp-primary focus:border-transparent"
+                      placeholder="+7 (___) ___-__-__"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Telegram или другой контакт</label>
+                    <input
+                      type="text"
+                      value={social}
+                      onChange={(e) => setSocial(e.target.value)}
+                      maxLength={200}
+                      className="w-full px-3 py-2.5 bg-black border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kamp-primary focus:border-transparent"
+                      placeholder="@username, Instagram, VK"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Комментарий</label>
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      className="w-full px-3 py-2.5 bg-black border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-kamp-primary focus:border-transparent resize-none"
+                      placeholder="Расскажи о себе или задай вопрос"
+                    />
+                  </div>
+
+                  {/* honeypot: visually hidden, но не display:none */}
+                  <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+                    <label>
+                      Ваш сайт
+                      <input
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  {refCode && (
+                    <p className="text-xs text-kamp-accent">Заявка отправлена по приглашению · код: {refCode}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-kamp-primary hover:bg-kamp-primary/90 disabled:opacity-60 text-white font-semibold py-3 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Отправка…</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> Отправить заявку</>
+                    )}
+                  </button>
+                  <p className="text-xs text-gray-500 text-center">
+                    Отправляя форму, вы соглашаетесь с обработкой персональных данных.
+                  </p>
+                </form>
+              )}
             </div>
-            
-            {/* Ask a Question Button */}
+
             {!isMobile && <AskQuestion />}
           </div>
 
-          {/* Timer and Info */}
           <div className="reveal-on-scroll order-1 md:order-2">
             <div className="bg-gradient-to-r from-kamp-accent to-kamp-primary text-white rounded-xl overflow-hidden shadow-lg h-full flex flex-col">
               <div className={`flex-grow ${isMobile ? 'p-4' : 'p-8'}`}>
                 <h3 className={`${isMobile ? 'text-lg mb-3' : 'text-xl mb-6'} font-bold`}>Новый интенсив</h3>
                 {isMobile ? (
                   <p className="text-white/80 mb-4 text-sm whitespace-pre-line">
-                    Интенсив начинается 3 августа {"\n"}2026! Записывайся сейчас — количество мест ограничено!
+                    Интенсив начинается {formattedDate}! Записывайся сейчас — количество мест ограничено!
                   </p>
                 ) : (
                   <p className="text-white/80 mb-8 whitespace-pre-line">
-                    Новый интенсив стартует 3 августа {"\n"}2026! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
+                    Новый интенсив стартует {formattedDate}! Записывайся сейчас — количество мест ограничено, чтобы мы могли уделить внимание каждому участнику.
                   </p>
                 )}
-
                 <CountdownTimer targetDate={effectiveDate} />
-                
                 {!isMobile && <CourseInfo />}
               </div>
-              
               <div className={`${isMobile ? 'p-4' : 'p-6'} bg-black/20 backdrop-blur-sm border-t border-white/10`}>
                 <div className="flex items-center">
                   <div className="flex-grow">
@@ -280,5 +279,6 @@ const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
