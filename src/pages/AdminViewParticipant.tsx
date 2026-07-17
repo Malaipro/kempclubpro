@@ -247,6 +247,9 @@ export default function AdminViewParticipant() {
               Режим администратора
             </Badge>
           </div>
+          <div className="mt-3">
+            <ParticipantTagsSection userId={participant.user_id} />
+          </div>
         </div>
       </div>
 
