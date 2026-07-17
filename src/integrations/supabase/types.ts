@@ -3237,6 +3237,13 @@ export type Database = {
         Returns: Json
       }
       get_ascetic_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_broadcast_audience: {
+        Args: { filter_json: Json }
+        Returns: {
+          total_count: number
+          user_ids: string[]
+        }[]
+      }
       get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_journal_for_user: {
         Args: { p_date?: string; p_telegram_id: string }
@@ -3246,6 +3253,17 @@ export type Database = {
       get_participant_full_state_by_telegram: {
         Args: { p_telegram_id: string }
         Returns: Json
+      }
+      get_participant_timeline: {
+        Args: { _user_id: string }
+        Returns: {
+          author_name: string
+          description: string
+          event_time: string
+          event_type: string
+          metadata: Json
+          title: string
+        }[]
       }
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_pyramid_for_user: { Args: { p_telegram_id: string }; Returns: Json }
