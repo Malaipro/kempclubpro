@@ -313,18 +313,33 @@ export default function AdminViewParticipant() {
               <History className="w-4 h-4" />
               Аудит
             </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="w-4 h-4" />
+              История
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
             {participant && (
-              <ParticipantOverview
-                userId={participant.user_id}
-                participant={participant as any}
-                streamName={streamName}
-                totems={totems}
-                onReload={loadParticipantData}
-              />
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <QuickStatusActions
+                    userId={participant.user_id}
+                    currentStatus={participant.participant_status}
+                    currentStreamId={participant.current_stream_id}
+                    onChanged={loadParticipantData}
+                  />
+                  <ParticipantNotesSection userId={participant.user_id} />
+                </div>
+                <ParticipantOverview
+                  userId={participant.user_id}
+                  participant={participant as any}
+                  streamName={streamName}
+                  totems={totems}
+                  onReload={loadParticipantData}
+                />
+              </div>
             )}
           </TabsContent>
 
