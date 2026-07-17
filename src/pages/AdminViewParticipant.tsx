@@ -655,6 +655,11 @@ export default function AdminViewParticipant() {
           <TabsContent value="audit">
             {userId && <ParticipantAuditTab userId={userId} />}
           </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history">
+            {userId && <ParticipantHistoryTab userId={userId} />}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
