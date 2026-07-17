@@ -20,6 +20,10 @@ import { ParticipantCrashTestsTab } from '@/components/admin/participant/Partici
 import { ParticipantRewardsTab } from '@/components/admin/participant/ParticipantRewardsTab';
 import { ParticipantReferralsTab } from '@/components/admin/participant/ParticipantReferralsTab';
 import { ParticipantAuditTab } from '@/components/admin/participant/ParticipantAuditTab';
+import { QuickStatusActions } from '@/components/admin/participant/QuickStatusActions';
+import { ParticipantTagsSection } from '@/components/admin/participant/ParticipantTagsSection';
+import { ParticipantNotesSection } from '@/components/admin/participant/ParticipantNotesSection';
+import { ParticipantHistoryTab } from '@/components/admin/participant/ParticipantHistoryTab';
 import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
 import { getParticipantStatusLabel } from '@/constants/participantStatus';
 
@@ -243,6 +247,9 @@ export default function AdminViewParticipant() {
               Режим администратора
             </Badge>
           </div>
+          <div className="mt-3">
+            <ParticipantTagsSection userId={participant.user_id} />
+          </div>
         </div>
       </div>
 
@@ -306,18 +313,33 @@ export default function AdminViewParticipant() {
               <History className="w-4 h-4" />
               Аудит
             </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="w-4 h-4" />
+              История
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
             {participant && (
-              <ParticipantOverview
-                userId={participant.user_id}
-                participant={participant as any}
-                streamName={streamName}
-                totems={totems}
-                onReload={loadParticipantData}
-              />
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <QuickStatusActions
+                    userId={participant.user_id}
+                    currentStatus={participant.participant_status}
+                    currentStreamId={participant.current_stream_id}
+                    onChanged={loadParticipantData}
+                  />
+                  <ParticipantNotesSection userId={participant.user_id} />
+                </div>
+                <ParticipantOverview
+                  userId={participant.user_id}
+                  participant={participant as any}
+                  streamName={streamName}
+                  totems={totems}
+                  onReload={loadParticipantData}
+                />
+              </div>
             )}
           </TabsContent>
 
@@ -632,6 +654,11 @@ export default function AdminViewParticipant() {
           {/* Audit Tab */}
           <TabsContent value="audit">
             {userId && <ParticipantAuditTab userId={userId} />}
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history">
+            {userId && <ParticipantHistoryTab userId={userId} />}
           </TabsContent>
         </Tabs>
       </div>
