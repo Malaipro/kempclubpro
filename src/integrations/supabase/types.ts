@@ -3257,12 +3257,10 @@ export type Database = {
       get_participant_timeline: {
         Args: { _user_id: string }
         Returns: {
-          author_name: string
-          description: string
+          actor_id: string
           event_time: string
           event_type: string
-          metadata: Json
-          title: string
+          payload: Json
         }[]
       }
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
