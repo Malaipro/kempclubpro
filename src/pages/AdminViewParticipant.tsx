@@ -20,6 +20,10 @@ import { ParticipantCrashTestsTab } from '@/components/admin/participant/Partici
 import { ParticipantRewardsTab } from '@/components/admin/participant/ParticipantRewardsTab';
 import { ParticipantReferralsTab } from '@/components/admin/participant/ParticipantReferralsTab';
 import { ParticipantAuditTab } from '@/components/admin/participant/ParticipantAuditTab';
+import { QuickStatusActions } from '@/components/admin/participant/QuickStatusActions';
+import { ParticipantTagsSection } from '@/components/admin/participant/ParticipantTagsSection';
+import { ParticipantNotesSection } from '@/components/admin/participant/ParticipantNotesSection';
+import { ParticipantHistoryTab } from '@/components/admin/participant/ParticipantHistoryTab';
 import { TelegramLinkCard } from '@/components/telegram/TelegramLinkCard';
 import { getParticipantStatusLabel } from '@/constants/participantStatus';
 
