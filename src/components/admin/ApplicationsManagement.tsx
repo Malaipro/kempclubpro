@@ -351,7 +351,7 @@ const EnrollDialog: React.FC<{ submission: Submission | null; onClose: () => voi
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={submitting}>Отмена</Button>
-          <Button onClick={enroll} disabled={!streamId || !userId || submitting}>
+          <Button onClick={enroll} disabled={!streamId || submitting}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Зачислить
           </Button>
