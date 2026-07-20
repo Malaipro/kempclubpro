@@ -41,6 +41,7 @@ interface Participant {
   stream?: string;
   current_stream_id?: string;
   status: 'registered' | 'active' | 'completed';
+  participant_status?: string | null;
   height_cm?: number;
   weight_kg?: number;
   date_of_birth?: string;
