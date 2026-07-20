@@ -143,7 +143,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
           approved,
           approved_at,
           approved_by,
-          current_stream_id
+          current_stream_id,
+          participant_status
         `)
         .order('display_name');
       
