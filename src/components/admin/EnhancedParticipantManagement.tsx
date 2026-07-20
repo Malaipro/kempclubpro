@@ -890,8 +890,121 @@ export const EnhancedParticipantManagement: React.FC = () => {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
+
+      {/* D1: Панель фильтров */}
+      <Card className="p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск: имя, email, телефон, telegram"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Статус {filterStatuses.size > 0 && <Badge className="ml-2" variant="secondary">{filterStatuses.size}</Badge>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 z-50 bg-popover" align="start">
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {PARTICIPANT_STATUSES.map((s) => (
+                  <label key={s.value} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={filterStatuses.has(s.value)}
+                      onCheckedChange={() => toggleSetItem(setFilterStatuses, s.value)}
+                    />
+                    <span>{s.label}{s.legacy && <span className="text-muted-foreground ml-1 text-xs">(legacy)</span>}</span>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Теги {filterTagIds.size > 0 && <Badge className="ml-2" variant="secondary">{filterTagIds.size}</Badge>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 z-50 bg-popover" align="start">
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {allTags.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Тегов нет</p>
+                )}
+                {allTags.map((t) => (
+                  <label key={t.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={filterTagIds.has(t.id)}
+                      onCheckedChange={() => toggleSetItem(setFilterTagIds, t.id)}
+                    />
+                    <Badge style={{ backgroundColor: t.color || '#6b7280', color: '#fff' }}>{t.name}</Badge>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {activeFiltersCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="w-4 h-4 mr-1" /> Сбросить ({activeFiltersCount})
+            </Button>
+          )}
+
+          <div className="ml-auto text-sm text-muted-foreground">
+            Найдено: <span className="font-semibold text-foreground">{filteredParticipants.length}</span> из {streamScoped.length}
+          </div>
+        </div>
+      </Card>
+
+      {/* D2-UI: Диалог рассылки по отфильтрованному списку */}
+      <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5" /> Рассылка по списку
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Получателей: <span className="font-semibold text-foreground">{filteredParticipants.length}</span>
+              {activeFiltersCount > 0 && ` (с учётом фильтров${activeStreamTab !== 'all' ? ' и текущего потока' : ''})`}
+            </div>
+            <div>
+              <Label>Текст сообщения</Label>
+              <Textarea
+                rows={6}
+                maxLength={4000}
+                value={broadcastText}
+                onChange={(e) => setBroadcastText(e.target.value)}
+                placeholder="Введите текст рассылки..."
+              />
+            </div>
+            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+              ⚠️ Рассылка будет сохранена как черновик с явным списком получателей.
+              Автоматическая отправка через Telegram активируется после обновления сервера рассылок.
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setBroadcastDialogOpen(false)} disabled={broadcastSending}>
+                Отмена
+              </Button>
+              <Button onClick={handleSendBroadcastFromList} disabled={broadcastSending}>
+                {broadcastSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Сохранить черновик
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Transfer Dialog */}
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
