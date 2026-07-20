@@ -272,14 +272,15 @@ const EnrollDialog: React.FC<{ submission: Submission | null; onClose: () => voi
   });
 
   const enroll = async () => {
-    if (!submission || !streamId || !userId) return;
+    if (!submission || !streamId) return;
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('enroll_application', {
+      const params: Record<string, string> = {
         p_submission_id: submission.id,
-        p_user_id: userId,
         p_stream_id: streamId,
-      });
+      };
+      if (userId) params.p_user_id = userId;
+      const { data, error } = await supabase.rpc('enroll_application', params as any);
       if (error) throw error;
       const result = data as { ok?: boolean; duplicate?: boolean; referral_awarded?: boolean };
       if (result?.duplicate) {
@@ -350,7 +351,7 @@ const EnrollDialog: React.FC<{ submission: Submission | null; onClose: () => voi
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={submitting}>Отмена</Button>
-          <Button onClick={enroll} disabled={!streamId || !userId || submitting}>
+          <Button onClick={enroll} disabled={!streamId || submitting}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Зачислить
           </Button>

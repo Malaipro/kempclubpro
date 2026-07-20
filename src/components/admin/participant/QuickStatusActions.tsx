@@ -65,16 +65,8 @@ export const QuickStatusActions: React.FC<Props> = ({
         .eq('user_id', userId);
       if (upErr) throw upErr;
 
-      const { error: histErr } = await supabase
-        .from('participant_status_history')
-        .insert([{
-          profile_user_id: userId,
-          old_status: (currentStatus as ParticipantStatus) || null,
-          new_status: transition.to,
-          stream_id: streamId ?? currentStreamId ?? null,
-          changed_by: actor,
-        }]);
-      if (histErr) throw histErr;
+      // История статусов пишется автоматически триггером на profiles.
+      // Ручная вставка здесь удалена, чтобы не создавать дубли.
 
       toast({ title: 'Статус обновлён', description: `→ ${getParticipantStatusLabel(transition.to)}` });
       setPending(null);
