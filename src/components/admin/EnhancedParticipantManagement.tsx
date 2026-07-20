@@ -701,25 +701,33 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Управление участниками</h1>
           <p className="text-muted-foreground">Добавляйте и редактируйте участников по потокам</p>
         </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="bg-destructive hover:bg-destructive/90 text-white"
-              onClick={() => {
-                setEditingParticipant(null);
-                resetForm();
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить участника
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setBroadcastDialogOpen(true)}
+            title="Отправить рассылку по отфильтрованному списку"
+          >
+            <Megaphone className="w-4 h-4 mr-2" />
+            Отправить рассылку ({filteredParticipants.length})
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-destructive hover:bg-destructive/90 text-white"
+                onClick={() => {
+                  setEditingParticipant(null);
+                  resetForm();
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Добавить участника
+              </Button>
+            </DialogTrigger>
           
           <DialogContent className="max-w-md bg-gray-900 border-gray-700">
             <DialogHeader>
