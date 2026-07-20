@@ -384,9 +384,99 @@ export const EnhancedParticipantManagement: React.FC = () => {
     return stream?.name || 'Неизвестный поток';
   };
 
-  const filteredParticipants = activeStreamTab === 'all' 
-    ? participants 
+  // Применяет D1-фильтры (поиск, статусы, теги) к списку
+  const applyFilters = (list: Participant[]) => {
+    const q = search.trim().toLowerCase();
+    return list.filter((p) => {
+      // текст: имя / фамилия / display_name / email / telegram / phone
+      if (q) {
+        const hay = [
+          p.first_name, p.last_name, p.display_name, p.email, p.telegram, p.phone,
+        ].filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      // статусы
+      if (filterStatuses.size > 0) {
+        const st = p.participant_status || '';
+        if (!filterStatuses.has(st)) return false;
+      }
+      // теги
+      if (filterTagIds.size > 0) {
+        const userTags = profileTagsMap.get(p.user_id) || [];
+        const hasAny = userTags.some((tid) => filterTagIds.has(tid));
+        if (!hasAny) return false;
+      }
+      return true;
+    });
+  };
+
+  const streamScoped = activeStreamTab === 'all'
+    ? participants
     : participants.filter(p => p.current_stream_id === activeStreamTab);
+  const filteredParticipants = applyFilters(streamScoped);
+  const activeFiltersCount = (search ? 1 : 0) + filterStatuses.size + filterTagIds.size;
+
+  const toggleSetItem = <T,>(setter: React.Dispatch<React.SetStateAction<Set<T>>>, value: T) => {
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value); else next.add(value);
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatuses(new Set());
+    setFilterTagIds(new Set());
+  };
+
+  const handleSendBroadcastFromList = async () => {
+    const text = broadcastText.trim();
+    if (!text) {
+      toast({ title: 'Введите текст', variant: 'destructive' });
+      return;
+    }
+    if (filteredParticipants.length === 0) {
+      toast({ title: 'Нет получателей', description: 'Список пуст — уточните фильтры', variant: 'destructive' });
+      return;
+    }
+    setBroadcastSending(true);
+    try {
+      const targetIds = filteredParticipants.map(p => p.user_id);
+      const snapshot = {
+        statuses: Array.from(filterStatuses),
+        tag_ids: Array.from(filterTagIds),
+        streams: activeStreamTab === 'all' ? [] : [activeStreamTab],
+        search: search.trim() || null,
+      };
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await (supabase as any)
+        .from('broadcast_messages')
+        .insert({
+          text,
+          audience: 'all',
+          buttons: [],
+          file_url: null,
+          status: 'draft',
+          recipients_count: targetIds.length,
+          target_user_ids: targetIds,
+          filter_snapshot: snapshot,
+          created_by: userData?.user?.id ?? null,
+        });
+      if (error) throw error;
+
+      toast({
+        title: 'Черновик рассылки создан',
+        description: `Получателей в списке: ${targetIds.length}. Отправка активируется после обновления сервера рассылок.`,
+      });
+      setBroadcastDialogOpen(false);
+      setBroadcastText('');
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось сохранить рассылку', variant: 'destructive' });
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
 
   const handleToggleApproval = async (p: Participant) => {
     try {
