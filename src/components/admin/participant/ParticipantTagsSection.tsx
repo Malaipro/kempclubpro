@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Plus, Loader2, Tag as TagIcon } from 'lucide-react';
 
 interface Props { userId: string; }
@@ -17,6 +18,30 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
   const [assigned, setAssigned] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [newTagName, setNewTagName] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const createTag = async () => {
+    const name = newTagName.trim();
+    if (!name) return;
+    setCreating(true);
+    try {
+      const palette = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#8b5cf6', '#0ea5e9', '#22c55e', '#dc2626'];
+      const color = palette[Math.floor(Math.random() * palette.length)];
+      const { data, error } = await supabase
+        .from('participant_tags')
+        .insert([{ name, color }])
+        .select('id, name, color')
+        .single();
+      if (error) throw error;
+      setAllTags((prev) => [...prev, data as Tag].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewTagName('');
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось создать тег', variant: 'destructive' });
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,7 +116,7 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
             Тег
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64 max-h-80 overflow-y-auto">
+        <PopoverContent className="w-64 max-h-96 overflow-y-auto space-y-3">
           {allTags.length === 0 ? (
             <p className="text-sm text-muted-foreground">Нет доступных тегов</p>
           ) : (
@@ -115,6 +140,21 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
               })}
             </div>
           )}
+          <div className="pt-2 border-t space-y-2">
+            <p className="text-xs text-muted-foreground">Создать новый тег</p>
+            <div className="flex gap-2">
+              <Input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="Название"
+                className="h-8"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); createTag(); } }}
+              />
+              <Button size="sm" onClick={createTag} disabled={creating || !newTagName.trim()}>
+                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
