@@ -18,6 +18,30 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
   const [assigned, setAssigned] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [newTagName, setNewTagName] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const createTag = async () => {
+    const name = newTagName.trim();
+    if (!name) return;
+    setCreating(true);
+    try {
+      const palette = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#8b5cf6', '#0ea5e9', '#22c55e', '#dc2626'];
+      const color = palette[Math.floor(Math.random() * palette.length)];
+      const { data, error } = await supabase
+        .from('participant_tags')
+        .insert([{ name, color }])
+        .select('id, name, color')
+        .single();
+      if (error) throw error;
+      setAllTags((prev) => [...prev, data as Tag].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewTagName('');
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось создать тег', variant: 'destructive' });
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
