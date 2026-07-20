@@ -116,7 +116,7 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
             Тег
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64 max-h-80 overflow-y-auto">
+        <PopoverContent className="w-64 max-h-96 overflow-y-auto space-y-3">
           {allTags.length === 0 ? (
             <p className="text-sm text-muted-foreground">Нет доступных тегов</p>
           ) : (
@@ -140,6 +140,21 @@ export const ParticipantTagsSection: React.FC<Props> = ({ userId }) => {
               })}
             </div>
           )}
+          <div className="pt-2 border-t space-y-2">
+            <p className="text-xs text-muted-foreground">Создать новый тег</p>
+            <div className="flex gap-2">
+              <Input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="Название"
+                className="h-8"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); createTag(); } }}
+              />
+              <Button size="sm" onClick={createTag} disabled={creating || !newTagName.trim()}>
+                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
