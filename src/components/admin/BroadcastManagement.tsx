@@ -13,7 +13,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip } from 'lucide-react';
+import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -34,6 +34,8 @@ interface BroadcastMessage {
   recipients_count: number;
   created_at: string;
   sent_at: string | null;
+  target_user_ids?: string[] | null;
+  filter_snapshot?: Record<string, any> | null;
 }
 
 const audienceLabels: Record<Audience, string> = {
@@ -53,6 +55,25 @@ export const BroadcastManagement: React.FC = () => {
 
   const [history, setHistory] = useState<BroadcastMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const openFile = async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage.from('broadcasts').createSignedUrl(path, 60 * 10);
+      if (error) throw error;
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось открыть файл', variant: 'destructive' });
+    }
+  };
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
