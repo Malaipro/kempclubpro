@@ -3231,9 +3231,10 @@ export type Database = {
       }
       enroll_application: {
         Args: {
+          p_new_status?: Database["public"]["Enums"]["participant_status_type"]
           p_stream_id: string
           p_submission_id: string
-          p_user_id: string
+          p_user_id?: string
         }
         Returns: Json
       }
