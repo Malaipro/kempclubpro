@@ -275,29 +275,100 @@ export const BroadcastManagement: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8" />
                     <TableHead>Дата</TableHead>
                     <TableHead>Аудитория</TableHead>
+                    <TableHead>Текст</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>Получателей</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="text-sm whitespace-nowrap">
-                        {format(new Date(m.created_at), 'dd.MM.yyyy HH:mm', { locale: ru })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{audienceLabels[m.audience]}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={m.status === 'sent' ? 'default' : 'secondary'}>
-                          {m.status === 'sent' ? 'Отправлено' : 'Черновик'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{m.recipients_count}</TableCell>
-                    </TableRow>
-                  ))}
+                  {history.map((m) => {
+                    const isOpen = expanded.has(m.id);
+                    const targetsInfo = m.target_user_ids && m.target_user_ids.length > 0
+                      ? `${m.target_user_ids.length} получателей из списка`
+                      : audienceLabels[m.audience];
+                    const snapshot = m.filter_snapshot || null;
+                    return (
+                      <React.Fragment key={m.id}>
+                        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(m.id)}>
+                          <TableCell>
+                            {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </TableCell>
+                          <TableCell className="text-sm whitespace-nowrap">
+                            {format(new Date(m.created_at), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{targetsInfo}</Badge>
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                            {m.text}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={m.status === 'sent' ? 'default' : 'secondary'}>
+                              {m.status === 'sent' ? 'Отправлено' : 'Черновик'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{m.recipients_count}</TableCell>
+                        </TableRow>
+                        {isOpen && (
+                          <TableRow className="bg-muted/30">
+                            <TableCell colSpan={6}>
+                              <div className="p-3 space-y-3 text-sm">
+                                <div>
+                                  <div className="font-semibold mb-1">Полный текст:</div>
+                                  <div className="whitespace-pre-wrap">{m.text}</div>
+                                </div>
+                                {m.buttons && m.buttons.length > 0 && (
+                                  <div>
+                                    <div className="font-semibold mb-1">Кнопки:</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {m.buttons.map((b, i) => (
+                                        <a
+                                          key={i}
+                                          href={b.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
+                                        >
+                                          {b.label} <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {m.file_url && (
+                                  <div>
+                                    <div className="font-semibold mb-1">Файл:</div>
+                                    <Button variant="outline" size="sm" onClick={() => openFile(m.file_url!)}>
+                                      <Paperclip className="w-4 h-4 mr-2" /> Открыть вложение
+                                    </Button>
+                                  </div>
+                                )}
+                                {snapshot && (
+                                  <div>
+                                    <div className="font-semibold mb-1">Фильтр списка:</div>
+                                    <div className="text-muted-foreground">
+                                      {snapshot.statuses?.length ? `Статусы: ${snapshot.statuses.join(', ')}. ` : ''}
+                                      {snapshot.streams?.length ? `Потоки: ${snapshot.streams.length}. ` : ''}
+                                      {snapshot.tag_ids?.length ? `Тегов: ${snapshot.tag_ids.length}. ` : ''}
+                                      {snapshot.search ? `Поиск: «${snapshot.search}». ` : ''}
+                                      {!snapshot.statuses?.length && !snapshot.streams?.length && !snapshot.tag_ids?.length && !snapshot.search ? 'Без фильтров' : ''}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="text-xs text-muted-foreground pt-1 border-t">
+                                  ID: {m.id}
+                                  {m.sent_at && ` • Отправлено: ${format(new Date(m.sent_at), 'dd.MM.yyyy HH:mm', { locale: ru })}`}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
