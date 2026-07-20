@@ -1081,7 +1081,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         {/* All participants */}
         <TabsContent value="all" className="mt-6">
           <div className="grid gap-4">
-            {participants.map((participant) => {
+            {filteredParticipants.map((participant) => {
           const fullName = formatParticipantName(participant);
           const isExpanded = expandedParticipants.has(participant.user_id);
           const details = participantDetails.get(participant.user_id);
@@ -1355,7 +1355,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         })}
           </div>
 
-          {participants.length === 0 && (
+          {filteredParticipants.length === 0 && (
             <Card className="p-8">
               <div className="text-center text-muted-foreground">
                 <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
