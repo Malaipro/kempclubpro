@@ -371,10 +371,12 @@ export type Database = {
           created_at: string
           created_by: string | null
           file_url: string | null
+          filter_snapshot: Json | null
           id: string
           recipients_count: number
           sent_at: string | null
           status: string
+          target_user_ids: string[] | null
           text: string
         }
         Insert: {
@@ -383,10 +385,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_url?: string | null
+          filter_snapshot?: Json | null
           id?: string
           recipients_count?: number
           sent_at?: string | null
           status?: string
+          target_user_ids?: string[] | null
           text: string
         }
         Update: {
@@ -395,10 +399,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_url?: string | null
+          filter_snapshot?: Json | null
           id?: string
           recipients_count?: number
           sent_at?: string | null
           status?: string
+          target_user_ids?: string[] | null
           text?: string
         }
         Relationships: []

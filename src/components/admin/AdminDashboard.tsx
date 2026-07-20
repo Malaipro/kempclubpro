@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone, Tag } from 'lucide-react';
+import { TagsManagement } from './TagsManagement';
 import { BroadcastManagement } from './BroadcastManagement';
 import { JournalManagement } from './JournalManagement';
 import { ApplicationsManagement } from './ApplicationsManagement';
@@ -154,6 +155,11 @@ export const AdminDashboard: React.FC = () => {
               <Megaphone className="w-4 h-4" />
               <span className="whitespace-nowrap">Рассылки</span>
             </TabsTrigger>
+
+            <TabsTrigger value="tags" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Tag className="w-4 h-4" />
+              <span className="whitespace-nowrap">Теги</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -256,6 +262,10 @@ export const AdminDashboard: React.FC = () => {
 
         <TabsContent value="broadcasts" className="mt-0">
           <BroadcastManagement />
+        </TabsContent>
+
+        <TabsContent value="tags" className="mt-0">
+          <TagsManagement />
         </TabsContent>
       </Tabs>
     </div>;
