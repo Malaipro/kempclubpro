@@ -10,6 +10,7 @@ interface BroadcastMessageRow {
   audience: string;
   buttons: BroadcastButton[] | null;
   file_url: string | null;
+  target_user_ids: string[] | null;
 }
 
 // audience → участники profiles с этим participant_status
@@ -37,7 +38,7 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
   // 1. Загружаем рассылку
   const { data: broadcast, error: fetchError } = await supabase
     .from('broadcast_messages')
-    .select('text, audience, buttons, file_url')
+    .select('text, audience, buttons, file_url, target_user_ids')
     .eq('id', broadcastId)
     .single<BroadcastMessageRow>();
 
@@ -47,19 +48,29 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const statuses = AUDIENCE_STATUSES[broadcast.audience];
-  if (!statuses) {
-    res.status(400).json({ ok: false, error: 'unknown_audience' });
-    return;
-  }
+  const targetUserIds = broadcast.target_user_ids;
+  const hasTargetUserIds = Array.isArray(targetUserIds) && targetUserIds.length > 0;
 
-  // 2. Получаем telegram_id всех участников нужной аудитории
-  const { data: profiles, error: profilesError } = await supabase
+  // 2. Получаем telegram_id получателей: точечно по target_user_ids,
+  // либо по participant_status для выбранной аудитории
+  let profilesQuery = supabase
     .from('profiles')
     .select('telegram_id')
-    .in('participant_status', statuses)
     .eq('approved', true)
     .not('telegram_id', 'is', null);
+
+  if (hasTargetUserIds) {
+    profilesQuery = profilesQuery.in('user_id', targetUserIds as string[]);
+  } else {
+    const statuses = AUDIENCE_STATUSES[broadcast.audience];
+    if (!statuses) {
+      res.status(400).json({ ok: false, error: 'unknown_audience' });
+      return;
+    }
+    profilesQuery = profilesQuery.in('participant_status', statuses);
+  }
+
+  const { data: profiles, error: profilesError } = await profilesQuery;
 
   if (profilesError) {
     console.error('[broadcast] profiles error:', profilesError.message);
