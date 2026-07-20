@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink, Search, Filter, X, Send, Megaphone, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { ParticipantCRMBlock } from './participant/ParticipantCRMBlock';
+import { PARTICIPANT_STATUSES, getParticipantStatusMeta, type ParticipantStatus } from '@/constants/participantStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -96,13 +99,48 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const [resetPasswordDialog, setResetPasswordDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Participant | null>(null);
   const [newPassword, setNewPassword] = useState('');
+
+  // D1: фильтры
+  const [search, setSearch] = useState('');
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterTagIds, setFilterTagIds] = useState<Set<string>>(new Set());
+  const [allTags, setAllTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
+  const [profileTagsMap, setProfileTagsMap] = useState<Map<string, string[]>>(new Map());
+
+  // D2-UI: рассылка из списка
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
+  const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     fetchStreams();
     fetchParticipants();
+    fetchTagsData();
   }, []);
+
+  const fetchTagsData = async () => {
+    try {
+      const [tagsRes, mapRes] = await Promise.all([
+        supabase.from('participant_tags').select('id, name, color').order('name'),
+        supabase.from('profile_tags').select('profile_user_id, tag_id'),
+      ]);
+      if (tagsRes.error) throw tagsRes.error;
+      if (mapRes.error) throw mapRes.error;
+      setAllTags(tagsRes.data || []);
+      const map = new Map<string, string[]>();
+      (mapRes.data || []).forEach((r: any) => {
+        const arr = map.get(r.profile_user_id) || [];
+        arr.push(r.tag_id);
+        map.set(r.profile_user_id, arr);
+      });
+      setProfileTagsMap(map);
+    } catch (e) {
+      console.error('fetchTagsData error:', e);
+    }
+  };
 
   const fetchStreams = async () => {
     try {
