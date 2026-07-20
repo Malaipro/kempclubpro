@@ -11,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink } from 'lucide-react';
+import { ParticipantCRMBlock } from './participant/ParticipantCRMBlock';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,7 @@ interface Participant {
   stream?: string;
   current_stream_id?: string;
   status: 'registered' | 'active' | 'completed';
+  participant_status?: string | null;
   height_cm?: number;
   weight_kg?: number;
   date_of_birth?: string;
@@ -141,7 +143,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
           approved,
           approved_at,
           approved_by,
-          current_stream_id
+          current_stream_id,
+          participant_status
         `)
         .order('display_name');
       
@@ -1086,6 +1089,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         <p className="text-sm">Активности пока не зафиксированы</p>
                       </div>
                     )}
+
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <ParticipantCRMBlock
+                        userId={participant.user_id}
+                        currentStatus={participant.participant_status ?? null}
+                        currentStreamId={participant.current_stream_id ?? null}
+                        onChanged={fetchParticipants}
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -1322,6 +1334,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
                                 </div>
                               </div>
                             )}
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-gray-200">
+                            <ParticipantCRMBlock
+                              userId={participant.user_id}
+                              currentStatus={participant.participant_status ?? null}
+                              currentStreamId={participant.current_stream_id ?? null}
+                              onChanged={fetchParticipants}
+                            />
                           </div>
                         </div>
                       )}
