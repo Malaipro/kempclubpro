@@ -1335,6 +1335,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
+
+                          <div className="mt-6 pt-4 border-t border-gray-200">
+                            <ParticipantCRMBlock
+                              userId={participant.user_id}
+                              currentStatus={participant.participant_status ?? null}
+                              currentStreamId={participant.current_stream_id ?? null}
+                              onChanged={fetchParticipants}
+                            />
+                          </div>
                         </div>
                       )}
                     </CardContent>
