@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, User, CalendarIcon, CheckCircle, XCircle, ChevronDown, ChevronUp, Target, Zap, Dumbbell, Book, Shield, Award, Key, ArrowRightLeft, ExternalLink, Search, Filter, X, Send, Megaphone, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { ParticipantCRMBlock } from './participant/ParticipantCRMBlock';
+import { PARTICIPANT_STATUSES, getParticipantStatusMeta, type ParticipantStatus } from '@/constants/participantStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -96,13 +99,48 @@ export const EnhancedParticipantManagement: React.FC = () => {
   const [resetPasswordDialog, setResetPasswordDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Participant | null>(null);
   const [newPassword, setNewPassword] = useState('');
+
+  // D1: фильтры
+  const [search, setSearch] = useState('');
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterTagIds, setFilterTagIds] = useState<Set<string>>(new Set());
+  const [allTags, setAllTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
+  const [profileTagsMap, setProfileTagsMap] = useState<Map<string, string[]>>(new Map());
+
+  // D2-UI: рассылка из списка
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
+  const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     fetchStreams();
     fetchParticipants();
+    fetchTagsData();
   }, []);
+
+  const fetchTagsData = async () => {
+    try {
+      const [tagsRes, mapRes] = await Promise.all([
+        supabase.from('participant_tags').select('id, name, color').order('name'),
+        supabase.from('profile_tags').select('profile_user_id, tag_id'),
+      ]);
+      if (tagsRes.error) throw tagsRes.error;
+      if (mapRes.error) throw mapRes.error;
+      setAllTags(tagsRes.data || []);
+      const map = new Map<string, string[]>();
+      (mapRes.data || []).forEach((r: any) => {
+        const arr = map.get(r.profile_user_id) || [];
+        arr.push(r.tag_id);
+        map.set(r.profile_user_id, arr);
+      });
+      setProfileTagsMap(map);
+    } catch (e) {
+      console.error('fetchTagsData error:', e);
+    }
+  };
 
   const fetchStreams = async () => {
     try {
@@ -346,9 +384,99 @@ export const EnhancedParticipantManagement: React.FC = () => {
     return stream?.name || 'Неизвестный поток';
   };
 
-  const filteredParticipants = activeStreamTab === 'all' 
-    ? participants 
+  // Применяет D1-фильтры (поиск, статусы, теги) к списку
+  const applyFilters = (list: Participant[]) => {
+    const q = search.trim().toLowerCase();
+    return list.filter((p) => {
+      // текст: имя / фамилия / display_name / email / telegram / phone
+      if (q) {
+        const hay = [
+          p.first_name, p.last_name, p.display_name, p.email, p.telegram, p.phone,
+        ].filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      // статусы
+      if (filterStatuses.size > 0) {
+        const st = p.participant_status || '';
+        if (!filterStatuses.has(st)) return false;
+      }
+      // теги
+      if (filterTagIds.size > 0) {
+        const userTags = profileTagsMap.get(p.user_id) || [];
+        const hasAny = userTags.some((tid) => filterTagIds.has(tid));
+        if (!hasAny) return false;
+      }
+      return true;
+    });
+  };
+
+  const streamScoped = activeStreamTab === 'all'
+    ? participants
     : participants.filter(p => p.current_stream_id === activeStreamTab);
+  const filteredParticipants = applyFilters(streamScoped);
+  const activeFiltersCount = (search ? 1 : 0) + filterStatuses.size + filterTagIds.size;
+
+  const toggleSetItem = <T,>(setter: React.Dispatch<React.SetStateAction<Set<T>>>, value: T) => {
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value); else next.add(value);
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatuses(new Set());
+    setFilterTagIds(new Set());
+  };
+
+  const handleSendBroadcastFromList = async () => {
+    const text = broadcastText.trim();
+    if (!text) {
+      toast({ title: 'Введите текст', variant: 'destructive' });
+      return;
+    }
+    if (filteredParticipants.length === 0) {
+      toast({ title: 'Нет получателей', description: 'Список пуст — уточните фильтры', variant: 'destructive' });
+      return;
+    }
+    setBroadcastSending(true);
+    try {
+      const targetIds = filteredParticipants.map(p => p.user_id);
+      const snapshot = {
+        statuses: Array.from(filterStatuses),
+        tag_ids: Array.from(filterTagIds),
+        streams: activeStreamTab === 'all' ? [] : [activeStreamTab],
+        search: search.trim() || null,
+      };
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await (supabase as any)
+        .from('broadcast_messages')
+        .insert({
+          text,
+          audience: 'all',
+          buttons: [],
+          file_url: null,
+          status: 'draft',
+          recipients_count: targetIds.length,
+          target_user_ids: targetIds,
+          filter_snapshot: snapshot,
+          created_by: userData?.user?.id ?? null,
+        });
+      if (error) throw error;
+
+      toast({
+        title: 'Черновик рассылки создан',
+        description: `Получателей в списке: ${targetIds.length}. Отправка активируется после обновления сервера рассылок.`,
+      });
+      setBroadcastDialogOpen(false);
+      setBroadcastText('');
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось сохранить рассылку', variant: 'destructive' });
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
 
   const handleToggleApproval = async (p: Participant) => {
     try {
@@ -573,25 +701,33 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Управление участниками</h1>
           <p className="text-muted-foreground">Добавляйте и редактируйте участников по потокам</p>
         </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="bg-destructive hover:bg-destructive/90 text-white"
-              onClick={() => {
-                setEditingParticipant(null);
-                resetForm();
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Добавить участника
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setBroadcastDialogOpen(true)}
+            title="Отправить рассылку по отфильтрованному списку"
+          >
+            <Megaphone className="w-4 h-4 mr-2" />
+            Отправить рассылку ({filteredParticipants.length})
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-destructive hover:bg-destructive/90 text-white"
+                onClick={() => {
+                  setEditingParticipant(null);
+                  resetForm();
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Добавить участника
+              </Button>
+            </DialogTrigger>
           
           <DialogContent className="max-w-md bg-gray-900 border-gray-700">
             <DialogHeader>
@@ -754,8 +890,121 @@ export const EnhancedParticipantManagement: React.FC = () => {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
+
+      {/* D1: Панель фильтров */}
+      <Card className="p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск: имя, email, телефон, telegram"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Статус {filterStatuses.size > 0 && <Badge className="ml-2" variant="secondary">{filterStatuses.size}</Badge>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 z-50 bg-popover" align="start">
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {PARTICIPANT_STATUSES.map((s) => (
+                  <label key={s.value} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={filterStatuses.has(s.value)}
+                      onCheckedChange={() => toggleSetItem(setFilterStatuses, s.value)}
+                    />
+                    <span>{s.label}{s.legacy && <span className="text-muted-foreground ml-1 text-xs">(legacy)</span>}</span>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Теги {filterTagIds.size > 0 && <Badge className="ml-2" variant="secondary">{filterTagIds.size}</Badge>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 z-50 bg-popover" align="start">
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {allTags.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Тегов нет</p>
+                )}
+                {allTags.map((t) => (
+                  <label key={t.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={filterTagIds.has(t.id)}
+                      onCheckedChange={() => toggleSetItem(setFilterTagIds, t.id)}
+                    />
+                    <Badge style={{ backgroundColor: t.color || '#6b7280', color: '#fff' }}>{t.name}</Badge>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {activeFiltersCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="w-4 h-4 mr-1" /> Сбросить ({activeFiltersCount})
+            </Button>
+          )}
+
+          <div className="ml-auto text-sm text-muted-foreground">
+            Найдено: <span className="font-semibold text-foreground">{filteredParticipants.length}</span> из {streamScoped.length}
+          </div>
+        </div>
+      </Card>
+
+      {/* D2-UI: Диалог рассылки по отфильтрованному списку */}
+      <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5" /> Рассылка по списку
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Получателей: <span className="font-semibold text-foreground">{filteredParticipants.length}</span>
+              {activeFiltersCount > 0 && ` (с учётом фильтров${activeStreamTab !== 'all' ? ' и текущего потока' : ''})`}
+            </div>
+            <div>
+              <Label>Текст сообщения</Label>
+              <Textarea
+                rows={6}
+                maxLength={4000}
+                value={broadcastText}
+                onChange={(e) => setBroadcastText(e.target.value)}
+                placeholder="Введите текст рассылки..."
+              />
+            </div>
+            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+              ⚠️ Рассылка будет сохранена как черновик с явным списком получателей.
+              Автоматическая отправка через Telegram активируется после обновления сервера рассылок.
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setBroadcastDialogOpen(false)} disabled={broadcastSending}>
+                Отмена
+              </Button>
+              <Button onClick={handleSendBroadcastFromList} disabled={broadcastSending}>
+                {broadcastSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Сохранить черновик
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Transfer Dialog */}
       <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
@@ -832,7 +1081,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         {/* All participants */}
         <TabsContent value="all" className="mt-6">
           <div className="grid gap-4">
-            {participants.map((participant) => {
+            {filteredParticipants.map((participant) => {
           const fullName = formatParticipantName(participant);
           const isExpanded = expandedParticipants.has(participant.user_id);
           const details = participantDetails.get(participant.user_id);
@@ -1106,7 +1355,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         })}
           </div>
 
-          {participants.length === 0 && (
+          {filteredParticipants.length === 0 && (
             <Card className="p-8">
               <div className="text-center text-muted-foreground">
                 <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
