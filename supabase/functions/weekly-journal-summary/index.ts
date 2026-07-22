@@ -15,9 +15,17 @@ const PERSONAL_PROMPT =
 
 interface Profile {
   user_id: string
-  full_name: string | null
+  display_name: string | null
+  first_name: string | null
+  last_name: string | null
   telegram_id: string | null
   coaching_type: 'standard' | 'personal'
+}
+
+function resolveDisplayName(profile: Profile): string | null {
+  if (profile.display_name) return profile.display_name
+  const combined = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim()
+  return combined || null
 }
 
 interface RequestBody {
@@ -57,7 +65,7 @@ serve(async (req) => {
   try {
     let profilesQuery = supabaseAdmin
       .from('profiles')
-      .select('user_id, full_name, telegram_id, coaching_type')
+      .select('user_id, display_name, first_name, last_name, telegram_id, coaching_type')
       .not('telegram_id', 'is', null)
 
     if (targetUserId) {
@@ -144,7 +152,7 @@ serve(async (req) => {
 
         const systemPrompt = profile.coaching_type === 'personal' ? PERSONAL_PROMPT : STANDARD_PROMPT
 
-        const summaryText = await requestSummary(anthropicKey, systemPrompt, profile.full_name, journalText)
+        const summaryText = await requestSummary(anthropicKey, systemPrompt, resolveDisplayName(profile), journalText)
 
         if (!summaryText) {
           failed++
