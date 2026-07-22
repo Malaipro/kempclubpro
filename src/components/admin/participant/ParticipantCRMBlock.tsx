@@ -3,6 +3,7 @@ import { ParticipantTagsSection } from './ParticipantTagsSection';
 import { QuickStatusActions } from './QuickStatusActions';
 import { ParticipantNotesSection } from './ParticipantNotesSection';
 import { ParticipantHistoryTab } from './ParticipantHistoryTab';
+import { CoachingTypeToggle } from './CoachingTypeToggle';
 
 interface Props {
   userId: string;
@@ -22,6 +23,7 @@ export const ParticipantCRMBlock: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       <ParticipantTagsSection userId={userId} />
+      <CoachingTypeToggle userId={userId} onChanged={onChanged} />
       <QuickStatusActions
         userId={userId}
         currentStatus={currentStatus}
