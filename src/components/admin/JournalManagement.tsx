@@ -394,15 +394,203 @@ const EntriesSection: React.FC = () => {
   );
 };
 
+interface SummaryRow {
+  id: string;
+  user_id: string;
+  week_start: string;
+  summary_text: string;
+  edited_text: string | null;
+  status: string;
+  profile?: {
+    display_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+}
+
+const SummariesSection: React.FC = () => {
+  const { toast } = useToast();
+  const [rows, setRows] = useState<SummaryRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState<Record<string, string>>({});
+  const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('weekly_summaries')
+        .select('id, user_id, week_start, summary_text, edited_text, status')
+        .eq('status', 'draft')
+        .order('week_start', { ascending: false });
+      if (error) throw error;
+      const list = (data ?? []) as SummaryRow[];
+      const ids = Array.from(new Set(list.map((r) => r.user_id)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, first_name, last_name')
+          .in('user_id', ids);
+        const map = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+        list.forEach((r) => { r.profile = map.get(r.user_id) ?? null; });
+      }
+      setRows(list);
+    } catch (e: any) {
+      toast({ title: 'Ошибка загрузки', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const nameOf = (r: SummaryRow) => {
+    const p = r.profile;
+    if (!p) return 'Без имени';
+    return p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Без имени';
+  };
+
+  const send = async (r: SummaryRow) => {
+    setBusy(r.id);
+    try {
+      const newText = editMode[r.id] ? editing[r.id] : (r.edited_text ?? r.summary_text);
+      if (editMode[r.id]) {
+        const { error: upErr } = await supabase
+          .from('weekly_summaries')
+          .update({ edited_text: newText })
+          .eq('id', r.id);
+        if (upErr) throw upErr;
+      }
+      const { data, error } = await supabase.functions.invoke('send-weekly-summary', {
+        body: { summary_id: r.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: 'Отправлено' });
+      await load();
+    } catch (e: any) {
+      toast({ title: 'Ошибка отправки', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reject = async (r: SummaryRow) => {
+    setBusy(r.id);
+    try {
+      const { error } = await supabase
+        .from('weekly_summaries')
+        .update({ status: 'rejected' })
+        .eq('id', r.id);
+      if (error) throw error;
+      toast({ title: 'Отклонено' });
+      await load();
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Черновики сводок ({rows.length})</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Загрузка...
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Нет черновиков для отправки</p>
+        ) : (
+          rows.map((r) => {
+            const isEditing = !!editMode[r.id];
+            const currentText = isEditing
+              ? (editing[r.id] ?? r.edited_text ?? r.summary_text)
+              : (r.edited_text ?? r.summary_text);
+            return (
+              <div key={r.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <div className="font-medium">{nameOf(r)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Неделя с {new Date(r.week_start).toLocaleDateString('ru-RU')}
+                    </div>
+                  </div>
+                  <Badge variant="secondary">Черновик</Badge>
+                </div>
+                {isEditing ? (
+                  <Textarea
+                    rows={8}
+                    value={currentText}
+                    onChange={(e) => setEditing((s) => ({ ...s, [r.id]: e.target.value }))}
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap text-sm bg-muted/40 rounded p-3">
+                    {currentText}
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  {isEditing ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditMode((s) => ({ ...s, [r.id]: false }))}
+                    >
+                      Отмена
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditing((s) => ({ ...s, [r.id]: r.edited_text ?? r.summary_text }));
+                        setEditMode((s) => ({ ...s, [r.id]: true }));
+                      }}
+                    >
+                      <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    disabled={busy === r.id}
+                    onClick={() => send(r)}
+                  >
+                    {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    Отправить
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={busy === r.id}
+                    onClick={() => reject(r)}
+                  >
+                    Отклонить
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const JournalManagement: React.FC = () => {
   return (
     <Tabs defaultValue="prompts" className="space-y-4">
       <TabsList>
         <TabsTrigger value="prompts">Вопросы</TabsTrigger>
         <TabsTrigger value="entries">Записи</TabsTrigger>
+        <TabsTrigger value="summaries">Сводки</TabsTrigger>
       </TabsList>
       <TabsContent value="prompts"><PromptsSection /></TabsContent>
       <TabsContent value="entries"><EntriesSection /></TabsContent>
+      <TabsContent value="summaries"><SummariesSection /></TabsContent>
     </Tabs>
   );
 };
