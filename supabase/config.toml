@@ -36,6 +36,9 @@ verify_jwt = false
 [functions.send-journal-reminders]
 verify_jwt = false
 
+[functions.weekly-journal-summary]
+verify_jwt = false
+
 [functions.submit-application]
 verify_jwt = false
 
