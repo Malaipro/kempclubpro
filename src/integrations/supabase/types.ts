@@ -2946,8 +2946,10 @@ export type Database = {
           created_at: string
           edited_text: string | null
           id: string
+          sent_at: string | null
           status: string
           summary_text: string
+          updated_at: string
           user_id: string
           week_start: string
         }
@@ -2955,8 +2957,10 @@ export type Database = {
           created_at?: string
           edited_text?: string | null
           id?: string
+          sent_at?: string | null
           status?: string
           summary_text: string
+          updated_at?: string
           user_id: string
           week_start: string
         }
@@ -2964,8 +2968,10 @@ export type Database = {
           created_at?: string
           edited_text?: string | null
           id?: string
+          sent_at?: string | null
           status?: string
           summary_text?: string
+          updated_at?: string
           user_id?: string
           week_start?: string
         }

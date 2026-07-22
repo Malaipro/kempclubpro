@@ -1,0 +1,1 @@
+ALTER TABLE public.weekly_summaries ADD COLUMN IF NOT EXISTS sent_at timestamptz, ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
