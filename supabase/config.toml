@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.send-broadcast]
 verify_jwt = true
+
+[functions.send-weekly-summary]
+verify_jwt = true
