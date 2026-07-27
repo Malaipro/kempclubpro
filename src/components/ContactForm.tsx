@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { captureRefFromUrl, getStoredRefCode } from '@/lib/refCapture';
+import { captureUtmFromUrl, getStoredUtm, type UtmData } from '@/lib/utmCapture';
 import { Loader2, Send, CheckCircle2 } from 'lucide-react';
 
 // Менять дату следующего запуска КЭМП здесь
@@ -39,10 +40,13 @@ export const ContactForm: React.FC = () => {
   const [refCode, setRefCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [utmData, setUtmData] = useState<UtmData | null>(null);
 
   useEffect(() => {
     captureRefFromUrl();
+    captureUtmFromUrl();
     setRefCode(getStoredRefCode());
+    setUtmData(getStoredUtm());
   }, []);
 
   useEffect(() => {
@@ -101,6 +105,7 @@ export const ContactForm: React.FC = () => {
           social: social.trim() || undefined,
           message: message.trim() || undefined,
           ref_code: refCode || undefined,
+          utm_data: utmData || undefined,
           website, // honeypot
         }),
       });
