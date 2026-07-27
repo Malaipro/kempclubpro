@@ -71,6 +71,7 @@ serve(async (req) => {
   const social = payload.social?.trim() || null
   const message = payload.message?.trim() || null
   const refCode = payload.ref_code?.trim() || null
+  const utmData = sanitizeUtm(payload.utm_data)
 
   if (!name || !phone) {
     return new Response(
