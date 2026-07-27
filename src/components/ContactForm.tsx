@@ -40,10 +40,13 @@ export const ContactForm: React.FC = () => {
   const [refCode, setRefCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [utmData, setUtmData] = useState<UtmData | null>(null);
 
   useEffect(() => {
     captureRefFromUrl();
+    captureUtmFromUrl();
     setRefCode(getStoredRefCode());
+    setUtmData(getStoredUtm());
   }, []);
 
   useEffect(() => {
