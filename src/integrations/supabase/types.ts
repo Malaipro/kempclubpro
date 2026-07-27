@@ -603,6 +603,7 @@ export type Database = {
           social: string | null
           status: string
           stream_id: string | null
+          utm_data: Json | null
         }
         Insert: {
           course?: string | null
@@ -621,6 +622,7 @@ export type Database = {
           social?: string | null
           status?: string
           stream_id?: string | null
+          utm_data?: Json | null
         }
         Update: {
           course?: string | null
@@ -639,6 +641,7 @@ export type Database = {
           social?: string | null
           status?: string
           stream_id?: string | null
+          utm_data?: Json | null
         }
         Relationships: [
           {
