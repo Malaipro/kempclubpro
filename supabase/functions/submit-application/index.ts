@@ -132,6 +132,7 @@ serve(async (req) => {
       ref_code: refCode,
       referral_code: refCode,
       referrer_user_id: referrerUserId,
+      utm_data: utmData,
       status: 'new',
     })
     .select('id')
