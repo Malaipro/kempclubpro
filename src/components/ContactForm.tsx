@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { captureRefFromUrl, getStoredRefCode } from '@/lib/refCapture';
+import { captureUtmFromUrl, getStoredUtm, type UtmData } from '@/lib/utmCapture';
 import { Loader2, Send, CheckCircle2 } from 'lucide-react';
 
 // Менять дату следующего запуска КЭМП здесь
