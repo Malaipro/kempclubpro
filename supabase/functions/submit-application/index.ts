@@ -2,13 +2,37 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
 
+interface UtmData {
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
+  yclid?: string
+}
+
 interface ApplicationPayload {
   name?: string
   phone?: string
   social?: string
   message?: string
   ref_code?: string
+  utm_data?: UtmData
   website?: string // honeypot — реальные пользователи это поле не видят и не заполняют
+}
+
+const UTM_KEYS: (keyof UtmData)[] = [
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'yclid',
+]
+
+const sanitizeUtm = (raw: unknown): UtmData | null => {
+  if (!raw || typeof raw !== 'object') return null
+  const out: UtmData = {}
+  for (const key of UTM_KEYS) {
+    const v = (raw as Record<string, unknown>)[key]
+    if (typeof v === 'string' && v.trim()) out[key] = v.trim().slice(0, 255)
+  }
+  return Object.keys(out).length ? out : null
 }
 
 serve(async (req) => {
