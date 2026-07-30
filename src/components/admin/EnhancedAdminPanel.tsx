@@ -45,6 +45,9 @@ import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 import { PyramidManagement } from '@/components/admin/PyramidManagement';
 import { JournalManagement } from '@/components/admin/JournalManagement';
 import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
+import { RewardsManagement } from '@/components/admin/RewardsManagement';
+import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
+
 
 interface TabConfig {
   id: string;
