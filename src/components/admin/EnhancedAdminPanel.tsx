@@ -149,12 +149,27 @@ const adminTabs: TabConfig[] = [
     requiresSuperAdmin: true
   },
   { 
+    id: 'rewards',
+    label: 'Награды',
+    icon: Gift,
+    description: 'Каталог наград за коины и заявки на получение',
+    requiresSuperAdmin: true
+  },
+  { 
+    id: 'referrals',
+    label: 'Рефералка',
+    icon: UserPlus,
+    description: 'Реферальные заявки и настройки бонусов',
+    requiresSuperAdmin: true
+  },
+  { 
     id: 'broadcasts', 
     label: 'Рассылки', 
     icon: Megaphone,
     description: 'Массовые рассылки участникам',
     requiresSuperAdmin: true
   },
+
   { 
     id: 'pyramid', 
     label: 'Пирамида КЭМП', 
