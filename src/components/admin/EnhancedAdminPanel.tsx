@@ -18,7 +18,10 @@ import {
   Megaphone,
   Triangle,
   BookOpen,
-  Inbox
+  Inbox,
+  Gift,
+  UserPlus
+
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
