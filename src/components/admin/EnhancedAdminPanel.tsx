@@ -18,7 +18,10 @@ import {
   Megaphone,
   Triangle,
   BookOpen,
-  Inbox
+  Inbox,
+  Gift,
+  UserPlus
+
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 
@@ -42,6 +45,9 @@ import { BroadcastManagement } from '@/components/admin/BroadcastManagement';
 import { PyramidManagement } from '@/components/admin/PyramidManagement';
 import { JournalManagement } from '@/components/admin/JournalManagement';
 import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
+import { RewardsManagement } from '@/components/admin/RewardsManagement';
+import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
+
 
 interface TabConfig {
   id: string;
@@ -143,12 +149,27 @@ const adminTabs: TabConfig[] = [
     requiresSuperAdmin: true
   },
   { 
+    id: 'rewards',
+    label: 'Награды',
+    icon: Gift,
+    description: 'Каталог наград за коины и заявки на получение',
+    requiresSuperAdmin: true
+  },
+  { 
+    id: 'referrals',
+    label: 'Рефералка',
+    icon: UserPlus,
+    description: 'Реферальные заявки и настройки бонусов',
+    requiresSuperAdmin: true
+  },
+  { 
     id: 'broadcasts', 
     label: 'Рассылки', 
     icon: Megaphone,
     description: 'Массовые рассылки участникам',
     requiresSuperAdmin: true
   },
+
   { 
     id: 'pyramid', 
     label: 'Пирамида КЭМП', 
@@ -240,8 +261,13 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <ContractManagement />;
       case 'coins':
         return <AdminCoinsManagement />;
+      case 'rewards':
+        return <RewardsManagement />;
+      case 'referrals':
+        return <ReferralsManagement />;
       case 'broadcasts':
         return <BroadcastManagement />;
+
       case 'pyramid':
         return <PyramidManagement />;
       case 'journal':
