@@ -12,7 +12,7 @@ import { captureUtmFromUrl, getStoredUtm, type UtmData } from '@/lib/utmCapture'
 import { Loader2, Send, CheckCircle2 } from 'lucide-react';
 
 // Менять дату следующего запуска КЭМП здесь
-export const FIXED_TARGET_DATE = new Date('2026-08-03T00:00:00');
+export const FIXED_TARGET_DATE = new Date('2026-08-10T00:00:00');
 
 const SUBMIT_URL = 'https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/submit-application';
 
