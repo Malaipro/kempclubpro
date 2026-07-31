@@ -3402,6 +3402,14 @@ export type Database = {
         }
         Returns: Json
       }
+      server_create_reward_request: {
+        Args: {
+          p_reward_id: string
+          p_user_comment?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       submit_homework:
         | {
             Args: {
