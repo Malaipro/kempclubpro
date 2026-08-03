@@ -642,14 +642,18 @@ export type Database = {
           created_at: string
           enrolled_user_id: string | null
           id: string
+          landing_page: string | null
           message: string | null
           name: string
+          notify_error: string | null
+          notify_failed: boolean
           phone: string
           processed: boolean | null
           processed_at: string | null
           processed_by: string | null
           ref_code: string | null
           referral_code: string | null
+          referrer: string | null
           referrer_user_id: string | null
           social: string | null
           status: string
@@ -661,14 +665,18 @@ export type Database = {
           created_at?: string
           enrolled_user_id?: string | null
           id?: string
+          landing_page?: string | null
           message?: string | null
           name: string
+          notify_error?: string | null
+          notify_failed?: boolean
           phone: string
           processed?: boolean | null
           processed_at?: string | null
           processed_by?: string | null
           ref_code?: string | null
           referral_code?: string | null
+          referrer?: string | null
           referrer_user_id?: string | null
           social?: string | null
           status?: string
@@ -680,14 +688,18 @@ export type Database = {
           created_at?: string
           enrolled_user_id?: string | null
           id?: string
+          landing_page?: string | null
           message?: string | null
           name?: string
+          notify_error?: string | null
+          notify_failed?: boolean
           phone?: string
           processed?: boolean | null
           processed_at?: string | null
           processed_by?: string | null
           ref_code?: string | null
           referral_code?: string | null
+          referrer?: string | null
           referrer_user_id?: string | null
           social?: string | null
           status?: string
