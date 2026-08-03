@@ -49,6 +49,7 @@ import { JournalManagement } from '@/components/admin/JournalManagement';
 import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
 import { RewardsManagement } from '@/components/admin/RewardsManagement';
 import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
+import { ChallengesManagement } from '@/components/admin/ChallengesManagement';
 
 
 interface TabConfig {
