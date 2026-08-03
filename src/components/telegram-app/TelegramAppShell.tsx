@@ -128,6 +128,10 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'journal') {
     return <TelegramJournalView onBack={() => setActiveSection('home')} />;
+
+  if (activeSection === 'shop') {
+    return <TelegramShopView onBack={() => setActiveSection('home')} />;
+  }
   }
 
   return (

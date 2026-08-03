@@ -59,6 +59,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     activity_type, text, ascetic_id, assignment_id, content, file_url,
     file_name, file_base64, weight, height, birth_date,
     entry_date, day_type, emotions, answers,
+    reward_id, comment,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -82,6 +83,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     day_type?: string;
     emotions?: Array<{ name: string; intensity: number }>;
     answers?: Array<{ prompt_id: string; text: string }>;
+    reward_id?: string;
+    comment?: string;
   };
 
   // Базовая валидация тела запроса
@@ -619,6 +622,98 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       console.error('[state/nutrition_chat] error:', err instanceof Error ? err.message : err);
       res.status(500).json({ ok: false, error: 'nutrition_chat_error' });
     }
+    return;
+  }
+
+  if (action === 'get_shop') {
+    // Находим user_id по telegram_id
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (profileErr || !profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const userId = profile.user_id;
+
+    const [rewardsRes, balanceRes, requestsRes] = await Promise.all([
+      supabase
+        .from('rewards')
+        .select('id, title, description, image_url, cost_coins, stock')
+        .eq('is_active', true)
+        .order('sort_order'),
+      supabase.rpc('get_user_coin_balance', { p_user_id: userId }),
+      supabase
+        .from('reward_requests')
+        .select('id, status, cost_coins, admin_comment, created_at, reward:rewards(title)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false }),
+    ]);
+
+    if (rewardsRes.error || balanceRes.error || requestsRes.error) {
+      console.error('[state/get_shop] error:',
+        rewardsRes.error?.message, balanceRes.error?.message, requestsRes.error?.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    const myRequests = (requestsRes.data || []).map((r: any) => ({
+      id: r.id,
+      status: r.status,
+      cost_coins: r.cost_coins,
+      admin_comment: r.admin_comment,
+      created_at: r.created_at,
+      reward_title: r.reward?.title ?? 'Награда',
+    }));
+
+    res.json({
+      ok: true,
+      data: {
+        rewards: rewardsRes.data || [],
+        balance: Number(balanceRes.data) || 0,
+        my_requests: myRequests,
+      },
+    });
+    return;
+  }
+
+  if (action === 'purchase_reward') {
+    if (!reward_id || typeof reward_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_reward_id' });
+      return;
+    }
+
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (profileErr || !profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_create_reward_request', {
+      p_user_id: profile.user_id,
+      p_reward_id: reward_id,
+      p_user_comment: typeof comment === 'string' && comment.trim() ? comment.trim() : null,
+    });
+
+    if (error) {
+      console.error('[state/purchase_reward] RPC error:', error.message);
+      const userMessage = error.message.includes('коинов') || error.message.includes('Награда') || error.message.includes('Магазин')
+        ? error.message
+        : 'rpc_error';
+      res.status(400).json({ ok: false, error: userMessage });
+      return;
+    }
+
+    res.json({ ok: true, data: { request_id: data } });
     return;
   }
 
