@@ -366,9 +366,13 @@ export const RewardsManagement: React.FC = () => {
                 <Input
                   type="number"
                   min={0}
-                  value={form.cost_coins}
-                  onChange={(e) => setForm({ ...form, cost_coins: Number(e.target.value) })}
+                  value={String(form.cost_coins)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/^0+(?=\d)/, '');
+                    setForm({ ...form, cost_coins: raw === '' ? 0 : Number(raw) });
+                  }}
                 />
+
               </div>
               <div>
                 <Label>Остаток (пусто = ∞)</Label>
