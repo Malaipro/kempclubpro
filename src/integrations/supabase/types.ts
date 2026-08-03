@@ -442,6 +442,45 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_entries: {
+        Row: {
+          challenge_id: string
+          created_at: string | null
+          entry_date: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           challenge_type: string
@@ -451,8 +490,10 @@ export type Database = {
           id: string
           is_active: boolean | null
           max_participants: number | null
+          max_per_day: number | null
           name: string
           points_reward: number | null
+          prize_description: string | null
           requirements: Json | null
           start_date: string | null
         }
@@ -464,8 +505,10 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_participants?: number | null
+          max_per_day?: number | null
           name: string
           points_reward?: number | null
+          prize_description?: string | null
           requirements?: Json | null
           start_date?: string | null
         }
@@ -477,8 +520,10 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_participants?: number | null
+          max_per_day?: number | null
           name?: string
           points_reward?: number | null
+          prize_description?: string | null
           requirements?: Json | null
           start_date?: string | null
         }
@@ -3400,6 +3445,10 @@ export type Database = {
           p_entry_date: string
           p_telegram_id: string
         }
+        Returns: Json
+      }
+      server_challenge_checkin: {
+        Args: { p_challenge_id: string; p_user_id: string }
         Returns: Json
       }
       server_create_reward_request: {
