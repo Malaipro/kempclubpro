@@ -9,6 +9,8 @@ interface UtmData {
   utm_content?: string
   utm_term?: string
   yclid?: string
+  referrer?: string
+  landing_page?: string
 }
 
 interface ApplicationPayload {
@@ -18,11 +20,13 @@ interface ApplicationPayload {
   message?: string
   ref_code?: string
   utm_data?: UtmData
-  website?: string // honeypot — реальные пользователи это поле не видят и не заполняют
+  hp_field?: string // honeypot — реальные пользователи это поле не видят и не заполняют
+  website?: string // legacy honeypot (обратная совместимость)
 }
 
 const UTM_KEYS: (keyof UtmData)[] = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'yclid',
+  'referrer', 'landing_page',
 ]
 
 const sanitizeUtm = (raw: unknown): UtmData | null => {
@@ -30,7 +34,7 @@ const sanitizeUtm = (raw: unknown): UtmData | null => {
   const out: UtmData = {}
   for (const key of UTM_KEYS) {
     const v = (raw as Record<string, unknown>)[key]
-    if (typeof v === 'string' && v.trim()) out[key] = v.trim().slice(0, 255)
+    if (typeof v === 'string' && v.trim()) out[key] = v.trim().slice(0, 500)
   }
   return Object.keys(out).length ? out : null
 }
@@ -59,9 +63,12 @@ serve(async (req) => {
 
   // Honeypot: боты обычно заполняют все поля формы, включая скрытые.
   // Отвечаем как при успехе, но ничего не сохраняем и не уведомляем.
-  if (payload.website && payload.website.trim()) {
+  const honeypot = (payload.hp_field ?? payload.website ?? '').trim()
+  if (honeypot) {
+    // Логируем только факт срабатывания, без персональных данных
+    console.warn('honeypot_triggered')
     return new Response(
-      JSON.stringify({ ok: true }),
+      JSON.stringify({ ok: true, skipped: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -133,6 +140,8 @@ serve(async (req) => {
       referral_code: refCode,
       referrer_user_id: referrerUserId,
       utm_data: utmData,
+      referrer: utmData?.referrer ?? null,
+      landing_page: utmData?.landing_page ?? null,
       status: 'new',
     })
     .select('id')
@@ -146,12 +155,15 @@ serve(async (req) => {
     )
   }
 
-  // Уведомление в Telegram — некритично, не должно проваливать сам запрос
+  // Уведомление в Telegram — некритично, заявка уже сохранена
+  let notifyError: string | null = null
   try {
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
     const chatId = Deno.env.get('ADMIN_TELEGRAM_CHAT_ID')
 
-    if (botToken && chatId) {
+    if (!botToken || !chatId) {
+      notifyError = 'telegram_not_configured'
+    } else {
       const lines = [
         '🆕 Новая заявка с сайта',
         `Имя: ${name}`,
@@ -168,11 +180,21 @@ serve(async (req) => {
       })
 
       if (!res.ok) {
-        console.error(`Telegram notify failed: ${res.status} ${await res.text()}`)
+        notifyError = `telegram_http_${res.status}`
+        console.error(`Telegram notify failed: ${res.status}`)
       }
     }
-  } catch (notifyError) {
-    console.error('Telegram notify error:', notifyError instanceof Error ? notifyError.message : notifyError)
+  } catch (_notifyError) {
+    notifyError = 'telegram_request_failed'
+    console.error('Telegram notify error')
+  }
+
+  if (notifyError) {
+    const { error: flagError } = await supabaseAdmin
+      .from('contact_submissions')
+      .update({ notify_failed: true, notify_error: notifyError })
+      .eq('id', submission.id)
+    if (flagError) console.error('Failed to flag notify_failed:', flagError.message)
   }
 
   return new Response(
