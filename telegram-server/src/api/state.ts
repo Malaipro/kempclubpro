@@ -731,10 +731,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    if (profile.participant_status !== 'club_resident') {
-      res.json({ ok: true, data: { challenges: [], entries: [], not_eligible: true } });
-      return;
-    }
+    // Таргетинг: фильтруем челленджи по статусу и тегам участника
+    // target_statuses = null означает "для всех"
 
     const [chRes, entRes] = await Promise.all([
       supabase.from('challenges').select('id, name, description, prize_description, start_date, end_date, max_per_day, is_active').eq('is_active', true).order('created_at', { ascending: false }),
@@ -768,10 +766,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    if (profile.participant_status !== 'club_resident') {
-      res.status(403).json({ ok: false, error: 'Только для резидентов' });
-      return;
-    }
+    // Доступ к челленджам для всех связанных участников
 
     const { data, error } = await supabase.rpc('server_challenge_checkin', {
       p_user_id: profile.user_id,
