@@ -20,7 +20,9 @@ import {
   BookOpen,
   Inbox,
   Gift,
-  UserPlus
+  UserPlus,
+  Trophy
+
 
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
