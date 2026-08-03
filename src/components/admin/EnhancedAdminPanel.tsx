@@ -165,7 +165,15 @@ const adminTabs: TabConfig[] = [
     description: 'Реферальные заявки и настройки бонусов',
     requiresSuperAdmin: true
   },
+  {
+    id: 'challenges',
+    label: 'Челленджи',
+    icon: Trophy,
+    description: 'Челленджи, результаты и рассылки',
+    requiresSuperAdmin: true
+  },
   { 
+
     id: 'broadcasts', 
     label: 'Рассылки', 
     icon: Megaphone,
