@@ -59,7 +59,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     activity_type, text, ascetic_id, assignment_id, content, file_url,
     file_name, file_base64, weight, height, birth_date,
     entry_date, day_type, emotions, answers,
-    reward_id, comment,
+    reward_id, comment, challenge_id,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -84,6 +84,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     emotions?: Array<{ name: string; intensity: number }>;
     answers?: Array<{ prompt_id: string; text: string }>;
     reward_id?: string;
+    challenge_id?: string;
     comment?: string;
   };
 
@@ -714,6 +715,81 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, data: { request_id: data } });
+    return;
+  }
+
+
+  if (action === 'get_challenges') {
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('user_id, participant_status, referral_code')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (profileErr || !profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    if (profile.participant_status !== 'club_resident') {
+      res.json({ ok: true, data: { challenges: [], entries: [], not_eligible: true } });
+      return;
+    }
+
+    const [chRes, entRes] = await Promise.all([
+      supabase.from('challenges').select('id, name, description, prize_description, start_date, end_date, max_per_day, is_active').eq('is_active', true).order('created_at', { ascending: false }),
+      supabase.from('challenge_entries').select('id, challenge_id, entry_date, created_at').eq('user_id', profile.user_id).order('entry_date', { ascending: false }),
+    ]);
+
+    if (chRes.error || entRes.error) {
+      console.error('[state/get_challenges] error:', chRes.error?.message, entRes.error?.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, data: { challenges: chRes.data || [], entries: entRes.data || [], referral_code: profile.referral_code || null } });
+    return;
+  }
+
+  if (action === 'challenge_checkin') {
+    if (!challenge_id || typeof challenge_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_challenge_id' });
+      return;
+    }
+
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('user_id, participant_status')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (profileErr || !profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    if (profile.participant_status !== 'club_resident') {
+      res.status(403).json({ ok: false, error: 'Только для резидентов' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_challenge_checkin', {
+      p_user_id: profile.user_id,
+      p_challenge_id: challenge_id,
+    });
+
+    if (error) {
+      console.error('[state/challenge_checkin] RPC error:', error.message);
+      res.status(400).json({ ok: false, error: error.message });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error || 'checkin_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
     return;
   }
 

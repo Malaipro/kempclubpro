@@ -274,6 +274,12 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             onClick={() => onNavigate('journal')}
           />
           <SectionCard
+          <SectionCard
+            icon={<Trophy className="w-5 h-5" />}
+            label="Челлендж"
+            active={activeSection === 'challenges'}
+            onClick={() => onNavigate('challenges')}
+          />
             icon={<ShoppingBag className="w-5 h-5" />}
             label="Магазин"
             active={activeSection === 'shop'}
