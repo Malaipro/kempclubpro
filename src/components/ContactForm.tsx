@@ -36,18 +36,20 @@ export const ContactForm: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [social, setSocial] = useState('');
   const [message, setMessage] = useState('');
-  const [website, setWebsite] = useState(''); // honeypot
+  const [hpField, setHpField] = useState(''); // honeypot
   const [refCode, setRefCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [utmData, setUtmData] = useState<UtmData | null>(null);
 
   useEffect(() => {
+    // Порядок важен: сначала фиксируем метки из URL, затем читаем сохранённые
     captureRefFromUrl();
     captureUtmFromUrl();
     setRefCode(getStoredRefCode());
     setUtmData(getStoredUtm());
   }, []);
+
 
   useEffect(() => {
     const fetchActiveStream = async () => {
