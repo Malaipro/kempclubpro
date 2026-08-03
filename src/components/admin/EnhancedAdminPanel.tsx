@@ -20,7 +20,9 @@ import {
   BookOpen,
   Inbox,
   Gift,
-  UserPlus
+  UserPlus,
+  Trophy
+
 
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
@@ -47,6 +49,7 @@ import { JournalManagement } from '@/components/admin/JournalManagement';
 import { ApplicationsManagement } from '@/components/admin/ApplicationsManagement';
 import { RewardsManagement } from '@/components/admin/RewardsManagement';
 import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
+import { ChallengesManagement } from '@/components/admin/ChallengesManagement';
 
 
 interface TabConfig {
@@ -162,7 +165,15 @@ const adminTabs: TabConfig[] = [
     description: 'Реферальные заявки и настройки бонусов',
     requiresSuperAdmin: true
   },
+  {
+    id: 'challenges',
+    label: 'Челленджи',
+    icon: Trophy,
+    description: 'Челленджи, результаты и рассылки',
+    requiresSuperAdmin: true
+  },
   { 
+
     id: 'broadcasts', 
     label: 'Рассылки', 
     icon: Megaphone,
@@ -265,6 +276,9 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <RewardsManagement />;
       case 'referrals':
         return <ReferralsManagement />;
+      case 'challenges':
+        return <ChallengesManagement />;
+
       case 'broadcasts':
         return <BroadcastManagement />;
 

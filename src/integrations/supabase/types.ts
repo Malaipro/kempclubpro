@@ -496,6 +496,8 @@ export type Database = {
           prize_description: string | null
           requirements: Json | null
           start_date: string | null
+          target_statuses: Json | null
+          target_tag_ids: Json | null
         }
         Insert: {
           challenge_type: string
@@ -511,6 +513,8 @@ export type Database = {
           prize_description?: string | null
           requirements?: Json | null
           start_date?: string | null
+          target_statuses?: Json | null
+          target_tag_ids?: Json | null
         }
         Update: {
           challenge_type?: string
@@ -526,6 +530,8 @@ export type Database = {
           prize_description?: string | null
           requirements?: Json | null
           start_date?: string | null
+          target_statuses?: Json | null
+          target_tag_ids?: Json | null
         }
         Relationships: []
       }
