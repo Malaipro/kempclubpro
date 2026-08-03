@@ -233,19 +233,20 @@ export const ContactForm: React.FC = () => {
                     />
                   </div>
 
-                  {/* honeypot: visually hidden, но не display:none */}
+                  {/* honeypot: нейтральное имя, скрыто от людей и автозаполнения */}
                   <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
-                    <label>
-                      Ваш сайт
-                      <input
-                        type="text"
-                        tabIndex={-1}
-                        autoComplete="off"
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                      />
-                    </label>
+                    <input
+                      type="text"
+                      name="hp_field"
+                      id="hp_field"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      autoComplete="off"
+                      value={hpField}
+                      onChange={(e) => setHpField(e.target.value)}
+                    />
                   </div>
+
 
                   {refCode && (
                     <p className="text-xs text-kamp-accent">Заявка отправлена по приглашению · код: {refCode}</p>
