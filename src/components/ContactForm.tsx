@@ -98,6 +98,10 @@ export const ContactForm: React.FC = () => {
 
     setSubmitting(true);
     try {
+      // Перечитываем метки прямо перед отправкой — на случай, если пользователь
+      // зашёл по ссылке с UTM уже после монтирования компонента
+      const attribution = getStoredUtm() || utmData || undefined;
+
       const res = await fetch(SUBMIT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,32 +111,45 @@ export const ContactForm: React.FC = () => {
           social: social.trim() || undefined,
           message: message.trim() || undefined,
           ref_code: refCode || undefined,
-          utm_data: utmData || undefined,
-          website, // honeypot
+          utm_data: attribution,
+          hp_field: hpField, // honeypot
         }),
       });
 
       if (res.status === 429) {
-        toast.error('Слишком много попыток. Попробуйте позже.');
+        toast.error('Слишком много попыток. Попробуйте позже или напишите нам напрямую: t.me/Dmitriy116');
         return;
       }
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        toast.error(body?.error === 'name_and_phone_required'
-          ? 'Заполните имя и телефон'
-          : 'Не удалось отправить заявку. Попробуйте позже.');
+
+      const body = await res.json().catch(() => ({} as { id?: string; error?: string }));
+
+      // Успех только при res.ok && наличии id созданной заявки
+      if (!res.ok || !body?.id) {
+        toast.error(
+          body?.error === 'name_and_phone_required'
+            ? 'Заполните имя и телефон'
+            : 'Заявка не сохранилась. Напишите нам напрямую: t.me/Dmitriy116'
+        );
         return;
       }
+
       setSuccess(true);
       setName(''); setPhone(''); setSocial(''); setMessage('');
       toast.success('Заявка принята. Свяжемся в ближайшее время.');
+
+      // Цель Яндекс.Метрики — только после подтверждённой записи в БД
+      try {
+        (window as unknown as { ym?: (id: number, action: string, goal: string) => void })
+          .ym?.(105195673, 'reachGoal', 'kemp_application_success');
+      } catch { /* noop */ }
     } catch (err) {
       console.error(err);
-      toast.error('Ошибка сети. Проверьте соединение.');
+      toast.error('Ошибка сети. Проверьте соединение или напишите нам: t.me/Dmitriy116');
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const effectiveDate = FIXED_TARGET_DATE;
   const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
