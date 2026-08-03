@@ -1,4 +1,4 @@
-// Захват UTM-меток и yclid из URL в localStorage с TTL 30 дней.
+// Захват UTM-меток, yclid и атрибуции (referrer / landing_page) в localStorage с TTL 30 дней.
 // Стратегия: Last non-empty — при новом заходе непустые значения перезаписывают старые,
 // пустые/отсутствующие параметры сохраняют предыдущее значение.
 const KEY = 'kemp_utm';
@@ -14,7 +14,7 @@ const TRACKED_KEYS = [
 ] as const;
 
 type TrackedKey = typeof TRACKED_KEYS[number];
-export type UtmData = Partial<Record<TrackedKey, string>>;
+export type UtmData = Partial<Record<TrackedKey | 'referrer' | 'landing_page', string>>;
 
 interface Stored {
   data: UtmData;
@@ -39,6 +39,8 @@ const readStored = (): Stored | null => {
   }
 };
 
+const clip = (v: string) => v.trim().slice(0, 500);
+
 export const captureUtmFromUrl = () => {
   if (typeof window === 'undefined') return;
   try {
@@ -46,12 +48,27 @@ export const captureUtmFromUrl = () => {
     const incoming: UtmData = {};
     for (const key of TRACKED_KEYS) {
       const v = params.get(key);
-      if (v && v.trim()) incoming[key] = v.trim().slice(0, 255);
+      if (v && v.trim()) incoming[key] = clip(v).slice(0, 255);
     }
+
+    const prev = readStored();
+
+    // Атрибуция первого касания: referrer и страница входа фиксируются один раз
+    // (или обновляются вместе с новыми непустыми utm-метками).
+    const hasNewUtm = Object.keys(incoming).length > 0;
+    const referrer = document.referrer && !document.referrer.includes(window.location.host)
+      ? clip(document.referrer)
+      : '';
+    const landing = clip(window.location.href);
+
+    if (hasNewUtm || !prev?.data?.landing_page) {
+      if (referrer) incoming.referrer = referrer;
+      incoming.landing_page = landing;
+    }
+
     if (Object.keys(incoming).length === 0) return;
 
     const now = Date.now();
-    const prev = readStored();
     const merged: UtmData = { ...(prev?.data ?? {}), ...incoming };
 
     const payload: Stored = {
