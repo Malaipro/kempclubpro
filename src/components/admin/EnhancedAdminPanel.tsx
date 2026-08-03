@@ -276,6 +276,9 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <RewardsManagement />;
       case 'referrals':
         return <ReferralsManagement />;
+      case 'challenges':
+        return <ChallengesManagement />;
+
       case 'broadcasts':
         return <BroadcastManagement />;
 
