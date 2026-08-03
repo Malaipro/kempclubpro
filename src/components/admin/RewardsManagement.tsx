@@ -380,7 +380,7 @@ export const RewardsManagement: React.FC = () => {
                   type="number"
                   min={0}
                   value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value.replace(/^0+(?=\d)/, '') })}
                 />
               </div>
             </div>
@@ -389,10 +389,14 @@ export const RewardsManagement: React.FC = () => {
                 <Label>Порядок</Label>
                 <Input
                   type="number"
-                  value={form.sort_order}
-                  onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+                  value={String(form.sort_order)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/^0+(?=\d)/, '');
+                    setForm({ ...form, sort_order: raw === '' ? 0 : Number(raw) });
+                  }}
                 />
               </div>
+
               <div className="flex items-center gap-2 pt-6">
                 <Switch
                   checked={form.is_active}
