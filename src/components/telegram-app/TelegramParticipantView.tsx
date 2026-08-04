@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
-  Salad, ScrollText, ShieldCheck, Home, Flame, Pyramid,
+  Salad, Home, Flame, Pyramid,
   NotebookPen, Share2, ShoppingBag,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
