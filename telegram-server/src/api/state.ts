@@ -788,6 +788,44 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'cancel_booking') {
+    if (!schedule_id || typeof schedule_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_schedule_id' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_unregister_from_event', {
+      p_user_id: profile.user_id,
+      p_schedule_id: schedule_id,
+    });
+
+    if (error) {
+      console.error('[state/cancel_booking] RPC error:', error.message);
+      res.status(400).json({ ok: false, error: error.message });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error || 'cancel_failed' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
