@@ -261,7 +261,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           )}
 
           {status === 'intensive_active' && (
-            -            <SectionCard
+            <SectionCard
               icon={<BarChart2 className="w-5 h-5" />}
               label="Рейтинг"
               active={activeSection === 'rating'}
