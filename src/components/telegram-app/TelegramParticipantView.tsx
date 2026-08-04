@@ -225,69 +225,90 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
             active={activeSection === 'home'}
             onClick={() => onNavigate('home')}
           />
-          <SectionCard
-            icon={<Activity className="w-5 h-5" />}
-            label="Отметки"
-            active={activeSection === 'activities'}
-            onClick={() => onNavigate('activities')}
-          />
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<Activity className="w-5 h-5" />}
+              label="Отметки"
+              active={activeSection === 'activities'}
+              onClick={() => onNavigate('activities')}
+            />
+          )}
+
           <SectionCard
             icon={<Calendar className="w-5 h-5" />}
             label="Расписание"
             active={activeSection === 'schedule'}
             onClick={() => onNavigate('schedule')}
           />
-          <SectionCard
-            icon={<Flame className="w-5 h-5" />}
-            label="Аскезы"
-            active={activeSection === 'ascetics'}
-            onClick={() => onNavigate('ascetics')}
-          />
-          <SectionCard
-            icon={<ClipboardList className="w-5 h-5" />}
-            label="ДЗ"
-            active={activeSection === 'homework'}
-            onClick={() => onNavigate('homework')}
-          />
-          <SectionCard
-            icon={<BarChart2 className="w-5 h-5" />}
-            label="Рейтинг"
-            active={activeSection === 'rating'}
-            onClick={() => onNavigate('rating')}
-          />
-          <SectionCard
-            icon={<Salad className="w-5 h-5" />}
-            label="Нутрициолог"
-            active={activeSection === 'nutrition'}
-            onClick={() => onNavigate('nutrition')}
-          />
-          <SectionCard
-            icon={<Pyramid className="w-5 h-5" />}
-            label="Пирамида КЭМП"
-            active={activeSection === 'pyramid'}
-            onClick={() => onNavigate('pyramid')}
-          />
-          <SectionCard
-            icon={<NotebookPen className="w-5 h-5" />}
-            label="Ежедневник"
-            active={activeSection === 'journal'}
-            onClick={() => onNavigate('journal')}
-          />
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<Flame className="w-5 h-5" />}
+              label="Аскезы"
+              active={activeSection === 'ascetics'}
+              onClick={() => onNavigate('ascetics')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<ClipboardList className="w-5 h-5" />}
+              label="ДЗ"
+              active={activeSection === 'homework'}
+              onClick={() => onNavigate('homework')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            -            <SectionCard
+              icon={<BarChart2 className="w-5 h-5" />}
+              label="Рейтинг"
+              active={activeSection === 'rating'}
+              onClick={() => onNavigate('rating')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<Salad className="w-5 h-5" />}
+              label="Нутрициолог"
+              active={activeSection === 'nutrition'}
+              onClick={() => onNavigate('nutrition')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<Pyramid className="w-5 h-5" />}
+              label="Пирамида КЭМП"
+              active={activeSection === 'pyramid'}
+              onClick={() => onNavigate('pyramid')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<NotebookPen className="w-5 h-5" />}
+              label="Ежедневник"
+              active={activeSection === 'journal'}
+              onClick={() => onNavigate('journal')}
+            />
+          )}
+
           <SectionCard
             icon={<Trophy className="w-5 h-5" />}
             label="Челлендж"
             active={activeSection === 'challenges'}
             onClick={() => onNavigate('challenges')}
           />
+
           <SectionCard
             icon={<ShoppingBag className="w-5 h-5" />}
             label="Магазин"
             active={activeSection === 'shop'}
             onClick={() => onNavigate('shop')}
           />
-
-          <SectionCard icon={<ScrollText className="w-5 h-5" />} label="Правила" />
-          <SectionCard icon={<ShieldCheck className="w-5 h-5" />} label="Админ" />
         </div>
       </div>
 
