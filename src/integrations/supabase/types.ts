@@ -3477,6 +3477,14 @@ export type Database = {
         }
         Returns: string
       }
+      server_register_for_event: {
+        Args: { p_schedule_id: string; p_user_id: string }
+        Returns: Json
+      }
+      server_unregister_from_event: {
+        Args: { p_schedule_id: string; p_user_id: string }
+        Returns: Json
+      }
       submit_homework:
         | {
             Args: {

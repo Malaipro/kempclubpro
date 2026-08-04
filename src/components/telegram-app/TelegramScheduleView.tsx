@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Clock, MapPin, User, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,13 +83,28 @@ function getActivityColorKey(activityType: string, title: string): ActivityColor
 interface BookingStatusProps {
   booked: boolean;
   isFull: boolean;
+  scheduleId: string;
+  onBook: (id: string) => void;
+  onCancel: (id: string) => void;
+  loading: boolean;
 }
 
-const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull }) => {
+const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull, scheduleId, onBook, onCancel, loading }) => {
   if (booked) {
     return (
-      <div className="mt-3 rounded-lg bg-green-600/10 border border-green-600/25 px-3 py-1.5 text-center">
-        <span className="text-xs font-semibold text-green-500">Вы записаны</span>
+      <div className="mt-3 space-y-2">
+        <div className="rounded-lg bg-green-600/10 border border-green-600/25 px-3 py-1.5 text-center">
+          <span className="text-xs font-semibold text-green-500">Вы записаны</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-destructive hover:text-destructive"
+          disabled={loading}
+          onClick={() => onCancel(scheduleId)}
+        >
+          {loading ? 'Отменяю...' : 'Отменить запись'}
+        </Button>
       </div>
     );
   }
@@ -102,13 +117,23 @@ const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull }) => {
     );
   }
 
-  return null;
+  return (
+    <Button
+      size="sm"
+      className="mt-3 w-full bg-kamp-primary hover:bg-kamp-primary/90"
+      disabled={loading}
+      onClick={() => onBook(scheduleId)}
+    >
+      {loading ? 'Записываю...' : 'Записаться'}
+    </Button>
+  );
 };
 
 // ---------- View ----------
 
 export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -123,31 +148,71 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
   }, [onBack]);
 
   // Загрузка расписания
-  useEffect(() => {
+  const fetchSchedule = useCallback(async () => {
     const initData = window.Telegram?.WebApp?.initData;
     if (!initData) {
       setLoadState({ status: 'error', message: 'Нет доступа к Telegram WebApp' });
       return;
     }
 
-    fetch(`${SERVER_URL}/api/state`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData, action: 'get_schedule' }),
-    })
-      .then(async (res) => {
-        const body = await res.json() as { ok: boolean; data?: ScheduleResponse; error?: string };
-        if (!body.ok) throw new Error(body.error ?? 'rpc_error');
-        return body.data!;
-      })
-      .then((data) => {
-        setLoadState({ status: 'ok', data });
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Ошибка загрузки';
-        setLoadState({ status: 'error', message: msg });
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, action: 'get_schedule' }),
       });
+      const body = await res.json() as { ok: boolean; data?: ScheduleResponse; error?: string };
+      if (!body.ok) throw new Error(body.error ?? 'rpc_error');
+      setLoadState({ status: 'ok', data: body.data! });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ошибка загрузки';
+      setLoadState({ status: 'error', message: msg });
+    }
   }, []);
+
+  useEffect(() => { fetchSchedule(); }, [fetchSchedule]);
+
+  const handleBook = async (scheduleId: string) => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setBookingId(scheduleId);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, action: 'book_session', schedule_id: scheduleId }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка записи');
+      await fetchSchedule();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Ошибка записи');
+    } finally {
+      setBookingId(null);
+    }
+  };
+
+  const handleCancel = async (scheduleId: string) => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setBookingId(scheduleId);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, action: 'cancel_booking', schedule_id: scheduleId }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка отмены');
+      await fetchSchedule();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Ошибка отмены');
+    } finally {
+      setBookingId(null);
+    }
+  };
+
+
 
   // ---------- Render: loading ----------
   if (loadState.status === 'loading') {
@@ -263,7 +328,14 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                             </p>
                           )}
 
-                          <BookingStatus booked={item.booked} isFull={isFull} />
+                          <BookingStatus
+                            booked={item.booked}
+                            isFull={isFull}
+                            scheduleId={item.id}
+                            onBook={handleBook}
+                            onCancel={handleCancel}
+                            loading={bookingId === item.id}
+                          />
 
                         </CardContent>
                       </Card>
