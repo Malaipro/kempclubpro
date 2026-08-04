@@ -69,8 +69,8 @@ export const TelegramChallengesView: React.FC<Props> = ({ onBack }) => {
   const handleShare = () => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.openTelegramLink && referralCode) {
-      const text = 'Присоединяйся к КЭМП — мужскому клубу, где меняют себя через дисциплину и тренировки. Мой реферальный код: ' + referralCode;
-      const url = 'https://t.me/kempclub_bot?start=' + referralCode;
+      const text = 'Присоединяйся к КЭМП — мужскому клубу эффективного мужского прогресса. Запишись на интенсив по ссылке: ' + referralCode;
+      const url = 'https://kempclub.pro/join?ref=' + referralCode;
       tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
     }
   };

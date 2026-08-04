@@ -109,14 +109,14 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
   const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
 
   const referralCode = profile?.referral_code;
-  const referralLink = referralCode ? `https://t.me/${BOT_USERNAME}?start=${referralCode}` : null;
+  const referralLink = referralCode ? `https://kempclub.pro/join?ref=${referralCode}` : null;
 
   const handleShareReferral = () => {
     if (!referralLink) return;
 
     const webapp = window.Telegram?.WebApp;
     if (webapp) {
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к КЭМП!')}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся к КЭМП — мужскому клубу эффективного мужского прогресса. Запишись на интенсив:')}`;
       webapp.openTelegramLink(shareUrl);
     } else {
       navigator.clipboard.writeText(referralLink).catch(() => {});
