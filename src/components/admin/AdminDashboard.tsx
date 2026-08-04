@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone, Tag } from 'lucide-react';
+import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone, Tag, Trophy } from 'lucide-react';
+import { ChallengesManagement } from './ChallengesManagement';
 import { TagsManagement } from './TagsManagement';
 import { BroadcastManagement } from './BroadcastManagement';
 import { JournalManagement } from './JournalManagement';
@@ -156,10 +157,16 @@ export const AdminDashboard: React.FC = () => {
               <span className="whitespace-nowrap">Рассылки</span>
             </TabsTrigger>
 
+            <TabsTrigger value="challenges" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Trophy className="w-4 h-4" />
+              <span className="whitespace-nowrap">Челленджи</span>
+            </TabsTrigger>
+
             <TabsTrigger value="tags" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Tag className="w-4 h-4" />
               <span className="whitespace-nowrap">Теги</span>
             </TabsTrigger>
+
           </TabsList>
         </div>
 
@@ -264,9 +271,14 @@ export const AdminDashboard: React.FC = () => {
           <BroadcastManagement />
         </TabsContent>
 
+        <TabsContent value="challenges" className="mt-0">
+          <ChallengesManagement />
+        </TabsContent>
+
         <TabsContent value="tags" className="mt-0">
           <TagsManagement />
         </TabsContent>
+
       </Tabs>
     </div>;
 };
