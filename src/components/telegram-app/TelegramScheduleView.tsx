@@ -133,6 +133,7 @@ const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull, scheduleI
 
 export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
