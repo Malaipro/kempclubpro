@@ -328,7 +328,14 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                             </p>
                           )}
 
-                          <BookingStatus booked={item.booked} isFull={isFull} />
+                          <BookingStatus
+                            booked={item.booked}
+                            isFull={isFull}
+                            scheduleId={item.id}
+                            onBook={handleBook}
+                            onCancel={handleCancel}
+                            loading={bookingId === item.id}
+                          />
 
                         </CardContent>
                       </Card>
