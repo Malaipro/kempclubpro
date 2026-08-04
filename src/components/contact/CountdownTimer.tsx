@@ -67,7 +67,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) =>
 
   useEffect(() => {
     // Use provided targetDate, fetched streamStartDate, or fallback to default date
-    const calculatedTargetDate = targetDate || streamStartDate || new Date('2025-11-08T00:00:00');
+    const calculatedTargetDate = targetDate || streamStartDate || new Date('2026-08-24T00:00:00');
     
     const interval = setInterval(() => {
       const now = new Date();
