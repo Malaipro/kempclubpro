@@ -233,6 +233,85 @@ export type Database = {
         }
         Relationships: []
       }
+      application_notes: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: string
+          note: string
+          submission_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          note: string
+          submission_id: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_notes_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "contact_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_reminders: {
+        Row: {
+          author_id: string | null
+          comment: string | null
+          created_at: string
+          done: boolean
+          id: string
+          remind_at: string
+          sent: boolean
+          sent_at: string | null
+          submission_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          comment?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          remind_at: string
+          sent?: boolean
+          sent_at?: string | null
+          submission_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          comment?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          remind_at?: string
+          sent?: boolean
+          sent_at?: string | null
+          submission_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_reminders_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "contact_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ascetic_activities: {
         Row: {
           activity_type: string
