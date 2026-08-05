@@ -11,6 +11,8 @@ import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, Chec
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { ApplicationFollowUp } from './ApplicationFollowUp';
+
 
 type Status = 'new' | 'contacted' | 'enrolled' | 'rejected';
 
@@ -243,10 +245,11 @@ export const ApplicationsManagement: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4 mr-1" />Удалить
                         </Button>
-
                       </div>
                     </div>
+                    <ApplicationFollowUp submissionId={s.id} />
                   </div>
+
                 );
               })}
             </div>
