@@ -324,8 +324,12 @@ export const ReferralsManagement: React.FC = () => {
               <Input
                 type="number"
                 min={0}
-                value={bonusAmount}
-                onChange={e => setBonusAmount(parseInt(e.target.value) || 0)}
+                inputMode="numeric"
+                value={String(bonusAmount)}
+                onChange={e => {
+                  const cleaned = e.target.value.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '');
+                  setBonusAmount(cleaned === '' ? 0 : parseInt(cleaned, 10));
+                }}
                 className="bg-black/40 border-kamp-gray text-white mt-1"
               />
             </div>
