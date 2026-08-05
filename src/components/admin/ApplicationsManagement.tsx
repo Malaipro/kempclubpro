@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -127,6 +127,19 @@ export const ApplicationsManagement: React.FC = () => {
     onError: (e: any) => toast.error(e?.message || 'Не удалось обновить статус'),
   });
 
+  const removeSubmission = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Заявка удалена');
+      qc.invalidateQueries({ queryKey: ['contact_submissions'] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Не удалось удалить заявку'),
+  });
+
+
   return (
     <div className="space-y-6">
       {/* Счётчики */}
@@ -217,6 +230,20 @@ export const ApplicationsManagement: React.FC = () => {
                             <UserCheck className="w-4 h-4 mr-1" />Зачислить
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          disabled={removeSubmission.isPending}
+                          onClick={() => {
+                            if (window.confirm(`Удалить заявку «${s.name}»? Действие необратимо.`)) {
+                              removeSubmission.mutate(s.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />Удалить
+                        </Button>
+
                       </div>
                     </div>
                   </div>
