@@ -251,13 +251,14 @@ export const RewardsManagement: React.FC = () => {
                         <ImageIcon className="w-8 h-8 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">{r.title}</h3>
-                      <Badge variant="secondary" className="flex items-center gap-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-card-foreground break-words flex-1 min-w-0">{r.title}</h3>
+                      <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
                         <Coins className="w-3 h-3" />
                         {r.cost_coins}
                       </Badge>
                     </div>
+
                     {r.description && <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>}
                     <div className="text-xs text-muted-foreground">
                       Остаток: {r.stock ?? '∞'} · {r.is_active ? 'Активна' : 'Скрыта'}
