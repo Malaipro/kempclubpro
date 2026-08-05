@@ -11,6 +11,8 @@ import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, Chec
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { ApplicationFollowUp } from './ApplicationFollowUp';
+
 
 type Status = 'new' | 'contacted' | 'enrolled' | 'rejected';
 
