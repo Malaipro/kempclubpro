@@ -243,10 +243,11 @@ export const ApplicationsManagement: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4 mr-1" />Удалить
                         </Button>
-
                       </div>
                     </div>
+                    <ApplicationFollowUp submissionId={s.id} />
                   </div>
+
                 );
               })}
             </div>
