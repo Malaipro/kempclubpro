@@ -169,23 +169,63 @@ export const Auth: React.FC = () => {
             </CardHeader>
             
             <CardContent>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={mode === 'phone' ? 'default' : 'outline'}
+                  onClick={() => { setMode('phone'); setFormErrors({}); }}
+                  className="w-full"
+                >
+                  По телефону
+                </Button>
+                <Button
+                  type="button"
+                  variant={mode === 'email' ? 'default' : 'outline'}
+                  onClick={() => { setMode('email'); setFormErrors({}); }}
+                  className="w-full"
+                >
+                  По email
+                </Button>
+              </div>
+
               <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email" className="text-muted-foreground">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    maxLength={254}
-                    className={`kamp-input ${formErrors.email ? 'border-red-500' : ''}`}
-                  />
-                  {formErrors.email && (
-                    <p className="text-red-400 text-xs mt-1">{formErrors.email}</p>
-                  )}
-                </div>
+                {mode === 'phone' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="login-phone" className="text-muted-foreground">Телефон</Label>
+                    <Input
+                      id="login-phone"
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="+7XXXXXXXXXX"
+                      value={loginPhone}
+                      onChange={(e) => setLoginPhone(formatPhoneRu(e.target.value))}
+                      required
+                      maxLength={12}
+                      className={`kamp-input ${formErrors.phone ? 'border-red-500' : ''}`}
+                    />
+                    {formErrors.phone && (
+                      <p className="text-red-400 text-xs mt-1">{formErrors.phone}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email" className="text-muted-foreground">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      maxLength={254}
+                      className={`kamp-input ${formErrors.email ? 'border-red-500' : ''}`}
+                    />
+                    {formErrors.email && (
+                      <p className="text-red-400 text-xs mt-1">{formErrors.email}</p>
+                    )}
+                  </div>
+                )}
+
                 
                 <div className="space-y-2">
                   <Label htmlFor="login-password" className="text-muted-foreground">Пароль</Label>
