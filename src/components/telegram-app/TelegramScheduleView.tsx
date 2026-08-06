@@ -43,11 +43,11 @@ interface Props {
 // ---------- Helpers ----------
 
 function fmt_time(iso: string): string {
-  return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' });
 }
 
 function fmt_date(iso: string): string {
-  return new Date(iso).toLocaleDateString('ru-RU', {
+  return new Date(iso).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow',
     weekday: 'long', day: 'numeric', month: 'long',
   });
 }
