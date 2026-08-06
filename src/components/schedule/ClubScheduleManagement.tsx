@@ -349,6 +349,7 @@ export const ClubScheduleManagement: React.FC = () => {
     if (activity.includes('Кикбоксинг')) return 'bg-red-100 text-red-800';
     if (activity.includes('Встреча')) return 'bg-green-100 text-green-800';
     if (activity.includes('Баня')) return 'bg-orange-100 text-orange-800';
+    if (activity.includes('Мастермайнд')) return 'bg-indigo-100 text-indigo-800';
     return 'bg-gray-100 text-gray-800';
   };
 
@@ -475,6 +476,7 @@ export const ClubScheduleManagement: React.FC = () => {
                       <SelectItem value="Баня">Баня</SelectItem>
                       <SelectItem value="Совместный ужин">Совместный ужин</SelectItem>
                       <SelectItem value="Мастер-класс">Мастер-класс</SelectItem>
+                      <SelectItem value="Мастермайнд">Мастермайнд</SelectItem>
                       <SelectItem value="Выезд на природу">Выезд на природу</SelectItem>
                       <SelectItem value="Семейное мероприятие">Семейное мероприятие</SelectItem>
                       <SelectItem value="Выездное мероприятие">Выездное мероприятие</SelectItem>
