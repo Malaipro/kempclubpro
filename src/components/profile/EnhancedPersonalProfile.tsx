@@ -732,7 +732,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                         <p><span className="text-muted-foreground">Отчество:</span> {profile?.middle_name || 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Дата рождения:</span> {profile?.date_of_birth ? format(new Date(profile.date_of_birth), "dd.MM.yyyy") : 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Телефон:</span> {profile?.phone || 'Не указан'}</p>
-                        <p><span className="text-muted-foreground">E-mail:</span> {profile?.email || user?.email || 'Не указан'}</p>
+                        
                         <p><span className="text-muted-foreground">Telegram:</span> {profile?.telegram || 'Не указан'}</p>
                       </div>
                     </div>
