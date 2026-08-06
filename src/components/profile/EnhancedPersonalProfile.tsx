@@ -534,23 +534,16 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     <div>
                       <Label>Телефон *</Label>
                       <Input
+                        type="tel"
+                        inputMode="tel"
                         value={profileForm.phone}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="+7 (999) 123-45-67"
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                        placeholder="+79991234567"
                       />
                     </div>
                   </div>
 
                   <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label>E-mail</Label>
-                      <Input
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="example@mail.ru"
-                      />
-                    </div>
                     <div>
                       <Label>Telegram</Label>
                       <Input
