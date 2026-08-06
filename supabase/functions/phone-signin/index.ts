@@ -20,6 +20,7 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Ошибки входа отдаём со статусом 200, чтобы клиент мог показать текст
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), {
       status,
@@ -30,12 +31,12 @@ serve(async (req) => {
     const { phone, password } = await req.json();
 
     if (typeof phone !== "string" || typeof password !== "string" || password.length < 6) {
-      return json({ error: "Введите телефон и пароль" }, 400);
+      return json({ error: "Введите телефон и пароль" });
     }
 
     const normalized = normalizePhone(phone);
     if (!normalized) {
-      return json({ error: "Введите корректный номер телефона" }, 400);
+      return json({ error: "Введите корректный номер телефона" });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -57,7 +58,7 @@ serve(async (req) => {
     );
 
     if (found.length === 0) {
-      return json({ error: "Неверный телефон или пароль" }, 400);
+      return json({ error: "Неверный телефон или пароль" });
     }
     if (found.length > 1) {
       return json(
@@ -71,7 +72,7 @@ serve(async (req) => {
     );
     const email = userData?.user?.email;
     if (userError || !email) {
-      return json({ error: "Неверный телефон или пароль" }, 400);
+      return json({ error: "Неверный телефон или пароль" });
     }
 
     const anon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "");
@@ -81,7 +82,7 @@ serve(async (req) => {
     });
 
     if (signInError || !signInData.session) {
-      return json({ error: "Неверный телефон или пароль" }, 400);
+      return json({ error: "Неверный телефон или пароль" });
     }
 
     return json({
