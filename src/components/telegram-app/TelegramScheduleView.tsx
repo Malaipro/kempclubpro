@@ -159,7 +159,7 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
       const res = await fetch(`${SERVER_URL}/api/state`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, action: 'get_schedule' }),
+        body: JSON.stringify({ initData, action: 'get_schedule', days: 90 }),
       });
       const body = await res.json() as { ok: boolean; data?: ScheduleResponse; error?: string };
       if (!body.ok) throw new Error(body.error ?? 'rpc_error');
@@ -250,7 +250,7 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
       {/* Header */}
       <div className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-1">
         <h1 className="text-white text-xl font-bold">Расписание</h1>
-        <p className="text-white/70 text-sm">Ближайшие 7 дней</p>
+        <p className="text-white/70 text-sm">Расписание</p>
       </div>
 
       <div className="px-4 pt-4">
