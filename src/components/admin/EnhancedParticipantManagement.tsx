@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ParticipantCRMBlock } from './participant/ParticipantCRMBlock';
 import { PARTICIPANT_STATUSES, getParticipantStatusMeta, type ParticipantStatus } from '@/constants/participantStatus';
 import { supabase } from '@/integrations/supabase/client';
+import { formatPhoneRu, isValidPhoneRu } from '@/lib/phoneFormat';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -210,15 +212,27 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.first_name || !formData.last_name || !formData.email) {
+
+    const normalizedPhone = formatPhoneRu(formData.phone);
+
+    if (!formData.first_name || !formData.last_name || !normalizedPhone) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните обязательные поля',
+        description: 'Заполните обязательные поля: имя, фамилия, телефон',
         variant: 'destructive',
       });
       return;
     }
+
+    if (!isValidPhoneRu(formData.phone)) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите телефон в формате +7XXXXXXXXXX',
+        variant: 'destructive',
+      });
+      return;
+    }
+
 
     try {
       if (editingParticipant) {
@@ -230,7 +244,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
             last_name: formData.last_name,
             display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' ') || null,
             email: formData.email || null,
-            phone: formData.phone || null,
+            phone: normalizedPhone,
             telegram: formData.telegram || null,
             height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
             weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
@@ -246,16 +260,21 @@ export const EnhancedParticipantManagement: React.FC = () => {
           description: 'Данные участника успешно обновлены',
         });
       } else {
+        // Email необязателен: если не указан — создаём технический адрес из телефона
+        const authEmail = formData.email?.trim()
+          || `${normalizedPhone.replace(/\D/g, '')}@kempclub.pro`;
+
         // Create new participant
         const { data, error } = await supabase.functions.invoke('create-user', {
           body: {
-            email: formData.email,
+            email: authEmail,
             password: formData.password,
             metadata: {
               first_name: formData.first_name,
               last_name: formData.last_name,
               display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' '),
-              phone: formData.phone || null,
+              profile_email: formData.email?.trim() || null,
+              phone: normalizedPhone,
               telegram: formData.telegram || null,
               height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
               weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
@@ -264,6 +283,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
              }
            }
          });
+
 
         if (error) {
           console.error('Error creating participant:', error);
@@ -760,26 +780,30 @@ export const EnhancedParticipantManagement: React.FC = () => {
               </div>
 
               <div>
-                <Label className="text-white">Электронная почта</Label>
+                <Label className="text-white">Электронная почта (необязательно)</Label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@example.com"
                   className="bg-white text-black"
-                  required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-white">Телефон</Label>
+                  <Label className="text-white">Телефон *</Label>
                   <Input
+                    type="tel"
+                    inputMode="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+7 (999) 123-45-67"
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                    placeholder="+7XXXXXXXXXX"
+                    maxLength={12}
                     className="bg-white text-black"
+                    required
                   />
+
                 </div>
                 <div>
                   <Label className="text-white">Telegram</Label>
