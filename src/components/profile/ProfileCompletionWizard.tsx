@@ -252,16 +252,7 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="example@mail.ru"
-                  />
-                </div>
+                <div className="hidden" aria-hidden="true" />
                 <div>
                   <Label htmlFor="telegram">Telegram</Label>
                   <Input
