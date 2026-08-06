@@ -255,17 +255,7 @@ export const PersonalProfile: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={profile.email || user?.email || ''}
-                onChange={handleProfileChange}
-                placeholder="example@mail.ru"
-              />
-            </div>
+            <div className="hidden" aria-hidden="true" />
 
             <div>
               <Label htmlFor="telegram">Telegram</Label>
