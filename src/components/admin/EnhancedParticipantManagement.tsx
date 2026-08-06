@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ParticipantCRMBlock } from './participant/ParticipantCRMBlock';
 import { PARTICIPANT_STATUSES, getParticipantStatusMeta, type ParticipantStatus } from '@/constants/participantStatus';
 import { supabase } from '@/integrations/supabase/client';
+import { formatPhoneRu, isValidPhoneRu } from '@/lib/phoneFormat';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
