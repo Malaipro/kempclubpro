@@ -210,15 +210,27 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.first_name || !formData.last_name || !formData.email) {
+
+    const normalizedPhone = formatPhoneRu(formData.phone);
+
+    if (!formData.first_name || !formData.last_name || !normalizedPhone) {
       toast({
         title: 'Ошибка',
-        description: 'Заполните обязательные поля',
+        description: 'Заполните обязательные поля: имя, фамилия, телефон',
         variant: 'destructive',
       });
       return;
     }
+
+    if (!isValidPhoneRu(formData.phone)) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите телефон в формате +7XXXXXXXXXX',
+        variant: 'destructive',
+      });
+      return;
+    }
+
 
     try {
       if (editingParticipant) {
