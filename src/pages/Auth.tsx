@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Layout } from '@/components/Layout';
 import { validateEmail, sanitizeInput, rateLimiter } from '@/lib/validation';
+import { formatPhoneRu, isValidPhoneRu } from '@/lib/phoneFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -15,11 +16,14 @@ export const Auth: React.FC = () => {
   const { user, signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [mode, setMode] = useState<'phone' | 'email'>('phone');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPhone, setLoginPhone] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const { toast } = useToast();
+
 
   // Where to go after login: honor a same-origin relative `next` (used by the
   // OAuth consent flow), otherwise fall back to the dashboard.
