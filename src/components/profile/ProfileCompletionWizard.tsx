@@ -244,9 +244,11 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
                   <Label htmlFor="phone">Телефон *</Label>
                   <Input
                     id="phone"
+                    type="tel"
+                    inputMode="tel"
                     value={profileData.phone}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+7 (900) 123-45-67"
+                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                    placeholder="+79001234567"
                   />
                 </div>
               </div>
