@@ -81,11 +81,15 @@ export const Auth: React.FC = () => {
     // Validate inputs
     const errors: Record<string, string> = {};
     const sanitizedEmail = sanitizeInput(loginEmail);
-    
-    if (!validateEmail(sanitizedEmail)) {
+
+    if (mode === 'email' && !validateEmail(sanitizedEmail)) {
       errors.email = 'Введите корректный email адрес';
     }
-    
+
+    if (mode === 'phone' && !isValidPhoneRu(loginPhone)) {
+      errors.phone = 'Введите номер в формате +7XXXXXXXXXX';
+    }
+
     if (!loginPassword || loginPassword.length < 6) {
       errors.password = 'Пароль должен содержать минимум 6 символов';
     }
@@ -98,17 +102,47 @@ export const Auth: React.FC = () => {
     setFormErrors({});
     setIsLoading(true);
 
+    const goNext = () => {
+      const next = resolveNext();
+      if (next.startsWith('/.')) {
+        window.location.href = next;
+      } else {
+        navigate(next);
+      }
+    };
+
     try {
+      if (mode === 'phone') {
+        const { data, error } = await supabase.functions.invoke('phone-signin', {
+          body: { phone: formatPhoneRu(loginPhone), password: loginPassword },
+        });
+
+        const payload = data as { access_token?: string; refresh_token?: string; error?: string } | null;
+
+        if (error || !payload?.access_token || !payload?.refresh_token) {
+          setFormErrors({ general: payload?.error || 'Неверный телефон или пароль' });
+          return;
+        }
+
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: payload.access_token,
+          refresh_token: payload.refresh_token,
+        });
+
+        if (sessionError) {
+          setFormErrors({ general: 'Ошибка входа. Попробуйте ещё раз.' });
+          return;
+        }
+
+        goNext();
+        return;
+      }
+
       const { error } = await signIn(sanitizedEmail, loginPassword);
       if (error) {
         setFormErrors({ general: 'Неверный email или пароль' });
       } else {
-        const next = resolveNext();
-        if (next.startsWith('/.')) {
-          window.location.href = next;
-        } else {
-          navigate(next);
-        }
+        goNext();
       }
     } catch (e) {
       setFormErrors({ general: 'Ошибка входа. Попробуйте ещё раз.' });
@@ -116,6 +150,7 @@ export const Auth: React.FC = () => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <Layout>
