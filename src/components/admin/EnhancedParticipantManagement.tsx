@@ -780,26 +780,30 @@ export const EnhancedParticipantManagement: React.FC = () => {
               </div>
 
               <div>
-                <Label className="text-white">Электронная почта</Label>
+                <Label className="text-white">Электронная почта (необязательно)</Label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="email@example.com"
                   className="bg-white text-black"
-                  required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-white">Телефон</Label>
+                  <Label className="text-white">Телефон *</Label>
                   <Input
+                    type="tel"
+                    inputMode="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+7 (999) 123-45-67"
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                    placeholder="+7XXXXXXXXXX"
+                    maxLength={12}
                     className="bg-white text-black"
+                    required
                   />
+
                 </div>
                 <div>
                   <Label className="text-white">Telegram</Label>
