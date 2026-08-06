@@ -94,7 +94,8 @@ export const PersonalProfile: React.FC = () => {
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? formatPhoneRu(value) : value;
+    setProfile(prev => ({ ...prev, [name]: nextValue }));
   };
 
   const handleContractDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
