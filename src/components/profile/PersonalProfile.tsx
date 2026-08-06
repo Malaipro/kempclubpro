@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatPhoneRu } from '@/lib/phoneFormat';
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, FileText, Shield } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
