@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatPhoneRu } from '@/lib/phoneFormat';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -534,23 +535,16 @@ export const EnhancedPersonalProfile: React.FC = () => {
                     <div>
                       <Label>Телефон *</Label>
                       <Input
+                        type="tel"
+                        inputMode="tel"
                         value={profileForm.phone}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="+7 (999) 123-45-67"
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                        placeholder="+79991234567"
                       />
                     </div>
                   </div>
 
                   <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label>E-mail</Label>
-                      <Input
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="example@mail.ru"
-                      />
-                    </div>
                     <div>
                       <Label>Telegram</Label>
                       <Input
@@ -738,7 +732,7 @@ export const EnhancedPersonalProfile: React.FC = () => {
                         <p><span className="text-muted-foreground">Отчество:</span> {profile?.middle_name || 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Дата рождения:</span> {profile?.date_of_birth ? format(new Date(profile.date_of_birth), "dd.MM.yyyy") : 'Не указано'}</p>
                         <p><span className="text-muted-foreground">Телефон:</span> {profile?.phone || 'Не указан'}</p>
-                        <p><span className="text-muted-foreground">E-mail:</span> {profile?.email || user?.email || 'Не указан'}</p>
+                        
                         <p><span className="text-muted-foreground">Telegram:</span> {profile?.telegram || 'Не указан'}</p>
                       </div>
                     </div>

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatPhoneRu } from '@/lib/phoneFormat';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -243,24 +244,17 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
                   <Label htmlFor="phone">Телефон *</Label>
                   <Input
                     id="phone"
+                    type="tel"
+                    inputMode="tel"
                     value={profileData.phone}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+7 (900) 123-45-67"
+                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: formatPhoneRu(e.target.value) }))}
+                    placeholder="+79001234567"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="example@mail.ru"
-                  />
-                </div>
+                <div className="hidden" aria-hidden="true" />
                 <div>
                   <Label htmlFor="telegram">Telegram</Label>
                   <Input

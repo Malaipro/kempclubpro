@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatPhoneRu } from '@/lib/phoneFormat';
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, FileText, Shield } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
@@ -93,7 +94,8 @@ export const PersonalProfile: React.FC = () => {
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    const nextValue = name === 'phone' ? formatPhoneRu(value) : value;
+    setProfile(prev => ({ ...prev, [name]: nextValue }));
   };
 
   const handleContractDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,17 +256,7 @@ export const PersonalProfile: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={profile.email || user?.email || ''}
-                onChange={handleProfileChange}
-                placeholder="example@mail.ru"
-              />
-            </div>
+            <div className="hidden" aria-hidden="true" />
 
             <div>
               <Label htmlFor="telegram">Telegram</Label>
