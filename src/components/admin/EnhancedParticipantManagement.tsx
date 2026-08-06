@@ -244,7 +244,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
             last_name: formData.last_name,
             display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' ') || null,
             email: formData.email || null,
-            phone: formData.phone || null,
+            phone: normalizedPhone,
             telegram: formData.telegram || null,
             height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
             weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
@@ -260,16 +260,21 @@ export const EnhancedParticipantManagement: React.FC = () => {
           description: 'Данные участника успешно обновлены',
         });
       } else {
+        // Email необязателен: если не указан — создаём технический адрес из телефона
+        const authEmail = formData.email?.trim()
+          || `${normalizedPhone.replace(/\D/g, '')}@kempclub.pro`;
+
         // Create new participant
         const { data, error } = await supabase.functions.invoke('create-user', {
           body: {
-            email: formData.email,
+            email: authEmail,
             password: formData.password,
             metadata: {
               first_name: formData.first_name,
               last_name: formData.last_name,
               display_name: [formData.first_name, formData.last_name].filter(Boolean).join(' '),
-              phone: formData.phone || null,
+              profile_email: formData.email?.trim() || null,
+              phone: normalizedPhone,
               telegram: formData.telegram || null,
               height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
               weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
@@ -278,6 +283,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
              }
            }
          });
+
 
         if (error) {
           console.error('Error creating participant:', error);
