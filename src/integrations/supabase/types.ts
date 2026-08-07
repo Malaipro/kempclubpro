@@ -1479,6 +1479,138 @@ export type Database = {
         }
         Relationships: []
       }
+      mastermind_entries: {
+        Row: {
+          admin_comment: string | null
+          created_at: string | null
+          entry_date: string
+          id: string
+          member_id: string
+          my_tasks: string | null
+          status: string | null
+          summary: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          member_id: string
+          my_tasks?: string | null
+          status?: string | null
+          summary: string
+        }
+        Update: {
+          admin_comment?: string | null
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          member_id?: string
+          my_tasks?: string | null
+          status?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_entries_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mastermind_members: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          plan: string | null
+          request: string | null
+          start_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          plan?: string | null
+          request?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          plan?: string | null
+          request?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      mastermind_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          file_url: string | null
+          id: string
+          is_completed: boolean | null
+          member_id: string
+          participant_comment: string | null
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_completed?: boolean | null
+          member_id: string
+          participant_comment?: string | null
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_completed?: boolean | null
+          member_id?: string
+          participant_comment?: string | null
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_tasks_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           available_to: string
@@ -3548,6 +3680,15 @@ export type Database = {
         Args: { p_challenge_id: string; p_user_id: string }
         Returns: Json
       }
+      server_complete_mastermind_task: {
+        Args: {
+          p_comment?: string
+          p_file_url?: string
+          p_task_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       server_create_reward_request: {
         Args: {
           p_reward_id: string
@@ -3558,6 +3699,10 @@ export type Database = {
       }
       server_register_for_event: {
         Args: { p_schedule_id: string; p_user_id: string }
+        Returns: Json
+      }
+      server_submit_mastermind_entry: {
+        Args: { p_my_tasks?: string; p_summary: string; p_user_id: string }
         Returns: Json
       }
       server_unregister_from_event: {
@@ -3626,6 +3771,12 @@ export type Database = {
           p_social?: string
         }
         Returns: boolean
+      }
+      validate_referral_code: {
+        Args: { p_code: string }
+        Returns: {
+          user_id: string
+        }[]
       }
     }
     Enums: {
