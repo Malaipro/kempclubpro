@@ -13,6 +13,7 @@ import { TelegramPyramidView } from './TelegramPyramidView';
 import { TelegramJournalView } from './TelegramJournalView';
 import { TelegramShopView } from './TelegramShopView';
 import { TelegramChallengesView } from './TelegramChallengesView';
+import { TelegramMastermindView } from './TelegramMastermindView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -20,7 +21,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges' | 'mastermind';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -130,6 +131,10 @@ export const TelegramAppShell: React.FC = () => {
   if (activeSection === 'challenges') {
     return <TelegramChallengesView onBack={() => setActiveSection('home')} />;
 
+  }
+
+  if (activeSection === 'mastermind') {
+    return <TelegramMastermindView onBack={() => setActiveSection('home')} />;
   }
 
   if (activeSection === 'journal') {

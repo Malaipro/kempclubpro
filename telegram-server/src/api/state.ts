@@ -826,6 +826,132 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'get_mastermind') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: member } = await supabase
+      .from('mastermind_members')
+      .select('id, request, plan, start_date, end_date, is_active')
+      .eq('user_id', profile.user_id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!member) {
+      res.json({ ok: true, data: { is_member: false } });
+      return;
+    }
+
+    const [tasksRes, entriesRes] = await Promise.all([
+      supabase.from('mastermind_tasks').select('*').eq('member_id', member.id).order('sort_order'),
+      supabase.from('mastermind_entries').select('*').eq('member_id', member.id).order('created_at', { ascending: false }),
+    ]);
+
+    res.json({
+      ok: true,
+      data: {
+        is_member: true,
+        member,
+        tasks: tasksRes.data || [],
+        entries: entriesRes.data || [],
+      },
+    });
+    return;
+  }
+
+  if (action === 'complete_mastermind_task') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const task_id = (req.body as any).task_id;
+    const task_comment = (req.body as any).task_comment;
+    const task_file_url = (req.body as any).task_file_url;
+
+    if (!task_id) {
+      res.status(400).json({ ok: false, error: 'missing_task_id' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_complete_mastermind_task', {
+      p_user_id: profile.user_id,
+      p_task_id: task_id,
+      p_comment: task_comment || null,
+      p_file_url: task_file_url || null,
+    });
+
+    if (error) {
+      console.error('[state/complete_mastermind_task] RPC error:', error.message);
+      res.status(400).json({ ok: false, error: error.message });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error || 'task_error' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'submit_mastermind_entry') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const summary = (req.body as any).summary;
+    const my_tasks = (req.body as any).my_tasks;
+
+    if (!summary || typeof summary !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_summary' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_submit_mastermind_entry', {
+      p_user_id: profile.user_id,
+      p_summary: summary,
+      p_my_tasks: my_tasks || null,
+    });
+
+    if (error) {
+      console.error('[state/submit_mastermind_entry] RPC error:', error.message);
+      res.status(400).json({ ok: false, error: error.message });
+      return;
+    }
+
+    if (!data?.ok) {
+      res.status(400).json({ ok: false, error: data?.error || 'entry_error' });
+      return;
+    }
+
+    res.json({ ok: true, data });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
