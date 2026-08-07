@@ -3627,6 +3627,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_referral_code: {
+        Args: { p_code: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       activity_type:
