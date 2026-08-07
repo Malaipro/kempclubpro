@@ -50,6 +50,7 @@ import { ApplicationsManagement } from '@/components/admin/ApplicationsManagemen
 import { RewardsManagement } from '@/components/admin/RewardsManagement';
 import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
 import { ChallengesManagement } from '@/components/admin/ChallengesManagement';
+import { MastermindManagement } from '@/components/admin/MastermindManagement';
 
 
 interface TabConfig {
@@ -172,6 +173,13 @@ const adminTabs: TabConfig[] = [
     description: 'Челленджи, результаты и рассылки',
     requiresSuperAdmin: true
   },
+  {
+    id: 'mastermind',
+    label: 'Мастермайнд',
+    icon: Users,
+    description: 'Участники, задачи и отчёты мастермайнда',
+    requiresSuperAdmin: true
+  },
   { 
 
     id: 'broadcasts', 
@@ -278,6 +286,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <ReferralsManagement />;
       case 'challenges':
         return <ChallengesManagement />;
+      case 'mastermind':
+        return <MastermindManagement />;
 
       case 'broadcasts':
         return <BroadcastManagement />;
