@@ -283,6 +283,11 @@ export const AdminDashboard: React.FC = () => {
           <ChallengesManagement />
         </TabsContent>
 
+        <TabsContent value="mastermind" className="mt-0">
+          <MastermindManagement />
+        </TabsContent>
+
+
         <TabsContent value="tags" className="mt-0">
           <TagsManagement />
         </TabsContent>
