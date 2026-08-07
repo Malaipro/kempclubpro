@@ -48,14 +48,12 @@ const Join: React.FC = () => {
         return;
       }
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('referral_code', ref)
-          .maybeSingle();
-        if (data?.user_id) {
+        const { data } = await (supabase as any)
+          .rpc('validate_referral_code', { p_code: ref });
+        const found = Array.isArray(data) ? data[0] : data;
+        if (found?.user_id) {
           setRefValid(true);
-          setReferrerId(data.user_id);
+          setReferrerId(found.user_id);
         } else {
           setRefValid(false);
         }
