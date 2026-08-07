@@ -49,9 +49,7 @@ const Join: React.FC = () => {
       }
       try {
         const { data } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('referral_code', ref)
+          .rpc('validate_referral_code', { p_code: ref })
           .maybeSingle();
         if (data?.user_id) {
           setRefValid(true);
