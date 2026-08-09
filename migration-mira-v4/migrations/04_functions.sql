@@ -1787,7 +1787,8 @@ CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
 AS $function$
 BEGIN
   -- v4: только собственный баланс, администратор или service_role
-  IF current_user <> 'service_role'
+  IF auth.uid() IS NOT NULL
+     AND current_user NOT IN ('service_role','postgres','supabase_admin')
      AND p_user_id IS DISTINCT FROM auth.uid()
      AND NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'access denied: own balance or admin role required';
@@ -3388,7 +3389,8 @@ CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_ne
 AS $function$
 BEGIN
   -- v4: проверка роли внутри тела (UI-скрытие кнопки не является защитой)
-  IF current_user <> 'service_role' AND NOT public.is_admin(auth.uid()) THEN
+  IF auth.uid() IS NOT NULL AND current_user NOT IN ('service_role','postgres','supabase_admin')
+     AND NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
   END IF;
 
@@ -3502,7 +3504,8 @@ DECLARE
   v_stream_id UUID;
 BEGIN
   -- v4: пересчёт разрешён только для себя, администратору или service_role
-  IF current_user <> 'service_role'
+  IF auth.uid() IS NOT NULL
+     AND current_user NOT IN ('service_role','postgres','supabase_admin')
      AND user_uuid IS DISTINCT FROM auth.uid()
      AND NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
