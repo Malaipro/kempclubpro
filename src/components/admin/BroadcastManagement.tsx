@@ -116,6 +116,7 @@ export const BroadcastManagement: React.FC = () => {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+    if (!expanded.has(id) && !responses[id]) loadResponses(id);
   };
 
   const openFile = async (path: string) => {
