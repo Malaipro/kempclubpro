@@ -1,8 +1,11 @@
--- 07_grants.sql (v3) — минимально необходимые привилегии PostgREST-ролей.
+-- 07_grants.sql (v4) — минимально необходимые привилегии PostgREST-ролей.
 -- Отличие от v2: вместо «полный доступ всем ролям на все таблицы» —
 -- матрица из TABLE_ACCESS_MATRIX.md. anon получает только то, что реально
 -- нужно публичному лендингу и форме заявки; всё остальное — authenticated,
 -- права всегда не шире, чем разрешает соответствующая RLS-политика (08).
+
+-- v4: запрещаем клиентским ролям создавать объекты в схеме public
+REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
@@ -41,7 +44,6 @@ GRANT SELECT ON public.content_blocks TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.content_blocks TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.contract_data TO authenticated;
 GRANT SELECT ON public.contracts TO authenticated;
-GRANT SELECT ON public.cooper_test_results TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.cooper_test_results TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.crash_tests TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.habit_progress TO authenticated;
@@ -71,7 +73,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_status_history TO aut
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_tags TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_tags TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
-GRANT SELECT ON public.public_profiles TO anon;
 GRANT SELECT ON public.public_profiles TO authenticated;
 GRANT SELECT ON public.public_testimonials TO anon;
 GRANT SELECT ON public.public_testimonials TO authenticated;
@@ -112,6 +113,11 @@ GRANT SELECT ON public."кэмп_активности" TO authenticated;
 GRANT SELECT ON public."тотемы_участников" TO authenticated;
 GRANT SELECT, UPDATE ON public."участники" TO authenticated;
 
+-- v4: публичные данные отдаются только через безопасные представления (06_views.sql).
+-- Таблицы public_profiles и cooper_test_results роли anon больше не выдаются.
+GRANT SELECT ON public.public_leaderboard_view TO anon, authenticated;
+GRANT SELECT ON public.public_cooper_results_view TO anon, authenticated;
+
 -- ---------------------------------------------------------------
 -- EXECUTE: по умолчанию функции недоступны клиентским ролям.
 -- ---------------------------------------------------------------
@@ -139,11 +145,6 @@ GRANT EXECUTE ON FUNCTION public.unlink_telegram_profile(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_reward_request(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.log_security_event(text, uuid, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.decrypt_phone(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_email_secure(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_secure(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_number(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_participant_name(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(uuid, integer, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_approval(uuid, boolean) TO authenticated;
@@ -155,5 +156,12 @@ GRANT EXECUTE ON FUNCTION public.review_reward_request(uuid, text, text) TO auth
 GRANT EXECUTE ON FUNCTION public.update_participant_status(uuid, participant_status_type) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(uuid, text, text, uuid, text, integer) TO authenticated;
 
+-- v4: НЕ выдаются клиентским ролям (только service_role):
+--   decrypt_phone(text)      — расшифровка телефона любого участника по строке;
+--                              см. SECURITY_NOTES.md и правку src/hooks/usePhoneDecryption.ts
+--   mask_email_secure / mask_phone_secure / mask_phone_number / mask_participant_name
+--                            — во фронтенде не вызываются, маскирование делается на сервере
+--   encrypt_phone(text)      — только серверная сторона
+--
 -- Остальные функции (RPC Telegram Mini App по p_telegram_id, server_*, cron,
 -- триггерные и служебные) вызываются только с service_role — см. FUNCTION_ACCESS_MATRIX.md.
