@@ -128,6 +128,8 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 -- anon: только то, что вызывается на публичных страницах и в RLS-предикатах anon
 GRANT EXECUTE ON FUNCTION public.validate_contact_submission(text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.validate_referral_code(text) TO anon;
+-- v4: используется в anon-политиках crash_tests / user_totems / leaderboard
+GRANT EXECUTE ON FUNCTION public.is_public_participant(uuid) TO anon;
 
 -- authenticated: вспомогательные функции RLS + RPC, вызываемые из ЛК/админки
 GRANT EXECUTE ON FUNCTION public.is_admin(uuid) TO authenticated;

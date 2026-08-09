@@ -1,4 +1,5 @@
 -- 08_rls_policies.sql (v3) — включение RLS на 80 таблицах и 194 политики.
+-- v4: см. CHANGELOG_v3_to_v4.md (Купер, public_profiles, leaderboard).
 -- Отличия от v2: политики переведены с TO public на TO authenticated везде,
 -- кроме явно публичных SELECT лендинга и INSERT формы заявки (см. RLS_REVIEW.md).
 -- Политики Мастермайнда с предикатом true заменены на проверку членства/админа.
@@ -303,20 +304,10 @@ CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_resu
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Public can view Cooper test results for club residents" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE ((public_profiles.user_id = cooper_test_results.user_id) AND (public_profiles.participant_status = 'club_resident'::participant_status_type))))));
-
-CREATE POLICY "Public can view Cooper test results for intensive active partic" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE ((public_profiles.user_id = cooper_test_results.user_id) AND (public_profiles.participant_status = 'intensive_active'::participant_status_type))))));
-
-CREATE POLICY "Public can view verified Cooper test results for visible partic" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.user_id = cooper_test_results.user_id) AND (profiles.approved = true) AND (COALESCE(profiles.leaderboard_visible, true) = true) AND (COALESCE(profiles.profile_private, false) = false))))));
+-- v4: три «публичные» политики заменены одной. Анонимный доступ к таблице снят —
+-- публичные результаты отдаются через public_cooper_results_view (06_views.sql).
+CREATE POLICY "Authenticated can view verified results of public participants" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
+  USING (((verified = true) AND is_public_participant(user_id)));
 
 CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
@@ -418,10 +409,10 @@ CREATE POLICY "Prompts viewable by authenticated" ON public.journal_prompts AS P
 CREATE POLICY "Admins can manage leaderboard" ON public.leaderboard AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Anon can view leaderboard via public_profiles" ON public.leaderboard AS PERMISSIVE FOR SELECT TO anon
-  USING ((EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE (public_profiles.user_id = leaderboard.user_id))));
+-- v4: предикат больше не читает public_profiles напрямую (anon не имеет прав на таблицу),
+-- проверка вынесена в SECURITY DEFINER-функцию is_public_participant.
+CREATE POLICY "Anon can view leaderboard of public participants" ON public.leaderboard AS PERMISSIVE FOR SELECT TO anon
+  USING (is_public_participant(user_id));
 
 CREATE POLICY "Authenticated users can view public leaderboard entries" ON public.leaderboard AS PERMISSIVE FOR SELECT TO authenticated
   USING (((EXISTS ( SELECT 1
@@ -535,7 +526,8 @@ CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISS
 CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Public can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO public
+-- v4: anon читает рейтинг только через public_leaderboard_view (без user_id, ФИО и служебных полей).
+CREATE POLICY "Authenticated can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING (true);
 
 CREATE POLICY "Public testimonials are readable by everyone" ON public.public_testimonials AS PERMISSIVE FOR SELECT TO public
