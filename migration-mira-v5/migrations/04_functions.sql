@@ -31,7 +31,7 @@ BEGIN
   VALUES (p_user_id, p_amount, trim(p_reason), 'admin_manual', auth.uid());
 
   -- Пересчёт баланса через существующую логику
-  v_new_balance := public.get_user_coin_balance(p_user_id);
+  v_new_balance := public._internal_get_user_coin_balance(p_user_id);
 
   RETURN v_new_balance;
 END;
@@ -151,7 +151,7 @@ begin
   end if;
 
   -- Recalculate leaderboard/ranks for visibility changes
-  perform public.update_user_leaderboard(p_user_id);
+  perform public._internal_update_user_leaderboard(p_user_id);
   perform public.recalculate_all_ranks();
 
   -- Audit
@@ -242,7 +242,7 @@ BEGIN
     LIMIT 1;
 
     IF v_existing IS NOT NULL THEN
-      v_balance := public.get_user_coin_balance(p_user_id);
+      v_balance := public._internal_get_user_coin_balance(p_user_id);
       RETURN jsonb_build_object(
         'awarded', false,
         'duplicate', true,
@@ -267,7 +267,7 @@ BEGIN
   )
   RETURNING id INTO v_tx_id;
 
-  v_balance := public.get_user_coin_balance(p_user_id);
+  v_balance := public._internal_get_user_coin_balance(p_user_id);
 
   RETURN jsonb_build_object(
     'awarded', true,
@@ -636,7 +636,7 @@ BEGIN
     RAISE EXCEPTION 'Награда закончилась';
   END IF;
 
-  v_balance := public.get_user_coin_balance(v_user_id);
+  v_balance := public._internal_get_user_coin_balance(v_user_id);
   IF v_balance < v_cost THEN
     RAISE EXCEPTION 'Недостаточно коинов (баланс: %, требуется: %)', v_balance, v_cost;
   END IF;
@@ -1337,7 +1337,7 @@ BEGIN
       SELECT jsonb_build_object('id', s.id, 'name', s.name, 'start_date', s.start_date, 'end_date', s.end_date)
       FROM public.intensive_streams s WHERE s.id = v_profile.current_stream_id
     ),
-    'coins_balance', public.get_user_coin_balance(p_user_id),
+    'coins_balance', public._internal_get_user_coin_balance(p_user_id),
     'total_points', COALESCE(v_profile.total_points, 0),
     'current_totem', v_current_totem,
     'totems_count', (SELECT COUNT(*) FROM public.user_totems WHERE user_id = p_user_id),
@@ -1779,26 +1779,45 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
+CREATE OR REPLACE FUNCTION public._internal_get_user_coin_balance(p_user_id uuid)
  RETURNS integer
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  -- v4: только собственный баланс, администратор или service_role
-  IF auth.uid() IS NOT NULL
-     AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND p_user_id IS DISTINCT FROM auth.uid()
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: own balance or admin role required';
-  END IF;
-
+  -- v5: внутренняя функция без проверки прав.
+  -- EXECUTE выдан только service_role; вызывается из других SECURITY DEFINER-функций,
+  -- триггеров и cron. Клиентские роли (anon/authenticated) её вызвать не могут.
   RETURN (
     SELECT COALESCE(SUM(amount), 0)::INTEGER
     FROM public.coin_transactions
     WHERE user_id = p_user_id
   );
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: авторизация только по auth.uid(). current_user внутри SECURITY DEFINER
+  -- равен владельцу функции (postgres) и НЕ может использоваться для определения клиента.
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'access denied: authenticated user required (service_role must call public._internal_get_user_coin_balance)';
+  END IF;
+
+  IF p_user_id IS DISTINCT FROM v_caller AND NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: own balance or admin role required';
+  END IF;
+
+  RETURN public._internal_get_user_coin_balance(p_user_id);
 END;
 $function$
 ;
@@ -2543,7 +2562,7 @@ BEGIN
       points_earned = CASE WHEN p_status = 'accepted' THEN v_points ELSE 0 END
   WHERE id = p_submission_id;
 
-  PERFORM public.update_user_leaderboard(v_submission.user_id);
+  PERFORM public._internal_update_user_leaderboard(v_submission.user_id);
 END;
 $function$
 ;
@@ -2801,7 +2820,7 @@ BEGIN
   END IF;
 
   -- Проверяем баланс
-  v_balance := public.get_user_coin_balance(p_user_id);
+  v_balance := public._internal_get_user_coin_balance(p_user_id);
   IF v_balance < v_cost THEN
     RAISE EXCEPTION 'Недостаточно коинов (баланс: %, требуется: %)', v_balance, v_cost;
   END IF;
@@ -3269,10 +3288,10 @@ AS $function$
 BEGIN
   -- Обновляем рейтинг для затронутого пользователя
   IF TG_OP = 'DELETE' THEN
-    PERFORM update_user_leaderboard(OLD.user_id);
+    PERFORM public._internal_update_user_leaderboard(OLD.user_id);
     RETURN OLD;
   ELSE
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
     RETURN NEW;
   END IF;
 END;
@@ -3371,9 +3390,9 @@ AS $function$
 BEGIN
   -- Only update when verification status changes to true
   IF TG_OP = 'UPDATE' AND NEW.verified = true AND (OLD.verified IS NULL OR OLD.verified = false) THEN
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
   ELSIF TG_OP = 'UPDATE' AND NEW.verified = false AND OLD.verified = true THEN
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
   END IF;
   
   RETURN COALESCE(NEW, OLD);
@@ -3381,19 +3400,14 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type)
+CREATE OR REPLACE FUNCTION public._internal_update_participant_status(p_user_id uuid, p_new_status participant_status_type)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  -- v4: проверка роли внутри тела (UI-скрытие кнопки не является защитой)
-  IF auth.uid() IS NOT NULL AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
-  END IF;
-
+  -- v5: внутренняя реализация без проверки прав. EXECUTE только у service_role.
   -- Обновляем статус участника
   UPDATE profiles
   SET 
@@ -3415,7 +3429,27 @@ BEGIN
   WHERE user_id = p_user_id;
 
   -- Обновляем leaderboard
-  PERFORM update_user_leaderboard(p_user_id);
+  PERFORM public._internal_update_user_leaderboard(p_user_id);
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: только администратор. Обычному участнику функция не нужна.
+  -- service_role вызывает public._internal_update_participant_status.
+  IF v_caller IS NULL OR NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
+  END IF;
+
+  PERFORM public._internal_update_participant_status(p_user_id, p_new_status);
 END;
 $function$
 ;
@@ -3480,7 +3514,7 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_user_leaderboard(user_uuid uuid)
+CREATE OR REPLACE FUNCTION public._internal_update_user_leaderboard(user_uuid uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -3503,13 +3537,7 @@ DECLARE
   v_crash_ofp INTEGER := 0;
   v_stream_id UUID;
 BEGIN
-  -- v4: пересчёт разрешён только для себя, администратору или service_role
-  IF auth.uid() IS NOT NULL
-     AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND user_uuid IS DISTINCT FROM auth.uid()
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
-  END IF;
+  -- v5: внутренняя реализация без проверки прав. EXECUTE только у service_role.
 
   -- Get user's stream_id
   SELECT current_stream_id INTO v_stream_id FROM profiles WHERE user_id = user_uuid;
@@ -3643,6 +3671,29 @@ BEGIN
     rank_position = COALESCE((SELECT rank_position FROM leaderboard WHERE user_id = user_uuid), 0)
   WHERE user_id = user_uuid;
 
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_user_leaderboard(user_uuid uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: авторизация только по auth.uid(); участник пересчитывает лишь себя.
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'access denied: authenticated user required (service_role must call public._internal_update_user_leaderboard)';
+  END IF;
+
+  IF user_uuid IS DISTINCT FROM v_caller AND NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
+  END IF;
+
+  PERFORM public._internal_update_user_leaderboard(user_uuid);
 END;
 $function$
 ;
