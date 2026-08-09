@@ -1,8 +1,11 @@
--- schema-structure-only.sql (v3) — сборка файлов migrations/01..08,10 одним файлом.
--- Справочники (09_reference_data.sql) сюда НЕ включены. Бакеты создаются до 10.
+-- =====================================================================
+-- schema-structure-only.sql (v4)
+-- Сборка migrations/01–08 + 10 одним файлом. БЕЗ справочных данных (09).
+-- Без персональных данных и без секретов.
+-- Сгенерировано из актуальных файлов migrations/ версии v4.
+-- =====================================================================
 
-
--- ==================== migrations/01_extensions_and_types.sql ====================
+-- ============ 01_extensions_and_types.sql ============
 -- =====================================================================
 -- 01_extensions_and_types.sql
 -- Проект: МИРА (структурный перенос схемы КЭМП)
@@ -35,7 +38,7 @@ CREATE TYPE public.training_subtype AS ENUM ('bjj', 'kick', 'ofp');
 CREATE TYPE public.user_role AS ENUM ('user', 'admin', 'super_admin', 'trainer');
 CREATE TYPE public.zakal_subtype AS ENUM ('bjj', 'kick', 'ofp');
 
--- ==================== migrations/02_tables_and_constraints.sql ====================
+-- ============ 02_tables_and_constraints.sql ============
 -- =====================================================================
 -- 02_tables_and_constraints.sql — таблицы (80) и ограничения (204)
 -- Только структура. Данных нет.
@@ -1303,7 +1306,7 @@ ALTER TABLE public."кэмп_активности" ADD CONSTRAINT "кэмп_ак
 ALTER TABLE public."тотемы_участников" ADD CONSTRAINT "тотемы_участников_participant_id_fkey" FOREIGN KEY (participant_id) REFERENCES "участники"(id);
 ALTER TABLE public."участники" ADD CONSTRAINT "участники_stream_id_fkey" FOREIGN KEY (stream_id) REFERENCES intensive_streams(id);
 
--- ==================== migrations/03_indexes.sql ====================
+-- ============ 03_indexes.sql ============
 -- 03_indexes.sql — неуникальные и частичные индексы (63). PK/UNIQUE созданы в 02.
 
 CREATE INDEX idx_activity_checkins_user_id ON public.activity_checkins USING btree (user_id);
@@ -1405,7 +1408,7 @@ CREATE INDEX IF NOT EXISTS idx_user_activities_activity ON public.user_activitie
 CREATE INDEX IF NOT EXISTS idx_user_activities_user ON public.user_activities USING btree (user_id);
 CREATE INDEX IF NOT EXISTS idx_user_challenges_challenge ON public.user_challenges USING btree (challenge_id);
 
--- ==================== migrations/04_functions.sql ====================
+-- ============ 04_functions.sql ============
 -- 04_functions.sql (v3): всем функциям задан SET search_path = public
 -- 04_functions.sql — 92 функции схемы public (90 SECURITY DEFINER).
 -- Секретов и персональных данных не содержит.
@@ -3189,13 +3192,25 @@ $function$
 
 CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
  RETURNS integer
- LANGUAGE sql
+ LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
-  SELECT COALESCE(SUM(amount), 0)::INTEGER
-  FROM public.coin_transactions
-  WHERE user_id = p_user_id;
+BEGIN
+  -- v4: только собственный баланс, администратор или service_role
+  IF auth.uid() IS NOT NULL
+     AND current_user NOT IN ('service_role','postgres','supabase_admin')
+     AND p_user_id IS DISTINCT FROM auth.uid()
+     AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: own balance or admin role required';
+  END IF;
+
+  RETURN (
+    SELECT COALESCE(SUM(amount), 0)::INTEGER
+    FROM public.coin_transactions
+    WHERE user_id = p_user_id
+  );
+END;
 $function$
 ;
 
@@ -4784,6 +4799,12 @@ CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_ne
  SET search_path TO 'public'
 AS $function$
 BEGIN
+  -- v4: проверка роли внутри тела (UI-скрытие кнопки не является защитой)
+  IF auth.uid() IS NOT NULL AND current_user NOT IN ('service_role','postgres','supabase_admin')
+     AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
+  END IF;
+
   -- Обновляем статус участника
   UPDATE profiles
   SET 
@@ -4893,6 +4914,14 @@ DECLARE
   v_crash_ofp INTEGER := 0;
   v_stream_id UUID;
 BEGIN
+  -- v4: пересчёт разрешён только для себя, администратору или service_role
+  IF auth.uid() IS NOT NULL
+     AND current_user NOT IN ('service_role','postgres','supabase_admin')
+     AND user_uuid IS DISTINCT FROM auth.uid()
+     AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
+  END IF;
+
   -- Get user's stream_id
   SELECT current_stream_id INTO v_stream_id FROM profiles WHERE user_id = user_uuid;
 
@@ -5167,7 +5196,7 @@ END;
 $function$
 ;
 
--- ==================== migrations/05_triggers.sql ====================
+-- ============ 05_triggers.sql ============
 -- 05_triggers.sql — 53 триггера схемы public. Требует 02 и 04.
 
 CREATE TRIGGER update_activities_updated_at BEFORE UPDATE ON public.activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -5224,18 +5253,65 @@ CREATE TRIGGER trigger_training_sessions_leaderboard AFTER INSERT OR DELETE OR U
 CREATE TRIGGER update_leaderboard_on_training_session AFTER INSERT OR DELETE OR UPDATE ON public.training_sessions FOR EACH ROW EXECUTE FUNCTION trigger_update_leaderboard();
 CREATE TRIGGER role_changes_audit_trigger AFTER INSERT OR DELETE ON public.user_roles FOR EACH ROW EXECUTE FUNCTION log_role_changes();
 
--- ==================== migrations/06_views.sql ====================
--- 06_views.sql
--- В действующей базе КЭМП НЕТ ни одного VIEW и ни одной MATERIALIZED VIEW
--- в схеме public (проверено по pg_class relkind IN ('v','m') = 0).
--- Файл оставлен как placeholder для сохранения порядка миграций.
+-- ============ 06_views.sql ============
+-- 06_views.sql (v4)
+-- В действующей базе КЭМП НЕТ ни одного VIEW в схеме public.
+-- v4 добавляет ДВА безопасных публичных представления, чтобы роль anon
+-- больше не читала таблицы public_profiles и cooper_test_results целиком.
+--
+-- Представления создаются владельцем (postgres) и НЕ используют security_invoker,
+-- поэтому фильтрация выполняется внутри самого представления, а не через RLS.
+-- Ключ участника отдаётся как псевдоним (md5 от uuid + соль), чтобы фронтенд мог
+-- группировать строки, не получая реальный user_id.
 
--- ==================== migrations/07_grants.sql ====================
--- 07_grants.sql (v3) — минимально необходимые привилегии PostgREST-ролей.
+-- ---------------------------------------------------------------
+-- 1. Публичный рейтинг (замена anon-доступа к public_profiles)
+--    Колонки: только псевдоним, отображаемое имя, баллы, позиция, статус, поток.
+--    НЕ содержит: id, user_id, first_name, last_name, created_at/updated_at.
+-- ---------------------------------------------------------------
+CREATE OR REPLACE VIEW public.public_leaderboard_view
+WITH (security_barrier = true) AS
+SELECT
+  md5(pp.user_id::text || 'mira-public-v4')     AS participant_key,
+  pp.display_name,
+  pp.total_points,
+  pp.rank_position,
+  pp.participant_status,
+  pp.current_stream_id
+FROM public.public_profiles pp
+WHERE pp.display_name IS NOT NULL
+  AND pp.participant_status IN ('intensive_active', 'club_resident');
+
+-- ---------------------------------------------------------------
+-- 2. Публичные результаты теста Купера (замена anon-доступа к таблице)
+--    Колонки: псевдоним, отображаемое имя, результат, уровень, этап, дата.
+--    НЕ содержит: id, user_id, age, gender, notes, verified_by, created_at.
+-- ---------------------------------------------------------------
+CREATE OR REPLACE VIEW public.public_cooper_results_view
+WITH (security_barrier = true) AS
+SELECT
+  md5(c.user_id::text || 'mira-public-v4')      AS participant_key,
+  pp.display_name,
+  c.total_time,
+  c.fitness_level,
+  c.test_phase,
+  c.test_date::date                              AS test_date
+FROM public.cooper_test_results c
+JOIN public.public_profiles pp ON pp.user_id = c.user_id
+WHERE c.verified = true
+  AND pp.participant_status IN ('intensive_active', 'club_resident');
+
+-- Гранты на представления выданы в 07_grants.sql.
+
+-- ============ 07_grants.sql ============
+-- 07_grants.sql (v4) — минимально необходимые привилегии PostgREST-ролей.
 -- Отличие от v2: вместо «полный доступ всем ролям на все таблицы» —
 -- матрица из TABLE_ACCESS_MATRIX.md. anon получает только то, что реально
 -- нужно публичному лендингу и форме заявки; всё остальное — authenticated,
 -- права всегда не шире, чем разрешает соответствующая RLS-политика (08).
+
+-- v4: запрещаем клиентским ролям создавать объекты в схеме public
+REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
@@ -5274,7 +5350,6 @@ GRANT SELECT ON public.content_blocks TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.content_blocks TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.contract_data TO authenticated;
 GRANT SELECT ON public.contracts TO authenticated;
-GRANT SELECT ON public.cooper_test_results TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.cooper_test_results TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.crash_tests TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.habit_progress TO authenticated;
@@ -5304,7 +5379,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_status_history TO aut
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_tags TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_tags TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
-GRANT SELECT ON public.public_profiles TO anon;
 GRANT SELECT ON public.public_profiles TO authenticated;
 GRANT SELECT ON public.public_testimonials TO anon;
 GRANT SELECT ON public.public_testimonials TO authenticated;
@@ -5345,6 +5419,11 @@ GRANT SELECT ON public."кэмп_активности" TO authenticated;
 GRANT SELECT ON public."тотемы_участников" TO authenticated;
 GRANT SELECT, UPDATE ON public."участники" TO authenticated;
 
+-- v4: публичные данные отдаются только через безопасные представления (06_views.sql).
+-- Таблицы public_profiles и cooper_test_results роли anon больше не выдаются.
+GRANT SELECT ON public.public_leaderboard_view TO anon, authenticated;
+GRANT SELECT ON public.public_cooper_results_view TO anon, authenticated;
+
 -- ---------------------------------------------------------------
 -- EXECUTE: по умолчанию функции недоступны клиентским ролям.
 -- ---------------------------------------------------------------
@@ -5355,6 +5434,8 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 -- anon: только то, что вызывается на публичных страницах и в RLS-предикатах anon
 GRANT EXECUTE ON FUNCTION public.validate_contact_submission(text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.validate_referral_code(text) TO anon;
+-- v4: используется в anon-политиках crash_tests / user_totems / leaderboard
+GRANT EXECUTE ON FUNCTION public.is_public_participant(uuid) TO anon;
 
 -- authenticated: вспомогательные функции RLS + RPC, вызываемые из ЛК/админки
 GRANT EXECUTE ON FUNCTION public.is_admin(uuid) TO authenticated;
@@ -5372,11 +5453,6 @@ GRANT EXECUTE ON FUNCTION public.unlink_telegram_profile(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_reward_request(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.log_security_event(text, uuid, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.decrypt_phone(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_email_secure(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_secure(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_number(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_participant_name(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(uuid, integer, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_approval(uuid, boolean) TO authenticated;
@@ -5388,11 +5464,19 @@ GRANT EXECUTE ON FUNCTION public.review_reward_request(uuid, text, text) TO auth
 GRANT EXECUTE ON FUNCTION public.update_participant_status(uuid, participant_status_type) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(uuid, text, text, uuid, text, integer) TO authenticated;
 
+-- v4: НЕ выдаются клиентским ролям (только service_role):
+--   decrypt_phone(text)      — расшифровка телефона любого участника по строке;
+--                              см. SECURITY_NOTES.md и правку src/hooks/usePhoneDecryption.ts
+--   mask_email_secure / mask_phone_secure / mask_phone_number / mask_participant_name
+--                            — во фронтенде не вызываются, маскирование делается на сервере
+--   encrypt_phone(text)      — только серверная сторона
+--
 -- Остальные функции (RPC Telegram Mini App по p_telegram_id, server_*, cron,
 -- триггерные и служебные) вызываются только с service_role — см. FUNCTION_ACCESS_MATRIX.md.
 
--- ==================== migrations/08_rls_policies.sql ====================
+-- ============ 08_rls_policies.sql ============
 -- 08_rls_policies.sql (v3) — включение RLS на 80 таблицах и 194 политики.
+-- v4: см. CHANGELOG_v3_to_v4.md (Купер, public_profiles, leaderboard).
 -- Отличия от v2: политики переведены с TO public на TO authenticated везде,
 -- кроме явно публичных SELECT лендинга и INSERT формы заявки (см. RLS_REVIEW.md).
 -- Политики Мастермайнда с предикатом true заменены на проверку членства/админа.
@@ -5697,20 +5781,10 @@ CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_resu
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Public can view Cooper test results for club residents" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE ((public_profiles.user_id = cooper_test_results.user_id) AND (public_profiles.participant_status = 'club_resident'::participant_status_type))))));
-
-CREATE POLICY "Public can view Cooper test results for intensive active partic" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE ((public_profiles.user_id = cooper_test_results.user_id) AND (public_profiles.participant_status = 'intensive_active'::participant_status_type))))));
-
-CREATE POLICY "Public can view verified Cooper test results for visible partic" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
-  USING (((verified = true) AND (EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.user_id = cooper_test_results.user_id) AND (profiles.approved = true) AND (COALESCE(profiles.leaderboard_visible, true) = true) AND (COALESCE(profiles.profile_private, false) = false))))));
+-- v4: три «публичные» политики заменены одной. Анонимный доступ к таблице снят —
+-- публичные результаты отдаются через public_cooper_results_view (06_views.sql).
+CREATE POLICY "Authenticated can view verified results of public participants" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
+  USING (((verified = true) AND is_public_participant(user_id)));
 
 CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
@@ -5812,10 +5886,10 @@ CREATE POLICY "Prompts viewable by authenticated" ON public.journal_prompts AS P
 CREATE POLICY "Admins can manage leaderboard" ON public.leaderboard AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Anon can view leaderboard via public_profiles" ON public.leaderboard AS PERMISSIVE FOR SELECT TO anon
-  USING ((EXISTS ( SELECT 1
-   FROM public_profiles
-  WHERE (public_profiles.user_id = leaderboard.user_id))));
+-- v4: предикат больше не читает public_profiles напрямую (anon не имеет прав на таблицу),
+-- проверка вынесена в SECURITY DEFINER-функцию is_public_participant.
+CREATE POLICY "Anon can view leaderboard of public participants" ON public.leaderboard AS PERMISSIVE FOR SELECT TO anon
+  USING (is_public_participant(user_id));
 
 CREATE POLICY "Authenticated users can view public leaderboard entries" ON public.leaderboard AS PERMISSIVE FOR SELECT TO authenticated
   USING (((EXISTS ( SELECT 1
@@ -5929,7 +6003,8 @@ CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISS
 CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Public can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO public
+-- v4: anon читает рейтинг только через public_leaderboard_view (без user_id, ФИО и служебных полей).
+CREATE POLICY "Authenticated can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING (true);
 
 CREATE POLICY "Public testimonials are readable by everyone" ON public.public_testimonials AS PERMISSIVE FOR SELECT TO public
@@ -6160,11 +6235,62 @@ CREATE POLICY "Users can update their own participant" ON public."участни
 CREATE POLICY "Users can view their own participant" ON public."участники" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
--- ==================== migrations/10_storage.sql ====================
--- 10_storage.sql (v3) — 38 RLS-политик storage.objects.
--- Отличие от v2: TO public оставлен только у 4 публичных SELECT-политик
--- (avatars, content, moments, testimonials); остальные переведены на TO authenticated.
--- Бакеты создаются ОТДЕЛЬНО (см. README, раздел «Ручные действия»).
+-- ============ 10_storage.sql ============
+-- 10_storage.sql (v4) — бакеты + 38 RLS-политик storage.objects.
+-- Отличие от v3: восемь бакетов создаются идемпотентно ДО политик.
+-- Ограничения (public/private, размер, mime) выведены из фактического кода загрузок:
+--   content            — src/components/admin/ContentBlocksManagement.tsx, RewardsManagement.tsx (accept="image/*")
+--   moments            — src/components/admin/MomentsManagement.tsx (accept="image/*", "video/*")
+--   testimonials       — src/components/admin/TestimonialManagement.tsx (accept="image/*", "video/*")
+--   pyramid-materials  — src/components/admin/PyramidManagement.tsx (accept=".pdf,.ppt,.pptx,image/*")
+--   homework-files     — src/components/dashboard/HomeworkUserView.tsx (accept="image/*,application/pdf")
+--   broadcasts         — src/components/admin/BroadcastManagement.tsx (изображения/видео/документы рассылки)
+--   avatars            — telegram-server/src/api/state.ts (аватар из Telegram, изображения)
+--   contracts          — src/components/admin/ContractManagement.tsx (file.type === 'application/pdf')
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+  -- Публичные бакеты: их содержимое отдаётся лендингом по прямым URL.
+  ('avatars',            'avatars',            true,   5 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp']),
+  ('content',            'content',            true,  10 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp','image/svg+xml']),
+  ('moments',            'moments',            true, 100 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp','video/mp4','video/quicktime']),
+  ('testimonials',       'testimonials',       true, 100 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp','video/mp4','video/quicktime']),
+
+  -- Приватные бакеты: доступ только по подписанным URL / политикам.
+  ('pyramid-materials',  'pyramid-materials',  false, 50 * 1024 * 1024,
+     ARRAY['application/pdf','application/vnd.ms-powerpoint',
+           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+           'image/jpeg','image/png','image/webp']),
+  ('homework-files',     'homework-files',     false, 20 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp','application/pdf']),
+  ('broadcasts',         'broadcasts',         false, 50 * 1024 * 1024,
+     ARRAY['image/jpeg','image/png','image/webp','video/mp4','application/pdf']),
+  ('contracts',          'contracts',          false, 20 * 1024 * 1024,
+     ARRAY['application/pdf'])
+ON CONFLICT (id) DO UPDATE
+  SET public             = EXCLUDED.public,
+      file_size_limit    = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- ВНИМАНИЕ (решение владельца проекта МИРА):
+--   * broadcasts — сейчас приватный; в КЭМП файлы рассылки отдаются ботом по подписанному
+--     URL. Если бот МИРА будет слать прямые ссылки, потребуется решение владельца — по
+--     умолчанию НЕ делаем публичным.
+--   * moments / testimonials — публичные, потому что лендинг рендерит их напрямую.
+--     Если для МИРА публикация медиа участниц нежелательна, переключить public = false
+--     и раздавать через подписанные URL.
+--   * Лимиты размера в КЭМП не были заданы (NULL) — значения выше подобраны
+--     консервативно; при отказе загрузки увеличивайте точечно.
+
+-- ---------------------------------------------------------------
+-- Политики storage.objects
+-- TO public оставлен только у 4 публичных SELECT-политик
+-- (avatars, content, moments, testimonials); остальные — TO authenticated.
+-- ---------------------------------------------------------------
 
 CREATE POLICY "Admins can delete content media" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'content'::text) AND is_admin(auth.uid())));
@@ -6230,11 +6356,11 @@ CREATE POLICY "Admins update assignment files" ON storage.objects AS PERMISSIVE 
 CREATE POLICY "Admins update reward images" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
   USING (((bucket_id = 'content'::text) AND ((storage.foldername(name))[1] = 'rewards'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins upload assignment files" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
-  WITH CHECK (((bucket_id = 'homework-files'::text) AND ((storage.foldername(name))[1] = 'assignments'::text) AND (has_role(auth.uid(), 'admin'::user_role) OR has_role(auth.uid(), 'super_admin'::user_role))));
-
 CREATE POLICY "Admins upload reward images" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'content'::text) AND ((storage.foldername(name))[1] = 'rewards'::text) AND is_admin(auth.uid())));
+
+CREATE POLICY "Admins upload assignment files" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
+  WITH CHECK (((bucket_id = 'homework-files'::text) AND ((storage.foldername(name))[1] = 'assignments'::text) AND (has_role(auth.uid(), 'admin'::user_role) OR has_role(auth.uid(), 'super_admin'::user_role))));
 
 CREATE POLICY "Authenticated can read pyramid materials" ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated
   USING ((bucket_id = 'pyramid-materials'::text));
