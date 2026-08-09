@@ -60,6 +60,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     file_name, file_base64, weight, height, birth_date,
     entry_date, day_type, emotions, answers,
     reward_id, comment, challenge_id,
+    task_title, task_description, task_deadline,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -86,6 +87,9 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     reward_id?: string;
     challenge_id?: string;
     comment?: string;
+    task_title?: string;
+    task_description?: string;
+    task_deadline?: string;
   };
 
   // Базовая валидация тела запроса
@@ -949,6 +953,40 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true, data });
+    return;
+  }
+
+  if (action === 'create_mastermind_task') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    if (!task_title || typeof task_title !== 'string' || !task_title.trim()) {
+      res.status(400).json({ ok: false, error: 'missing_task_title' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('server_create_mastermind_task', {
+      p_user_id: profile.user_id,
+      p_title: task_title,
+      p_description: task_description || null,
+      p_deadline: task_deadline || null,
+    });
+
+    if (error) {
+      console.error('[state/create_mastermind_task] RPC error:', error.message);
+      res.status(400).json({ ok: false, error: error.message });
+      return;
+    }
+
+    res.json({ ok: true, data: { task_id: data } });
     return;
   }
 

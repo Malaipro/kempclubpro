@@ -1,10 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Clock, Send, ListChecks, FileText } from 'lucide-react';
+import { Users, Clock, Send, ListChecks, FileText, Paperclip, X, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const SERVER_URL = (import.meta as any).env?.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -16,6 +24,8 @@ interface MastermindMember {
   end_date: string | null;
 }
 
+type TaskApprovalStatus = 'pending' | 'approved' | 'rejected';
+
 interface MastermindTask {
   id: string;
   title: string;
@@ -24,6 +34,8 @@ interface MastermindTask {
   completed_at: string | null;
   participant_comment: string | null;
   sort_order: number;
+  deadline: string | null;
+  approval_status: TaskApprovalStatus | null;
 }
 
 interface MastermindEntry {
@@ -49,15 +61,25 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Комментарий к отметке задачи выполненной
+  // Комментарий (обязателен) и файл к отметке задачи выполненной
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [taskComment, setTaskComment] = useState('');
+  const [taskFileUrl, setTaskFileUrl] = useState<string | null>(null);
+  const [taskFileName, setTaskFileName] = useState<string | null>(null);
+  const [uploadingTaskFile, setUploadingTaskFile] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
 
   // Форма нового отчёта
   const [entrySummary, setEntrySummary] = useState('');
   const [entryMyTasks, setEntryMyTasks] = useState('');
   const [submittingEntry, setSubmittingEntry] = useState(false);
+
+  // Форма новой задачи, создаваемой участником
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskDeadline, setNewTaskDeadline] = useState('');
+  const [creatingTask, setCreatingTask] = useState(false);
 
   useEffect(() => {
     const btn = (window as any).Telegram?.WebApp?.BackButton;
@@ -93,16 +115,58 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
   const openTaskComment = (taskId: string) => {
     setOpenTaskId(taskId);
     setTaskComment('');
+    setTaskFileUrl(null);
+    setTaskFileName(null);
   };
 
   const cancelTaskComment = () => {
     setOpenTaskId(null);
     setTaskComment('');
+    setTaskFileUrl(null);
+    setTaskFileName(null);
+  };
+
+  const handleTaskFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData) return;
+
+    setUploadingTaskFile(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+        reader.onerror = () => reject(new Error('file_read_error'));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'upload_homework_file',
+          file_name: file.name,
+          file_base64: base64,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка загрузки файла');
+      setTaskFileUrl(json.data.file_url);
+      setTaskFileName(file.name);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setUploadingTaskFile(false);
+    }
   };
 
   const handleCompleteTask = async (taskId: string) => {
     const initData = (window as any).Telegram?.WebApp?.initData;
-    if (!initData) return;
+    if (!initData || !taskComment.trim()) return;
     setCompletingTaskId(taskId);
     try {
       const res = await fetch(`${SERVER_URL}/api/state`, {
@@ -112,18 +176,51 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
           initData,
           action: 'complete_mastermind_task',
           task_id: taskId,
-          task_comment: taskComment.trim() || null,
+          task_comment: taskComment.trim(),
+          task_file_url: taskFileUrl,
         }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Ошибка');
       setOpenTaskId(null);
       setTaskComment('');
+      setTaskFileUrl(null);
+      setTaskFileName(null);
       await fetchData();
     } catch (e: any) {
       alert(e.message);
     } finally {
       setCompletingTaskId(null);
+    }
+  };
+
+  const handleCreateTask = async () => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData || !newTaskTitle.trim() || creatingTask) return;
+    setCreatingTask(true);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'create_mastermind_task',
+          task_title: newTaskTitle.trim(),
+          task_description: newTaskDescription.trim() || null,
+          task_deadline: newTaskDeadline || null,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка');
+      setAddTaskOpen(false);
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setNewTaskDeadline('');
+      await fetchData();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setCreatingTask(false);
     }
   };
 
@@ -215,69 +312,133 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
             <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">Пока нет задач</CardContent></Card>
           ) : (
             <div className="space-y-2">
-              {tasks.map((task) => (
-                <Card key={task.id} className={task.is_completed ? 'border-green-500/30 bg-green-500/5' : undefined}>
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={task.is_completed}
-                        disabled={task.is_completed || completingTaskId === task.id}
-                        onCheckedChange={() => { if (!task.is_completed) openTaskComment(task.id); }}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 space-y-1">
-                        <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
-                          {task.title}
-                        </p>
-                        {task.description && (
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
-                        )}
-                        {task.is_completed && task.completed_at && (
-                          <p className="text-xs text-muted-foreground">
-                            Выполнено {new Date(task.completed_at).toLocaleDateString('ru-RU')}
-                          </p>
-                        )}
-                        {task.is_completed && task.participant_comment && (
-                          <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
-                        )}
-                      </div>
-                    </div>
+              {tasks.map((task) => {
+                const isOverdue = !!task.deadline && !task.is_completed && new Date(task.deadline).getTime() < Date.now();
+                const approvalBadge = task.approval_status && (
+                  <Badge
+                    variant="outline"
+                    className={
+                      task.approval_status === 'pending'
+                        ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/40'
+                        : task.approval_status === 'approved'
+                        ? 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/40'
+                        : 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40'
+                    }
+                  >
+                    {task.approval_status === 'pending' ? 'На проверке' : task.approval_status === 'approved' ? 'Одобрена' : 'Отклонена'}
+                  </Badge>
+                );
 
-                    {openTaskId === task.id && (
-                      <div className="space-y-2 pl-8">
-                        <Textarea
-                          value={taskComment}
-                          onChange={(e) => setTaskComment(e.target.value)}
-                          placeholder="Комментарий к выполнению (необязательно)"
-                          rows={3}
-                          disabled={completingTaskId === task.id}
+                return (
+                  <Card key={task.id} className={task.is_completed ? 'border-green-500/30 bg-green-500/5' : undefined}>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={task.is_completed}
+                          disabled={task.is_completed || completingTaskId === task.id}
+                          onCheckedChange={() => { if (!task.is_completed) openTaskComment(task.id); }}
+                          className="mt-0.5"
                         />
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={cancelTaskComment}
-                            disabled={completingTaskId === task.id}
-                          >
-                            Отмена
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                            onClick={() => handleCompleteTask(task.id)}
-                            disabled={completingTaskId === task.id}
-                          >
-                            {completingTaskId === task.id ? 'Отмечаю...' : 'Отметить выполненной'}
-                          </Button>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-start justify-between gap-2 flex-wrap">
+                            <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                              {task.title}
+                            </p>
+                            {approvalBadge}
+                          </div>
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                          )}
+                          {task.deadline && (
+                            <p className={`text-xs ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
+                              Срок: {new Date(task.deadline).toLocaleDateString('ru-RU')}
+                            </p>
+                          )}
+                          {task.is_completed && task.completed_at && (
+                            <p className="text-xs text-muted-foreground">
+                              Выполнено {new Date(task.completed_at).toLocaleDateString('ru-RU')}
+                            </p>
+                          )}
+                          {task.is_completed && task.participant_comment && (
+                            <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+
+                      {openTaskId === task.id && (
+                        <div className="space-y-2 pl-8">
+                          <Textarea
+                            value={taskComment}
+                            onChange={(e) => setTaskComment(e.target.value)}
+                            placeholder="Опишите результат выполнения (обязательно)"
+                            rows={3}
+                            disabled={completingTaskId === task.id}
+                          />
+
+                          {taskFileName ? (
+                            <div className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
+                              <span className="truncate flex items-center gap-1">
+                                <Paperclip className="w-3 h-3 shrink-0" />{taskFileName}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => { setTaskFileUrl(null); setTaskFileName(null); }}
+                                disabled={completingTaskId === task.id}
+                                aria-label="Убрать файл"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer w-fit">
+                              <Paperclip className="w-3 h-3" />
+                              {uploadingTaskFile ? 'Загружаем...' : 'Прикрепить файл'}
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*,.pdf,.doc,.docx"
+                                disabled={completingTaskId === task.id || uploadingTaskFile}
+                                onChange={handleTaskFileChange}
+                              />
+                            </label>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={cancelTaskComment}
+                              disabled={completingTaskId === task.id}
+                            >
+                              Отмена
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                              onClick={() => handleCompleteTask(task.id)}
+                              disabled={!taskComment.trim() || completingTaskId === task.id || uploadingTaskFile}
+                            >
+                              {completingTaskId === task.id ? 'Отмечаю...' : 'Выполнено'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setAddTaskOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-1" /> Добавить задачу
+          </Button>
         </div>
 
         <div className="space-y-2">
@@ -341,6 +502,58 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
           )}
         </div>
       </div>
+
+      <Dialog open={addTaskOpen} onOpenChange={(open) => { if (!creatingTask) setAddTaskOpen(open); }}>
+        <DialogContent className="max-w-[90vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Новая задача</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Название *</label>
+              <Input
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Что нужно сделать"
+                disabled={creatingTask}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Описание</label>
+              <Textarea
+                value={newTaskDescription}
+                onChange={(e) => setNewTaskDescription(e.target.value)}
+                placeholder="Подробности (необязательно)"
+                rows={3}
+                disabled={creatingTask}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Срок (необязательно)</label>
+              <Input
+                type="date"
+                value={newTaskDeadline}
+                onChange={(e) => setNewTaskDeadline(e.target.value)}
+                disabled={creatingTask}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setAddTaskOpen(false)} disabled={creatingTask}>
+              Отмена
+            </Button>
+            <Button
+              onClick={handleCreateTask}
+              disabled={!newTaskTitle.trim() || creatingTask}
+              className="bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+            >
+              {creatingTask ? 'Добавляем...' : 'Добавить'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
