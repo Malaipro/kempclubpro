@@ -1,15 +1,8 @@
--- =====================================================================
--- schema-structure-only.sql — сводный структурный дамп базы КЭМП
--- Сгенерировано 09.08.2026 из фактического состояния БД (только чтение).
--- СОДЕРЖИТ: расширения, 13 enum, 80 таблиц, 204 ограничения, 63 индекса,
---           92 функции, 53 триггера, GRANT'ы, 194 RLS-политики, 38 политик storage.
--- НЕ СОДЕРЖИТ: данных, пользователей Auth, PII, секретов, бакетов, cron.
--- Порядок = migrations/01..10 без 09_reference_data.sql.
--- =====================================================================
+-- schema-structure-only.sql (v3) — сборка файлов migrations/01..08,10 одним файлом.
+-- Справочники (09_reference_data.sql) сюда НЕ включены. Бакеты создаются до 10.
 
 
--- ################ 01_extensions_and_types.sql ################
-
+-- ==================== migrations/01_extensions_and_types.sql ====================
 -- =====================================================================
 -- 01_extensions_and_types.sql
 -- Проект: МИРА (структурный перенос схемы КЭМП)
@@ -42,8 +35,7 @@ CREATE TYPE public.training_subtype AS ENUM ('bjj', 'kick', 'ofp');
 CREATE TYPE public.user_role AS ENUM ('user', 'admin', 'super_admin', 'trainer');
 CREATE TYPE public.zakal_subtype AS ENUM ('bjj', 'kick', 'ofp');
 
--- ################ 02_tables_and_constraints.sql ################
-
+-- ==================== migrations/02_tables_and_constraints.sql ====================
 -- =====================================================================
 -- 02_tables_and_constraints.sql — таблицы (80) и ограничения (204)
 -- Только структура. Данных нет.
@@ -1311,8 +1303,7 @@ ALTER TABLE public."кэмп_активности" ADD CONSTRAINT "кэмп_ак
 ALTER TABLE public."тотемы_участников" ADD CONSTRAINT "тотемы_участников_participant_id_fkey" FOREIGN KEY (participant_id) REFERENCES "участники"(id);
 ALTER TABLE public."участники" ADD CONSTRAINT "участники_stream_id_fkey" FOREIGN KEY (stream_id) REFERENCES intensive_streams(id);
 
--- ################ 03_indexes.sql ################
-
+-- ==================== migrations/03_indexes.sql ====================
 -- 03_indexes.sql — неуникальные и частичные индексы (63). PK/UNIQUE созданы в 02.
 
 CREATE INDEX idx_activity_checkins_user_id ON public.activity_checkins USING btree (user_id);
@@ -1379,8 +1370,43 @@ CREATE INDEX idx_user_totems_user_id ON public.user_totems USING btree (user_id)
 CREATE INDEX weekly_summaries_status_idx ON public.weekly_summaries USING btree (status);
 CREATE INDEX weekly_summaries_user_id_idx ON public.weekly_summaries USING btree (user_id);
 
--- ################ 04_functions.sql ################
+-- v3: индексы под внешние ключи, у которых не было покрывающего индекса (аудит FK_INDEX_AUDIT.md)
+CREATE INDEX IF NOT EXISTS idx_ascezy_uchastnikov_participant ON public."аскезы_участников" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_kemp_aktivnosti_participant ON public."кэмп_активности" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_totemy_uchastnikov_participant ON public."тотемы_участников" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_uchastniki_stream ON public."участники" USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_activity_checkins_stream ON public.activity_checkins USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_application_reminders_submission ON public.application_reminders USING btree (submission_id);
+CREATE INDEX IF NOT EXISTS idx_ascetic_activities_type ON public.ascetic_activities USING btree (ascetic_type_id);
+CREATE INDEX IF NOT EXISTS idx_ascetic_activities_user ON public.ascetic_activities USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_challenge_entries_user_id ON public.challenge_entries USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_coin_transactions_rule ON public.coin_transactions USING btree (rule_id);
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_referrer ON public.contact_submissions USING btree (referrer_user_id);
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_stream ON public.contact_submissions USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_crash_tests_user ON public.crash_tests USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_hero_races_user ON public.hero_races USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_homework_submissions_user ON public.homework_submissions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_journal_answers_prompt ON public.journal_answers USING btree (prompt_id);
+CREATE INDEX IF NOT EXISTS idx_journal_emotions_entry ON public.journal_emotions USING btree (entry_id);
+CREATE INDEX IF NOT EXISTS idx_lectures_user ON public.lectures USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_mm_members_group ON public.mastermind_members USING btree (group_id);
+CREATE INDEX IF NOT EXISTS idx_mm_tasks_created_by ON public.mastermind_tasks USING btree (created_by);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_public_profiles_stream ON public.public_profiles USING btree (current_stream_id);
+CREATE INDEX IF NOT EXISTS idx_reward_requests_reward ON public.reward_requests USING btree (reward_id);
+CREATE INDEX IF NOT EXISTS idx_schedule_participants_user ON public.schedule_participants USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_schedules_instructor ON public.schedules USING btree (instructor_id);
+CREATE INDEX IF NOT EXISTS idx_tactical_sessions_user ON public.tactical_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_program ON public.training_sessions USING btree (program_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_trainer ON public.training_sessions USING btree (trainer_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_user ON public.training_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON public.user_achievements USING btree (achievement_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_activity ON public.user_activities USING btree (activity_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_user ON public.user_activities USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_challenges_challenge ON public.user_challenges USING btree (challenge_id);
 
+-- ==================== migrations/04_functions.sql ====================
+-- 04_functions.sql (v3): всем функциям задан SET search_path = public
 -- 04_functions.sql — 92 функции схемы public (90 SECURITY DEFINER).
 -- Секретов и персональных данных не содержит.
 
@@ -2364,6 +2390,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.generate_referral_code()
  RETURNS trigger
  LANGUAGE plpgsql
+SET search_path = public
 AS $function$
 BEGIN
   IF NEW.referral_code IS NULL THEN
@@ -5140,8 +5167,7 @@ END;
 $function$
 ;
 
--- ################ 05_triggers.sql ################
-
+-- ==================== migrations/05_triggers.sql ====================
 -- 05_triggers.sql — 53 триггера схемы public. Требует 02 и 04.
 
 CREATE TRIGGER update_activities_updated_at BEFORE UPDATE ON public.activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -5198,531 +5224,178 @@ CREATE TRIGGER trigger_training_sessions_leaderboard AFTER INSERT OR DELETE OR U
 CREATE TRIGGER update_leaderboard_on_training_session AFTER INSERT OR DELETE OR UPDATE ON public.training_sessions FOR EACH ROW EXECUTE FUNCTION trigger_update_leaderboard();
 CREATE TRIGGER role_changes_audit_trigger AFTER INSERT OR DELETE ON public.user_roles FOR EACH ROW EXECUTE FUNCTION log_role_changes();
 
--- ################ 06_views.sql ################
-
+-- ==================== migrations/06_views.sql ====================
 -- 06_views.sql
 -- В действующей базе КЭМП НЕТ ни одного VIEW и ни одной MATERIALIZED VIEW
 -- в схеме public (проверено по pg_class relkind IN ('v','m') = 0).
 -- Файл оставлен как placeholder для сохранения порядка миграций.
 
--- ################ 07_grants.sql ################
+-- ==================== migrations/07_grants.sql ====================
+-- 07_grants.sql (v3) — минимально необходимые привилегии PostgREST-ролей.
+-- Отличие от v2: вместо «полный доступ всем ролям на все таблицы» —
+-- матрица из TABLE_ACCESS_MATRIX.md. anon получает только то, что реально
+-- нужно публичному лендингу и форме заявки; всё остальное — authenticated,
+-- права всегда не шире, чем разрешает соответствующая RLS-политика (08).
 
--- 07_grants.sql — привилегии PostgREST-ролей (anon, authenticated, service_role).
--- 239 табличных GRANT + 268 GRANT EXECUTE. Доступ реально ограничивается RLS (08).
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievement_types TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievement_types TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievement_types TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievements TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievements TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.achievements TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activities TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activities TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activities TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activity_checkins TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activity_checkins TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.activity_checkins TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_access_log TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_access_log TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_access_log TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_sessions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_sessions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.admin_sessions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_notes TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_notes TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_notes TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_reminders TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_reminders TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.application_reminders TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_activities TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_activities TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_activities TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_types TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_types TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.ascetic_types TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.audit_log TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.audit_log TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.audit_log TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_messages TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_messages TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_messages TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_responses TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_responses TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcast_responses TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcasts TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcasts TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.broadcasts TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.challenge_entries TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.challenge_entries TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.challenges TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.challenges TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.challenges TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_rules TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_rules TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_rules TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_transactions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_transactions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.coin_transactions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_rate_limit TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_rate_limit TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_rate_limit TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_submissions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_submissions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contact_submissions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.content_blocks TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.content_blocks TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.content_blocks TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contract_data TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contract_data TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contract_data TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contracts TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contracts TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.contracts TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.cooper_test_results TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.cooper_test_results TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.cooper_test_results TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.crash_tests TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.crash_tests TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.crash_tests TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.habit_progress TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.habit_progress TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.habit_progress TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.hero_races TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.hero_races TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.hero_races TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_assignments TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_assignments TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_assignments TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_submissions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_submissions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.homework_submissions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.intensive_streams TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.intensive_streams TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.intensive_streams TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_answers TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_answers TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_answers TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_emotions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_emotions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_emotions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_entries TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_entries TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_entries TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_prompts TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_prompts TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.journal_prompts TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.leaderboard TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.leaderboard TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.leaderboard TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.lectures TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.lectures TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.lectures TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_entries TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_entries TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_entries TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_groups TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_groups TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_groups TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_members TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_members TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_members TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_tasks TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_tasks TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.mastermind_tasks TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.materials TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.materials TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.materials TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.moments TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.moments TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.moments TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.notifications TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.notifications TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.notifications TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_habits TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_habits TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_habits TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_notes TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_notes TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_notes TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_status_history TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_status_history TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_status_history TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_tags TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_tags TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.participant_tags TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profile_tags TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profile_tags TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profile_tags TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profiles TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profiles TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.profiles TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_profiles TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_profiles TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_profiles TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_testimonials TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_testimonials TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.public_testimonials TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.pyramid_levels TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.pyramid_levels TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.pyramid_levels TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_leads TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_leads TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_leads TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_settings TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_settings TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.referral_settings TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.reward_requests TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.reward_requests TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.reward_requests TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.rewards TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.rewards TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.rewards TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.role_audit_log TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.role_audit_log TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.role_audit_log TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedule_participants TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedule_participants TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedule_participants TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedules TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedules TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.schedules TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.streams TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.streams TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.streams TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.tactical_sessions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.tactical_sessions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.tactical_sessions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_logs TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_logs TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_logs TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_sessions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_sessions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_bot_sessions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_leads TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_leads TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.telegram_leads TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.testimonials TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.testimonials TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.testimonials TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.totems TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.totems TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.totems TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.trainers TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.trainers TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.trainers TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_programs TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_programs TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_programs TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_sessions TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_sessions TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.training_sessions TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_achievements TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_achievements TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_achievements TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_activities TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_activities TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_activities TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_challenges TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_challenges TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_challenges TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_points TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_points TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_points TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_roles TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_roles TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_roles TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_totems TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_totems TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.user_totems TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.weekly_summaries TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.weekly_summaries TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public.weekly_summaries TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."аскезы_участников" TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."аскезы_участников" TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."аскезы_участников" TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."кэмп_активности" TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."кэмп_активности" TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."кэмп_активности" TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."тотемы_участников" TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."тотемы_участников" TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."тотемы_участников" TO service_role;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."участники" TO anon;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."участники" TO authenticated;
-GRANT DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE ON public."участники" TO service_role;
+GRANT SELECT ON public.achievement_types TO anon;
+GRANT SELECT ON public.achievement_types TO authenticated;
+GRANT SELECT ON public.achievements TO anon;
+GRANT SELECT ON public.achievements TO authenticated;
+GRANT SELECT ON public.activities TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.activities TO authenticated;
+GRANT SELECT, INSERT ON public.activity_checkins TO authenticated;
+-- admin_access_log: только service_role (служебная таблица, политик для клиентов нет)
+GRANT SELECT ON public.admin_sessions TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.application_notes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.application_reminders TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.ascetic_activities TO authenticated;
+GRANT SELECT ON public.ascetic_types TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ascetic_types TO authenticated;
+GRANT SELECT, INSERT ON public.audit_log TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.broadcast_messages TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.broadcast_responses TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.broadcasts TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.challenge_entries TO authenticated;
+GRANT SELECT ON public.challenges TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.challenges TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.coin_rules TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.coin_transactions TO authenticated;
+-- contact_rate_limit: только service_role (служебная таблица, политик для клиентов нет)
+GRANT INSERT ON public.contact_submissions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.contact_submissions TO authenticated;
+GRANT SELECT ON public.content_blocks TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.content_blocks TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.contract_data TO authenticated;
+GRANT SELECT ON public.contracts TO authenticated;
+GRANT SELECT ON public.cooper_test_results TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cooper_test_results TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.crash_tests TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.habit_progress TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.hero_races TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.homework_assignments TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.homework_submissions TO authenticated;
+GRANT SELECT ON public.intensive_streams TO anon;
+GRANT SELECT ON public.intensive_streams TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.journal_answers TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.journal_emotions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.journal_entries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.journal_prompts TO authenticated;
+GRANT SELECT ON public.leaderboard TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.leaderboard TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.lectures TO authenticated;
+GRANT SELECT, INSERT ON public.mastermind_entries TO authenticated;
+GRANT SELECT ON public.mastermind_groups TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mastermind_members TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.mastermind_tasks TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.materials TO authenticated;
+GRANT SELECT ON public.moments TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.moments TO authenticated;
+GRANT SELECT, UPDATE ON public.notifications TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_habits TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_notes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_status_history TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.participant_tags TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profile_tags TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
+GRANT SELECT ON public.public_profiles TO anon;
+GRANT SELECT ON public.public_profiles TO authenticated;
+GRANT SELECT ON public.public_testimonials TO anon;
+GRANT SELECT ON public.public_testimonials TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pyramid_levels TO authenticated;
+GRANT INSERT ON public.referral_leads TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.referral_leads TO authenticated;
+GRANT SELECT ON public.referral_settings TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.referral_settings TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reward_requests TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.rewards TO authenticated;
+GRANT SELECT ON public.role_audit_log TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.schedule_participants TO authenticated;
+GRANT SELECT ON public.schedules TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.schedules TO authenticated;
+GRANT SELECT ON public.streams TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.streams TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tactical_sessions TO authenticated;
+GRANT SELECT ON public.telegram_bot_logs TO authenticated;
+-- telegram_bot_sessions: только service_role (служебная таблица, политик для клиентов нет)
+GRANT SELECT, UPDATE ON public.telegram_leads TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.testimonials TO authenticated;
+GRANT SELECT ON public.totems TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.totems TO authenticated;
+GRANT SELECT ON public.trainers TO anon;
+GRANT SELECT ON public.trainers TO authenticated;
+GRANT SELECT ON public.training_programs TO anon;
+GRANT SELECT ON public.training_programs TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.training_sessions TO authenticated;
+GRANT SELECT ON public.user_achievements TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_activities TO authenticated;
+GRANT SELECT, INSERT ON public.user_challenges TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_points TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_roles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_totems TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.weekly_summaries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."аскезы_участников" TO authenticated;
+GRANT SELECT ON public."кэмп_активности" TO authenticated;
+GRANT SELECT ON public."тотемы_участников" TO authenticated;
+GRANT SELECT, UPDATE ON public."участники" TO authenticated;
 
--- function grants
-GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(p_user_id uuid, p_amount integer, p_reason text) TO anon;
-GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(p_user_id uuid, p_amount integer, p_reason text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(p_user_id uuid, p_amount integer, p_reason text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(p_lead_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(p_lead_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(p_lead_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.admin_list_coin_balances() TO anon;
+-- ---------------------------------------------------------------
+-- EXECUTE: по умолчанию функции недоступны клиентским ролям.
+-- ---------------------------------------------------------------
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
+
+-- anon: только то, что вызывается на публичных страницах и в RLS-предикатах anon
+GRANT EXECUTE ON FUNCTION public.validate_contact_submission(text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.validate_referral_code(text) TO anon;
+
+-- authenticated: вспомогательные функции RLS + RPC, вызываемые из ЛК/админки
+GRANT EXECUTE ON FUNCTION public.is_admin(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_super_admin(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_club_resident(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_public_participant(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, user_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.validate_referral_code(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_referral_code(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_coin_balance(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_participant_full_state(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_participant_timeline(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.generate_telegram_link_code(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.unlink_telegram_profile(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_reward_request(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.log_security_event(text, uuid, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.decrypt_phone(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mask_email_secure(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mask_phone_secure(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mask_phone_number(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mask_participant_name(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_adjust_coins(uuid, integer, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_confirm_referral(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_approval(uuid, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_list_coin_balances() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_list_coin_balances() TO service_role;
-GRANT EXECUTE ON FUNCTION public.admin_set_approval(p_user_id uuid, p_approved boolean) TO anon;
-GRANT EXECUTE ON FUNCTION public.admin_set_approval(p_user_id uuid, p_approved boolean) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_approval(p_user_id uuid, p_approved boolean) TO service_role;
-GRANT EXECUTE ON FUNCTION public.auto_cleanup_contact_submissions() TO anon;
-GRANT EXECUTE ON FUNCTION public.auto_cleanup_contact_submissions() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.auto_cleanup_contact_submissions() TO service_role;
-GRANT EXECUTE ON FUNCTION public.auto_delete_old_contact_submissions() TO anon;
-GRANT EXECUTE ON FUNCTION public.auto_delete_old_contact_submissions() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.auto_delete_old_contact_submissions() TO service_role;
-GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(p_user_id uuid, p_rule_code text, p_source_type text, p_source_id uuid, p_reason text, p_amount_override integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(p_user_id uuid, p_rule_code text, p_source_type text, p_source_id uuid, p_reason text, p_amount_override integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(p_user_id uuid, p_rule_code text, p_source_type text, p_source_id uuid, p_reason text, p_amount_override integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.book_schedule_session(p_telegram_id text, p_schedule_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.book_schedule_session(p_telegram_id text, p_schedule_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.book_schedule_session(p_telegram_id text, p_schedule_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level(total_seconds integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level(total_seconds integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level(total_seconds integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level_minutes(total_minutes integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level_minutes(total_minutes integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.calculate_cooper_fitness_level_minutes(total_minutes integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.check_in_activity(p_telegram_id text, p_activity_type text) TO anon;
-GRANT EXECUTE ON FUNCTION public.check_in_activity(p_telegram_id text, p_activity_type text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.check_in_activity(p_telegram_id text, p_activity_type text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.checkin_ascetic(p_telegram_id text, p_ascetic_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.checkin_ascetic(p_telegram_id text, p_ascetic_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.checkin_ascetic(p_telegram_id text, p_ascetic_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_bot_sessions() TO anon;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_bot_sessions() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_bot_sessions() TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO anon;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs() TO anon;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs() TO service_role;
-GRANT EXECUTE ON FUNCTION public.confirm_referral_lead(_lead_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.confirm_referral_lead(_lead_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.confirm_referral_lead(_lead_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.create_reward_request(p_reward_id uuid, p_user_comment text) TO anon;
-GRANT EXECUTE ON FUNCTION public.create_reward_request(p_reward_id uuid, p_user_comment text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.create_reward_request(p_reward_id uuid, p_user_comment text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.decrypt_phone(encrypted_phone text) TO anon;
-GRANT EXECUTE ON FUNCTION public.decrypt_phone(encrypted_phone text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.decrypt_phone(encrypted_phone text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.encrypt_phone(phone_text text) TO anon;
-GRANT EXECUTE ON FUNCTION public.encrypt_phone(phone_text text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.encrypt_phone(phone_text text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.enhanced_contact_rate_limit(p_ip_address inet) TO anon;
-GRANT EXECUTE ON FUNCTION public.enhanced_contact_rate_limit(p_ip_address inet) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.enhanced_contact_rate_limit(p_ip_address inet) TO service_role;
-GRANT EXECUTE ON FUNCTION public.enhanced_rate_limit_check(p_ip_address inet, p_action text) TO anon;
-GRANT EXECUTE ON FUNCTION public.enhanced_rate_limit_check(p_ip_address inet, p_action text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.enhanced_rate_limit_check(p_ip_address inet, p_action text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.enroll_application(p_submission_id uuid, p_stream_id uuid, p_user_id uuid, p_new_status participant_status_type) TO anon;
-GRANT EXECUTE ON FUNCTION public.enroll_application(p_submission_id uuid, p_stream_id uuid, p_user_id uuid, p_new_status participant_status_type) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.enroll_application(p_submission_id uuid, p_stream_id uuid, p_user_id uuid, p_new_status participant_status_type) TO service_role;
-GRANT EXECUTE ON FUNCTION public.ensure_referral_code(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.ensure_referral_code(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.ensure_referral_code(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.generate_display_name() TO anon;
-GRANT EXECUTE ON FUNCTION public.generate_display_name() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.generate_display_name() TO service_role;
-GRANT EXECUTE ON FUNCTION public.generate_referral_code() TO anon;
-GRANT EXECUTE ON FUNCTION public.generate_referral_code() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.generate_referral_code() TO service_role;
-GRANT EXECUTE ON FUNCTION public.generate_telegram_link_code(p_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.generate_telegram_link_code(p_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_ascetic_for_user(p_telegram_id text) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_ascetic_for_user(p_telegram_id text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_ascetic_for_user(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_broadcast_audience(filter_json jsonb) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_broadcast_audience(filter_json jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_broadcast_audience(filter_json jsonb) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_homework_for_user(p_telegram_id text) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_homework_for_user(p_telegram_id text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_homework_for_user(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_journal_for_user(p_telegram_id text, p_date date) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_journal_for_user(p_telegram_id text, p_date date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_journal_for_user(p_telegram_id text, p_date date) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_participant_full_state(p_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_participant_full_state(p_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_participant_full_state(p_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_participant_full_state_by_telegram(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_participant_timeline(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_participant_timeline(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_participant_timeline(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_profile_for_user(p_telegram_id text) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_profile_for_user(p_telegram_id text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_profile_for_user(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_pyramid_for_user(p_telegram_id text) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_pyramid_for_user(p_telegram_id text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_pyramid_for_user(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_rating_for_user(p_telegram_id text) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_rating_for_user(p_telegram_id text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_rating_for_user(p_telegram_id text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_schedule_for_user(p_telegram_id text, p_from timestamp with time zone, p_days integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_schedule_for_user(p_telegram_id text, p_from timestamp with time zone, p_days integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_schedule_for_user(p_telegram_id text, p_from timestamp with time zone, p_days integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_user_coin_balance(p_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_user_coin_balance(p_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_user_coin_balance(p_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.handle_new_user() TO anon;
-GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
-GRANT EXECUTE ON FUNCTION public.handle_new_user_participant() TO anon;
-GRANT EXECUTE ON FUNCTION public.handle_new_user_participant() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.handle_new_user_participant() TO service_role;
-GRANT EXECUTE ON FUNCTION public.has_role(_user_id uuid, _role user_role) TO anon;
-GRANT EXECUTE ON FUNCTION public.has_role(_user_id uuid, _role user_role) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.has_role(_user_id uuid, _role user_role) TO service_role;
-GRANT EXECUTE ON FUNCTION public.is_admin(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.is_admin(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_admin(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.is_club_resident(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.is_club_resident(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_club_resident(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.is_public_participant(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.is_public_participant(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_public_participant(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.is_super_admin(_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.is_super_admin(_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_super_admin(_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.link_or_create_telegram_profile(p_telegram_id text, p_telegram_username text, p_telegram_first_name text, p_telegram_last_name text, p_phone text, p_referral_code text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.link_telegram_lead_to_profile(p_lead_id uuid, p_profile_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.link_telegram_lead_to_profile(p_lead_id uuid, p_profile_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.link_telegram_lead_to_profile(p_lead_id uuid, p_profile_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.link_telegram_profile(p_link_code text, p_telegram_id text, p_telegram_username text, p_telegram_first_name text, p_telegram_last_name text, p_telegram_photo_url text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.log_contact_form_access() TO anon;
-GRANT EXECUTE ON FUNCTION public.log_contact_form_access() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_contact_form_access() TO service_role;
-GRANT EXECUTE ON FUNCTION public.log_participant_status_change() TO anon;
-GRANT EXECUTE ON FUNCTION public.log_participant_status_change() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_participant_status_change() TO service_role;
-GRANT EXECUTE ON FUNCTION public.log_role_changes() TO anon;
-GRANT EXECUTE ON FUNCTION public.log_role_changes() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_role_changes() TO service_role;
-GRANT EXECUTE ON FUNCTION public.log_security_access(p_action text, p_table_name text, p_record_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.log_security_access(p_action text, p_table_name text, p_record_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_security_access(p_action text, p_table_name text, p_record_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.log_security_event(event_type text, user_id_param uuid, details jsonb) TO anon;
-GRANT EXECUTE ON FUNCTION public.log_security_event(event_type text, user_id_param uuid, details jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_security_event(event_type text, user_id_param uuid, details jsonb) TO service_role;
-GRANT EXECUTE ON FUNCTION public.mask_email_secure(email_address text) TO anon;
-GRANT EXECUTE ON FUNCTION public.mask_email_secure(email_address text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_email_secure(email_address text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.mask_participant_name(full_name text) TO anon;
-GRANT EXECUTE ON FUNCTION public.mask_participant_name(full_name text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_participant_name(full_name text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.mask_phone_number(phone_number text) TO anon;
-GRANT EXECUTE ON FUNCTION public.mask_phone_number(phone_number text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_number(phone_number text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.mask_phone_secure(phone_number text) TO anon;
-GRANT EXECUTE ON FUNCTION public.mask_phone_secure(phone_number text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.mask_phone_secure(phone_number text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.normalize_phone(p_phone text) TO anon;
-GRANT EXECUTE ON FUNCTION public.normalize_phone(p_phone text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.normalize_phone(p_phone text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.recalculate_all_ranks() TO anon;
-GRANT EXECUTE ON FUNCTION public.recalculate_all_ranks() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.recalculate_all_ranks() TO service_role;
-GRANT EXECUTE ON FUNCTION public.review_homework_submission(p_submission_id uuid, p_status text, p_admin_comment text) TO anon;
-GRANT EXECUTE ON FUNCTION public.review_homework_submission(p_submission_id uuid, p_status text, p_admin_comment text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.review_homework_submission(p_submission_id uuid, p_status text, p_admin_comment text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.review_reward_request(p_request_id uuid, p_new_status text, p_admin_comment text) TO anon;
-GRANT EXECUTE ON FUNCTION public.review_reward_request(p_request_id uuid, p_new_status text, p_admin_comment text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.review_reward_request(p_request_id uuid, p_new_status text, p_admin_comment text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.save_journal_entry(p_telegram_id text, p_entry_date date, p_day_type text, p_emotions jsonb, p_answers jsonb) TO anon;
-GRANT EXECUTE ON FUNCTION public.save_journal_entry(p_telegram_id text, p_entry_date date, p_day_type text, p_emotions jsonb, p_answers jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.save_journal_entry(p_telegram_id text, p_entry_date date, p_day_type text, p_emotions jsonb, p_answers jsonb) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_challenge_checkin(p_user_id uuid, p_challenge_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_challenge_checkin(p_user_id uuid, p_challenge_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_challenge_checkin(p_user_id uuid, p_challenge_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_complete_mastermind_task(p_user_id uuid, p_task_id uuid, p_comment text, p_file_url text) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_complete_mastermind_task(p_user_id uuid, p_task_id uuid, p_comment text, p_file_url text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_complete_mastermind_task(p_user_id uuid, p_task_id uuid, p_comment text, p_file_url text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_create_mastermind_task(p_user_id uuid, p_title text, p_description text, p_deadline date) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_create_mastermind_task(p_user_id uuid, p_title text, p_description text, p_deadline date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_create_mastermind_task(p_user_id uuid, p_title text, p_description text, p_deadline date) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_create_reward_request(p_user_id uuid, p_reward_id uuid, p_user_comment text) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_create_reward_request(p_user_id uuid, p_reward_id uuid, p_user_comment text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_create_reward_request(p_user_id uuid, p_reward_id uuid, p_user_comment text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_register_for_event(p_user_id uuid, p_schedule_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_register_for_event(p_user_id uuid, p_schedule_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_register_for_event(p_user_id uuid, p_schedule_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_submit_mastermind_entry(p_user_id uuid, p_summary text, p_my_tasks text) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_submit_mastermind_entry(p_user_id uuid, p_summary text, p_my_tasks text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_submit_mastermind_entry(p_user_id uuid, p_summary text, p_my_tasks text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.server_unregister_from_event(p_user_id uuid, p_schedule_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.server_unregister_from_event(p_user_id uuid, p_schedule_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.server_unregister_from_event(p_user_id uuid, p_schedule_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text) TO anon;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text, p_file_url text) TO anon;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text, p_file_url text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_homework(p_telegram_id text, p_assignment_id uuid, p_content text, p_file_url text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles() TO anon;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles() TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles_from_leaderboard() TO anon;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles_from_leaderboard() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.sync_public_profiles_from_leaderboard() TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_testimonial_display_name() TO anon;
-GRANT EXECUTE ON FUNCTION public.sync_testimonial_display_name() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.sync_testimonial_display_name() TO service_role;
-GRANT EXECUTE ON FUNCTION public.sync_to_public_testimonials() TO anon;
-GRANT EXECUTE ON FUNCTION public.sync_to_public_testimonials() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.sync_to_public_testimonials() TO service_role;
-GRANT EXECUTE ON FUNCTION public.take_ascetic(p_telegram_id text, p_text text) TO anon;
-GRANT EXECUTE ON FUNCTION public.take_ascetic(p_telegram_id text, p_text text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.take_ascetic(p_telegram_id text, p_text text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.trigger_recalculate_ranks() TO anon;
-GRANT EXECUTE ON FUNCTION public.trigger_recalculate_ranks() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.trigger_recalculate_ranks() TO service_role;
-GRANT EXECUTE ON FUNCTION public.trigger_update_leaderboard() TO anon;
-GRANT EXECUTE ON FUNCTION public.trigger_update_leaderboard() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.trigger_update_leaderboard() TO service_role;
-GRANT EXECUTE ON FUNCTION public.unlink_telegram_profile(p_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.unlink_telegram_profile(p_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_avatar_for_user(p_telegram_id text, p_avatar_url text) TO anon;
-GRANT EXECUTE ON FUNCTION public.update_avatar_for_user(p_telegram_id text, p_avatar_url text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_avatar_for_user(p_telegram_id text, p_avatar_url text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_habit_completed_days() TO anon;
-GRANT EXECUTE ON FUNCTION public.update_habit_completed_days() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_habit_completed_days() TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_leaderboard_on_ascetic() TO anon;
-GRANT EXECUTE ON FUNCTION public.update_leaderboard_on_ascetic() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_leaderboard_on_ascetic() TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type) TO anon;
-GRANT EXECUTE ON FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type) TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_profile_for_user(p_telegram_id text, p_weight_kg integer, p_height_cm integer, p_date_of_birth date) TO anon;
-GRANT EXECUTE ON FUNCTION public.update_profile_for_user(p_telegram_id text, p_weight_kg integer, p_height_cm integer, p_date_of_birth date) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_profile_for_user(p_telegram_id text, p_weight_kg integer, p_height_cm integer, p_date_of_birth date) TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_timestamp_public_profiles() TO anon;
-GRANT EXECUTE ON FUNCTION public.update_timestamp_public_profiles() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_timestamp_public_profiles() TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO anon;
-GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(user_uuid uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(user_uuid uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_user_leaderboard(user_uuid uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.validate_audit_entry() TO anon;
-GRANT EXECUTE ON FUNCTION public.validate_audit_entry() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_audit_entry() TO service_role;
-GRANT EXECUTE ON FUNCTION public.validate_audit_log_entry(p_action text, p_table_name text, p_user_id uuid) TO anon;
-GRANT EXECUTE ON FUNCTION public.validate_audit_log_entry(p_action text, p_table_name text, p_user_id uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_audit_log_entry(p_action text, p_table_name text, p_user_id uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.validate_contact_submission(p_name text, p_phone text, p_course text, p_social text) TO anon;
-GRANT EXECUTE ON FUNCTION public.validate_contact_submission(p_name text, p_phone text, p_course text, p_social text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_contact_submission(p_name text, p_phone text, p_course text, p_social text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.validate_referral_code(p_code text) TO anon;
-GRANT EXECUTE ON FUNCTION public.validate_referral_code(p_code text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_referral_code(p_code text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.validate_security_event_type() TO anon;
-GRANT EXECUTE ON FUNCTION public.validate_security_event_type() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_security_event_type() TO service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_referral_lead(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.enroll_application(uuid, uuid, uuid, participant_status_type) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.review_homework_submission(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.review_reward_request(uuid, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_participant_status(uuid, participant_status_type) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(uuid, text, text, uuid, text, integer) TO authenticated;
 
--- ################ 08_rls_policies.sql ################
+-- Остальные функции (RPC Telegram Mini App по p_telegram_id, server_*, cron,
+-- триггерные и служебные) вызываются только с service_role — см. FUNCTION_ACCESS_MATRIX.md.
 
--- 08_rls_policies.sql — включение RLS на 80 таблицах и 194 политики.
+-- ==================== migrations/08_rls_policies.sql ====================
+-- 08_rls_policies.sql (v3) — включение RLS на 80 таблицах и 194 политики.
+-- Отличия от v2: политики переведены с TO public на TO authenticated везде,
+-- кроме явно публичных SELECT лендинга и INSERT формы заявки (см. RLS_REVIEW.md).
+-- Политики Мастермайнда с предикатом true заменены на проверку членства/админа.
 
 ALTER TABLE public.achievement_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
@@ -5814,21 +5487,21 @@ CREATE POLICY "Achievements are publicly readable" ON public.achievements AS PER
 CREATE POLICY "Activities are publicly viewable" ON public.activities AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage activities" ON public.activities AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage activities" ON public.activities AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Users can insert their own checkins" ON public.activity_checkins AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own checkins" ON public.activity_checkins AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own checkins" ON public.activity_checkins AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own checkins" ON public.activity_checkins AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Super admins can view all sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Super admins can view all sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Users can view their own sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins can add application notes" ON public.application_notes AS PERMISSIVE FOR INSERT TO authenticated
@@ -5853,38 +5526,38 @@ CREATE POLICY "Admins can update application reminders" ON public.application_re
 CREATE POLICY "Admins can view application reminders" ON public.application_reminders AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can create ascetic activities for any participant" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can create ascetic activities for any participant" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can update ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Trainers can view all ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Ascetic types are publicly readable" ON public.ascetic_types AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Super admins can manage ascetic types" ON public.ascetic_types AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Super admins can manage ascetic types" ON public.ascetic_types AS PERMISSIVE FOR ALL TO authenticated
   USING (is_super_admin(auth.uid()))
   WITH CHECK (is_super_admin(auth.uid()));
 
-CREATE POLICY "Secure audit log insertions" ON public.audit_log AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Secure audit log insertions" ON public.audit_log AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((((current_setting('request.jwt.claims'::text, true))::json ->> 'role'::text) = 'service_role'::text) OR ((auth.uid() IS NOT NULL) AND (current_setting('role'::text, true) = 'authenticated'::text))));
 
-CREATE POLICY "Super admins can view audit logs" ON public.audit_log AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Super admins can view audit logs" ON public.audit_log AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
 CREATE POLICY "Admins can create broadcasts" ON public.broadcast_messages AS PERMISSIVE FOR INSERT TO authenticated
@@ -5970,7 +5643,7 @@ CREATE POLICY "Admins can delete contact submissions" ON public.contact_submissi
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can update contact submissions" ON public.contact_submissions AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update contact submissions" ON public.contact_submissions AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))))
@@ -5982,34 +5655,34 @@ CREATE POLICY "Allow validated contact form submissions" ON public.contact_submi
 CREATE POLICY "Deny public read access to contact submissions" ON public.contact_submissions AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (false);
 
-CREATE POLICY "Admins can manage content blocks" ON public.content_blocks AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage content blocks" ON public.content_blocks AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Content blocks are publicly readable" ON public.content_blocks AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Admins can view all contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own contract data" ON public.contract_data AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own contract data" ON public.contract_data AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update own contract data" ON public.contract_data AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update own contract data" ON public.contract_data AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can view all contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Service role can manage contracts" ON public.contracts AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Service role can manage contracts" ON public.contracts AS PERMISSIVE FOR ALL TO authenticated
   USING (((auth.jwt() ->> 'role'::text) = 'service_role'::text));
 
-CREATE POLICY "Users can view own contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can create cooper test results for any participant" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can create cooper test results for any participant" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
@@ -6019,7 +5692,7 @@ CREATE POLICY "Admins can delete cooper test results" ON public.cooper_test_resu
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
@@ -6039,44 +5712,44 @@ CREATE POLICY "Public can view verified Cooper test results for visible partic" 
    FROM profiles
   WHERE ((profiles.user_id = cooper_test_results.user_id) AND (profiles.approved = true) AND (COALESCE(profiles.leaderboard_visible, true) = true) AND (COALESCE(profiles.profile_private, false) = false))))));
 
-CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all crash test data" ON public.crash_tests AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all crash test data" ON public.crash_tests AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Public can view crash tests of approved participants" ON public.crash_tests AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (((verified = true) AND is_public_participant(user_id)));
 
-CREATE POLICY "Users can insert own crash tests" ON public.crash_tests AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own crash tests" ON public.crash_tests AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own crash tests" ON public.crash_tests AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own crash tests" ON public.crash_tests AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can view all habit progress" ON public.habit_progress AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all habit progress" ON public.habit_progress AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can manage their own habit progress" ON public.habit_progress AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Users can manage their own habit progress" ON public.habit_progress AS PERMISSIVE FOR ALL TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all hero race data" ON public.hero_races AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all hero race data" ON public.hero_races AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own hero races" ON public.hero_races AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own hero races" ON public.hero_races AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own hero races" ON public.hero_races AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own hero races" ON public.hero_races AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage all homework assignments" ON public.homework_assignments AS PERMISSIVE FOR ALL TO authenticated
@@ -6088,13 +5761,13 @@ CREATE POLICY "Intensive participants view their assignments" ON public.homework
    FROM profiles p
   WHERE ((p.user_id = auth.uid()) AND (p.current_stream_id = homework_assignments.stream_id) AND (p.participant_status = 'intensive_active'::participant_status_type))))))));
 
-CREATE POLICY "Admins can manage all homework data" ON public.homework_submissions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all homework data" ON public.homework_submissions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own homework" ON public.homework_submissions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own homework" ON public.homework_submissions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own homework" ON public.homework_submissions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own homework" ON public.homework_submissions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Allow public read access for active streams" ON public.intensive_streams AS PERMISSIVE FOR SELECT TO public
@@ -6149,44 +5822,37 @@ CREATE POLICY "Authenticated users can view public leaderboard entries" ON publi
    FROM profiles
   WHERE ((profiles.user_id = leaderboard.user_id) AND (profiles.leaderboard_visible = true)))) OR (user_id = auth.uid())));
 
-CREATE POLICY "Admins can manage all lecture data" ON public.lectures AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all lecture data" ON public.lectures AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own lectures" ON public.lectures AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own lectures" ON public.lectures AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own lectures" ON public.lectures AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own lectures" ON public.lectures AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "mm_entries_admin_write" ON public.mastermind_entries AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "mm_entries_insert" ON public.mastermind_entries AS PERMISSIVE FOR INSERT TO public
-  WITH CHECK (true);
+CREATE POLICY "mm_entries_insert" ON public.mastermind_entries AS PERMISSIVE FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_entries_read" ON public.mastermind_entries AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_entries_read" ON public.mastermind_entries AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_groups_read" ON public.mastermind_groups AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_groups_read" ON public.mastermind_groups AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.group_id = id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_members_admin_write" ON public.mastermind_members AS PERMISSIVE FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
+CREATE POLICY "mm_members_read" ON public.mastermind_members AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR user_id = auth.uid());
 
-CREATE POLICY "mm_members_read" ON public.mastermind_members AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_tasks_read" ON public.mastermind_tasks AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_tasks_admin_write" ON public.mastermind_tasks AS PERMISSIVE FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
-CREATE POLICY "mm_tasks_read" ON public.mastermind_tasks AS PERMISSIVE FOR SELECT TO public
-  USING (true);
-
-CREATE POLICY "mm_tasks_update" ON public.mastermind_tasks AS PERMISSIVE FOR UPDATE TO public
-  USING (true);
+CREATE POLICY "mm_tasks_update" ON public.mastermind_tasks AS PERMISSIVE FOR UPDATE TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()))
+  WITH CHECK (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
 CREATE POLICY "Admins manage all materials" ON public.materials AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
@@ -6197,35 +5863,35 @@ CREATE POLICY "Members view available materials" ON public.materials AS PERMISSI
    FROM profiles p
   WHERE ((p.user_id = auth.uid()) AND ((materials.available_to = 'all'::text) OR ((materials.available_to = 'intensive'::text) AND (p.participant_status = 'intensive_active'::participant_status_type)) OR ((materials.available_to = 'club'::text) AND (p.participant_status = 'club_resident'::participant_status_type))) AND ((materials.stream_id IS NULL) OR (materials.stream_id = p.current_stream_id))))))));
 
-CREATE POLICY "Admins can manage moments" ON public.moments AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage moments" ON public.moments AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Moments are publicly readable" ON public.moments AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Users can update their own notifications" ON public.notifications AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own notifications" ON public.notifications AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own notifications" ON public.notifications AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own notifications" ON public.notifications AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all habits" ON public.participant_habits AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all habits" ON public.participant_habits AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can view all habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own habits" ON public.participant_habits AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own habits" ON public.participant_habits AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own habits" ON public.participant_habits AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own habits" ON public.participant_habits AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage participant_notes" ON public.participant_notes AS PERMISSIVE FOR ALL TO authenticated
@@ -6244,23 +5910,23 @@ CREATE POLICY "Admins manage profile_tags" ON public.profile_tags AS PERMISSIVE 
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can update any profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update any profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can view all profiles" ON public.profiles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all profiles" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Block anonymous access to profiles" ON public.profiles AS RESTRICTIVE FOR ALL TO anon
   USING (false)
   WITH CHECK (false);
 
-CREATE POLICY "Users can insert their own profile" ON public.profiles AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own profile" ON public.profiles AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Public can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO public
@@ -6323,36 +5989,36 @@ CREATE POLICY "Club residents view active rewards" ON public.rewards AS PERMISSI
 CREATE POLICY "Super admins can view role audit logs" ON public.role_audit_log AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Club residents can register for club schedules" ON public.schedule_participants AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Club residents can register for club schedules" ON public.schedule_participants AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((auth.uid() = user_id) AND (is_club_resident(auth.uid()) OR is_admin(auth.uid()))));
 
-CREATE POLICY "Trainers can view all schedule participants" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all schedule participants" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can view their own schedule participation" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own schedule participation" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "admins_delete_any_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "admins_delete_any_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "users_delete_own_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "users_delete_own_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins and trainers can manage schedules" ON public.schedules AS PERMISSIVE FOR ALL TO authenticated
   USING ((is_admin(auth.uid()) OR has_role(auth.uid(), 'trainer'::user_role)))
   WITH CHECK ((is_admin(auth.uid()) OR has_role(auth.uid(), 'trainer'::user_role)));
 
-CREATE POLICY "Club schedules are viewable by club residents" ON public.schedules AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Club schedules are viewable by club residents" ON public.schedules AS PERMISSIVE FOR SELECT TO authenticated
   USING (((schedule_type = 'club'::schedule_type) AND (is_active = true) AND (is_club_resident(auth.uid()) OR is_admin(auth.uid()))));
 
 CREATE POLICY "Intensive schedules are publicly viewable" ON public.schedules AS PERMISSIVE FOR SELECT TO public
   USING (((schedule_type = 'intensive'::schedule_type) AND (is_active = true)));
 
-CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
@@ -6360,16 +6026,16 @@ CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR AL
 CREATE POLICY "Streams are publicly viewable" ON public.streams AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage all tactical data" ON public.tactical_sessions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all tactical data" ON public.tactical_sessions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "super_admin_select_bot_logs" ON public.telegram_bot_logs AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "super_admin_select_bot_logs" ON public.telegram_bot_logs AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
 CREATE POLICY "Admins can update telegram leads" ON public.telegram_leads AS PERMISSIVE FOR UPDATE TO authenticated
@@ -6379,13 +6045,13 @@ CREATE POLICY "Admins can update telegram leads" ON public.telegram_leads AS PER
 CREATE POLICY "Admins can view telegram leads" ON public.telegram_leads AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can manage testimonials" ON public.testimonials AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage testimonials" ON public.testimonials AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can view all testimonial data" ON public.testimonials AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all testimonial data" ON public.testimonials AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can manage totems" ON public.totems AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage totems" ON public.totems AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Totems are publicly readable" ON public.totems AS PERMISSIVE FOR SELECT TO public
@@ -6397,51 +6063,51 @@ CREATE POLICY "Trainers are publicly readable" ON public.trainers AS PERMISSIVE 
 CREATE POLICY "Training programs are publicly readable" ON public.training_programs AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage all training sessions" ON public.training_sessions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all training sessions" ON public.training_sessions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Users can create their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can create their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can insert their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own training sessions" ON public.training_sessions AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own training sessions" ON public.training_sessions AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id))
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own training sessions" ON public.training_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own training sessions" ON public.training_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own achievements" ON public.user_achievements AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own achievements" ON public.user_achievements AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage user activities" ON public.user_activities AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Trainers can view all user activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all user activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own activities" ON public.user_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own activities" ON public.user_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can join challenges" ON public.user_challenges AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can join challenges" ON public.user_challenges AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own challenge participation" ON public.user_challenges AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own challenge participation" ON public.user_challenges AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage user points" ON public.user_points AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage user points" ON public.user_points AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can view own points" ON public.user_points AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own points" ON public.user_points AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Only super admins can assign roles" ON public.user_roles AS PERMISSIVE FOR INSERT TO authenticated
@@ -6450,15 +6116,15 @@ CREATE POLICY "Only super admins can assign roles" ON public.user_roles AS PERMI
 CREATE POLICY "Super admins can manage user roles" ON public.user_roles AS PERMISSIVE FOR ALL TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Users can view their own roles" ON public.user_roles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own roles" ON public.user_roles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can assign totems" ON public.user_totems AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can assign totems" ON public.user_totems AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
@@ -6466,74 +6132,75 @@ CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE F
 CREATE POLICY "Public can view totems of approved participants" ON public.user_totems AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (is_public_participant(user_id));
 
-CREATE POLICY "Users can view their own totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins manage weekly summaries" ON public.weekly_summaries AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins manage weekly summaries" ON public.weekly_summaries AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Users can manage their own ascetics" ON public."аскезы_участников" AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Users can manage their own ascetics" ON public."аскезы_участников" AS PERMISSIVE FOR ALL TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can view their own kamp activities" ON public."кэмп_активности" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own kamp activities" ON public."кэмп_активности" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can view their own totems" ON public."тотемы_участников" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own totems" ON public."тотемы_участников" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can update their own participant" ON public."участники" AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own participant" ON public."участники" AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own participant" ON public."участники" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own participant" ON public."участники" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
--- ################ 10_storage.sql ################
-
--- 10_storage.sql — 38 RLS-политик storage.objects.
+-- ==================== migrations/10_storage.sql ====================
+-- 10_storage.sql (v3) — 38 RLS-политик storage.objects.
+-- Отличие от v2: TO public оставлен только у 4 публичных SELECT-политик
+-- (avatars, content, moments, testimonials); остальные переведены на TO authenticated.
 -- Бакеты создаются ОТДЕЛЬНО (см. README, раздел «Ручные действия»).
 
-CREATE POLICY "Admins can delete content media" ON storage.objects AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "Admins can delete content media" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'content'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can delete moments media" ON storage.objects AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "Admins can delete moments media" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'moments'::text) AND is_admin(auth.uid())));
 
 CREATE POLICY "Admins can delete pyramid materials" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'pyramid-materials'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can delete testimonials media" ON storage.objects AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "Admins can delete testimonials media" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'testimonials'::text) AND is_admin(auth.uid())));
 
 CREATE POLICY "Admins can insert pyramid materials" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'pyramid-materials'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can update content media" ON storage.objects AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update content media" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
   USING (((bucket_id = 'content'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can update moments media" ON storage.objects AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update moments media" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
   USING (((bucket_id = 'moments'::text) AND is_admin(auth.uid())));
 
 CREATE POLICY "Admins can update pyramid materials" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
   USING (((bucket_id = 'pyramid-materials'::text) AND is_admin(auth.uid())))
   WITH CHECK (((bucket_id = 'pyramid-materials'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can update testimonials media" ON storage.objects AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update testimonials media" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
   USING (((bucket_id = 'testimonials'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can upload content media" ON storage.objects AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can upload content media" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'content'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can upload moments media" ON storage.objects AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can upload moments media" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'moments'::text) AND is_admin(auth.uid())));
 
-CREATE POLICY "Admins can upload testimonials media" ON storage.objects AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can upload testimonials media" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'testimonials'::text) AND is_admin(auth.uid())));
 
 CREATE POLICY "Admins delete assignment files" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
@@ -6587,11 +6254,11 @@ CREATE POLICY "Public can view moments media" ON storage.objects AS PERMISSIVE F
 CREATE POLICY "Public can view testimonials media" ON storage.objects AS PERMISSIVE FOR SELECT TO public
   USING ((bucket_id = 'testimonials'::text));
 
-CREATE POLICY "Super admins can manage contracts" ON storage.objects AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Super admins can manage contracts" ON storage.objects AS PERMISSIVE FOR ALL TO authenticated
   USING (((bucket_id = 'contracts'::text) AND is_super_admin(auth.uid())))
   WITH CHECK (((bucket_id = 'contracts'::text) AND is_super_admin(auth.uid())));
 
-CREATE POLICY "Users can view their own contracts" ON storage.objects AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own contracts" ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated
   USING (((bucket_id = 'contracts'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
 
 CREATE POLICY "Users delete own avatar" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
