@@ -87,8 +87,11 @@ export const MastermindManagement: React.FC = () => {
   const [taskMemberId, setTaskMemberId] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
+  const [taskDeadline, setTaskDeadline] = useState('');
 
   const [reviewComments, setReviewComments] = useState<Record<string, string>>({});
+  const [taskComments, setTaskComments] = useState<Record<string, string>>({});
+  const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
 
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
