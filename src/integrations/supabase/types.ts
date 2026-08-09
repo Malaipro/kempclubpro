@@ -1570,10 +1570,41 @@ export type Database = {
           },
         ]
       }
+      mastermind_groups: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          start_date?: string | null
+        }
+        Relationships: []
+      }
       mastermind_members: {
         Row: {
           created_at: string | null
           end_date: string | null
+          group_id: string | null
           id: string
           is_active: boolean | null
           plan: string | null
@@ -1585,6 +1616,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           end_date?: string | null
+          group_id?: string | null
           id?: string
           is_active?: boolean | null
           plan?: string | null
@@ -1596,6 +1628,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           end_date?: string | null
+          group_id?: string | null
           id?: string
           is_active?: boolean | null
           plan?: string | null
@@ -1605,6 +1638,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mastermind_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mastermind_members_user_id_fkey"
             columns: ["user_id"]
