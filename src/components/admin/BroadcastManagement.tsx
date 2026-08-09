@@ -478,20 +478,90 @@ export const BroadcastManagement: React.FC = () => {
                                   <div>
                                     <div className="font-semibold mb-1">Кнопки:</div>
                                     <div className="flex flex-wrap gap-2">
-                                      {m.buttons.map((b, i) => (
-                                        <a
-                                          key={i}
-                                          href={b.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
-                                        >
-                                          {b.label} <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                      ))}
+                                      {m.buttons.map((b, i) =>
+                                        (b.type ?? 'url') === 'url' && b.url ? (
+                                          <a
+                                            key={b.id || i}
+                                            href={b.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
+                                          >
+                                            {b.label} <ExternalLink className="w-3 h-3" />
+                                          </a>
+                                        ) : (
+                                          <span
+                                            key={b.id || i}
+                                            className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs"
+                                          >
+                                            {b.label}
+                                            <Badge variant="secondary" className="text-[10px]">
+                                              {buttonTypeLabels[(b.type ?? 'url') as ButtonType]}
+                                            </Badge>
+                                          </span>
+                                        )
+                                      )}
                                     </div>
                                   </div>
                                 )}
+
+                                {/* Ответы по интерактивным кнопкам */}
+                                {m.buttons?.some((b) => (b.type ?? 'url') !== 'url') && (
+                                  <div>
+                                    <div className="font-semibold mb-1">Ответы:</div>
+                                    {responsesLoading.has(m.id) ? (
+                                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {m.buttons
+                                          .filter((b) => (b.type ?? 'url') !== 'url')
+                                          .map((b, i) => {
+                                            const all = responses[m.id] || [];
+                                            const clicks = all.filter((r) =>
+                                              b.id ? r.button_id === b.id : r.button_label === b.label
+                                            );
+                                            return (
+                                              <div key={b.id || i} className="border rounded p-2">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                  <span className="font-medium">{b.label}</span>
+                                                  <Badge variant="outline">{clicks.length} нажатий</Badge>
+                                                </div>
+                                                {clicks.length === 0 ? (
+                                                  <p className="text-xs text-muted-foreground">Нажатий пока нет</p>
+                                                ) : (
+                                                  <div className="overflow-x-auto">
+                                                    <Table>
+                                                      <TableHeader>
+                                                        <TableRow>
+                                                          <TableHead>Участник</TableHead>
+                                                          <TableHead>Телефон</TableHead>
+                                                          <TableHead>Telegram ID</TableHead>
+                                                          <TableHead>Дата</TableHead>
+                                                        </TableRow>
+                                                      </TableHeader>
+                                                      <TableBody>
+                                                        {clicks.map((r) => (
+                                                          <TableRow key={r.id}>
+                                                            <TableCell className="text-xs">{r.display_name || '—'}</TableCell>
+                                                            <TableCell className="text-xs">{r.phone || '—'}</TableCell>
+                                                            <TableCell className="text-xs">{r.telegram_id || '—'}</TableCell>
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                              {format(new Date(r.created_at), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                                                            </TableCell>
+                                                          </TableRow>
+                                                        ))}
+                                                      </TableBody>
+                                                    </Table>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
                                 {m.file_url && (
                                   <div>
                                     <div className="font-semibold mb-1">Файл:</div>
