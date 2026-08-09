@@ -1781,13 +1781,24 @@ $function$
 
 CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
  RETURNS integer
- LANGUAGE sql
+ LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
-  SELECT COALESCE(SUM(amount), 0)::INTEGER
-  FROM public.coin_transactions
-  WHERE user_id = p_user_id;
+BEGIN
+  -- v4: только собственный баланс, администратор или service_role
+  IF current_user <> 'service_role'
+     AND p_user_id IS DISTINCT FROM auth.uid()
+     AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: own balance or admin role required';
+  END IF;
+
+  RETURN (
+    SELECT COALESCE(SUM(amount), 0)::INTEGER
+    FROM public.coin_transactions
+    WHERE user_id = p_user_id
+  );
+END;
 $function$
 ;
 
@@ -3376,6 +3387,11 @@ CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_ne
  SET search_path TO 'public'
 AS $function$
 BEGIN
+  -- v4: проверка роли внутри тела (UI-скрытие кнопки не является защитой)
+  IF current_user <> 'service_role' AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
+  END IF;
+
   -- Обновляем статус участника
   UPDATE profiles
   SET 
@@ -3485,6 +3501,13 @@ DECLARE
   v_crash_ofp INTEGER := 0;
   v_stream_id UUID;
 BEGIN
+  -- v4: пересчёт разрешён только для себя, администратору или service_role
+  IF current_user <> 'service_role'
+     AND user_uuid IS DISTINCT FROM auth.uid()
+     AND NOT public.is_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
+  END IF;
+
   -- Get user's stream_id
   SELECT current_stream_id INTO v_stream_id FROM profiles WHERE user_id = user_uuid;
 
