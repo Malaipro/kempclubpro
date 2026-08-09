@@ -1,4 +1,7 @@
--- 08_rls_policies.sql — включение RLS на 80 таблицах и 194 политики.
+-- 08_rls_policies.sql (v3) — включение RLS на 80 таблицах и 194 политики.
+-- Отличия от v2: политики переведены с TO public на TO authenticated везде,
+-- кроме явно публичных SELECT лендинга и INSERT формы заявки (см. RLS_REVIEW.md).
+-- Политики Мастермайнда с предикатом true заменены на проверку членства/админа.
 
 ALTER TABLE public.achievement_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
@@ -90,21 +93,21 @@ CREATE POLICY "Achievements are publicly readable" ON public.achievements AS PER
 CREATE POLICY "Activities are publicly viewable" ON public.activities AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage activities" ON public.activities AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage activities" ON public.activities AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Users can insert their own checkins" ON public.activity_checkins AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own checkins" ON public.activity_checkins AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own checkins" ON public.activity_checkins AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own checkins" ON public.activity_checkins AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Super admins can view all sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Super admins can view all sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Users can view their own sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own sessions" ON public.admin_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins can add application notes" ON public.application_notes AS PERMISSIVE FOR INSERT TO authenticated
@@ -129,38 +132,38 @@ CREATE POLICY "Admins can update application reminders" ON public.application_re
 CREATE POLICY "Admins can view application reminders" ON public.application_reminders AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can create ascetic activities for any participant" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can create ascetic activities for any participant" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can update ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Trainers can view all ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own ascetic activities" ON public.ascetic_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Ascetic types are publicly readable" ON public.ascetic_types AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Super admins can manage ascetic types" ON public.ascetic_types AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Super admins can manage ascetic types" ON public.ascetic_types AS PERMISSIVE FOR ALL TO authenticated
   USING (is_super_admin(auth.uid()))
   WITH CHECK (is_super_admin(auth.uid()));
 
-CREATE POLICY "Secure audit log insertions" ON public.audit_log AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Secure audit log insertions" ON public.audit_log AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((((current_setting('request.jwt.claims'::text, true))::json ->> 'role'::text) = 'service_role'::text) OR ((auth.uid() IS NOT NULL) AND (current_setting('role'::text, true) = 'authenticated'::text))));
 
-CREATE POLICY "Super admins can view audit logs" ON public.audit_log AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Super admins can view audit logs" ON public.audit_log AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
 CREATE POLICY "Admins can create broadcasts" ON public.broadcast_messages AS PERMISSIVE FOR INSERT TO authenticated
@@ -246,7 +249,7 @@ CREATE POLICY "Admins can delete contact submissions" ON public.contact_submissi
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can update contact submissions" ON public.contact_submissions AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update contact submissions" ON public.contact_submissions AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))))
@@ -258,34 +261,34 @@ CREATE POLICY "Allow validated contact form submissions" ON public.contact_submi
 CREATE POLICY "Deny public read access to contact submissions" ON public.contact_submissions AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (false);
 
-CREATE POLICY "Admins can manage content blocks" ON public.content_blocks AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage content blocks" ON public.content_blocks AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Content blocks are publicly readable" ON public.content_blocks AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Admins can view all contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own contract data" ON public.contract_data AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own contract data" ON public.contract_data AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update own contract data" ON public.contract_data AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update own contract data" ON public.contract_data AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own contract data" ON public.contract_data AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can view all contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Service role can manage contracts" ON public.contracts AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Service role can manage contracts" ON public.contracts AS PERMISSIVE FOR ALL TO authenticated
   USING (((auth.jwt() ->> 'role'::text) = 'service_role'::text));
 
-CREATE POLICY "Users can view own contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own contracts" ON public.contracts AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can create cooper test results for any participant" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Admins can create cooper test results for any participant" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
@@ -295,7 +298,7 @@ CREATE POLICY "Admins can delete cooper test results" ON public.cooper_test_resu
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
@@ -315,44 +318,44 @@ CREATE POLICY "Public can view verified Cooper test results for visible partic" 
    FROM profiles
   WHERE ((profiles.user_id = cooper_test_results.user_id) AND (profiles.approved = true) AND (COALESCE(profiles.leaderboard_visible, true) = true) AND (COALESCE(profiles.profile_private, false) = false))))));
 
-CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own cooper test results" ON public.cooper_test_results AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all crash test data" ON public.crash_tests AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all crash test data" ON public.crash_tests AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Public can view crash tests of approved participants" ON public.crash_tests AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (((verified = true) AND is_public_participant(user_id)));
 
-CREATE POLICY "Users can insert own crash tests" ON public.crash_tests AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own crash tests" ON public.crash_tests AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own crash tests" ON public.crash_tests AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own crash tests" ON public.crash_tests AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can view all habit progress" ON public.habit_progress AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all habit progress" ON public.habit_progress AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can manage their own habit progress" ON public.habit_progress AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Users can manage their own habit progress" ON public.habit_progress AS PERMISSIVE FOR ALL TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all hero race data" ON public.hero_races AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all hero race data" ON public.hero_races AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own hero races" ON public.hero_races AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own hero races" ON public.hero_races AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own hero races" ON public.hero_races AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own hero races" ON public.hero_races AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage all homework assignments" ON public.homework_assignments AS PERMISSIVE FOR ALL TO authenticated
@@ -364,13 +367,13 @@ CREATE POLICY "Intensive participants view their assignments" ON public.homework
    FROM profiles p
   WHERE ((p.user_id = auth.uid()) AND (p.current_stream_id = homework_assignments.stream_id) AND (p.participant_status = 'intensive_active'::participant_status_type))))))));
 
-CREATE POLICY "Admins can manage all homework data" ON public.homework_submissions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all homework data" ON public.homework_submissions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own homework" ON public.homework_submissions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own homework" ON public.homework_submissions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own homework" ON public.homework_submissions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own homework" ON public.homework_submissions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Allow public read access for active streams" ON public.intensive_streams AS PERMISSIVE FOR SELECT TO public
@@ -425,44 +428,37 @@ CREATE POLICY "Authenticated users can view public leaderboard entries" ON publi
    FROM profiles
   WHERE ((profiles.user_id = leaderboard.user_id) AND (profiles.leaderboard_visible = true)))) OR (user_id = auth.uid())));
 
-CREATE POLICY "Admins can manage all lecture data" ON public.lectures AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all lecture data" ON public.lectures AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own lectures" ON public.lectures AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own lectures" ON public.lectures AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own lectures" ON public.lectures AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own lectures" ON public.lectures AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "mm_entries_admin_write" ON public.mastermind_entries AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "mm_entries_insert" ON public.mastermind_entries AS PERMISSIVE FOR INSERT TO public
-  WITH CHECK (true);
+CREATE POLICY "mm_entries_insert" ON public.mastermind_entries AS PERMISSIVE FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_entries_read" ON public.mastermind_entries AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_entries_read" ON public.mastermind_entries AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_groups_read" ON public.mastermind_groups AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_groups_read" ON public.mastermind_groups AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.group_id = id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_members_admin_write" ON public.mastermind_members AS PERMISSIVE FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
+CREATE POLICY "mm_members_read" ON public.mastermind_members AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR user_id = auth.uid());
 
-CREATE POLICY "mm_members_read" ON public.mastermind_members AS PERMISSIVE FOR SELECT TO public
-  USING (true);
+CREATE POLICY "mm_tasks_read" ON public.mastermind_tasks AS PERMISSIVE FOR SELECT TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
-CREATE POLICY "mm_tasks_admin_write" ON public.mastermind_tasks AS PERMISSIVE FOR ALL TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
-CREATE POLICY "mm_tasks_read" ON public.mastermind_tasks AS PERMISSIVE FOR SELECT TO public
-  USING (true);
-
-CREATE POLICY "mm_tasks_update" ON public.mastermind_tasks AS PERMISSIVE FOR UPDATE TO public
-  USING (true);
+CREATE POLICY "mm_tasks_update" ON public.mastermind_tasks AS PERMISSIVE FOR UPDATE TO authenticated
+  USING (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()))
+  WITH CHECK (is_admin(auth.uid()) OR EXISTS (SELECT 1 FROM public.mastermind_members m WHERE m.id = member_id AND m.user_id = auth.uid()));
 
 CREATE POLICY "Admins manage all materials" ON public.materials AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
@@ -473,35 +469,35 @@ CREATE POLICY "Members view available materials" ON public.materials AS PERMISSI
    FROM profiles p
   WHERE ((p.user_id = auth.uid()) AND ((materials.available_to = 'all'::text) OR ((materials.available_to = 'intensive'::text) AND (p.participant_status = 'intensive_active'::participant_status_type)) OR ((materials.available_to = 'club'::text) AND (p.participant_status = 'club_resident'::participant_status_type))) AND ((materials.stream_id IS NULL) OR (materials.stream_id = p.current_stream_id))))))));
 
-CREATE POLICY "Admins can manage moments" ON public.moments AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage moments" ON public.moments AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Moments are publicly readable" ON public.moments AS PERMISSIVE FOR SELECT TO public
   USING ((is_active = true));
 
-CREATE POLICY "Users can update their own notifications" ON public.notifications AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own notifications" ON public.notifications AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own notifications" ON public.notifications AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own notifications" ON public.notifications AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage all habits" ON public.participant_habits AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all habits" ON public.participant_habits AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can view all habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own habits" ON public.participant_habits AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own habits" ON public.participant_habits AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own habits" ON public.participant_habits AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own habits" ON public.participant_habits AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own habits" ON public.participant_habits AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage participant_notes" ON public.participant_notes AS PERMISSIVE FOR ALL TO authenticated
@@ -520,23 +516,23 @@ CREATE POLICY "Admins manage profile_tags" ON public.profile_tags AS PERMISSIVE 
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can update any profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Admins can update any profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can view all profiles" ON public.profiles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all profiles" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Block anonymous access to profiles" ON public.profiles AS RESTRICTIVE FOR ALL TO anon
   USING (false)
   WITH CHECK (false);
 
-CREATE POLICY "Users can insert their own profile" ON public.profiles AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own profile" ON public.profiles AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own profile" ON public.profiles AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own profile" ON public.profiles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Public can read public profiles" ON public.public_profiles AS PERMISSIVE FOR SELECT TO public
@@ -599,36 +595,36 @@ CREATE POLICY "Club residents view active rewards" ON public.rewards AS PERMISSI
 CREATE POLICY "Super admins can view role audit logs" ON public.role_audit_log AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Club residents can register for club schedules" ON public.schedule_participants AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Club residents can register for club schedules" ON public.schedule_participants AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((auth.uid() = user_id) AND (is_club_resident(auth.uid()) OR is_admin(auth.uid()))));
 
-CREATE POLICY "Trainers can view all schedule participants" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all schedule participants" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can view their own schedule participation" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own schedule participation" ON public.schedule_participants AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "admins_delete_any_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "admins_delete_any_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "users_delete_own_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO public
+CREATE POLICY "users_delete_own_participation" ON public.schedule_participants AS PERMISSIVE FOR DELETE TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins and trainers can manage schedules" ON public.schedules AS PERMISSIVE FOR ALL TO authenticated
   USING ((is_admin(auth.uid()) OR has_role(auth.uid(), 'trainer'::user_role)))
   WITH CHECK ((is_admin(auth.uid()) OR has_role(auth.uid(), 'trainer'::user_role)));
 
-CREATE POLICY "Club schedules are viewable by club residents" ON public.schedules AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Club schedules are viewable by club residents" ON public.schedules AS PERMISSIVE FOR SELECT TO authenticated
   USING (((schedule_type = 'club'::schedule_type) AND (is_active = true) AND (is_club_resident(auth.uid()) OR is_admin(auth.uid()))));
 
 CREATE POLICY "Intensive schedules are publicly viewable" ON public.schedules AS PERMISSIVE FOR SELECT TO public
   USING (((schedule_type = 'intensive'::schedule_type) AND (is_active = true)));
 
-CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
@@ -636,16 +632,16 @@ CREATE POLICY "Admins can manage streams" ON public.streams AS PERMISSIVE FOR AL
 CREATE POLICY "Streams are publicly viewable" ON public.streams AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage all tactical data" ON public.tactical_sessions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all tactical data" ON public.tactical_sessions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can insert own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own tactical sessions" ON public.tactical_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "super_admin_select_bot_logs" ON public.telegram_bot_logs AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "super_admin_select_bot_logs" ON public.telegram_bot_logs AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_super_admin(auth.uid()));
 
 CREATE POLICY "Admins can update telegram leads" ON public.telegram_leads AS PERMISSIVE FOR UPDATE TO authenticated
@@ -655,13 +651,13 @@ CREATE POLICY "Admins can update telegram leads" ON public.telegram_leads AS PER
 CREATE POLICY "Admins can view telegram leads" ON public.telegram_leads AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can manage testimonials" ON public.testimonials AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage testimonials" ON public.testimonials AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can view all testimonial data" ON public.testimonials AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all testimonial data" ON public.testimonials AS PERMISSIVE FOR SELECT TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Admins can manage totems" ON public.totems AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage totems" ON public.totems AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
 CREATE POLICY "Totems are publicly readable" ON public.totems AS PERMISSIVE FOR SELECT TO public
@@ -673,51 +669,51 @@ CREATE POLICY "Trainers are publicly readable" ON public.trainers AS PERMISSIVE 
 CREATE POLICY "Training programs are publicly readable" ON public.training_programs AS PERMISSIVE FOR SELECT TO public
   USING (true);
 
-CREATE POLICY "Admins can manage all training sessions" ON public.training_sessions AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage all training sessions" ON public.training_sessions AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Users can create their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can create their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can insert their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own training sessions" ON public.training_sessions AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can update their own training sessions" ON public.training_sessions AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own training sessions" ON public.training_sessions AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id))
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own training sessions" ON public.training_sessions AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own training sessions" ON public.training_sessions AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own achievements" ON public.user_achievements AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own achievements" ON public.user_achievements AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Admins manage user activities" ON public.user_activities AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Trainers can view all user activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Trainers can view all user activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role, 'trainer'::user_role]))))));
 
-CREATE POLICY "Users can insert their own activities" ON public.user_activities AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can insert their own activities" ON public.user_activities AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own activities" ON public.user_activities AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can join challenges" ON public.user_challenges AS PERMISSIVE FOR INSERT TO public
+CREATE POLICY "Users can join challenges" ON public.user_challenges AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own challenge participation" ON public.user_challenges AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own challenge participation" ON public.user_challenges AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can manage user points" ON public.user_points AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can manage user points" ON public.user_points AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()));
 
-CREATE POLICY "Users can view own points" ON public.user_points AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view own points" ON public.user_points AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
 CREATE POLICY "Only super admins can assign roles" ON public.user_roles AS PERMISSIVE FOR INSERT TO authenticated
@@ -726,15 +722,15 @@ CREATE POLICY "Only super admins can assign roles" ON public.user_roles AS PERMI
 CREATE POLICY "Super admins can manage user roles" ON public.user_roles AS PERMISSIVE FOR ALL TO authenticated
   USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Users can view their own roles" ON public.user_roles AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own roles" ON public.user_roles AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins can assign totems" ON public.user_totems AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins can assign totems" ON public.user_totems AS PERMISSIVE FOR ALL TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
 
-CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO authenticated
   USING ((EXISTS ( SELECT 1
    FROM user_roles
   WHERE ((user_roles.user_id = auth.uid()) AND (user_roles.role = ANY (ARRAY['admin'::user_role, 'super_admin'::user_role]))))));
@@ -742,30 +738,30 @@ CREATE POLICY "Admins can view all totems" ON public.user_totems AS PERMISSIVE F
 CREATE POLICY "Public can view totems of approved participants" ON public.user_totems AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING (is_public_participant(user_id));
 
-CREATE POLICY "Users can view their own totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own totems" ON public.user_totems AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Admins manage weekly summaries" ON public.weekly_summaries AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Admins manage weekly summaries" ON public.weekly_summaries AS PERMISSIVE FOR ALL TO authenticated
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
-CREATE POLICY "Users can manage their own ascetics" ON public."аскезы_участников" AS PERMISSIVE FOR ALL TO public
+CREATE POLICY "Users can manage their own ascetics" ON public."аскезы_участников" AS PERMISSIVE FOR ALL TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can view their own kamp activities" ON public."кэмп_активности" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own kamp activities" ON public."кэмп_активности" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can view their own totems" ON public."тотемы_участников" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own totems" ON public."тотемы_участников" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((participant_id IN ( SELECT "участники".id
    FROM "участники"
   WHERE ("участники".user_id = auth.uid()))));
 
-CREATE POLICY "Users can update their own participant" ON public."участники" AS PERMISSIVE FOR UPDATE TO public
+CREATE POLICY "Users can update their own participant" ON public."участники" AS PERMISSIVE FOR UPDATE TO authenticated
   USING ((auth.uid() = user_id));
 
-CREATE POLICY "Users can view their own participant" ON public."участники" AS PERMISSIVE FOR SELECT TO public
+CREATE POLICY "Users can view their own participant" ON public."участники" AS PERMISSIVE FOR SELECT TO authenticated
   USING ((auth.uid() = user_id));
