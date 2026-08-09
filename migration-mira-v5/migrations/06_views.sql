@@ -1,4 +1,4 @@
--- 06_views.sql (v4)
+-- 06_views.sql (v5)
 -- В действующей базе КЭМП НЕТ ни одного VIEW в схеме public.
 -- v4 добавляет ДВА безопасных публичных представления, чтобы роль anon
 -- больше не читала таблицы public_profiles и cooper_test_results целиком.
@@ -21,7 +21,12 @@ SELECT
   pp.total_points,
   pp.rank_position,
   pp.participant_status,
-  pp.current_stream_id
+  -- v5: реальный current_stream_id больше не публикуется.
+  -- Публичной странице нужен только признак «текущий активный поток».
+  EXISTS (
+    SELECT 1 FROM public.streams s
+    WHERE s.id = pp.current_stream_id AND s.is_active = true
+  ) AS is_active_stream
 FROM public.public_profiles pp
 WHERE pp.display_name IS NOT NULL
   AND pp.participant_status IN ('intensive_active', 'club_resident');

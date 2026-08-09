@@ -1,4 +1,4 @@
--- 07_grants.sql (v4) — минимально необходимые привилегии PostgREST-ролей.
+-- 07_grants.sql (v5) — минимально необходимые привилегии PostgREST-ролей.
 -- Отличие от v2: вместо «полный доступ всем ролям на все таблицы» —
 -- матрица из TABLE_ACCESS_MATRIX.md. anon получает только то, что реально
 -- нужно публичному лендингу и форме заявки; всё остальное — authenticated,
@@ -158,8 +158,29 @@ GRANT EXECUTE ON FUNCTION public.review_reward_request(uuid, text, text) TO auth
 GRANT EXECUTE ON FUNCTION public.update_participant_status(uuid, participant_status_type) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(uuid, text, text, uuid, text, integer) TO authenticated;
 
--- v4: НЕ выдаются клиентским ролям (только service_role):
+-- ---------------------------------------------------------------
+-- v5: внутренние привилегированные функции (_internal_*).
+-- Содержат логику БЕЗ проверки прав, вызываются из триггеров, cron,
+-- других SECURITY DEFINER-функций и из service_role.
+-- Клиентским ролям EXECUTE не выдаётся НИКОГДА.
+-- ---------------------------------------------------------------
+REVOKE EXECUTE ON FUNCTION public._internal_update_participant_status(uuid, participant_status_type) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public._internal_update_user_leaderboard(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public._internal_get_user_coin_balance(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public._internal_update_participant_status(uuid, participant_status_type) TO service_role;
+GRANT EXECUTE ON FUNCTION public._internal_update_user_leaderboard(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public._internal_get_user_coin_balance(uuid) TO service_role;
+
+-- Публичные обёртки авторизуются ТОЛЬКО по auth.uid():
+--   update_participant_status      — is_admin(auth.uid()), иначе отказ;
+--   get_user_coin_balance          — свой uid или админ;
+--   update_user_leaderboard        — свой uid или админ.
+-- current_user внутри SECURITY DEFINER равен владельцу функции (postgres),
+-- поэтому для определения вызывающего клиента он НЕ используется.
+
+-- v5: НЕ выдаются клиентским ролям (только service_role):
 --   decrypt_phone(text)      — расшифровка телефона любого участника по строке;
+--                              грант НЕ возвращается ни в каком виде (v5);
 --                              см. SECURITY_NOTES.md и правку src/hooks/usePhoneDecryption.ts
 --   mask_email_secure / mask_phone_secure / mask_phone_number / mask_participant_name
 --                            — во фронтенде не вызываются, маскирование делается на сервере
