@@ -1,3 +1,4 @@
+-- 04_functions.sql (v3): всем функциям задан SET search_path = public
 -- 04_functions.sql — 92 функции схемы public (90 SECURITY DEFINER).
 -- Секретов и персональных данных не содержит.
 
@@ -981,6 +982,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.generate_referral_code()
  RETURNS trigger
  LANGUAGE plpgsql
+SET search_path = public
 AS $function$
 BEGIN
   IF NEW.referral_code IS NULL THEN

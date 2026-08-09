@@ -63,3 +63,38 @@ CREATE INDEX idx_user_totems_totem_id ON public.user_totems USING btree (totem_i
 CREATE INDEX idx_user_totems_user_id ON public.user_totems USING btree (user_id);
 CREATE INDEX weekly_summaries_status_idx ON public.weekly_summaries USING btree (status);
 CREATE INDEX weekly_summaries_user_id_idx ON public.weekly_summaries USING btree (user_id);
+
+-- v3: индексы под внешние ключи, у которых не было покрывающего индекса (аудит FK_INDEX_AUDIT.md)
+CREATE INDEX IF NOT EXISTS idx_ascezy_uchastnikov_participant ON public."аскезы_участников" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_kemp_aktivnosti_participant ON public."кэмп_активности" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_totemy_uchastnikov_participant ON public."тотемы_участников" USING btree (participant_id);
+CREATE INDEX IF NOT EXISTS idx_uchastniki_stream ON public."участники" USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_activity_checkins_stream ON public.activity_checkins USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_application_reminders_submission ON public.application_reminders USING btree (submission_id);
+CREATE INDEX IF NOT EXISTS idx_ascetic_activities_type ON public.ascetic_activities USING btree (ascetic_type_id);
+CREATE INDEX IF NOT EXISTS idx_ascetic_activities_user ON public.ascetic_activities USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_challenge_entries_user_id ON public.challenge_entries USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_coin_transactions_rule ON public.coin_transactions USING btree (rule_id);
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_referrer ON public.contact_submissions USING btree (referrer_user_id);
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_stream ON public.contact_submissions USING btree (stream_id);
+CREATE INDEX IF NOT EXISTS idx_crash_tests_user ON public.crash_tests USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_hero_races_user ON public.hero_races USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_homework_submissions_user ON public.homework_submissions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_journal_answers_prompt ON public.journal_answers USING btree (prompt_id);
+CREATE INDEX IF NOT EXISTS idx_journal_emotions_entry ON public.journal_emotions USING btree (entry_id);
+CREATE INDEX IF NOT EXISTS idx_lectures_user ON public.lectures USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_mm_members_group ON public.mastermind_members USING btree (group_id);
+CREATE INDEX IF NOT EXISTS idx_mm_tasks_created_by ON public.mastermind_tasks USING btree (created_by);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_public_profiles_stream ON public.public_profiles USING btree (current_stream_id);
+CREATE INDEX IF NOT EXISTS idx_reward_requests_reward ON public.reward_requests USING btree (reward_id);
+CREATE INDEX IF NOT EXISTS idx_schedule_participants_user ON public.schedule_participants USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_schedules_instructor ON public.schedules USING btree (instructor_id);
+CREATE INDEX IF NOT EXISTS idx_tactical_sessions_user ON public.tactical_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_program ON public.training_sessions USING btree (program_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_trainer ON public.training_sessions USING btree (trainer_id);
+CREATE INDEX IF NOT EXISTS idx_training_sessions_user ON public.training_sessions USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON public.user_achievements USING btree (achievement_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_activity ON public.user_activities USING btree (activity_id);
+CREATE INDEX IF NOT EXISTS idx_user_activities_user ON public.user_activities USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_challenges_challenge ON public.user_challenges USING btree (challenge_id);
