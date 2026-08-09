@@ -197,13 +197,24 @@ export const MastermindManagement: React.FC = () => {
       member_id: taskMemberId,
       title: taskTitle.trim(),
       description: taskDesc || null,
+      deadline: taskDeadline || null,
       sort_order: tasks.filter((t) => t.member_id === taskMemberId).length,
     });
     setSaving(false);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
     toast({ title: 'Задача добавлена' });
     setTaskOpen(false);
-    setTaskTitle(''); setTaskDesc('');
+    setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
+    loadAll();
+  };
+
+  const setApproval = async (t: Task, status: 'approved' | 'rejected') => {
+    const payload: Record<string, unknown> = { approval_status: status };
+    if (status === 'rejected') payload.admin_comment = taskComments[t.id] ?? t.admin_comment ?? null;
+    const { error } = await supabase.from('mastermind_tasks').update(payload).eq('id', t.id);
+    if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+    toast({ title: status === 'approved' ? 'Задача утверждена' : 'Отправлено на доработку' });
+    setRejectOpen((p) => ({ ...p, [t.id]: false }));
     loadAll();
   };
 
