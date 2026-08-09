@@ -42,7 +42,7 @@
 
 ### `public_leaderboard_view`
 `participant_key` (md5-псевдоним вместо user_id), `display_name`, `total_points`,
-`rank_position`, `participant_status`, `current_stream_id`.
+`rank_position`, `participant_status`, `is_active_stream` (v5: реальный `current_stream_id` больше не публикуется — вместо него булев признак активного потока; фильтр `.in('current_stream_id', activeStreamIds)` в `RegisteredParticipants.tsx` заменить на `.eq('is_active_stream', true)`).
 Фильтр: `display_name IS NOT NULL` и статус `intensive_active` / `club_resident`.
 **Не отдаёт:** `id`, `user_id`, `first_name`, `last_name`, `created_at`, `updated_at`.
 

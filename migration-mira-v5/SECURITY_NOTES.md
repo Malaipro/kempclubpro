@@ -1,4 +1,4 @@
-# SECURITY_NOTES.md (v4)
+# SECURITY_NOTES.md (v5)
 
 Модель угроз и принятые решения. Читать вместе с `PUBLIC_DATA_EXPOSURE.md`,
 `TABLE_ACCESS_MATRIX.md`, `FUNCTION_ACCESS_MATRIX.md`.
@@ -10,7 +10,24 @@
 в интерфейсе — не защита. Поэтому в v4 каждая `SECURITY DEFINER`-функция, доступная
 роли `authenticated`, обязана проверять права **внутри тела**.
 
-## 2. Исправлено в v4: функции без внутренней проверки
+## 1a. Исправлено в v5: `current_user` не годится для авторизации
+
+В v4 проверки имели вид `current_user NOT IN ('service_role','postgres','supabase_admin')`.
+Внутри `SECURITY DEFINER` `current_user` — это владелец функции (`postgres`), поэтому
+условие всегда ложно и проверка не срабатывала. В v5 авторизация выполняется **только**
+по `auth.uid()`, а привилегированная логика вынесена в функции `_internal_*`,
+доступные исключительно `service_role`:
+
+| Публичная обёртка (`authenticated`) | Правило | Внутренняя функция (`service_role`) |
+|---|---|---|
+| `update_participant_status` | `is_admin(auth.uid())` | `_internal_update_participant_status` |
+| `get_user_coin_balance` | свой `auth.uid()` или админ | `_internal_get_user_coin_balance` |
+| `update_user_leaderboard` | свой `auth.uid()` или админ | `_internal_update_user_leaderboard` |
+
+Триггеры, cron, Edge Functions и telegram-server вызывают `_internal_*` напрямую —
+им `auth.uid()` недоступен. Проверки см. `AUTHORIZATION_TESTS.md`.
+
+## 2. Исправлено в v4 (модель уточнена в v5): функции без внутренней проверки
 
 | Функция | Было (v3) | Стало (v4) |
 |---|---|---|
@@ -20,20 +37,24 @@
 | `decrypt_phone(text)` | `EXECUTE` для `authenticated` → расшифровка телефона по строке из БД | `EXECUTE` **отозван**, только `service_role` |
 | `mask_email_secure`, `mask_phone_secure`, `mask_phone_number`, `mask_participant_name` | `EXECUTE` для `authenticated`, во фронтенде не вызываются | `EXECUTE` отозван |
 
-Форма проверки (единый шаблон):
+Форма проверки в v5 (единый шаблон обёртки):
 
 ```sql
-IF auth.uid() IS NOT NULL
-   AND current_user NOT IN ('service_role','postgres','supabase_admin')
-   AND NOT public.is_admin(auth.uid()) THEN
-  RAISE EXCEPTION 'access denied: ...';
-END IF;
+DECLARE v_caller uuid := auth.uid();
+BEGIN
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'access denied: authenticated user required (service_role must call public._internal_...)';
+  END IF;
+  IF p_user_id IS DISTINCT FROM v_caller AND NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: ...';
+  END IF;
+  RETURN public._internal_...(p_user_id);
+END;
 ```
 
-`auth.uid() IS NOT NULL` и список ролей нужны, чтобы не сломать вызовы из
-триггеров, cron-задач, Edge Functions и telegram-server (они работают под
-`service_role` / владельцем функции, где `auth.uid()` пуст). Роль `anon` при этом
-не получает `EXECUTE` на эти функции вовсе.
+`current_user` в шаблоне отсутствует намеренно. Серверные вызовы идут в `_internal_*`,
+у которых `EXECUTE` есть только у `service_role`; `anon` не получает `EXECUTE` ни на
+обёртки, ни на внутренние функции.
 
 ## 3. Функции, оставшиеся доступными `authenticated`
 
@@ -84,3 +105,5 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
 4. Под обычным пользователем вызвать `update_participant_status` → `access denied`.
 5. Под обычным пользователем вызвать `get_user_coin_balance` с чужим uuid → `access denied`.
 6. `create table public.t(i int);` под anon-ключом → отказ.
+7. Под обычным пользователем вызвать `_internal_update_user_leaderboard` → `permission denied`.
+8. `select ... pg_get_functiondef ilike '%current_user NOT IN%'` → 0 строк.

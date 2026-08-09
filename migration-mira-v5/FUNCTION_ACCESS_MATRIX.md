@@ -1,4 +1,4 @@
-# FUNCTION_ACCESS_MATRIX.md — права на функции (v3)
+# FUNCTION_ACCESS_MATRIX.md — права на функции (v5)
 
 В v2 все 92 функции наследовали `EXECUTE` для `PUBLIC`, то есть их мог вызвать любой
 анонимный посетитель. Поскольку 90 из 92 — `SECURITY DEFINER`, это давало обход RLS:
@@ -26,8 +26,9 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 ## 2. `authenticated` — 25 функций
 
 > v4: `decrypt_phone` и четыре `mask_*` отозваны (см. `SECURITY_NOTES.md` §2).
-> `update_participant_status`, `get_user_coin_balance`, `update_user_leaderboard`
-> оставлены, но теперь проверяют права **внутри тела**.
+> v5: `update_participant_status`, `get_user_coin_balance`, `update_user_leaderboard`
+> остаются доступны `authenticated`, но это тонкие обёртки, авторизующие вызов
+> **только по `auth.uid()`**; вся логика ушла в `_internal_*`.
 
 Хелперы RLS (обязательны, иначе политики упадут с ошибкой прав):
 `is_admin`, `is_super_admin`, `is_club_resident`, `is_public_participant`, `has_role`.
@@ -49,6 +50,12 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 ## 3. Только `service_role` — остальные ~60 функций
 
 Сюда попадают:
+
+- **v5: `_internal_*`** — `_internal_update_participant_status`,
+  `_internal_update_user_leaderboard`, `_internal_get_user_coin_balance`.
+  Содержат привилегированную логику без проверки прав. `EXECUTE` явно отозван
+  у `PUBLIC/anon/authenticated`. Именно их вызывают триггеры, cron, Edge Functions
+  и telegram-server, где `auth.uid()` пуст.
 
 - **RPC Telegram Mini App по `p_telegram_id`**: `get_profile_for_user`, `get_schedule_for_user`,
   `get_homework_for_user`, `get_journal_for_user`, `get_rating_for_user`, `get_pyramid_for_user`,

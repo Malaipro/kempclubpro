@@ -157,3 +157,16 @@ select id, public, file_size_limit from storage.buckets order by id;  -- 8 ст�
 1. `encrypt_phone`/`decrypt_phone` — Base64, а не шифрование (логика не менялась).
 2. Дублирующие enum'ы `app_role`/`user_role`, `activity_type`/`activity_type_new` — легаси.
 3. Три таблицы с кириллическими именами — легаси, требуют кавычек в SQL.
+
+
+---
+
+## v5 (текущая версия)
+
+Исправлена критическая ошибка авторизации v4: `current_user` внутри `SECURITY DEFINER`
+равен владельцу функции, а не вызывающему клиенту. Введена схема «internal + wrapper»:
+`_internal_*` (только `service_role`) и публичные обёртки, авторизующие по `auth.uid()`.
+`public_leaderboard_view` больше не отдаёт `current_stream_id`.
+
+- `CHANGELOG_v4_to_v5.md` — что изменилось;
+- `AUTHORIZATION_TESTS.md` — матрица allow/deny и команды проверки.

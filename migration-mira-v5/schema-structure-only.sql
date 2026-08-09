@@ -1,8 +1,8 @@
 -- =====================================================================
--- schema-structure-only.sql (v4)
+-- schema-structure-only.sql (v5)
 -- Сборка migrations/01–08 + 10 одним файлом. БЕЗ справочных данных (09).
 -- Без персональных данных и без секретов.
--- Сгенерировано из актуальных файлов migrations/ версии v4.
+-- Сгенерировано из актуальных файлов migrations/ версии v5.
 -- =====================================================================
 
 -- ============ 01_extensions_and_types.sql ============
@@ -1442,7 +1442,7 @@ BEGIN
   VALUES (p_user_id, p_amount, trim(p_reason), 'admin_manual', auth.uid());
 
   -- Пересчёт баланса через существующую логику
-  v_new_balance := public.get_user_coin_balance(p_user_id);
+  v_new_balance := public._internal_get_user_coin_balance(p_user_id);
 
   RETURN v_new_balance;
 END;
@@ -1562,7 +1562,7 @@ begin
   end if;
 
   -- Recalculate leaderboard/ranks for visibility changes
-  perform public.update_user_leaderboard(p_user_id);
+  perform public._internal_update_user_leaderboard(p_user_id);
   perform public.recalculate_all_ranks();
 
   -- Audit
@@ -1653,7 +1653,7 @@ BEGIN
     LIMIT 1;
 
     IF v_existing IS NOT NULL THEN
-      v_balance := public.get_user_coin_balance(p_user_id);
+      v_balance := public._internal_get_user_coin_balance(p_user_id);
       RETURN jsonb_build_object(
         'awarded', false,
         'duplicate', true,
@@ -1678,7 +1678,7 @@ BEGIN
   )
   RETURNING id INTO v_tx_id;
 
-  v_balance := public.get_user_coin_balance(p_user_id);
+  v_balance := public._internal_get_user_coin_balance(p_user_id);
 
   RETURN jsonb_build_object(
     'awarded', true,
@@ -2047,7 +2047,7 @@ BEGIN
     RAISE EXCEPTION 'Награда закончилась';
   END IF;
 
-  v_balance := public.get_user_coin_balance(v_user_id);
+  v_balance := public._internal_get_user_coin_balance(v_user_id);
   IF v_balance < v_cost THEN
     RAISE EXCEPTION 'Недостаточно коинов (баланс: %, требуется: %)', v_balance, v_cost;
   END IF;
@@ -2748,7 +2748,7 @@ BEGIN
       SELECT jsonb_build_object('id', s.id, 'name', s.name, 'start_date', s.start_date, 'end_date', s.end_date)
       FROM public.intensive_streams s WHERE s.id = v_profile.current_stream_id
     ),
-    'coins_balance', public.get_user_coin_balance(p_user_id),
+    'coins_balance', public._internal_get_user_coin_balance(p_user_id),
     'total_points', COALESCE(v_profile.total_points, 0),
     'current_totem', v_current_totem,
     'totems_count', (SELECT COUNT(*) FROM public.user_totems WHERE user_id = p_user_id),
@@ -3190,26 +3190,45 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
+CREATE OR REPLACE FUNCTION public._internal_get_user_coin_balance(p_user_id uuid)
  RETURNS integer
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  -- v4: только собственный баланс, администратор или service_role
-  IF auth.uid() IS NOT NULL
-     AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND p_user_id IS DISTINCT FROM auth.uid()
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: own balance or admin role required';
-  END IF;
-
+  -- v5: внутренняя функция без проверки прав.
+  -- EXECUTE выдан только service_role; вызывается из других SECURITY DEFINER-функций,
+  -- триггеров и cron. Клиентские роли (anon/authenticated) её вызвать не могут.
   RETURN (
     SELECT COALESCE(SUM(amount), 0)::INTEGER
     FROM public.coin_transactions
     WHERE user_id = p_user_id
   );
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.get_user_coin_balance(p_user_id uuid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: авторизация только по auth.uid(). current_user внутри SECURITY DEFINER
+  -- равен владельцу функции (postgres) и НЕ может использоваться для определения клиента.
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'access denied: authenticated user required (service_role must call public._internal_get_user_coin_balance)';
+  END IF;
+
+  IF p_user_id IS DISTINCT FROM v_caller AND NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: own balance or admin role required';
+  END IF;
+
+  RETURN public._internal_get_user_coin_balance(p_user_id);
 END;
 $function$
 ;
@@ -3954,7 +3973,7 @@ BEGIN
       points_earned = CASE WHEN p_status = 'accepted' THEN v_points ELSE 0 END
   WHERE id = p_submission_id;
 
-  PERFORM public.update_user_leaderboard(v_submission.user_id);
+  PERFORM public._internal_update_user_leaderboard(v_submission.user_id);
 END;
 $function$
 ;
@@ -4212,7 +4231,7 @@ BEGIN
   END IF;
 
   -- Проверяем баланс
-  v_balance := public.get_user_coin_balance(p_user_id);
+  v_balance := public._internal_get_user_coin_balance(p_user_id);
   IF v_balance < v_cost THEN
     RAISE EXCEPTION 'Недостаточно коинов (баланс: %, требуется: %)', v_balance, v_cost;
   END IF;
@@ -4680,10 +4699,10 @@ AS $function$
 BEGIN
   -- Обновляем рейтинг для затронутого пользователя
   IF TG_OP = 'DELETE' THEN
-    PERFORM update_user_leaderboard(OLD.user_id);
+    PERFORM public._internal_update_user_leaderboard(OLD.user_id);
     RETURN OLD;
   ELSE
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
     RETURN NEW;
   END IF;
 END;
@@ -4782,9 +4801,9 @@ AS $function$
 BEGIN
   -- Only update when verification status changes to true
   IF TG_OP = 'UPDATE' AND NEW.verified = true AND (OLD.verified IS NULL OR OLD.verified = false) THEN
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
   ELSIF TG_OP = 'UPDATE' AND NEW.verified = false AND OLD.verified = true THEN
-    PERFORM update_user_leaderboard(NEW.user_id);
+    PERFORM public._internal_update_user_leaderboard(NEW.user_id);
   END IF;
   
   RETURN COALESCE(NEW, OLD);
@@ -4792,19 +4811,14 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type)
+CREATE OR REPLACE FUNCTION public._internal_update_participant_status(p_user_id uuid, p_new_status participant_status_type)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 BEGIN
-  -- v4: проверка роли внутри тела (UI-скрытие кнопки не является защитой)
-  IF auth.uid() IS NOT NULL AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
-  END IF;
-
+  -- v5: внутренняя реализация без проверки прав. EXECUTE только у service_role.
   -- Обновляем статус участника
   UPDATE profiles
   SET 
@@ -4826,7 +4840,27 @@ BEGIN
   WHERE user_id = p_user_id;
 
   -- Обновляем leaderboard
-  PERFORM update_user_leaderboard(p_user_id);
+  PERFORM public._internal_update_user_leaderboard(p_user_id);
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_participant_status(p_user_id uuid, p_new_status participant_status_type)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: только администратор. Обычному участнику функция не нужна.
+  -- service_role вызывает public._internal_update_participant_status.
+  IF v_caller IS NULL OR NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: admin role required for update_participant_status';
+  END IF;
+
+  PERFORM public._internal_update_participant_status(p_user_id, p_new_status);
 END;
 $function$
 ;
@@ -4891,7 +4925,7 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.update_user_leaderboard(user_uuid uuid)
+CREATE OR REPLACE FUNCTION public._internal_update_user_leaderboard(user_uuid uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -4914,13 +4948,7 @@ DECLARE
   v_crash_ofp INTEGER := 0;
   v_stream_id UUID;
 BEGIN
-  -- v4: пересчёт разрешён только для себя, администратору или service_role
-  IF auth.uid() IS NOT NULL
-     AND current_user NOT IN ('service_role','postgres','supabase_admin')
-     AND user_uuid IS DISTINCT FROM auth.uid()
-     AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
-  END IF;
+  -- v5: внутренняя реализация без проверки прав. EXECUTE только у service_role.
 
   -- Get user's stream_id
   SELECT current_stream_id INTO v_stream_id FROM profiles WHERE user_id = user_uuid;
@@ -5054,6 +5082,29 @@ BEGIN
     rank_position = COALESCE((SELECT rank_position FROM leaderboard WHERE user_id = user_uuid), 0)
   WHERE user_id = user_uuid;
 
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.update_user_leaderboard(user_uuid uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_caller uuid := auth.uid();
+BEGIN
+  -- v5: авторизация только по auth.uid(); участник пересчитывает лишь себя.
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'access denied: authenticated user required (service_role must call public._internal_update_user_leaderboard)';
+  END IF;
+
+  IF user_uuid IS DISTINCT FROM v_caller AND NOT public.is_admin(v_caller) THEN
+    RAISE EXCEPTION 'access denied: own leaderboard or admin role required';
+  END IF;
+
+  PERFORM public._internal_update_user_leaderboard(user_uuid);
 END;
 $function$
 ;
@@ -5254,7 +5305,7 @@ CREATE TRIGGER update_leaderboard_on_training_session AFTER INSERT OR DELETE OR 
 CREATE TRIGGER role_changes_audit_trigger AFTER INSERT OR DELETE ON public.user_roles FOR EACH ROW EXECUTE FUNCTION log_role_changes();
 
 -- ============ 06_views.sql ============
--- 06_views.sql (v4)
+-- 06_views.sql (v5)
 -- В действующей базе КЭМП НЕТ ни одного VIEW в схеме public.
 -- v4 добавляет ДВА безопасных публичных представления, чтобы роль anon
 -- больше не читала таблицы public_profiles и cooper_test_results целиком.
@@ -5269,7 +5320,8 @@ CREATE TRIGGER role_changes_audit_trigger AFTER INSERT OR DELETE ON public.user_
 --    Колонки: только псевдоним, отображаемое имя, баллы, позиция, статус, поток.
 --    НЕ содержит: id, user_id, first_name, last_name, created_at/updated_at.
 -- ---------------------------------------------------------------
-CREATE OR REPLACE VIEW public.public_leaderboard_view
+DROP VIEW IF EXISTS public.public_leaderboard_view;
+CREATE VIEW public.public_leaderboard_view
 WITH (security_barrier = true) AS
 SELECT
   md5(pp.user_id::text || 'mira-public-v4')     AS participant_key,
@@ -5277,7 +5329,12 @@ SELECT
   pp.total_points,
   pp.rank_position,
   pp.participant_status,
-  pp.current_stream_id
+  -- v5: реальный current_stream_id больше не публикуется.
+  -- Публичной странице нужен только признак «текущий активный поток».
+  EXISTS (
+    SELECT 1 FROM public.streams s
+    WHERE s.id = pp.current_stream_id AND s.is_active = true
+  ) AS is_active_stream
 FROM public.public_profiles pp
 WHERE pp.display_name IS NOT NULL
   AND pp.participant_status IN ('intensive_active', 'club_resident');
@@ -5287,7 +5344,8 @@ WHERE pp.display_name IS NOT NULL
 --    Колонки: псевдоним, отображаемое имя, результат, уровень, этап, дата.
 --    НЕ содержит: id, user_id, age, gender, notes, verified_by, created_at.
 -- ---------------------------------------------------------------
-CREATE OR REPLACE VIEW public.public_cooper_results_view
+DROP VIEW IF EXISTS public.public_cooper_results_view;
+CREATE VIEW public.public_cooper_results_view
 WITH (security_barrier = true) AS
 SELECT
   md5(c.user_id::text || 'mira-public-v4')      AS participant_key,
@@ -5304,7 +5362,7 @@ WHERE c.verified = true
 -- Гранты на представления выданы в 07_grants.sql.
 
 -- ============ 07_grants.sql ============
--- 07_grants.sql (v4) — минимально необходимые привилегии PostgREST-ролей.
+-- 07_grants.sql (v5) — минимально необходимые привилегии PostgREST-ролей.
 -- Отличие от v2: вместо «полный доступ всем ролям на все таблицы» —
 -- матрица из TABLE_ACCESS_MATRIX.md. anon получает только то, что реально
 -- нужно публичному лендингу и форме заявки; всё остальное — authenticated,
@@ -5464,8 +5522,29 @@ GRANT EXECUTE ON FUNCTION public.review_reward_request(uuid, text, text) TO auth
 GRANT EXECUTE ON FUNCTION public.update_participant_status(uuid, participant_status_type) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.award_coins_by_rule(uuid, text, text, uuid, text, integer) TO authenticated;
 
--- v4: НЕ выдаются клиентским ролям (только service_role):
+-- ---------------------------------------------------------------
+-- v5: внутренние привилегированные функции (_internal_*).
+-- Содержат логику БЕЗ проверки прав, вызываются из триггеров, cron,
+-- других SECURITY DEFINER-функций и из service_role.
+-- Клиентским ролям EXECUTE не выдаётся НИКОГДА.
+-- ---------------------------------------------------------------
+REVOKE EXECUTE ON FUNCTION public._internal_update_participant_status(uuid, participant_status_type) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public._internal_update_user_leaderboard(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public._internal_get_user_coin_balance(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public._internal_update_participant_status(uuid, participant_status_type) TO service_role;
+GRANT EXECUTE ON FUNCTION public._internal_update_user_leaderboard(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public._internal_get_user_coin_balance(uuid) TO service_role;
+
+-- Публичные обёртки авторизуются ТОЛЬКО по auth.uid():
+--   update_participant_status      — is_admin(auth.uid()), иначе отказ;
+--   get_user_coin_balance          — свой uid или админ;
+--   update_user_leaderboard        — свой uid или админ.
+-- current_user внутри SECURITY DEFINER равен владельцу функции (postgres),
+-- поэтому для определения вызывающего клиента он НЕ используется.
+
+-- v5: НЕ выдаются клиентским ролям (только service_role):
 --   decrypt_phone(text)      — расшифровка телефона любого участника по строке;
+--                              грант НЕ возвращается ни в каком виде (v5);
 --                              см. SECURITY_NOTES.md и правку src/hooks/usePhoneDecryption.ts
 --   mask_email_secure / mask_phone_secure / mask_phone_number / mask_participant_name
 --                            — во фронтенде не вызываются, маскирование делается на сервере
