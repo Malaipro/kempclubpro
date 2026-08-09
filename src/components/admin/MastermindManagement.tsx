@@ -65,6 +65,9 @@ interface Candidate {
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('ru-RU') : '—';
 
+const isOverdue = (t: { deadline: string | null; is_completed: boolean | null }) =>
+  !!t.deadline && !t.is_completed && new Date(t.deadline) < new Date(new Date().toDateString());
+
 export const MastermindManagement: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
