@@ -13,7 +13,8 @@
 --    Колонки: только псевдоним, отображаемое имя, баллы, позиция, статус, поток.
 --    НЕ содержит: id, user_id, first_name, last_name, created_at/updated_at.
 -- ---------------------------------------------------------------
-CREATE OR REPLACE VIEW public.public_leaderboard_view
+DROP VIEW IF EXISTS public.public_leaderboard_view;
+CREATE VIEW public.public_leaderboard_view
 WITH (security_barrier = true) AS
 SELECT
   md5(pp.user_id::text || 'mira-public-v4')     AS participant_key,
@@ -36,7 +37,8 @@ WHERE pp.display_name IS NOT NULL
 --    Колонки: псевдоним, отображаемое имя, результат, уровень, этап, дата.
 --    НЕ содержит: id, user_id, age, gender, notes, verified_by, created_at.
 -- ---------------------------------------------------------------
-CREATE OR REPLACE VIEW public.public_cooper_results_view
+DROP VIEW IF EXISTS public.public_cooper_results_view;
+CREATE VIEW public.public_cooper_results_view
 WITH (security_barrier = true) AS
 SELECT
   md5(c.user_id::text || 'mira-public-v4')      AS participant_key,
