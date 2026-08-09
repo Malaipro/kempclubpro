@@ -96,6 +96,17 @@ export const MastermindManagement: React.FC = () => {
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
 
+  const sortedTasks = React.useMemo(
+    () =>
+      [...tasks].sort((a, b) => {
+        const ap = a.approval_status === 'pending' ? 0 : 1;
+        const bp = b.approval_status === 'pending' ? 0 : 1;
+        return ap - bp;
+      }),
+    [tasks]
+  );
+
+
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
     return m?.profile?.display_name || 'Участник';
