@@ -4,6 +4,7 @@ import { onStart } from './handlers/onStart';
 import { onContact } from './handlers/onContact';
 import { onLinkCode } from './handlers/onLinkCode';
 import { onUnknown } from './handlers/onUnknown';
+import { onCallbackQuery } from './handlers/onCallbackQuery';
 
 // Минимальные типы Telegram Update / Message
 export interface TelegramUser {
@@ -32,9 +33,17 @@ export interface TelegramMessage {
   contact?: TelegramContact;
 }
 
+export interface TelegramCallbackQuery {
+  id: string;
+  from: TelegramUser;
+  message?: TelegramMessage;
+  data?: string;
+}
+
 export interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
+  callback_query?: TelegramCallbackQuery;
 }
 
 export const webhookRouter = Router();
@@ -51,6 +60,16 @@ webhookRouter.post('/', async (req: Request, res: Response) => {
   res.sendStatus(200);
 
   const update: TelegramUpdate = req.body;
+
+  if (update.callback_query) {
+    try {
+      await onCallbackQuery(update.callback_query);
+    } catch (err) {
+      console.error('[webhook] Unhandled callback_query error:', err);
+    }
+    return;
+  }
+
   const msg = update.message;
   if (!msg) return;
 

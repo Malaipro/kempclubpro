@@ -101,7 +101,7 @@ broadcastRouter.post('/', async (req: Request, res: Response) => {
   // 4. Рассылаем каждому
   await Promise.all(
     recipients.map((telegramId) =>
-      sendBroadcastMessage(telegramId, broadcast.text, broadcast.buttons, fileUrl)
+      sendBroadcastMessage(telegramId, broadcast.text, broadcast.buttons, fileUrl, broadcastId)
     )
   );
 

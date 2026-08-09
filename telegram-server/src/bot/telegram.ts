@@ -64,22 +64,40 @@ export function removeKeyboard(chatId: number, text: string): Promise<void> {
   });
 }
 
+export type BroadcastButtonType = 'url' | 'callback' | 'book_event' | 'request_reward';
+
 export interface BroadcastButton {
   label: string;
-  url: string;
+  // Кнопки без type — старый формат (только label+url), трактуем как 'url'.
+  type?: BroadcastButtonType;
+  url?: string;
+  // reward_id / schedule_id для book_event и request_reward
+  target_id?: string;
 }
 
 // Рассылка: текст (+опционально фото) + inline-кнопки. chat_id — telegram_id
 // из profiles, хранится строкой, Telegram API принимает его как есть.
+// broadcastMessageId нужен для формирования callback_data интерактивных кнопок
+// (book_event/request_reward/callback) — по нему обработчик в webhook.ts находит
+// саму рассылку и её buttons в БД.
 export function sendBroadcastMessage(
   telegramId: string,
   text: string,
   buttons?: BroadcastButton[] | null,
-  fileUrl?: string | null
+  fileUrl?: string | null,
+  broadcastMessageId?: string | null
 ): Promise<void> {
   const reply_markup =
     buttons && buttons.length > 0
-      ? { inline_keyboard: buttons.map((b) => [{ text: b.label, url: b.url }]) }
+      ? {
+          inline_keyboard: buttons.map((b, index) => {
+            const type = b.type ?? 'url';
+            if (type === 'url') {
+              return [{ text: b.label, url: b.url }];
+            }
+            return [{ text: b.label, callback_data: `bc:${broadcastMessageId}:${index}` }];
+          }),
+        }
       : undefined;
 
   if (fileUrl) {
@@ -95,5 +113,20 @@ export function sendBroadcastMessage(
     chat_id: telegramId,
     text,
     ...(reply_markup ? { reply_markup } : {}),
+  });
+}
+
+// Ответ на нажатие inline-кнопки с callback_data — обязателен, иначе кнопка
+// в клиенте Telegram остаётся в состоянии "часики" до таймаута.
+// showAlert=true показывает всплывающее окно вместо тихого тоста (для ошибок).
+export function answerCallbackQuery(
+  callbackQueryId: string,
+  text?: string,
+  showAlert = false
+): Promise<void> {
+  return call('answerCallbackQuery', {
+    callback_query_id: callbackQueryId,
+    ...(text ? { text } : {}),
+    show_alert: showAlert,
   });
 }
