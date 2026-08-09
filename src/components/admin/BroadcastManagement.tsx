@@ -83,6 +83,32 @@ export const BroadcastManagement: React.FC = () => {
   const [history, setHistory] = useState<BroadcastMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [schedules, setSchedules] = useState<ScheduleOption[]>([]);
+  const [rewards, setRewards] = useState<RewardOption[]>([]);
+  const [responses, setResponses] = useState<Record<string, BroadcastResponse[]>>({});
+  const [responsesLoading, setResponsesLoading] = useState<Set<string>>(new Set());
+
+  const loadResponses = useCallback(async (broadcastId: string) => {
+    setResponsesLoading((prev) => new Set(prev).add(broadcastId));
+    try {
+      const { data, error } = await (supabase as any)
+        .from('broadcast_responses')
+        .select('id, user_id, display_name, phone, telegram_id, button_id, button_label, action_type, created_at')
+        .eq('broadcast_id', broadcastId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setResponses((prev) => ({ ...prev, [broadcastId]: (data || []) as BroadcastResponse[] }));
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось загрузить ответы', variant: 'destructive' });
+    } finally {
+      setResponsesLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(broadcastId);
+        return next;
+      });
+    }
+  }, [toast]);
+
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
