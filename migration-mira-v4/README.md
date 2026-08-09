@@ -93,7 +93,7 @@ migration-mira-v3/
 ```sql
 select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
  where n.nspname='public' and c.relkind='r';                        -- 80
-select count(*) from pg_policies where schemaname='public';         -- 192 (v4: 3 политики Купера → 1)
+select count(*) from pg_policies where schemaname='public';         -- 190 (v4: 3 политики Купера → 1)
 select count(*) from pg_views where schemaname='public';            -- 2
 select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
  where n.nspname='public';                                          -- 92
