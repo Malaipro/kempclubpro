@@ -488,6 +488,56 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_responses: {
+        Row: {
+          action_target_id: string | null
+          action_type: string
+          broadcast_id: string
+          button_id: string
+          button_label: string
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          telegram_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_target_id?: string | null
+          action_type?: string
+          broadcast_id: string
+          button_id: string
+          button_label: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          telegram_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_target_id?: string | null
+          action_type?: string
+          broadcast_id?: string
+          button_id?: string
+          button_label?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          telegram_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_responses_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "broadcast_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       broadcasts: {
         Row: {
           audience_cnt: number

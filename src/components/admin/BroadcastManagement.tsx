@@ -19,9 +19,36 @@ import { ru } from 'date-fns/locale';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
+type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
+
 interface BroadcastButton {
+  id?: string;
   label: string;
-  url: string;
+  type: ButtonType;
+  url?: string;
+  target_id?: string;
+}
+
+const buttonTypeLabels: Record<ButtonType, string> = {
+  url: 'Ссылка',
+  checkin: 'Отметка / Чекин',
+  book_event: 'Запись на событие',
+  request_reward: 'Заказ награды',
+};
+
+interface ScheduleOption { id: string; title: string; start_time: string }
+interface RewardOption { id: string; title: string; cost_coins: number }
+
+interface BroadcastResponse {
+  id: string;
+  user_id: string | null;
+  display_name: string | null;
+  phone: string | null;
+  telegram_id: string | null;
+  button_id: string | null;
+  button_label: string | null;
+  action_type: string | null;
+  created_at: string;
 }
 
 interface BroadcastMessage {
@@ -56,6 +83,32 @@ export const BroadcastManagement: React.FC = () => {
   const [history, setHistory] = useState<BroadcastMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [schedules, setSchedules] = useState<ScheduleOption[]>([]);
+  const [rewards, setRewards] = useState<RewardOption[]>([]);
+  const [responses, setResponses] = useState<Record<string, BroadcastResponse[]>>({});
+  const [responsesLoading, setResponsesLoading] = useState<Set<string>>(new Set());
+
+  const loadResponses = useCallback(async (broadcastId: string) => {
+    setResponsesLoading((prev) => new Set(prev).add(broadcastId));
+    try {
+      const { data, error } = await (supabase as any)
+        .from('broadcast_responses')
+        .select('id, user_id, display_name, phone, telegram_id, button_id, button_label, action_type, created_at')
+        .eq('broadcast_id', broadcastId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setResponses((prev) => ({ ...prev, [broadcastId]: (data || []) as BroadcastResponse[] }));
+    } catch (e: any) {
+      toast({ title: 'Ошибка', description: e?.message || 'Не удалось загрузить ответы', variant: 'destructive' });
+    } finally {
+      setResponsesLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(broadcastId);
+        return next;
+      });
+    }
+  }, [toast]);
+
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -63,6 +116,7 @@ export const BroadcastManagement: React.FC = () => {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+    if (!expanded.has(id) && !responses[id]) loadResponses(id);
   };
 
   const openFile = async (path: string) => {
@@ -91,12 +145,36 @@ export const BroadcastManagement: React.FC = () => {
     }
   }, [toast]);
 
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  const loadOptions = useCallback(async () => {
+    try {
+      const [{ data: sch }, { data: rw }] = await Promise.all([
+        (supabase as any)
+          .from('schedules')
+          .select('id, title, start_time')
+          .eq('is_active', true)
+          .gte('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
+          .limit(50),
+        (supabase as any)
+          .from('rewards')
+          .select('id, title, cost_coins')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+      ]);
+      setSchedules((sch || []) as ScheduleOption[]);
+      setRewards((rw || []) as RewardOption[]);
+    } catch {
+      /* опции не критичны для формы */
+    }
+  }, []);
 
-  const addButton = () => setButtons((prev) => [...prev, { label: '', url: '' }]);
+  useEffect(() => { loadHistory(); loadOptions(); }, [loadHistory, loadOptions]);
+
+  const addButton = () =>
+    setButtons((prev) => [...prev, { id: crypto.randomUUID(), label: '', type: 'url', url: '' }]);
   const removeButton = (i: number) => setButtons((prev) => prev.filter((_, idx) => idx !== i));
-  const updateButton = (i: number, field: keyof BroadcastButton, value: string) =>
-    setButtons((prev) => prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b)));
+  const updateButton = (i: number, patch: Partial<BroadcastButton>) =>
+    setButtons((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
 
   const resetForm = () => {
     setText('');
@@ -105,12 +183,26 @@ export const BroadcastManagement: React.FC = () => {
     setFile(null);
   };
 
+  const isButtonValid = (b: BroadcastButton) => {
+    if (!b.label.trim()) return false;
+    if (b.type === 'url') return !!b.url?.trim();
+    if (b.type === 'book_event' || b.type === 'request_reward') return !!b.target_id;
+    return true;
+  };
+
   const handleSend = async () => {
     if (!text.trim()) {
       toast({ title: 'Введите текст', description: 'Сообщение не может быть пустым', variant: 'destructive' });
       return;
     }
-    const validButtons = buttons.filter((b) => b.label.trim() && b.url.trim());
+    const validButtons = buttons.filter(isButtonValid).map((b) => ({
+      id: b.id || crypto.randomUUID(),
+      label: b.label.trim(),
+      type: b.type,
+      url: b.type === 'url' ? b.url?.trim() : undefined,
+      target_id: b.type === 'book_event' || b.type === 'request_reward' ? b.target_id : undefined,
+    }));
+
 
     setSending(true);
     try {
@@ -212,31 +304,94 @@ export const BroadcastManagement: React.FC = () => {
             {buttons.length === 0 && (
               <p className="text-sm text-muted-foreground">Кнопки не добавлены</p>
             )}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {buttons.map((b, i) => (
-                <div key={i} className="flex flex-col sm:flex-row gap-2">
-                  <Input
-                    placeholder="Название кнопки"
-                    value={b.label}
-                    onChange={(e) => updateButton(i, 'label', e.target.value)}
-                  />
-                  <Input
-                    placeholder="https://..."
-                    value={b.url}
-                    onChange={(e) => updateButton(i, 'url', e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeButton(i)}
-                    className="flex-shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                <div key={b.id || i} className="border rounded-md p-3 space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      placeholder="Название кнопки"
+                      value={b.label}
+                      onChange={(e) => updateButton(i, { label: e.target.value })}
+                    />
+                    <Select
+                      value={b.type}
+                      onValueChange={(v) =>
+                        updateButton(i, { type: v as ButtonType, url: undefined, target_id: undefined })
+                      }
+                    >
+                      <SelectTrigger className="w-full sm:w-56">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(buttonTypeLabels) as ButtonType[]).map((t) => (
+                          <SelectItem key={t} value={t}>{buttonTypeLabels[t]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeButton(i)}
+                      className="flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+
+                  {b.type === 'url' && (
+                    <Input
+                      placeholder="https://..."
+                      value={b.url ?? ''}
+                      onChange={(e) => updateButton(i, { url: e.target.value })}
+                    />
+                  )}
+
+                  {b.type === 'book_event' && (
+                    <Select value={b.target_id ?? ''} onValueChange={(v) => updateButton(i, { target_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите событие" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schedules.length === 0 && (
+                          <SelectItem value="none" disabled>Нет ближайших событий</SelectItem>
+                        )}
+                        {schedules.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.title} — {format(new Date(s.start_time), 'dd.MM HH:mm', { locale: ru })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {b.type === 'request_reward' && (
+                    <Select value={b.target_id ?? ''} onValueChange={(v) => updateButton(i, { target_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите награду" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rewards.length === 0 && (
+                          <SelectItem value="none" disabled>Нет активных наград</SelectItem>
+                        )}
+                        {rewards.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.title} — {r.cost_coins} коинов
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {b.type === 'checkin' && (
+                    <p className="text-xs text-muted-foreground">
+                      Кнопка подтверждения — дополнительные поля не требуются.
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
+
           </div>
 
           <div className="space-y-2">
@@ -324,20 +479,90 @@ export const BroadcastManagement: React.FC = () => {
                                   <div>
                                     <div className="font-semibold mb-1">Кнопки:</div>
                                     <div className="flex flex-wrap gap-2">
-                                      {m.buttons.map((b, i) => (
-                                        <a
-                                          key={i}
-                                          href={b.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
-                                        >
-                                          {b.label} <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                      ))}
+                                      {m.buttons.map((b, i) =>
+                                        (b.type ?? 'url') === 'url' && b.url ? (
+                                          <a
+                                            key={b.id || i}
+                                            href={b.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
+                                          >
+                                            {b.label} <ExternalLink className="w-3 h-3" />
+                                          </a>
+                                        ) : (
+                                          <span
+                                            key={b.id || i}
+                                            className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs"
+                                          >
+                                            {b.label}
+                                            <Badge variant="secondary" className="text-[10px]">
+                                              {buttonTypeLabels[(b.type ?? 'url') as ButtonType]}
+                                            </Badge>
+                                          </span>
+                                        )
+                                      )}
                                     </div>
                                   </div>
                                 )}
+
+                                {/* Ответы по интерактивным кнопкам */}
+                                {m.buttons?.some((b) => (b.type ?? 'url') !== 'url') && (
+                                  <div>
+                                    <div className="font-semibold mb-1">Ответы:</div>
+                                    {responsesLoading.has(m.id) ? (
+                                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {m.buttons
+                                          .filter((b) => (b.type ?? 'url') !== 'url')
+                                          .map((b, i) => {
+                                            const all = responses[m.id] || [];
+                                            const clicks = all.filter((r) =>
+                                              b.id ? r.button_id === b.id : r.button_label === b.label
+                                            );
+                                            return (
+                                              <div key={b.id || i} className="border rounded p-2">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                  <span className="font-medium">{b.label}</span>
+                                                  <Badge variant="outline">{clicks.length} нажатий</Badge>
+                                                </div>
+                                                {clicks.length === 0 ? (
+                                                  <p className="text-xs text-muted-foreground">Нажатий пока нет</p>
+                                                ) : (
+                                                  <div className="overflow-x-auto">
+                                                    <Table>
+                                                      <TableHeader>
+                                                        <TableRow>
+                                                          <TableHead>Участник</TableHead>
+                                                          <TableHead>Телефон</TableHead>
+                                                          <TableHead>Telegram ID</TableHead>
+                                                          <TableHead>Дата</TableHead>
+                                                        </TableRow>
+                                                      </TableHeader>
+                                                      <TableBody>
+                                                        {clicks.map((r) => (
+                                                          <TableRow key={r.id}>
+                                                            <TableCell className="text-xs">{r.display_name || '—'}</TableCell>
+                                                            <TableCell className="text-xs">{r.phone || '—'}</TableCell>
+                                                            <TableCell className="text-xs">{r.telegram_id || '—'}</TableCell>
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                              {format(new Date(r.created_at), 'dd.MM.yyyy HH:mm', { locale: ru })}
+                                                            </TableCell>
+                                                          </TableRow>
+                                                        ))}
+                                                      </TableBody>
+                                                    </Table>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
                                 {m.file_url && (
                                   <div>
                                     <div className="font-semibold mb-1">Файл:</div>
