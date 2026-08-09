@@ -39,6 +39,10 @@ interface Task {
   file_url: string | null;
   sort_order: number | null;
   created_at: string | null;
+  deadline: string | null;
+  created_by: string | null;
+  approval_status: string | null;
+  admin_comment: string | null;
 }
 
 interface Entry {
