@@ -303,31 +303,94 @@ export const BroadcastManagement: React.FC = () => {
             {buttons.length === 0 && (
               <p className="text-sm text-muted-foreground">Кнопки не добавлены</p>
             )}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {buttons.map((b, i) => (
-                <div key={i} className="flex flex-col sm:flex-row gap-2">
-                  <Input
-                    placeholder="Название кнопки"
-                    value={b.label}
-                    onChange={(e) => updateButton(i, 'label', e.target.value)}
-                  />
-                  <Input
-                    placeholder="https://..."
-                    value={b.url}
-                    onChange={(e) => updateButton(i, 'url', e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeButton(i)}
-                    className="flex-shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                <div key={b.id || i} className="border rounded-md p-3 space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      placeholder="Название кнопки"
+                      value={b.label}
+                      onChange={(e) => updateButton(i, { label: e.target.value })}
+                    />
+                    <Select
+                      value={b.type}
+                      onValueChange={(v) =>
+                        updateButton(i, { type: v as ButtonType, url: undefined, target_id: undefined })
+                      }
+                    >
+                      <SelectTrigger className="w-full sm:w-56">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(buttonTypeLabels) as ButtonType[]).map((t) => (
+                          <SelectItem key={t} value={t}>{buttonTypeLabels[t]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeButton(i)}
+                      className="flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+
+                  {b.type === 'url' && (
+                    <Input
+                      placeholder="https://..."
+                      value={b.url ?? ''}
+                      onChange={(e) => updateButton(i, { url: e.target.value })}
+                    />
+                  )}
+
+                  {b.type === 'book_event' && (
+                    <Select value={b.target_id ?? ''} onValueChange={(v) => updateButton(i, { target_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите событие" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schedules.length === 0 && (
+                          <SelectItem value="none" disabled>Нет ближайших событий</SelectItem>
+                        )}
+                        {schedules.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.title} — {format(new Date(s.start_time), 'dd.MM HH:mm', { locale: ru })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {b.type === 'request_reward' && (
+                    <Select value={b.target_id ?? ''} onValueChange={(v) => updateButton(i, { target_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите награду" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rewards.length === 0 && (
+                          <SelectItem value="none" disabled>Нет активных наград</SelectItem>
+                        )}
+                        {rewards.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.title} — {r.cost_coins} коинов
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {b.type === 'checkin' && (
+                    <p className="text-xs text-muted-foreground">
+                      Кнопка подтверждения — дополнительные поля не требуются.
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
+
           </div>
 
           <div className="space-y-2">
