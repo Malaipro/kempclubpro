@@ -1,0 +1,4 @@
+-- 06_views.sql
+-- В действующей базе КЭМП НЕТ ни одного VIEW и ни одной MATERIALIZED VIEW
+-- в схеме public (проверено по pg_class relkind IN ('v','m') = 0).
+-- Файл оставлен как placeholder для сохранения порядка миграций.
