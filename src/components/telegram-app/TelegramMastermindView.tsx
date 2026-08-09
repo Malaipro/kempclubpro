@@ -54,9 +54,11 @@ type MastermindData =
 
 interface Props {
   onBack: () => void;
+  groupId: string;
+  groupName: string;
 }
 
-export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
+export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, groupName }) => {
   const [data, setData] = useState<MastermindData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
       const res = await fetch(`${SERVER_URL}/api/state`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, action: 'get_mastermind' }),
+        body: JSON.stringify({ initData, action: 'get_mastermind', group_id: groupId }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Ошибка загрузки');
@@ -108,7 +110,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -196,7 +198,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
 
   const handleCreateTask = async () => {
     const initData = (window as any).Telegram?.WebApp?.initData;
-    if (!initData || !newTaskTitle.trim() || creatingTask) return;
+    if (!initData || !newTaskTitle.trim() || creatingTask || !data || !data.is_member) return;
     setCreatingTask(true);
     try {
       const res = await fetch(`${SERVER_URL}/api/state`, {
@@ -205,6 +207,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
         body: JSON.stringify({
           initData,
           action: 'create_mastermind_task',
+          member_id: data.member.id,
           task_title: newTaskTitle.trim(),
           task_description: newTaskDescription.trim() || null,
           task_deadline: newTaskDeadline || null,
@@ -226,7 +229,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
 
   const handleSubmitEntry = async () => {
     const initData = (window as any).Telegram?.WebApp?.initData;
-    if (!initData || !entrySummary.trim() || submittingEntry) return;
+    if (!initData || !entrySummary.trim() || submittingEntry || !data || !data.is_member) return;
     setSubmittingEntry(true);
     try {
       const res = await fetch(`${SERVER_URL}/api/state`, {
@@ -235,6 +238,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
         body: JSON.stringify({
           initData,
           action: 'submit_mastermind_entry',
+          member_id: data.member.id,
           summary: entrySummary.trim(),
           my_tasks: entryMyTasks.trim() || null,
         }),
@@ -265,7 +269,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
     return (
       <div className="flex flex-col min-h-screen bg-background">
         <div className="bg-kamp-primary text-white px-4 py-3">
-          <h1 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5" /> Мастермайнд</h1>
+          <h1 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5" /> {groupName}</h1>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <p className="text-base font-medium">Вы не записаны в мастермайнд.</p>
@@ -280,7 +284,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack }) => {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <div className="bg-kamp-primary text-white px-4 py-3">
-        <h1 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5" /> Мастермайнд</h1>
+        <h1 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5" /> {groupName}</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

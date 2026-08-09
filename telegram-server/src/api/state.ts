@@ -61,6 +61,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     entry_date, day_type, emotions, answers,
     reward_id, comment, challenge_id,
     task_title, task_description, task_deadline,
+    group_id, member_id,
   } = req.body as {
     initData?: string;
     action?: string;
@@ -90,6 +91,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     task_title?: string;
     task_description?: string;
     task_deadline?: string;
+    group_id?: string;
+    member_id?: string;
   };
 
   // Базовая валидация тела запроса
@@ -832,6 +835,11 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
 
   if (action === 'get_mastermind') {
+    if (!group_id || typeof group_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_group_id' });
+      return;
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('user_id')
@@ -847,6 +855,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       .from('mastermind_members')
       .select('id, request, plan, start_date, end_date, is_active')
       .eq('user_id', profile.user_id)
+      .eq('group_id', group_id)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -930,29 +939,46 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     const summary = (req.body as any).summary;
     const my_tasks = (req.body as any).my_tasks;
 
+    if (!member_id || typeof member_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_member_id' });
+      return;
+    }
+
     if (!summary || typeof summary !== 'string') {
       res.status(400).json({ ok: false, error: 'missing_summary' });
       return;
     }
 
-    const { data, error } = await supabase.rpc('server_submit_mastermind_entry', {
-      p_user_id: profile.user_id,
-      p_summary: summary,
-      p_my_tasks: my_tasks || null,
-    });
+    // Проверяем, что member_id действительно принадлежит этому пользователю.
+    const { data: member } = await supabase
+      .from('mastermind_members')
+      .select('id')
+      .eq('id', member_id)
+      .eq('user_id', profile.user_id)
+      .maybeSingle();
+
+    if (!member) {
+      res.status(403).json({ ok: false, error: 'not_member' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('mastermind_entries')
+      .insert({
+        member_id,
+        summary,
+        my_tasks: my_tasks || null,
+      })
+      .select('id')
+      .single();
 
     if (error) {
-      console.error('[state/submit_mastermind_entry] RPC error:', error.message);
+      console.error('[state/submit_mastermind_entry] insert error:', error.message);
       res.status(400).json({ ok: false, error: error.message });
       return;
     }
 
-    if (!data?.ok) {
-      res.status(400).json({ ok: false, error: data?.error || 'entry_error' });
-      return;
-    }
-
-    res.json({ ok: true, data });
+    res.json({ ok: true, data: { entry_id: data.id } });
     return;
   }
 
@@ -968,25 +994,60 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    if (!member_id || typeof member_id !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_member_id' });
+      return;
+    }
+
     if (!task_title || typeof task_title !== 'string' || !task_title.trim()) {
       res.status(400).json({ ok: false, error: 'missing_task_title' });
       return;
     }
 
-    const { data, error } = await supabase.rpc('server_create_mastermind_task', {
-      p_user_id: profile.user_id,
-      p_title: task_title,
-      p_description: task_description || null,
-      p_deadline: task_deadline || null,
-    });
+    // Проверяем, что member_id действительно принадлежит этому пользователю —
+    // иначе можно было бы подставить чужой member_id и создать задачу в чужой группе.
+    const { data: member } = await supabase
+      .from('mastermind_members')
+      .select('id')
+      .eq('id', member_id)
+      .eq('user_id', profile.user_id)
+      .maybeSingle();
+
+    if (!member) {
+      res.status(403).json({ ok: false, error: 'not_member' });
+      return;
+    }
+
+    const { data: lastTask } = await supabase
+      .from('mastermind_tasks')
+      .select('sort_order')
+      .eq('member_id', member_id)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextSort = (lastTask?.sort_order ?? 0) + 1;
+
+    const { data, error } = await supabase
+      .from('mastermind_tasks')
+      .insert({
+        member_id,
+        title: task_title.trim(),
+        description: task_description || null,
+        deadline: task_deadline || null,
+        approval_status: 'pending',
+        sort_order: nextSort,
+      })
+      .select('id')
+      .single();
 
     if (error) {
-      console.error('[state/create_mastermind_task] RPC error:', error.message);
+      console.error('[state/create_mastermind_task] insert error:', error.message);
       res.status(400).json({ ok: false, error: error.message });
       return;
     }
 
-    res.json({ ok: true, data: { task_id: data } });
+    res.json({ ok: true, data: { task_id: data.id } });
     return;
   }
 

@@ -3,7 +3,7 @@ import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
   Salad, Home, Flame, Pyramid,
-  NotebookPen, Share2, ShoppingBag,
+  NotebookPen, Share2, ShoppingBag, User, Briefcase,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -244,10 +244,19 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
 
           {status === 'club_resident' && (
             <SectionCard
-              icon={<Users className="w-5 h-5" />}
-              label="Мастермайнд"
-              active={activeSection === 'mastermind'}
-              onClick={() => onNavigate('mastermind')}
+              icon={<User className="w-5 h-5" />}
+              label="Личная эффективность"
+              active={activeSection === 'mastermind_personal'}
+              onClick={() => onNavigate('mastermind_personal')}
+            />
+          )}
+
+          {status === 'club_resident' && (
+            <SectionCard
+              icon={<Briefcase className="w-5 h-5" />}
+              label="Система в бизнесе"
+              active={activeSection === 'mastermind_business'}
+              onClick={() => onNavigate('mastermind_business')}
             />
           )}
 

@@ -21,7 +21,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges' | 'mastermind';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges' | 'mastermind_personal' | 'mastermind_business';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -133,8 +133,24 @@ export const TelegramAppShell: React.FC = () => {
 
   }
 
-  if (activeSection === 'mastermind') {
-    return <TelegramMastermindView onBack={() => setActiveSection('home')} />;
+  if (activeSection === 'mastermind_personal') {
+    return (
+      <TelegramMastermindView
+        onBack={() => setActiveSection('home')}
+        groupId="c7f38e3a-796b-40be-9062-7e65e574988f"
+        groupName="Личная эффективность"
+      />
+    );
+  }
+
+  if (activeSection === 'mastermind_business') {
+    return (
+      <TelegramMastermindView
+        onBack={() => setActiveSection('home')}
+        groupId="d387a138-c3d0-4711-b41c-6ccb76efd901"
+        groupName="Система в бизнесе"
+      />
+    );
   }
 
   if (activeSection === 'journal') {
