@@ -7,7 +7,11 @@
 
 Обозначения: S = SELECT, I = INSERT, U = UPDATE, D = DELETE.
 
-## 1. Доступ для `anon` (18 таблиц на чтение + 2 на запись)
+## 1. Доступ для `anon` (15 таблиц + 2 представления на чтение, 2 таблицы на запись)
+
+> v4: гранты `anon` на `public_profiles` и `cooper_test_results` сняты — публичные
+> результаты отдаются через `public_leaderboard_view` и `public_cooper_results_view`
+> (см. `PUBLIC_DATA_EXPOSURE.md`).
 
 | Таблица | anon | Почему |
 |---|---|---|
@@ -16,11 +20,11 @@
 | ascetic_types | S | только `is_active = true` (RLS) |
 | challenges | S | витрина челленджей |
 | content_blocks | S | тексты лендинга (CMS) |
-| cooper_test_results | S | RLS отдаёт только `verified = true` у публичных профилей |
 | intensive_streams, streams | S | даты и названия потоков |
-| leaderboard | S | RLS ограничивает строками из `public_profiles` |
+| leaderboard | S | RLS: только `is_public_participant(user_id)` (v4) |
+| public_leaderboard_view | S | **v4**: псевдоним, display_name, баллы, ранг, статус |
+| public_cooper_results_view | S | **v4**: псевдоним, display_name, результат, этап, дата |
 | moments | S | публичная галерея |
-| public_profiles | S | витрина участников (без PII) |
 | public_testimonials | S | отзывы |
 | referral_settings | S | размер бонуса на странице `/join` |
 | schedules | S | RLS отдаёт только `intensive` + `is_active` |

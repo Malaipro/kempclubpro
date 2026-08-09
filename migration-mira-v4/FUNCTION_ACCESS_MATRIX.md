@@ -21,8 +21,13 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 |---|---|
 | `validate_contact_submission(text,text,text,text)` | вызывается внутри `WITH CHECK` политики вставки заявки |
 | `validate_referral_code(text)` | страница `/join` до авторизации |
+| `is_public_participant(uuid)` | **v4**: предикат anon-политик `leaderboard`, `crash_tests`, `user_totems` (вместо прямого чтения `profiles`/`public_profiles`) |
 
-## 2. `authenticated` — 30 функций
+## 2. `authenticated` — 25 функций
+
+> v4: `decrypt_phone` и четыре `mask_*` отозваны (см. `SECURITY_NOTES.md` §2).
+> `update_participant_status`, `get_user_coin_balance`, `update_user_leaderboard`
+> оставлены, но теперь проверяют права **внутри тела**.
 
 Хелперы RLS (обязательны, иначе политики упадут с ошибкой прав):
 `is_admin`, `is_super_admin`, `is_club_resident`, `is_public_participant`, `has_role`.
@@ -36,9 +41,10 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 `admin_adjust_coins`, `admin_confirm_referral`, `admin_set_approval`,
 `admin_list_coin_balances`, `confirm_referral_lead`, `enroll_application`,
 `review_homework_submission`, `review_reward_request`, `update_participant_status`,
-`award_coins_by_rule`, `get_participant_full_state`, `get_participant_timeline`,
-`decrypt_phone`, `mask_email_secure`, `mask_phone_secure`, `mask_phone_number`,
-`mask_participant_name`.
+`award_coins_by_rule`, `get_participant_full_state`, `get_participant_timeline`.
+
+Отозвано в v4 (только `service_role`): `decrypt_phone`, `mask_email_secure`,
+`mask_phone_secure`, `mask_phone_number`, `mask_participant_name`.
 
 ## 3. Только `service_role` — остальные ~60 функций
 
