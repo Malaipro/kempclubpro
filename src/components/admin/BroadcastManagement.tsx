@@ -144,12 +144,36 @@ export const BroadcastManagement: React.FC = () => {
     }
   }, [toast]);
 
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  const loadOptions = useCallback(async () => {
+    try {
+      const [{ data: sch }, { data: rw }] = await Promise.all([
+        (supabase as any)
+          .from('schedules')
+          .select('id, title, start_time')
+          .eq('is_active', true)
+          .gte('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
+          .limit(50),
+        (supabase as any)
+          .from('rewards')
+          .select('id, title, cost_coins')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+      ]);
+      setSchedules((sch || []) as ScheduleOption[]);
+      setRewards((rw || []) as RewardOption[]);
+    } catch {
+      /* опции не критичны для формы */
+    }
+  }, []);
 
-  const addButton = () => setButtons((prev) => [...prev, { label: '', url: '' }]);
+  useEffect(() => { loadHistory(); loadOptions(); }, [loadHistory, loadOptions]);
+
+  const addButton = () =>
+    setButtons((prev) => [...prev, { id: crypto.randomUUID(), label: '', type: 'url', url: '' }]);
   const removeButton = (i: number) => setButtons((prev) => prev.filter((_, idx) => idx !== i));
-  const updateButton = (i: number, field: keyof BroadcastButton, value: string) =>
-    setButtons((prev) => prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b)));
+  const updateButton = (i: number, patch: Partial<BroadcastButton>) =>
+    setButtons((prev) => prev.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
 
   const resetForm = () => {
     setText('');
@@ -158,12 +182,26 @@ export const BroadcastManagement: React.FC = () => {
     setFile(null);
   };
 
+  const isButtonValid = (b: BroadcastButton) => {
+    if (!b.label.trim()) return false;
+    if (b.type === 'url') return !!b.url?.trim();
+    if (b.type === 'book_event' || b.type === 'request_reward') return !!b.target_id;
+    return true;
+  };
+
   const handleSend = async () => {
     if (!text.trim()) {
       toast({ title: 'Введите текст', description: 'Сообщение не может быть пустым', variant: 'destructive' });
       return;
     }
-    const validButtons = buttons.filter((b) => b.label.trim() && b.url.trim());
+    const validButtons = buttons.filter(isButtonValid).map((b) => ({
+      id: b.id || crypto.randomUUID(),
+      label: b.label.trim(),
+      type: b.type,
+      url: b.type === 'url' ? b.url?.trim() : undefined,
+      target_id: b.type === 'book_event' || b.type === 'request_reward' ? b.target_id : undefined,
+    }));
+
 
     setSending(true);
     try {
