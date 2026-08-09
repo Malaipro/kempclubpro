@@ -39,6 +39,10 @@ interface Task {
   file_url: string | null;
   sort_order: number | null;
   created_at: string | null;
+  deadline: string | null;
+  created_by: string | null;
+  approval_status: string | null;
+  admin_comment: string | null;
 }
 
 interface Entry {
@@ -60,6 +64,9 @@ interface Candidate {
 
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('ru-RU') : '—';
+
+const isOverdue = (t: { deadline: string | null; is_completed: boolean | null }) =>
+  !!t.deadline && !t.is_completed && new Date(t.deadline) < new Date(new Date().toDateString());
 
 export const MastermindManagement: React.FC = () => {
   const { toast } = useToast();
@@ -83,8 +90,22 @@ export const MastermindManagement: React.FC = () => {
   const [taskMemberId, setTaskMemberId] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
+  const [taskDeadline, setTaskDeadline] = useState('');
 
   const [reviewComments, setReviewComments] = useState<Record<string, string>>({});
+  const [taskComments, setTaskComments] = useState<Record<string, string>>({});
+  const [rejectOpen, setRejectOpen] = useState<Record<string, boolean>>({});
+
+  const sortedTasks = React.useMemo(
+    () =>
+      [...tasks].sort((a, b) => {
+        const ap = a.approval_status === 'pending' ? 0 : 1;
+        const bp = b.approval_status === 'pending' ? 0 : 1;
+        return ap - bp;
+      }),
+    [tasks]
+  );
+
 
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
@@ -190,13 +211,24 @@ export const MastermindManagement: React.FC = () => {
       member_id: taskMemberId,
       title: taskTitle.trim(),
       description: taskDesc || null,
+      deadline: taskDeadline || null,
       sort_order: tasks.filter((t) => t.member_id === taskMemberId).length,
     });
     setSaving(false);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
     toast({ title: 'Задача добавлена' });
     setTaskOpen(false);
-    setTaskTitle(''); setTaskDesc('');
+    setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
+    loadAll();
+  };
+
+  const setApproval = async (t: Task, status: 'approved' | 'rejected') => {
+    const payload: Record<string, unknown> = { approval_status: status };
+    if (status === 'rejected') payload.admin_comment = taskComments[t.id] ?? t.admin_comment ?? null;
+    const { error } = await supabase.from('mastermind_tasks').update(payload).eq('id', t.id);
+    if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+    toast({ title: status === 'approved' ? 'Задача утверждена' : 'Отправлено на доработку' });
+    setRejectOpen((p) => ({ ...p, [t.id]: false }));
     loadAll();
   };
 
@@ -382,6 +414,10 @@ export const MastermindManagement: React.FC = () => {
                   <Label>Описание</Label>
                   <Textarea value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} rows={3} />
                 </div>
+                <div>
+                  <Label>Дедлайн (необязательно)</Label>
+                  <Input type="date" value={taskDeadline} onChange={(e) => setTaskDeadline(e.target.value)} />
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={addTask} disabled={saving}>
@@ -394,26 +430,86 @@ export const MastermindManagement: React.FC = () => {
           {tasks.length === 0 && <p className="text-muted-foreground text-sm">Задач пока нет</p>}
 
           <div className="grid gap-3">
-            {tasks.map((t) => (
-              <Card key={t.id} className="bg-card">
+            {sortedTasks.map((t) => {
+              const overdue = isOverdue(t);
+              const pending = t.approval_status === 'pending';
+              return (
+              <Card key={t.id} className={`bg-card ${pending ? 'border-primary' : ''}`}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-card-foreground break-words">{t.title}</p>
                       <p className="text-xs text-muted-foreground">{memberName(t.member_id)}</p>
                     </div>
-                    <Badge variant={t.is_completed ? 'default' : 'outline'}>
-                      {t.is_completed ? 'Выполнена' : 'В работе'}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {t.created_by && <Badge variant="secondary">От участника</Badge>}
+                      {t.approval_status && (
+                        <Badge
+                          variant={
+                            t.approval_status === 'approved'
+                              ? 'default'
+                              : t.approval_status === 'rejected'
+                              ? 'destructive'
+                              : 'outline'
+                          }
+                        >
+                          {t.approval_status === 'approved'
+                            ? 'Утверждена'
+                            : t.approval_status === 'rejected'
+                            ? 'На доработку'
+                            : 'На проверке'}
+                        </Badge>
+                      )}
+                      <Badge variant={t.is_completed ? 'default' : 'outline'}>
+                        {t.is_completed ? 'Выполнена' : 'В работе'}
+                      </Badge>
+                    </div>
                   </div>
+                  {t.deadline && (
+                    <p className={`text-xs ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                      Дедлайн: {fmtDate(t.deadline)}{overdue ? ' — просрочено' : ''}
+                    </p>
+                  )}
                   {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
                   {t.participant_comment && (
                     <p className="text-sm"><span className="text-muted-foreground">Комментарий участника:</span> {t.participant_comment}</p>
                   )}
+                  {t.admin_comment && (
+                    <p className="text-sm"><span className="text-muted-foreground">Комментарий тренера:</span> {t.admin_comment}</p>
+                  )}
                   {t.file_url && (
-                    <a href={t.file_url} target="_blank" rel="noreferrer" className="text-sm underline text-primary">
-                      Файл участника
+                    <a href={t.file_url} target="_blank" rel="noreferrer" className="text-sm underline text-primary block">
+                      Файл
                     </a>
+                  )}
+                  {pending && (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => setApproval(t, 'approved')}>
+                          <Check className="w-4 h-4 mr-1" /> Утвердить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setRejectOpen((p) => ({ ...p, [t.id]: !p[t.id] }))}
+                        >
+                          <X className="w-4 h-4 mr-1" /> На доработку
+                        </Button>
+                      </div>
+                      {rejectOpen[t.id] && (
+                        <div className="space-y-2">
+                          <Textarea
+                            rows={2}
+                            placeholder="Комментарий тренера"
+                            value={taskComments[t.id] ?? t.admin_comment ?? ''}
+                            onChange={(ev) => setTaskComments((p) => ({ ...p, [t.id]: ev.target.value }))}
+                          />
+                          <Button size="sm" variant="destructive" onClick={() => setApproval(t, 'rejected')}>
+                            Отправить на доработку
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
                   <div className="flex gap-2 pt-1">
                     <Button size="sm" variant="outline" onClick={() => toggleTask(t)}>
@@ -425,7 +521,8 @@ export const MastermindManagement: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </TabsContent>
 

@@ -1616,8 +1616,12 @@ export type Database = {
       }
       mastermind_tasks: {
         Row: {
+          admin_comment: string | null
+          approval_status: string | null
           completed_at: string | null
           created_at: string | null
+          created_by: string | null
+          deadline: string | null
           description: string | null
           file_url: string | null
           id: string
@@ -1628,8 +1632,12 @@ export type Database = {
           title: string
         }
         Insert: {
+          admin_comment?: string | null
+          approval_status?: string | null
           completed_at?: string | null
           created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
           description?: string | null
           file_url?: string | null
           id?: string
@@ -1640,8 +1648,12 @@ export type Database = {
           title: string
         }
         Update: {
+          admin_comment?: string | null
+          approval_status?: string | null
           completed_at?: string | null
           created_at?: string | null
+          created_by?: string | null
+          deadline?: string | null
           description?: string | null
           file_url?: string | null
           id?: string
@@ -1652,6 +1664,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mastermind_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "mastermind_tasks_member_id_fkey"
             columns: ["member_id"]
@@ -3735,6 +3754,15 @@ export type Database = {
           p_comment?: string
           p_file_url?: string
           p_task_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      server_create_mastermind_task: {
+        Args: {
+          p_deadline?: string
+          p_description?: string
+          p_title: string
           p_user_id: string
         }
         Returns: Json
