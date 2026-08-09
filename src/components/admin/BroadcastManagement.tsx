@@ -19,9 +19,36 @@ import { ru } from 'date-fns/locale';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
+type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
+
 interface BroadcastButton {
+  id?: string;
   label: string;
-  url: string;
+  type: ButtonType;
+  url?: string;
+  target_id?: string;
+}
+
+const buttonTypeLabels: Record<ButtonType, string> = {
+  url: 'Ссылка',
+  checkin: 'Отметка / Чекин',
+  book_event: 'Запись на событие',
+  request_reward: 'Заказ награды',
+};
+
+interface ScheduleOption { id: string; title: string; start_time: string }
+interface RewardOption { id: string; title: string; cost_coins: number }
+
+interface BroadcastResponse {
+  id: string;
+  user_id: string | null;
+  display_name: string | null;
+  phone: string | null;
+  telegram_id: string | null;
+  button_id: string | null;
+  button_label: string | null;
+  action_type: string | null;
+  created_at: string;
 }
 
 interface BroadcastMessage {
