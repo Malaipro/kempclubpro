@@ -81,7 +81,11 @@ export async function onCallbackQuery(query: TelegramCallbackQuery): Promise<voi
     .insert({
       broadcast_id: broadcastMessageId,
       user_id: profile.user_id,
-      button_id: buttonIndex,
+      display_name: profile.display_name,
+      phone: profile.phone,
+      telegram_id: telegramId,
+      button_id: String(buttonIndex),
+      button_label: button.label,
       action_type: actionType,
       action_target_id: button.target_id ?? null,
     });
