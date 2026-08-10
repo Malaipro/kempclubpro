@@ -20,7 +20,7 @@ async function rollbackResponse(broadcastMessageId: string, userId: string, butt
   const { error } = await supabase
     .from('broadcast_responses')
     .delete()
-    .match({ broadcast_id: broadcastMessageId, user_id: userId, button_index: buttonIndex });
+    .match({ broadcast_id: broadcastMessageId, user_id: userId, button_id: buttonIndex });
 
   if (error) {
     console.error('[onCallbackQuery] rollback error:', error.message);
@@ -74,14 +74,14 @@ export async function onCallbackQuery(query: TelegramCallbackQuery): Promise<voi
     ? button.type
     : 'response';
 
-  // 3. Атомарно фиксируем клик — UNIQUE(broadcast_id, user_id, button_index)
+  // 3. Атомарно фиксируем клик — UNIQUE(broadcast_id, user_id, button_id)
   // защищает от повторного выполнения действия при повторном нажатии.
   const { error: responseErr } = await supabase
     .from('broadcast_responses')
     .insert({
       broadcast_id: broadcastMessageId,
       user_id: profile.user_id,
-      button_index: buttonIndex,
+      button_id: buttonIndex,
       action_type: actionType,
       action_target_id: button.target_id ?? null,
     });
