@@ -1051,6 +1051,33 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'get_rules') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('get_rules_for_user', {
+      p_user_id: profile.user_id,
+    });
+
+    if (error) {
+      console.error('[state/get_rules] RPC error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, data: { documents: data || [] } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
