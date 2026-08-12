@@ -182,7 +182,15 @@ const adminTabs: TabConfig[] = [
     description: 'Участники, задачи и отчёты мастермайнда',
     requiresSuperAdmin: true
   },
+  {
+    id: 'teams',
+    label: 'Команды',
+    icon: Users,
+    description: 'Команды потока, капитаны и светофоры',
+    requiresSuperAdmin: true
+  },
   { 
+
 
     id: 'broadcasts', 
     label: 'Рассылки', 
