@@ -305,6 +305,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <ChallengesManagement />;
       case 'mastermind':
         return <MastermindManagement />;
+      case 'teams':
+        return <TeamsManagement />;
 
       case 'broadcasts':
         return <BroadcastManagement />;
