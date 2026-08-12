@@ -571,6 +571,135 @@ export type Database = {
         }
         Relationships: []
       }
+      captain_ratings: {
+        Row: {
+          captain_user_id: string
+          completed_count: number | null
+          created_at: string
+          id: string
+          members_count: number | null
+          stream_id: string
+          team_rating: number | null
+        }
+        Insert: {
+          captain_user_id: string
+          completed_count?: number | null
+          created_at?: string
+          id?: string
+          members_count?: number | null
+          stream_id: string
+          team_rating?: number | null
+        }
+        Update: {
+          captain_user_id?: string
+          completed_count?: number | null
+          created_at?: string
+          id?: string
+          members_count?: number | null
+          stream_id?: string
+          team_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captain_ratings_captain_user_id_fkey"
+            columns: ["captain_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "captain_ratings_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      captain_team_members: {
+        Row: {
+          captain_comment: string | null
+          comment_updated_at: string | null
+          created_at: string
+          id: string
+          team_id: string
+          traffic_light: string
+          user_id: string
+        }
+        Insert: {
+          captain_comment?: string | null
+          comment_updated_at?: string | null
+          created_at?: string
+          id?: string
+          team_id: string
+          traffic_light?: string
+          user_id: string
+        }
+        Update: {
+          captain_comment?: string | null
+          comment_updated_at?: string | null
+          created_at?: string
+          id?: string
+          team_id?: string
+          traffic_light?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captain_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "captain_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "captain_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      captain_teams: {
+        Row: {
+          captain_user_id: string
+          created_at: string
+          id: string
+          name: string | null
+          stream_id: string
+        }
+        Insert: {
+          captain_user_id: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          stream_id: string
+        }
+        Update: {
+          captain_user_id?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          stream_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captain_teams_captain_user_id_fkey"
+            columns: ["captain_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "captain_teams_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_entries: {
         Row: {
           challenge_id: string
@@ -661,6 +790,30 @@ export type Database = {
           start_date?: string | null
           target_statuses?: Json | null
           target_tag_ids?: Json | null
+        }
+        Relationships: []
+      }
+      checkpoint_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          question_text: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_text: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_text?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -1854,6 +2007,90 @@ export type Database = {
           },
         ]
       }
+      participant_checkpoints: {
+        Row: {
+          belly_cm: number | null
+          body_fat_pct: number | null
+          checkpoint_type: string
+          chest_cm: number | null
+          cooper_results: Json | null
+          created_at: string
+          filled_by: string | null
+          hips_cm: number | null
+          id: string
+          main_achievement: string | null
+          personal_goal: string | null
+          personal_result: string | null
+          photo_urls: Json | null
+          pyramid_average: number | null
+          pyramid_scores: Json | null
+          stream_id: string
+          updated_at: string
+          user_id: string
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          belly_cm?: number | null
+          body_fat_pct?: number | null
+          checkpoint_type: string
+          chest_cm?: number | null
+          cooper_results?: Json | null
+          created_at?: string
+          filled_by?: string | null
+          hips_cm?: number | null
+          id?: string
+          main_achievement?: string | null
+          personal_goal?: string | null
+          personal_result?: string | null
+          photo_urls?: Json | null
+          pyramid_average?: number | null
+          pyramid_scores?: Json | null
+          stream_id: string
+          updated_at?: string
+          user_id: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          belly_cm?: number | null
+          body_fat_pct?: number | null
+          checkpoint_type?: string
+          chest_cm?: number | null
+          cooper_results?: Json | null
+          created_at?: string
+          filled_by?: string | null
+          hips_cm?: number | null
+          id?: string
+          main_achievement?: string | null
+          personal_goal?: string | null
+          personal_result?: string | null
+          photo_urls?: Json | null
+          pyramid_average?: number | null
+          pyramid_scores?: Json | null
+          stream_id?: string
+          updated_at?: string
+          user_id?: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_checkpoints_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_checkpoints_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       participant_habits: {
         Row: {
           completed_days: number | null
@@ -1983,6 +2220,42 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      platform_documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          doc_type: string
+          file_url: string | null
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          doc_type: string
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          doc_type?: string
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -2894,6 +3167,53 @@ export type Database = {
         }
         Relationships: []
       }
+      traffic_light_requests: {
+        Row: {
+          created_at: string
+          current_light: string
+          id: string
+          reason: string | null
+          requested_by: string
+          requested_light: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_light: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          requested_light: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          current_light?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          requested_light?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_light_requests_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "captain_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trainers: {
         Row: {
           bio: string | null
@@ -3703,6 +4023,15 @@ export type Database = {
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_pyramid_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_rules_for_user: {
+        Args: { p_user_id: string }
+        Returns: {
+          content: string
+          doc_type: string
+          file_url: string
+          title: string
+        }[]
+      }
       get_schedule_for_user: {
         Args: { p_days?: number; p_from?: string; p_telegram_id: string }
         Returns: Json
@@ -3716,6 +4045,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_captain: { Args: { p_user_id: string }; Returns: boolean }
       is_club_resident: { Args: { _user_id: string }; Returns: boolean }
       is_public_participant: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -3918,7 +4248,7 @@ export type Database = {
         | "heroes_race"
         | "tactics"
         | "ascetic"
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "captain"
       journal_day_type: "weekday" | "saturday" | "sunday"
       lecture_subtype:
         | "kemp"
@@ -3951,7 +4281,7 @@ export type Database = {
         | "lighthouse"
         | "bear"
       training_subtype: "bjj" | "kick" | "ofp"
-      user_role: "user" | "admin" | "super_admin" | "trainer"
+      user_role: "user" | "admin" | "super_admin" | "trainer" | "captain"
       zakal_subtype: "bjj" | "kick" | "ofp"
     }
     CompositeTypes: {
@@ -4102,7 +4432,7 @@ export const Constants = {
         "tactics",
         "ascetic",
       ],
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "captain"],
       journal_day_type: ["weekday", "saturday", "sunday"],
       lecture_subtype: [
         "kemp",
@@ -4138,7 +4468,7 @@ export const Constants = {
         "bear",
       ],
       training_subtype: ["bjj", "kick", "ofp"],
-      user_role: ["user", "admin", "super_admin", "trainer"],
+      user_role: ["user", "admin", "super_admin", "trainer", "captain"],
       zakal_subtype: ["bjj", "kick", "ofp"],
     },
   },

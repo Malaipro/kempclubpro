@@ -51,6 +51,7 @@ import { RewardsManagement } from '@/components/admin/RewardsManagement';
 import { ReferralsManagement } from '@/components/admin/ReferralsManagement';
 import { ChallengesManagement } from '@/components/admin/ChallengesManagement';
 import { MastermindManagement } from '@/components/admin/MastermindManagement';
+import { DocumentsManagement } from '@/components/admin/DocumentsManagement';
 
 
 interface TabConfig {
@@ -202,6 +203,13 @@ const adminTabs: TabConfig[] = [
     icon: BookOpen,
     description: 'Вопросы и записи участников',
     requiresSuperAdmin: true
+  },
+  {
+    id: 'documents',
+    label: 'Документы',
+    icon: FileText,
+    description: 'Правила, кодекс и вопросы Точка А/Б',
+    requiresSuperAdmin: true
   }
 ];
 
@@ -296,6 +304,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <PyramidManagement />;
       case 'journal':
         return <JournalManagement />;
+      case 'documents':
+        return <DocumentsManagement />;
       default:
         return (
           <div className="text-center py-8">
