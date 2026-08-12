@@ -203,6 +203,13 @@ const adminTabs: TabConfig[] = [
     icon: BookOpen,
     description: 'Вопросы и записи участников',
     requiresSuperAdmin: true
+  },
+  {
+    id: 'documents',
+    label: 'Документы',
+    icon: FileText,
+    description: 'Правила, кодекс и вопросы Точка А/Б',
+    requiresSuperAdmin: true
   }
 ];
 
