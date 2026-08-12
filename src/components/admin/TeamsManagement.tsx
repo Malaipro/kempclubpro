@@ -171,9 +171,12 @@ export const TeamsManagement: React.FC = () => {
   const availableParticipants = useMemo(
     () =>
       profiles.filter(
-        (p) => p.participant_status === 'intensive_active' && !assignedUserIdsInStream.has(p.user_id)
+        (p) =>
+          p.participant_status === 'intensive_active' &&
+          p.current_stream_id === selectedStream &&
+          !assignedUserIdsInStream.has(p.user_id)
       ),
-    [profiles, assignedUserIdsInStream]
+    [profiles, selectedStream, assignedUserIdsInStream]
   );
 
   const residents = useMemo(
