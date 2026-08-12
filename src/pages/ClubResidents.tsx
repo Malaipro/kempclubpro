@@ -9,6 +9,7 @@ const ClubResidents = () => {
       <Helmet>
         <title>Резиденты клуба КЭМП — мужское братство дисциплины и выносливости</title>
         <meta name="description" content="Резиденты закрытого мужского клуба КЭМП: единомышленники, прошедшие интенсив, тренировки и испытания. Братство дисциплины, выносливости и лидерства." />
+        <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://kempclub.pro/club-residents" />
         <meta property="og:title" content="Резиденты клуба КЭМП — мужское братство" />
         <meta property="og:description" content="Закрытое сообщество мужчин, прошедших путь дисциплины и испытаний в клубе КЭМП." />
