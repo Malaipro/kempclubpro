@@ -53,6 +53,7 @@ import { ChallengesManagement } from '@/components/admin/ChallengesManagement';
 import { MastermindManagement } from '@/components/admin/MastermindManagement';
 import { DocumentsManagement } from '@/components/admin/DocumentsManagement';
 import { TeamsManagement } from '@/components/admin/TeamsManagement';
+import { CaptainsRatingDashboard } from '@/components/admin/CaptainsRatingDashboard';
 
 
 interface TabConfig {
@@ -187,6 +188,13 @@ const adminTabs: TabConfig[] = [
     label: 'Команды',
     icon: Users,
     description: 'Команды потока, капитаны и светофоры',
+    requiresSuperAdmin: true
+  },
+  {
+    id: 'captains-rating',
+    label: 'Рейтинг капитанов',
+    icon: Trophy,
+    description: 'Дашборд эффективности капитанов по потоку',
     requiresSuperAdmin: true
   },
   { 
