@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone, Tag, Trophy } from 'lucide-react';
 import { ChallengesManagement } from './ChallengesManagement';
+import { TeamsManagement } from './TeamsManagement';
+import { CaptainsRatingDashboard } from './CaptainsRatingDashboard';
+import { CaptainDashboard } from './CaptainDashboard';
 import { MastermindManagement } from './MastermindManagement';
 
 import { TagsManagement } from './TagsManagement';
