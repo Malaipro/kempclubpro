@@ -319,6 +319,10 @@ export const AdminDashboard: React.FC = () => {
           <TagsManagement />
         </TabsContent>
 
+        <TabsContent value="stream-dashboard" className="mt-0">
+          <StreamDashboard />
+        </TabsContent>
+
         <TabsContent value="teams" className="mt-0">
           <TeamsManagement />
         </TabsContent>
