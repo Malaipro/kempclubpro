@@ -174,6 +174,23 @@ export const AdminDashboard: React.FC = () => {
               <span className="whitespace-nowrap">Теги</span>
             </TabsTrigger>
 
+            <TabsTrigger value="teams" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Users className="w-4 h-4" />
+              <span className="whitespace-nowrap">Команды</span>
+            </TabsTrigger>
+
+            <TabsTrigger value="captains-rating" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Trophy className="w-4 h-4" />
+              <span className="whitespace-nowrap">Рейтинг капитанов</span>
+            </TabsTrigger>
+
+            <TabsTrigger value="captain-dashboard" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <Shield className="w-4 h-4" />
+              <span className="whitespace-nowrap">ЛК Капитана</span>
+            </TabsTrigger>
+
+
+
 
           </TabsList>
         </div>
