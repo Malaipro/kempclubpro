@@ -5,7 +5,6 @@ import { Shield } from 'lucide-react';
 
 interface Captain {
   name: string;
-  team?: string;
   photo?: string;
   description: string;
 }
@@ -14,19 +13,11 @@ interface Captain {
 const CAPTAINS: Captain[] = [
   {
     name: 'Имя Капитана 1',
-    team: 'Команда 1',
     photo: '',
     description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
   },
   {
     name: 'Имя Капитана 2',
-    team: 'Команда 2',
-    photo: '',
-    description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
-  },
-  {
-    name: 'Имя Капитана 3',
-    team: 'Команда 3',
     photo: '',
     description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
   },
@@ -51,11 +42,11 @@ export const StreamCaptains: React.FC = () => {
             Капитаны потока
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Те, кто ведёт команды, держит дисциплину и отвечает за результат участников.
+            Те, кто помогает участникам держать дисциплину, мотивирует и отвечает за результат потока.
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2">
           {CAPTAINS.map((c) => (
             <Card key={c.name} className="h-full">
               <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
@@ -65,7 +56,6 @@ export const StreamCaptains: React.FC = () => {
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-semibold">{c.name}</h3>
-                  {c.team ? <p className="text-sm text-kamp-accent">{c.team}</p> : null}
                 </div>
                 <p className="text-sm text-muted-foreground">{c.description}</p>
               </CardContent>
