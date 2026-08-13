@@ -34,6 +34,8 @@ import { ContractManagement } from './ContractManagement';
 import { ReferralsManagement } from './ReferralsManagement';
 import { MaterialsManagement } from './MaterialsManagement';
 import { KampSystem } from '@/components/kamp';
+import { StreamDashboard } from './StreamDashboard';
+import { BarChart3 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('applications');
@@ -177,6 +179,11 @@ export const AdminDashboard: React.FC = () => {
               <span className="whitespace-nowrap">Теги</span>
             </TabsTrigger>
 
+            <TabsTrigger value="stream-dashboard" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
+              <BarChart3 className="w-4 h-4" />
+              <span className="whitespace-nowrap">Дашборд Поток</span>
+            </TabsTrigger>
+
             <TabsTrigger value="teams" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Users className="w-4 h-4" />
               <span className="whitespace-nowrap">Команды</span>
@@ -310,6 +317,10 @@ export const AdminDashboard: React.FC = () => {
 
         <TabsContent value="tags" className="mt-0">
           <TagsManagement />
+        </TabsContent>
+
+        <TabsContent value="stream-dashboard" className="mt-0">
+          <StreamDashboard />
         </TabsContent>
 
         <TabsContent value="teams" className="mt-0">

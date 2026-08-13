@@ -3954,6 +3954,11 @@ export type Database = {
         Args: { total_minutes: number }
         Returns: string
       }
+      calculate_participant_rating: {
+        Args: { p_stream_id: string; p_user_id: string }
+        Returns: number
+      }
+      calculate_team_rating: { Args: { p_team_id: string }; Returns: number }
       check_in_activity: {
         Args: { p_activity_type: string; p_telegram_id: string }
         Returns: Json
@@ -4036,6 +4041,17 @@ export type Database = {
         Args: { p_days?: number; p_from?: string; p_telegram_id: string }
         Returns: Json
       }
+      get_stream_team_ratings: {
+        Args: { p_stream_id: string }
+        Returns: {
+          captain_name: string
+          completed_count: number
+          members_count: number
+          team_id: string
+          team_name: string
+          team_rating: number
+        }[]
+      }
       get_user_coin_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
@@ -4089,6 +4105,10 @@ export type Database = {
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
       normalize_phone: { Args: { p_phone: string }; Returns: string }
       recalculate_all_ranks: { Args: never; Returns: undefined }
+      recalculate_stream_ratings: {
+        Args: { p_stream_id: string }
+        Returns: undefined
+      }
       review_homework_submission: {
         Args: {
           p_admin_comment?: string
