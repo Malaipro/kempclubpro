@@ -13,6 +13,7 @@ const Trainers = lazy(() => import('@/components/Trainers').then(m => ({ default
 const FounderInterview = lazy(() => import('@/components/FounderInterview').then(m => ({ default: m.FounderInterview })));
 const Leaderboard = lazy(() => import('@/components/leaderboard').then(m => ({ default: m.Leaderboard })));
 const AllParticipantsProgress = lazy(() => import('@/components/AllParticipantsProgress').then(m => ({ default: m.AllParticipantsProgress })));
+const StreamCaptains = lazy(() => import('@/components/StreamCaptains').then(m => ({ default: m.StreamCaptains })));
 const RegisteredParticipants = lazy(() => import('@/components/participants').then(m => ({ default: m.RegisteredParticipants })));
 const Achievements = lazy(() => import('@/components/achievements').then(m => ({ default: m.Achievements })));
 const Testimonials = lazy(() => import('@/components/Testimonials').then(m => ({ default: m.Testimonials })));
@@ -53,6 +54,7 @@ const Index = () => {
         <Testimonials />
         <AllParticipantsProgress />
         <Leaderboard />
+        <StreamCaptains />
         <RegisteredParticipants />
         <Achievements />
         <ContactForm />
