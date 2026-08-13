@@ -6,6 +6,7 @@ import { supabase } from '../../db/supabase';
 const CALLBACK_DATA_RE = /^bc:([0-9a-f-]{36}):(\d+)$/i;
 
 interface BroadcastButtonRow {
+  id?: string;
   label: string;
   type?: BroadcastButtonType;
   url?: string;
