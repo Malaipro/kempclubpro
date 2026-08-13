@@ -309,6 +309,19 @@ export const AdminDashboard: React.FC = () => {
           <TagsManagement />
         </TabsContent>
 
+        <TabsContent value="teams" className="mt-0">
+          <TeamsManagement />
+        </TabsContent>
+
+        <TabsContent value="captains-rating" className="mt-0">
+          <CaptainsRatingDashboard />
+        </TabsContent>
+
+        <TabsContent value="captain-dashboard" className="mt-0">
+          <CaptainDashboard />
+        </TabsContent>
+
+
       </Tabs>
     </div>;
 };
