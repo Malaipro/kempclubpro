@@ -54,6 +54,7 @@ import { MastermindManagement } from '@/components/admin/MastermindManagement';
 import { DocumentsManagement } from '@/components/admin/DocumentsManagement';
 import { TeamsManagement } from '@/components/admin/TeamsManagement';
 import { CaptainsRatingDashboard } from '@/components/admin/CaptainsRatingDashboard';
+import { CaptainDashboard } from '@/components/admin/CaptainDashboard';
 
 
 interface TabConfig {
@@ -62,9 +63,17 @@ interface TabConfig {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   requiresSuperAdmin?: boolean;
+  captainAccess?: boolean;
 }
 
 const adminTabs: TabConfig[] = [
+  {
+    id: 'captain_dashboard',
+    label: 'ЛК Капитана',
+    icon: Shield,
+    description: 'Команда капитана: светофор, точки А/Б, рейтинг и ежедневник',
+    captainAccess: true
+  },
   {
     id: 'applications',
     label: 'Заявки',
