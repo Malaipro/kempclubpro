@@ -1078,6 +1078,263 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'get_captain_team') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    // Проверяем роль капитана
+    const { data: role } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', profile.user_id)
+      .eq('role', 'captain')
+      .maybeSingle();
+
+    if (!role) {
+      res.json({ ok: true, data: { is_captain: false } });
+      return;
+    }
+
+    // Команды капитана с участниками
+    const { data: teams, error: teamsErr } = await supabase
+      .from('captain_teams')
+      .select('id, name, stream_id, streams(name), captain_team_members(id, user_id, traffic_light, captain_comment, profiles(display_name, telegram_id, participant_status))')
+      .eq('captain_user_id', profile.user_id)
+      .order('created_at', { ascending: false });
+
+    if (teamsErr) {
+      console.error('[state/get_captain_team] error:', teamsErr.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, data: { is_captain: true, teams: teams || [] } });
+    return;
+  }
+
+  if (action === 'update_traffic_light') {
+    const member_id = (req.body as any).member_id;
+    const new_light = (req.body as any).new_light;
+    const reason = (req.body as any).reason;
+
+    if (!member_id || !new_light) {
+      res.status(400).json({ ok: false, error: 'missing_params' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    // Проверяем что этот member в команде капитана
+    const { data: member } = await supabase
+      .from('captain_team_members')
+      .select('id, traffic_light, team_id, captain_teams!inner(captain_user_id)')
+      .eq('id', member_id)
+      .maybeSingle();
+
+    if (!member || (member as any).captain_teams?.captain_user_id !== profile.user_id) {
+      res.status(403).json({ ok: false, error: 'not_your_team' });
+      return;
+    }
+
+    // Создаём заявку на смену
+    const { error: reqErr } = await supabase
+      .from('traffic_light_requests')
+      .insert({
+        team_member_id: member_id,
+        requested_by: profile.user_id,
+        current_light: member.traffic_light,
+        requested_light: new_light,
+        reason: reason || null,
+      });
+
+    if (reqErr) {
+      console.error('[state/update_traffic_light] error:', reqErr.message);
+      res.status(400).json({ ok: false, error: reqErr.message });
+      return;
+    }
+
+    // Сразу обновляем светофор (без одобрения админа для капитана)
+    await supabase
+      .from('captain_team_members')
+      .update({ traffic_light: new_light })
+      .eq('id', member_id);
+
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'update_captain_comment') {
+    const member_id = (req.body as any).member_id;
+    const captain_comment = (req.body as any).captain_comment;
+
+    if (!member_id) {
+      res.status(400).json({ ok: false, error: 'missing_member_id' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: member } = await supabase
+      .from('captain_team_members')
+      .select('id, team_id, captain_teams!inner(captain_user_id)')
+      .eq('id', member_id)
+      .maybeSingle();
+
+    if (!member || (member as any).captain_teams?.captain_user_id !== profile.user_id) {
+      res.status(403).json({ ok: false, error: 'not_your_team' });
+      return;
+    }
+
+    await supabase
+      .from('captain_team_members')
+      .update({ captain_comment: captain_comment || null, comment_updated_at: new Date().toISOString() })
+      .eq('id', member_id);
+
+    res.json({ ok: true });
+    return;
+  }
+
+
+  if (action === 'get_checkpoint') {
+    const checkpoint_type = (req.body as any).checkpoint_type || 'A';
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, current_stream_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile || !profile.current_stream_id) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: checkpoint } = await supabase
+      .from('participant_checkpoints')
+      .select('*')
+      .eq('user_id', profile.user_id)
+      .eq('stream_id', profile.current_stream_id)
+      .eq('checkpoint_type', checkpoint_type)
+      .maybeSingle();
+
+    const { data: questions } = await supabase
+      .from('checkpoint_questions')
+      .select('id, question_text, sort_order')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    res.json({
+      ok: true,
+      data: {
+        checkpoint: checkpoint || null,
+        questions: questions || [],
+        stream_id: profile.current_stream_id,
+      },
+    });
+    return;
+  }
+
+  if (action === 'save_checkpoint') {
+    const checkpoint_type = (req.body as any).checkpoint_type || 'A';
+    const checkpoint_data = (req.body as any).checkpoint_data;
+
+    if (!checkpoint_data) {
+      res.status(400).json({ ok: false, error: 'missing_data' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, current_stream_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile || !profile.current_stream_id) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const row = {
+      user_id: profile.user_id,
+      stream_id: profile.current_stream_id,
+      checkpoint_type,
+      weight_kg: checkpoint_data.weight_kg || null,
+      waist_cm: checkpoint_data.waist_cm || null,
+      belly_cm: checkpoint_data.belly_cm || null,
+      chest_cm: checkpoint_data.chest_cm || null,
+      hips_cm: checkpoint_data.hips_cm || null,
+      body_fat_pct: checkpoint_data.body_fat_pct || null,
+      pyramid_scores: checkpoint_data.pyramid_scores || null,
+      pyramid_average: checkpoint_data.pyramid_average || null,
+      personal_goal: checkpoint_data.personal_goal || null,
+      personal_result: checkpoint_data.personal_result || null,
+      main_achievement: checkpoint_data.main_achievement || null,
+      filled_by: profile.user_id,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: existing } = await supabase
+      .from('participant_checkpoints')
+      .select('id')
+      .eq('user_id', profile.user_id)
+      .eq('stream_id', profile.current_stream_id)
+      .eq('checkpoint_type', checkpoint_type)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('participant_checkpoints')
+        .update(row)
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('[state/save_checkpoint] update error:', error.message);
+        res.status(500).json({ ok: false, error: error.message });
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from('participant_checkpoints')
+        .insert(row);
+
+      if (error) {
+        console.error('[state/save_checkpoint] insert error:', error.message);
+        res.status(500).json({ ok: false, error: error.message });
+        return;
+      }
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });

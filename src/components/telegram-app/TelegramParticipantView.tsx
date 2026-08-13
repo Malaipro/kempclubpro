@@ -3,7 +3,7 @@ import {
   Coins, Trophy, Star, BookOpen, Users,
   Activity, Calendar, ClipboardList, BarChart2,
   Salad, Home, Flame, Pyramid,
-  NotebookPen, Share2, ShoppingBag, User, Briefcase, ScrollText,
+  NotebookPen, Share2, ShoppingBag, User, Briefcase, ScrollText, Shield, Target,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -251,6 +251,15 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
 
           {status === 'club_resident' && (
             <SectionCard
+              icon={<Shield className="w-5 h-5" />}
+              label="Моя команда"
+              active={activeSection === 'captain'}
+              onClick={() => onNavigate('captain')}
+            />
+          )}
+
+          {status === 'club_resident' && (
+            <SectionCard
               icon={<User className="w-5 h-5" />}
               label="Личная эффективность"
               active={activeSection === 'mastermind_personal'}
@@ -264,6 +273,15 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
               label="Система в бизнесе"
               active={activeSection === 'mastermind_business'}
               onClick={() => onNavigate('mastermind_business')}
+            />
+          )}
+
+          {status === 'intensive_active' && (
+            <SectionCard
+              icon={<Target className="w-5 h-5" />}
+              label="Точка А/Б"
+              active={activeSection === 'checkpoint'}
+              onClick={() => onNavigate('checkpoint')}
             />
           )}
 

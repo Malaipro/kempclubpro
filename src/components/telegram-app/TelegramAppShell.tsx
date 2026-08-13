@@ -15,6 +15,8 @@ import { TelegramShopView } from './TelegramShopView';
 import { TelegramChallengesView } from './TelegramChallengesView';
 import { TelegramMastermindView } from './TelegramMastermindView';
 import { TelegramRulesView } from './TelegramRulesView';
+import { TelegramCaptainView } from './TelegramCaptainView';
+import { TelegramCheckpointView } from './TelegramCheckpointView';
 import type { ParticipantFullState } from '@/services/participantService';
 
 type AppState =
@@ -22,7 +24,7 @@ type AppState =
   | { status: 'error'; reason: NoAccessReason }
   | { status: 'ok'; data: ParticipantFullState };
 
-export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges' | 'mastermind_personal' | 'mastermind_business' | 'rules';
+export type Section = 'home' | 'schedule' | 'nutrition' | 'activities' | 'ascetics' | 'homework' | 'profile' | 'rating' | 'pyramid' | 'journal' | 'shop' | 'challenges' | 'mastermind_personal' | 'mastermind_business' | 'rules' | 'captain' | 'checkpoint';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -160,6 +162,14 @@ export const TelegramAppShell: React.FC = () => {
 
   if (activeSection === 'rules') {
     return <TelegramRulesView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'captain') {
+    return <TelegramCaptainView onBack={() => setActiveSection('home')} />;
+  }
+
+  if (activeSection === 'checkpoint') {
+    return <TelegramCheckpointView onBack={() => setActiveSection('home')} />;
   }
 
 
