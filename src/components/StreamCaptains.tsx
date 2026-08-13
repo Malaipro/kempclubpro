@@ -46,7 +46,7 @@ export const StreamCaptains: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2">
           {CAPTAINS.map((c) => (
             <Card key={c.name} className="h-full">
               <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
@@ -56,7 +56,6 @@ export const StreamCaptains: React.FC = () => {
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-semibold">{c.name}</h3>
-                  {c.team ? <p className="text-sm text-kamp-accent">{c.team}</p> : null}
                 </div>
                 <p className="text-sm text-muted-foreground">{c.description}</p>
               </CardContent>
