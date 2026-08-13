@@ -2836,6 +2836,7 @@ export type Database = {
           instructor_id: string | null
           is_active: boolean | null
           location: string | null
+          mastermind_group_id: string | null
           max_participants: number | null
           schedule_type: Database["public"]["Enums"]["schedule_type"]
           start_time: string
@@ -2853,6 +2854,7 @@ export type Database = {
           instructor_id?: string | null
           is_active?: boolean | null
           location?: string | null
+          mastermind_group_id?: string | null
           max_participants?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time: string
@@ -2870,6 +2872,7 @@ export type Database = {
           instructor_id?: string | null
           is_active?: boolean | null
           location?: string | null
+          mastermind_group_id?: string | null
           max_participants?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time?: string
@@ -2883,6 +2886,13 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_mastermind_group_id_fkey"
+            columns: ["mastermind_group_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_groups"
             referencedColumns: ["id"]
           },
           {
