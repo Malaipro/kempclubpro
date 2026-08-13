@@ -1335,6 +1335,39 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'get_team_leaderboard') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, current_stream_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile || !profile.current_stream_id) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('get_stream_team_ratings', {
+      p_stream_id: profile.current_stream_id,
+    });
+
+    if (error) {
+      console.error('[state/get_team_leaderboard] error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    // Индивидуальный рейтинг текущего пользователя
+    const { data: myRating } = await supabase.rpc('calculate_participant_rating', {
+      p_user_id: profile.user_id,
+      p_stream_id: profile.current_stream_id,
+    });
+
+    res.json({ ok: true, data: { teams: data || [], my_rating: myRating || 0 } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
