@@ -54,6 +54,7 @@ import { MastermindManagement } from '@/components/admin/MastermindManagement';
 import { DocumentsManagement } from '@/components/admin/DocumentsManagement';
 import { TeamsManagement } from '@/components/admin/TeamsManagement';
 import { CaptainsRatingDashboard } from '@/components/admin/CaptainsRatingDashboard';
+import { CaptainDashboard } from '@/components/admin/CaptainDashboard';
 
 
 interface TabConfig {
@@ -62,9 +63,17 @@ interface TabConfig {
   icon: React.ComponentType<{ className?: string }>;
   description: string;
   requiresSuperAdmin?: boolean;
+  captainAccess?: boolean;
 }
 
 const adminTabs: TabConfig[] = [
+  {
+    id: 'captain_dashboard',
+    label: 'ЛК Капитана',
+    icon: Shield,
+    description: 'Команда капитана: светофор, точки А/Б, рейтинг и ежедневник',
+    captainAccess: true
+  },
   {
     id: 'applications',
     label: 'Заявки',
@@ -232,7 +241,7 @@ const adminTabs: TabConfig[] = [
 
 
 export const EnhancedAdminPanel: React.FC = () => {
-  const { isAdmin, isSuperAdmin, loading } = useRole();
+  const { isAdmin, isSuperAdmin, isCaptain, loading } = useRole();
   const [activeTab, setActiveTab] = useState('participants');
 
   if (loading) {
@@ -244,7 +253,7 @@ export const EnhancedAdminPanel: React.FC = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isCaptain) {
     return (
       <Card className="bg-card">
         <CardContent className="text-center py-8">
@@ -257,15 +266,18 @@ export const EnhancedAdminPanel: React.FC = () => {
   }
 
   // Filter tabs based on user permissions
-  const availableTabs = adminTabs.filter(tab => 
-    !tab.requiresSuperAdmin || isSuperAdmin
-  );
+  const availableTabs = adminTabs.filter(tab => {
+    if (tab.captainAccess) return isCaptain || isSuperAdmin;
+    if (!isAdmin) return false;
+    return !tab.requiresSuperAdmin || isSuperAdmin;
+  });
 
   // Ensure active tab is available to current user
   const currentTab = availableTabs.find(tab => tab.id === activeTab);
   if (!currentTab) {
     setActiveTab(availableTabs[0]?.id || 'participants');
   }
+
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -317,6 +329,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <TeamsManagement />;
       case 'captains-rating':
         return <CaptainsRatingDashboard />;
+      case 'captain_dashboard':
+        return <CaptainDashboard />;
 
       case 'broadcasts':
         return <BroadcastManagement />;
