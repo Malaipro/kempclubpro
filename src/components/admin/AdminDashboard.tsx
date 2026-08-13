@@ -34,6 +34,8 @@ import { ContractManagement } from './ContractManagement';
 import { ReferralsManagement } from './ReferralsManagement';
 import { MaterialsManagement } from './MaterialsManagement';
 import { KampSystem } from '@/components/kamp';
+import { StreamDashboard } from './StreamDashboard';
+import { BarChart3 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('applications');

@@ -21,7 +21,8 @@ import {
   Inbox,
   Gift,
   UserPlus,
-  Trophy
+  Trophy,
+  BarChart3
 
 
 } from 'lucide-react';
@@ -74,6 +75,12 @@ const adminTabs: TabConfig[] = [
     icon: Shield,
     description: 'Команда капитана: светофор, точки А/Б, рейтинг и ежедневник',
     captainAccess: true
+  },
+  {
+    id: 'stream_dashboard',
+    label: 'Дашборд Поток',
+    icon: BarChart3,
+    description: 'Сводка по потоку: команды, рейтинг и светофор'
   },
   {
     id: 'applications',
@@ -282,6 +289,8 @@ export const EnhancedAdminPanel: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'stream_dashboard':
+        return <StreamDashboard />;
       case 'applications':
         return <ApplicationsManagement />;
       case 'participants':
