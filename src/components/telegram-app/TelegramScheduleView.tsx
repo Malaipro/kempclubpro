@@ -42,14 +42,33 @@ interface Props {
 
 // ---------- Helpers ----------
 
+// Europe/Moscow — фиксированный UTC+3 круглый год (переход на летнее время отменён в 2014).
+// Вместо toLocaleString(..., { timeZone: 'Europe/Moscow' }) — которое зависит от поддержки
+// базы часовых поясов в ICU движка WebView и может тихо откатиться на локальный часовой пояс
+// устройства — сдвигаем момент времени на +3ч вручную и форматируем как UTC. Так результат
+// не зависит ни от часового пояса устройства пользователя, ни от полноты ICU в WebView.
+const MOSCOW_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function toMoscow(iso: string): Date {
+  return new Date(new Date(iso).getTime() + MOSCOW_OFFSET_MS);
+}
+
 function fmt_time(iso: string): string {
-  return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' });
+  return toMoscow(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 }
 
 function fmt_date(iso: string): string {
-  return new Date(iso).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow',
+  return toMoscow(iso).toLocaleDateString('ru-RU', { timeZone: 'UTC',
     weekday: 'long', day: 'numeric', month: 'long',
   });
+}
+
+// Ключ группировки по календарной дате в Москве — строится из того же сдвинутого момента,
+// что и fmt_date, поэтому дата в заголовке группы всегда совпадает с датой, по которой
+// сгруппированы карточки.
+function dateKey(iso: string): string {
+  const d = toMoscow(iso);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 // Цветовая маркировка карточки по типу занятия — один источник цвета для
@@ -235,11 +254,17 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
 
   const { schedule } = loadState.data;
 
-  // Группируем по дате (порядок сохраняется — SQL возвращает ORDER BY start_time)
+  // Группируем по календарной дате в Москве (порядок сохраняется — SQL возвращает ORDER BY start_time).
+  // Ключ группировки (dateKey) и подпись группы (fmt_date) выводятся из одного и того же
+  // сдвинутого в Москву момента времени, поэтому не могут разойтись.
   const grouped: Record<string, ScheduleItem[]> = {};
+  const groupLabels: Record<string, string> = {};
   for (const item of schedule) {
-    const key = fmt_date(item.start_time);
-    if (!grouped[key]) grouped[key] = [];
+    const key = dateKey(item.start_time);
+    if (!grouped[key]) {
+      grouped[key] = [];
+      groupLabels[key] = fmt_date(item.start_time);
+    }
     grouped[key].push(item);
   }
 
@@ -260,10 +285,10 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
           </p>
         ) : (
           <div className="space-y-6">
-            {Object.entries(grouped).map(([date, items]) => (
-              <div key={date}>
+            {Object.entries(grouped).map(([key, items]) => (
+              <div key={key}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 capitalize">
-                  {date}
+                  {groupLabels[key]}
                 </p>
 
                 <div className="space-y-3">
@@ -322,11 +347,20 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                           </div>
 
                           {/* Description */}
-                          {item.description && (
-                            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                              {item.description}
-                            </p>
-                          )}
+                          {item.description && (() => {
+                            const [descTitle, ...rest] = item.description.split('|||');
+                            const descBody = rest.join('|||').trim();
+                            return (
+                              <div className="mt-2 text-xs leading-relaxed">
+                                <p className={descBody ? 'font-semibold text-foreground' : 'text-muted-foreground'}>
+                                  {descTitle.trim()}
+                                </p>
+                                {descBody && (
+                                  <p className="mt-0.5 text-muted-foreground">{descBody}</p>
+                                )}
+                              </div>
+                            );
+                          })()}
 
                           <BookingStatus
                             booked={item.booked}

@@ -179,6 +179,48 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // Автодобавление в мастермайнд-группу, если событие к ней привязано.
+    // Best-effort: ошибка здесь не должна ломать уже успешную запись на занятие.
+    // Проверяем существующее членство вручную (select, затем insert), а не через
+    // INSERT ... ON CONFLICT — на mastermind_members нет гарантированного unique-констрейнта
+    // (user_id, group_id) в этом репозитории, таблица заведена напрямую в Lovable.
+    try {
+      const { data: schedule } = await supabase
+        .from('schedules')
+        .select('mastermind_group_id')
+        .eq('id', schedule_id)
+        .maybeSingle();
+
+      if (schedule?.mastermind_group_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('telegram_id', telegramId)
+          .maybeSingle();
+
+        if (profile?.user_id) {
+          const { data: existingMember } = await supabase
+            .from('mastermind_members')
+            .select('id')
+            .eq('user_id', profile.user_id)
+            .eq('group_id', schedule.mastermind_group_id)
+            .maybeSingle();
+
+          if (!existingMember) {
+            const { error: mmError } = await supabase
+              .from('mastermind_members')
+              .insert({ user_id: profile.user_id, group_id: schedule.mastermind_group_id, is_active: true });
+
+            if (mmError) {
+              console.error('[state/book_session] mastermind insert error:', mmError.message);
+            }
+          }
+        }
+      }
+    } catch (mmErr) {
+      console.error('[state/book_session] mastermind auto-add error:', mmErr);
+    }
+
     res.json({ ok: true, action, data });
     return;
   }
