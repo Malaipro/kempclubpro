@@ -5,7 +5,6 @@ import { Shield } from 'lucide-react';
 
 interface Captain {
   name: string;
-  team?: string;
   photo?: string;
   description: string;
 }
@@ -14,19 +13,11 @@ interface Captain {
 const CAPTAINS: Captain[] = [
   {
     name: 'Имя Капитана 1',
-    team: 'Команда 1',
     photo: '',
     description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
   },
   {
     name: 'Имя Капитана 2',
-    team: 'Команда 2',
-    photo: '',
-    description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
-  },
-  {
-    name: 'Имя Капитана 3',
-    team: 'Команда 3',
     photo: '',
     description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
   },
