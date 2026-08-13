@@ -55,6 +55,7 @@ import { DocumentsManagement } from '@/components/admin/DocumentsManagement';
 import { TeamsManagement } from '@/components/admin/TeamsManagement';
 import { CaptainsRatingDashboard } from '@/components/admin/CaptainsRatingDashboard';
 import { CaptainDashboard } from '@/components/admin/CaptainDashboard';
+import { StreamDashboard } from '@/components/admin/StreamDashboard';
 
 
 interface TabConfig {
