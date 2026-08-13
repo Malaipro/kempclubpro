@@ -329,6 +329,8 @@ export const EnhancedAdminPanel: React.FC = () => {
         return <TeamsManagement />;
       case 'captains-rating':
         return <CaptainsRatingDashboard />;
+      case 'captain_dashboard':
+        return <CaptainDashboard />;
 
       case 'broadcasts':
         return <BroadcastManagement />;
