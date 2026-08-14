@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Shield } from 'lucide-react';
+import evgeniyCaptainAsset from '@/assets/evgeniy-menshov-captain.jpg.asset.json';
 
 interface Captain {
   name: string;
@@ -13,7 +14,7 @@ interface Captain {
 const CAPTAINS: Captain[] = [
   {
     name: 'Евгений Меньшов',
-    photo: '',
+    photo: evgeniyCaptainAsset.url,
     description:
       'Мастер спорта по фехтованию на шпагах. Победитель и призёр чемпионатов РТ и РФ. Участник международных соревнований. Член сборной команды РТ. Регулярный участник спортивных мероприятий: Гонка героев, Полумарафон. Резидент КЭМП.',
   },
