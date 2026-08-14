@@ -12,14 +12,10 @@ interface Captain {
 // Данные капитанов потока. Для правок — измените этот массив.
 const CAPTAINS: Captain[] = [
   {
-    name: 'Имя Капитана 1',
+    name: 'Евгений Меньшов',
     photo: '',
-    description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
-  },
-  {
-    name: 'Имя Капитана 2',
-    photo: '',
-    description: 'Краткое описание капитана: опыт, роль в потоке, за что отвечает.',
+    description:
+      'Мастер спорта по фехтованию на шпагах. Победитель и призёр чемпионатов РТ и РФ. Участник международных соревнований. Член сборной команды РТ. Регулярный участник спортивных мероприятий: Гонка героев, Полумарафон. Резидент КЭМП.',
   },
 ];
 
@@ -39,7 +35,7 @@ export const StreamCaptains: React.FC = () => {
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center gap-3">
             <Shield className="w-8 h-8 text-kamp-accent" />
-            Капитаны потока
+            Капитаны 7 потока
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Те, кто помогает участникам держать дисциплину, мотивирует и отвечает за результат потока.
