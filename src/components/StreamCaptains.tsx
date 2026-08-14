@@ -62,7 +62,7 @@ export const StreamCaptains: React.FC = () => {
               </div>
               <CardContent className="p-5 text-left">
                 <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
-                <p className="text-sm text-muted-foreground">{c.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">{c.description}</p>
               </CardContent>
             </Card>
           ))}
