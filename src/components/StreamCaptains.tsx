@@ -62,7 +62,13 @@ export const StreamCaptains: React.FC = () => {
               </div>
               <CardContent className="p-5 text-left">
                 <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">{c.description}</p>
+                <div className="space-y-2">
+                  {c.description.split('\n').filter(Boolean).map((line, i) => (
+                    <p key={i} className="text-sm text-foreground font-medium leading-relaxed">
+                      {line.trim()}
+                    </p>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}
