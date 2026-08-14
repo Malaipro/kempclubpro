@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Shield } from 'lucide-react';
 import evgeniyCaptainAsset from '@/assets/evgeniy-menshov-captain.jpg.asset.json';
 
