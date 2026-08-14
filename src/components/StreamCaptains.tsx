@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { Shield } from 'lucide-react';
+import compassIcon from '@/assets/totems/compass.png';
 import evgeniyCaptainAsset from '@/assets/evgeniy-menshov-captain.jpg.asset.json';
 
 interface Captain {
