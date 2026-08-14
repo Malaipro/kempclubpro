@@ -16,7 +16,7 @@ const CAPTAINS: Captain[] = [
     name: 'Евгений Меньшов',
     photo: evgeniyCaptainAsset.url,
     description:
-      'Мастер спорта по фехтованию на шпагах. Победитель и призёр чемпионатов РТ и РФ. Участник международных соревнований. Член сборной команды РТ. Регулярный участник спортивных мероприятий: Гонка героев, Полумарафон. Резидент КЭМП.',
+      'Мастер спорта по фехтованию на шпагах. Победитель и призёр чемпионатов РТ и РФ.\nУчастник международных соревнований.\nЧлен сборной команды РТ. Регулярный участник спортивных мероприятий: Гонка героев, Полумарафон.\n Резидент КЭМП.',
   },
 ];
 
@@ -62,7 +62,7 @@ export const StreamCaptains: React.FC = () => {
               </div>
               <CardContent className="p-5 text-left">
                 <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
-                <p className="text-sm text-muted-foreground">{c.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">{c.description}</p>
               </CardContent>
             </Card>
           ))}
