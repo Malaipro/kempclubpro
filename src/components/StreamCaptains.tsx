@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Shield } from 'lucide-react';
 import evgeniyCaptainAsset from '@/assets/evgeniy-menshov-captain.jpg.asset.json';
 
@@ -43,22 +43,31 @@ export const StreamCaptains: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
           {CAPTAINS.map((c) => (
-            <Card key={c.name} className="h-full">
-              <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
-                <Avatar className="w-24 h-24 border-2 border-kamp-accent/40">
-                  {c.photo ? <AvatarImage src={c.photo} alt={`Капитан потока — ${c.name}`} loading="lazy" /> : null}
-                  <AvatarFallback className="text-lg font-bold">{initials(c.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-xl font-semibold">{c.name}</h3>
-                </div>
+            <Card key={c.name} className="h-full overflow-hidden">
+              <div className="relative w-full aspect-[3/4] bg-muted">
+                {c.photo ? (
+                  <img
+                    src={c.photo}
+                    alt={`Капитан потока — ${c.name}`}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-muted-foreground">
+                    {initials(c.name)}
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-5 text-left">
+                <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
                 <p className="text-sm text-muted-foreground">{c.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
+
       </div>
     </section>
   );
