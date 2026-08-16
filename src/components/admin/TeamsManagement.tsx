@@ -443,7 +443,7 @@ export const TeamsManagement: React.FC = () => {
                                  userId={m.user_id}
                                  userName={nameOf(profileMap.get(m.user_id))}
                                  streamId={team.stream_id}
-                                 onDone={loadData}
+                                 onDone={loadAll}
                                />
                                <Button
                                 variant="ghost"
