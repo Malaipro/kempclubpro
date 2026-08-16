@@ -41,7 +41,7 @@ const CONTENT: Record<NoAccessReason, Content> = {
   missing_init_data: {
     icon: <AlertCircle className="w-8 h-8 text-destructive" />,
     title: 'Нет данных Telegram',
-    description: 'Откройте это приложение через Telegram.',
+    description: 'Откройте приложение через Telegram-бота КЭМП.',
   },
   missing_user: {
     icon: <AlertCircle className="w-8 h-8 text-destructive" />,

@@ -27,15 +27,25 @@ interface TelegramBackButton {
   offClick(callback: () => void): void;
 }
 
+interface TelegramInitDataUser {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
+
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
     start_param?: string;
+    user?: TelegramInitDataUser;
     [key: string]: unknown;
   };
   colorScheme: 'light' | 'dark';
   BackButton: TelegramBackButton;
   ready(): void;
+  expand?(): void;
   close(): void;
   openLink(url: string): void;
   openTelegramLink(url: string): void;
