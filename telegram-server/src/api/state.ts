@@ -1410,6 +1410,87 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'admin_checkin') {
+    const target_user_id = (req.body as any).target_user_id;
+    const checkin_type = (req.body as any).checkin_type;
+    const checkin_date = (req.body as any).checkin_date;
+
+    if (!target_user_id || !checkin_type) {
+      res.status(400).json({ ok: false, error: 'missing_params' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    // Проверяем: капитан этого участника или админ
+    const { data: isAdmin } = await supabase.rpc('is_admin', { p_user_id: profile.user_id });
+    const { data: isCaptain } = await supabase.rpc('is_captain', { p_user_id: profile.user_id });
+
+    if (!isAdmin && !isCaptain) {
+      res.status(403).json({ ok: false, error: 'Недостаточно прав' });
+      return;
+    }
+
+    // Если капитан — проверяем что участник в его команде
+    if (!isAdmin && isCaptain) {
+      const { data: inTeam } = await supabase
+        .from('captain_team_members')
+        .select('id, captain_teams!inner(captain_user_id)')
+        .eq('user_id', target_user_id)
+        .maybeSingle();
+
+      if (!inTeam || (inTeam as any).captain_teams?.captain_user_id !== profile.user_id) {
+        res.status(403).json({ ok: false, error: 'Участник не в вашей команде' });
+        return;
+      }
+    }
+
+    // Получаем stream_id участника
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('current_stream_id')
+      .eq('user_id', target_user_id)
+      .maybeSingle();
+
+    if (!targetProfile?.current_stream_id) {
+      res.status(400).json({ ok: false, error: 'Участник не привязан к потоку' });
+      return;
+    }
+
+    // Вставляем отметку
+    const { error: insertErr } = await supabase
+      .from('activity_checkins')
+      .insert({
+        user_id: target_user_id,
+        activity_type: checkin_type,
+        checked_at: checkin_date || new Date().toISOString().split('T')[0],
+        stream_id: targetProfile.current_stream_id,
+      });
+
+    if (insertErr) {
+      if (insertErr.code === '23505') {
+        res.status(400).json({ ok: false, error: 'Уже отмечен на эту дату' });
+        return;
+      }
+      console.error('[state/admin_checkin] error:', insertErr.message);
+      res.status(500).json({ ok: false, error: insertErr.message });
+      return;
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
