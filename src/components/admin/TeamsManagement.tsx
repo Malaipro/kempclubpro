@@ -34,6 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, UserPlus, Users } from 'lucide-react';
+import { AttendanceCheckinButton } from '@/components/admin/AttendanceCheckinButton';
 
 type TrafficLight = 'green' | 'yellow' | 'red';
 

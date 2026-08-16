@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw, Save, BookOpen, Target } from 'lucide-react';
+import { AttendanceCheckinButton } from '@/components/admin/AttendanceCheckinButton';
 
 type TrafficLight = 'green' | 'yellow' | 'red';
 
