@@ -34,6 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, UserPlus, Users } from 'lucide-react';
+import { AttendanceCheckinButton } from '@/components/admin/AttendanceCheckinButton';
 
 type TrafficLight = 'green' | 'yellow' | 'red';
 
@@ -436,8 +437,15 @@ export const TeamsManagement: React.FC = () => {
                                 {m.captain_comment && (
                                   <p className="text-xs text-muted-foreground mt-1">{m.captain_comment}</p>
                                 )}
-                              </div>
-                              <Button
+                               </div>
+                               <div className="flex items-center gap-1 shrink-0">
+                               <AttendanceCheckinButton
+                                 userId={m.user_id}
+                                 userName={nameOf(profileMap.get(m.user_id))}
+                                 streamId={team.stream_id}
+                                 onDone={loadAll}
+                               />
+                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() =>
@@ -449,7 +457,8 @@ export const TeamsManagement: React.FC = () => {
                                 }
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
+                               </Button>
+                               </div>
                             </li>
                           ))}
                         </ul>
