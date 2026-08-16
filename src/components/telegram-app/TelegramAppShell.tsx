@@ -77,12 +77,19 @@ export const TelegramAppShell: React.FC = () => {
     }
 
     webapp.ready();
+    webapp.expand?.();
 
     const initData = webapp.initData;
     if (!initData) {
       setState({ status: 'error', reason: 'missing_init_data' });
       return;
     }
+
+    if (!webapp.initDataUnsafe?.user) {
+      setState({ status: 'error', reason: 'missing_user' });
+      return;
+    }
+
 
     fetchState(initData)
       .then((data) => setState({ status: 'ok', data }))
