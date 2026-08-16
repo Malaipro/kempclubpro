@@ -457,7 +457,8 @@ export const TeamsManagement: React.FC = () => {
                                 }
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
+                               </Button>
+                               </div>
                             </li>
                           ))}
                         </ul>
