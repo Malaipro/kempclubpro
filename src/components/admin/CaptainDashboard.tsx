@@ -401,7 +401,15 @@ export const CaptainDashboard: React.FC = () => {
                         Telegram: {profileMap.get(m.user_id)?.telegram_id || '—'}
                       </p>
                     </div>
-                    <LightBadge light={m.traffic_light} />
+                    <div className="flex items-center gap-2">
+                      <LightBadge light={m.traffic_light} />
+                      <AttendanceCheckinButton
+                        userId={m.user_id}
+                        userName={nameOf(m.user_id)}
+                        streamId={teams.find((t) => t.id === selectedTeam)?.stream_id ?? null}
+                        onDone={loadTeamData}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Input
