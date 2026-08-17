@@ -334,6 +334,80 @@ export const ApplicationsManagement: React.FC = () => {
         </CardContent>
       </Card>
 
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Добавить заявку вручную</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="manual-name">Имя *</Label>
+              <Input
+                id="manual-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Имя участника"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-phone">Телефон *</Label>
+              <Input
+                id="manual-phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="+7 (999) 000-00-00"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-social">Telegram / контакт</Label>
+              <Input
+                id="manual-social"
+                value={form.social}
+                onChange={(e) => setForm({ ...form, social: e.target.value })}
+                placeholder="@username"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-comment">Комментарий</Label>
+              <Textarea
+                id="manual-comment"
+                value={form.comment}
+                onChange={(e) => setForm({ ...form, comment: e.target.value })}
+                placeholder="Дополнительная информация"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-ref">Реферальный код</Label>
+              <Input
+                id="manual-ref"
+                value={form.referralCode}
+                onChange={(e) => setForm({ ...form, referralCode: e.target.value })}
+                placeholder="REFCODE"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="manual-source">Источник *</Label>
+              <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
+                <SelectTrigger id="manual-source"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addSubmission.isPending}>Отмена</Button>
+            <Button onClick={handleAdd} disabled={addSubmission.isPending}>
+              {addSubmission.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <EnrollDialog submission={enrollFor} onClose={() => setEnrollFor(null)} onSuccess={() => qc.invalidateQueries({ queryKey: ['contact_submissions'] })} />
     </div>
   );
