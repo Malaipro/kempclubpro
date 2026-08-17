@@ -44,6 +44,14 @@ const STATUS_META: Record<Status, { label: string; className: string; icon: Reac
   rejected:  { label: 'Отказ',      className: 'bg-red-500/15 text-red-400 border-red-500/30',          icon: XCircle },
 };
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'call', label: 'Звонок' },
+  { value: 'meeting', label: 'Личная встреча' },
+  { value: 'recommendation', label: 'Рекомендация' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'other', label: 'Другое' },
+];
+
 export const ApplicationsManagement: React.FC = () => {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
