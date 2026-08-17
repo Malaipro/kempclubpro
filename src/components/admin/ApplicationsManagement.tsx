@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
+import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ApplicationFollowUp } from './ApplicationFollowUp';
+import { formatPhoneRu, isValidPhoneRu } from '@/lib/phoneFormat';
 
 
 type Status = 'new' | 'contacted' | 'enrolled' | 'rejected';
