@@ -162,6 +162,57 @@ export const ApplicationsManagement: React.FC = () => {
     onError: (e: any) => toast.error(e?.message || 'Не удалось удалить заявку'),
   });
 
+  const addSubmission = useMutation({
+    mutationFn: async (values: {
+      name: string;
+      phone: string;
+      social: string | null;
+      message: string | null;
+      referral_code: string | null;
+    }) => {
+      const { error } = await supabase.from('contact_submissions').insert({
+        name: values.name,
+        phone: values.phone,
+        social: values.social,
+        message: values.message,
+        referral_code: values.referral_code,
+        status: 'new',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Заявка добавлена');
+      qc.invalidateQueries({ queryKey: ['contact_submissions'] });
+      setAddOpen(false);
+      setForm({ name: '', phone: '', social: '', comment: '', referralCode: '', source: 'call' });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Не удалось добавить заявку'),
+  });
+
+  const handleAdd = () => {
+    if (!form.name.trim()) {
+      toast.error('Укажите имя');
+      return;
+    }
+    const phone = formatPhoneRu(form.phone);
+    if (!isValidPhoneRu(phone)) {
+      toast.error('Укажите корректный номер телефона');
+      return;
+    }
+    const sourceLabel = SOURCE_OPTIONS.find(s => s.value === form.source)?.label || form.source;
+    const parts = [`Ручная заявка: ${sourceLabel}`];
+    if (form.comment.trim()) parts.push(`Комментарий: ${form.comment.trim()}`);
+    const message = parts.join('\n\n');
+
+    addSubmission.mutate({
+      name: form.name.trim(),
+      phone,
+      social: form.social.trim() || null,
+      message,
+      referral_code: form.referralCode.trim() || null,
+    });
+  };
+
 
   return (
     <div className="space-y-6">
