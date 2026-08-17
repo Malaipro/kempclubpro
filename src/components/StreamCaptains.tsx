@@ -60,7 +60,7 @@ export const StreamCaptains: React.FC = () => {
                   </div>
                 )}
               </div>
-              <CardContent className="p-5 text-left">
+              <CardContent className="p-5 text-left border-2 border-kamp-primary rounded-b-lg">
                 <h3 className="text-xl font-semibold mb-2 text-kamp-primary">{c.name}</h3>
                 <div className="space-y-2">
                   {c.description.split('\n').filter(Boolean).map((line, i) => (
