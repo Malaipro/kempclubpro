@@ -238,7 +238,12 @@ export const ApplicationsManagement: React.FC = () => {
 
       <Card className="bg-card">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 space-y-0">
-          <CardTitle className="text-lg">Заявки {statusFilter !== 'all' && <Badge variant="outline" className="ml-2">{STATUS_META[statusFilter].label}</Badge>}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">Заявки {statusFilter !== 'all' && <Badge variant="outline" className="ml-2">{STATUS_META[statusFilter].label}</Badge>}</CardTitle>
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              <Plus className="w-4 h-4 mr-1" />Добавить вручную
+            </Button>
+          </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
