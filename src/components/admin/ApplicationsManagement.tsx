@@ -50,6 +50,16 @@ export const ApplicationsManagement: React.FC = () => {
   const [search, setSearch] = useState('');
   const [enrollFor, setEnrollFor] = useState<Submission | null>(null);
 
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    social: '',
+    comment: '',
+    referralCode: '',
+    source: 'call',
+  });
+
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['contact_submissions'],
     queryFn: async () => {
