@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
+import { Loader2, Phone, Search, UserCheck, UserX, Handshake, Inbox, Users, CheckCircle2, XCircle, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ApplicationFollowUp } from './ApplicationFollowUp';
+import { formatPhoneRu, isValidPhoneRu } from '@/lib/phoneFormat';
 
 
 type Status = 'new' | 'contacted' | 'enrolled' | 'rejected';
@@ -41,11 +44,29 @@ const STATUS_META: Record<Status, { label: string; className: string; icon: Reac
   rejected:  { label: 'Отказ',      className: 'bg-red-500/15 text-red-400 border-red-500/30',          icon: XCircle },
 };
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'call', label: 'Звонок' },
+  { value: 'meeting', label: 'Личная встреча' },
+  { value: 'recommendation', label: 'Рекомендация' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'other', label: 'Другое' },
+];
+
 export const ApplicationsManagement: React.FC = () => {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
   const [search, setSearch] = useState('');
   const [enrollFor, setEnrollFor] = useState<Submission | null>(null);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    social: '',
+    comment: '',
+    referralCode: '',
+    source: 'call',
+  });
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['contact_submissions'],
@@ -140,6 +161,57 @@ export const ApplicationsManagement: React.FC = () => {
     },
     onError: (e: any) => toast.error(e?.message || 'Не удалось удалить заявку'),
   });
+
+  const addSubmission = useMutation({
+    mutationFn: async (values: {
+      name: string;
+      phone: string;
+      social: string | null;
+      message: string | null;
+      referral_code: string | null;
+    }) => {
+      const { error } = await supabase.from('contact_submissions').insert({
+        name: values.name,
+        phone: values.phone,
+        social: values.social,
+        message: values.message,
+        referral_code: values.referral_code,
+        status: 'new',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Заявка добавлена');
+      qc.invalidateQueries({ queryKey: ['contact_submissions'] });
+      setAddOpen(false);
+      setForm({ name: '', phone: '', social: '', comment: '', referralCode: '', source: 'call' });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Не удалось добавить заявку'),
+  });
+
+  const handleAdd = () => {
+    if (!form.name.trim()) {
+      toast.error('Укажите имя');
+      return;
+    }
+    const phone = formatPhoneRu(form.phone);
+    if (!isValidPhoneRu(phone)) {
+      toast.error('Укажите корректный номер телефона');
+      return;
+    }
+    const sourceLabel = SOURCE_OPTIONS.find(s => s.value === form.source)?.label || form.source;
+    const parts = [`Ручная заявка: ${sourceLabel}`];
+    if (form.comment.trim()) parts.push(`Комментарий: ${form.comment.trim()}`);
+    const message = parts.join('\n\n');
+
+    addSubmission.mutate({
+      name: form.name.trim(),
+      phone,
+      social: form.social.trim() || null,
+      message,
+      referral_code: form.referralCode.trim() || null,
+    });
+  };
 
 
   return (
