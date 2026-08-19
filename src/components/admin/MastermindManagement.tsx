@@ -174,22 +174,43 @@ export const MastermindManagement: React.FC = () => {
       toast({ title: 'Выберите участника', variant: 'destructive' });
       return;
     }
+    if (!newGroupId) {
+      toast({ title: 'Выберите группу мастермайнда', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from('mastermind_members').insert({
-      user_id: newUserId,
-      request: newRequest || null,
-      plan: newPlan || null,
-      start_date: newStart || null,
-      end_date: newEnd || null,
-    });
+    const { data, error } = await supabase
+      .from('mastermind_members')
+      .upsert(
+        {
+          user_id: newUserId,
+          group_id: newGroupId,
+          is_active: true,
+          request: newRequest || null,
+          plan: newPlan || null,
+          start_date: newStart || null,
+          end_date: newEnd || null,
+        },
+        { onConflict: 'user_id,group_id' }
+      )
+      .select('id');
     setSaving(false);
     if (error) {
+      console.error('mastermind_members insert error:', error);
       toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      return;
+    }
+    if (!data || data.length === 0) {
+      toast({
+        title: 'Запись не сохранена',
+        description: 'Строка не вернулась после вставки — проверьте права доступа (RLS).',
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'Участник добавлен' });
     setAddOpen(false);
-    setNewUserId(''); setNewRequest(''); setNewPlan(''); setNewStart(''); setNewEnd('');
+    setNewUserId(''); setNewGroupId(''); setNewRequest(''); setNewPlan(''); setNewStart(''); setNewEnd('');
     loadAll();
   };
 
