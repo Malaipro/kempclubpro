@@ -346,6 +346,20 @@ export const MastermindManagement: React.FC = () => {
                   </Select>
                 </div>
                 <div>
+                  <Label>Группа мастермайнда</Label>
+                  <Select value={newGroupId} onValueChange={setNewGroupId}>
+                    <SelectTrigger><SelectValue placeholder="Выберите группу" /></SelectTrigger>
+                    <SelectContent>
+                      {groups.length === 0 && (
+                        <SelectItem value="none" disabled>Нет групп</SelectItem>
+                      )}
+                      {groups.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Запрос</Label>
                   <Textarea value={newRequest} onChange={(e) => setNewRequest(e.target.value)} rows={3} />
                 </div>
