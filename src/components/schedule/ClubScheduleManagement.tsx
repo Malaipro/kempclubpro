@@ -618,6 +618,28 @@ export const ClubScheduleManagement: React.FC = () => {
                   </Select>
                 </div>
 
+                {formData.activity === MASTERMIND_ACTIVITY && (
+                  <div>
+                    <Label className="text-white">Группа мастермайнда</Label>
+                    <Select
+                      value={formData.mastermind_group_id}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, mastermind_group_id: value }))}
+                    >
+                      <SelectTrigger className="bg-white text-black">
+                        <SelectValue placeholder="Выберите группу" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                        {mastermindGroups.map(group => (
+                          <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      При записи участника на это мероприятие он автоматически добавится в выбранную группу.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <Label className="text-white">Тема мероприятия</Label>
                   <Input
