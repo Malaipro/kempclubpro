@@ -97,7 +97,21 @@ export const ClubScheduleManagement: React.FC = () => {
   useEffect(() => {
     fetchTrainers();
     fetchSchedules();
+    fetchMastermindGroups();
   }, []);
+
+  const fetchMastermindGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mastermind_groups')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      setMastermindGroups(data || []);
+    } catch (error) {
+      console.error('Error fetching mastermind groups:', error);
+    }
+  };
 
   const fetchSchedules = async () => {
     
@@ -149,7 +163,8 @@ export const ClubScheduleManagement: React.FC = () => {
           theme: theme,
           description: fullDescription,
           color: schedule.color || '#10b981',
-          participants_count: schedule.participants_count
+          participants_count: schedule.participants_count,
+          mastermind_group_id: (schedule as any).mastermind_group_id ?? null,
         };
       });
 
