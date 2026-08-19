@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye, Search, UserPlus, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+
+const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
 interface ScheduleItem {
   id: string;
@@ -31,6 +33,7 @@ interface ScheduleItem {
   theme?: string;
   description?: string;
   participants_count?: number;
+  mastermind_group_id?: string | null;
 }
 
 interface Trainer {
@@ -38,6 +41,17 @@ interface Trainer {
   name: string;
 }
 
+interface MastermindGroup {
+  id: string;
+  name: string;
+}
+
+interface ProfileOption {
+  user_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
 
 interface Participant {
   id: string;
@@ -50,26 +64,34 @@ interface Participant {
   } | null;
 }
 
+const emptyForm = {
+  date: undefined as Date | undefined,
+  start_time: '19:00',
+  end_time: '21:00',
+  activity: '',
+  instructor_id: '',
+  location: '',
+  theme: '',
+  description: '',
+  stream_id: '',
+  color: '#10b981',
+  mastermind_group_id: '',
+};
+
 export const ClubScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [mastermindGroups, setMastermindGroups] = useState<MastermindGroup[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [viewingDetails, setViewingDetails] = useState<ScheduleItem | null>(null);
-  const [formData, setFormData] = useState({
-    date: undefined as Date | undefined,
-    start_time: '19:00',
-    end_time: '21:00',
-    activity: '',
-    instructor_id: '',
-    location: '',
-    theme: '',
-    description: '',
-    stream_id: '',
-    color: '#10b981',
-  });
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileResults, setProfileResults] = useState<ProfileOption[]>([]);
+  const [searchingProfiles, setSearchingProfiles] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
+  const [formData, setFormData] = useState(emptyForm);
   const { toast } = useToast();
 
   useEffect(() => {
