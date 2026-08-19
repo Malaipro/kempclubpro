@@ -812,10 +812,63 @@ export const ClubScheduleManagement: React.FC = () => {
                             {item.participants_count || 0}
                           </Button>
                         </SheetTrigger>
-                        <SheetContent className="w-full sm:max-w-md">
+                        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
                           <SheetHeader>
                             <SheetTitle>Список участников</SheetTitle>
                           </SheetHeader>
+
+                          <div className="mt-6 space-y-3">
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <UserPlus className="w-4 h-4" />
+                              Добавить участника
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={profileSearch}
+                                onChange={(e) => setProfileSearch(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSearchProfiles();
+                                  }
+                                }}
+                                placeholder="Имя или фамилия"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleSearchProfiles}
+                                disabled={searchingProfiles}
+                              >
+                                <Search className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            {profileResults.length > 0 && (
+                              <div className="space-y-1 max-h-56 overflow-y-auto border rounded-md p-2">
+                                {profileResults.map(profile => {
+                                  const already = participants.some(p => p.user_id === profile.user_id);
+                                  return (
+                                    <div
+                                      key={profile.user_id}
+                                      className="flex items-center justify-between gap-2 text-sm py-1"
+                                    >
+                                      <span className="truncate">{getProfileName(profile)}</span>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={already || addingUserId === profile.user_id}
+                                        onClick={() => handleAddParticipant(item.id, profile.user_id)}
+                                      >
+                                        {already ? 'Записан' : <Plus className="w-4 h-4" />}
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
                           <div className="mt-6 space-y-4">
                             {participants.length === 0 ? (
                               <p className="text-center text-muted-foreground py-8">
@@ -826,7 +879,7 @@ export const ClubScheduleManagement: React.FC = () => {
                                 {participants.map((participant, index) => (
                                   <Card key={participant.id}>
                                     <CardContent className="p-4">
-                                      <div className="flex items-center justify-between">
+                                      <div className="flex items-center justify-between gap-2">
                                         <div>
                                           <p className="font-medium">
                                             {index + 1}. {getParticipantName(participant)}
@@ -835,6 +888,15 @@ export const ClubScheduleManagement: React.FC = () => {
                                             Записался: {format(new Date(participant.registered_at), 'dd.MM.yyyy HH:mm')}
                                           </p>
                                         </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-destructive hover:text-destructive"
+                                          onClick={() => handleRemoveParticipant(item.id, participant.id)}
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </Button>
                                       </div>
                                     </CardContent>
                                   </Card>
