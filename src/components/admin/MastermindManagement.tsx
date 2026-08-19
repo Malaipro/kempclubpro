@@ -75,10 +75,12 @@ export const MastermindManagement: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
 
   // add member dialog
   const [addOpen, setAddOpen] = useState(false);
   const [newUserId, setNewUserId] = useState('');
+  const [newGroupId, setNewGroupId] = useState('');
   const [newRequest, setNewRequest] = useState('');
   const [newPlan, setNewPlan] = useState('');
   const [newStart, setNewStart] = useState('');
