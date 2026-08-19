@@ -224,6 +224,11 @@ export const ClubScheduleManagement: React.FC = () => {
         ? `${formData.theme}|||${formData.description}`
         : formData.theme || formData.description || null;
 
+      const mastermindGroupId =
+        formData.activity === MASTERMIND_ACTIVITY && formData.mastermind_group_id
+          ? formData.mastermind_group_id
+          : null;
+
       if (editingId) {
         const { error } = await supabase
           .from('schedules')
@@ -238,6 +243,7 @@ export const ClubScheduleManagement: React.FC = () => {
             stream_id: null,
             color: formData.color,
             schedule_type: 'club',
+            mastermind_group_id: mastermindGroupId,
           })
           .eq('id', editingId);
 
@@ -256,6 +262,7 @@ export const ClubScheduleManagement: React.FC = () => {
           instructor_id: null,
           color: formData.color,
           schedule_type: 'club',
+          mastermind_group_id: mastermindGroupId,
         });
 
         if (error) throw error;
@@ -265,18 +272,7 @@ export const ClubScheduleManagement: React.FC = () => {
       await fetchSchedules();
       setDialogOpen(false);
       setEditingId(null);
-      setFormData({
-        date: undefined,
-        start_time: '19:00',
-        end_time: '21:00',
-        activity: '',
-        instructor_id: '',
-        location: '',
-        theme: '',
-        description: '',
-        stream_id: '',
-        color: '#10b981',
-      });
+      setFormData(emptyForm);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
@@ -304,6 +300,7 @@ export const ClubScheduleManagement: React.FC = () => {
       description: item.description || '',
       stream_id: '',
       color: item.color || '#10b981',
+      mastermind_group_id: item.mastermind_group_id || '',
     });
     setDialogOpen(true);
   };
