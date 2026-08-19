@@ -529,18 +529,7 @@ export const ClubScheduleManagement: React.FC = () => {
             setDialogOpen(open);
             if (!open) {
               setEditingId(null);
-              setFormData({
-                date: undefined,
-                start_time: '19:00',
-                end_time: '21:00',
-                activity: '',
-                instructor_id: '',
-                location: '',
-                theme: '',
-                description: '',
-                stream_id: '',
-                color: '#10b981',
-              });
+              setFormData(emptyForm);
             }
           }}>
             <DialogTrigger asChild>
