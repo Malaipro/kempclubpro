@@ -75,10 +75,12 @@ export const MastermindManagement: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
 
   // add member dialog
   const [addOpen, setAddOpen] = useState(false);
   const [newUserId, setNewUserId] = useState('');
+  const [newGroupId, setNewGroupId] = useState('');
   const [newRequest, setNewRequest] = useState('');
   const [newPlan, setNewPlan] = useState('');
   const [newStart, setNewStart] = useState('');
@@ -138,6 +140,13 @@ export const MastermindManagement: React.FC = () => {
       setTasks((tRes.data || []) as Task[]);
       setEntries((eRes.data || []) as Entry[]);
 
+      // группы мастермайнда
+      const { data: grps } = await supabase
+        .from('mastermind_groups')
+        .select('id, name')
+        .order('name');
+      setGroups((grps || []) as { id: string; name: string }[]);
+
       // candidates: club residents not yet members
       const { data: residents } = await supabase
         .from('profiles')
@@ -165,22 +174,43 @@ export const MastermindManagement: React.FC = () => {
       toast({ title: 'Выберите участника', variant: 'destructive' });
       return;
     }
+    if (!newGroupId) {
+      toast({ title: 'Выберите группу мастермайнда', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from('mastermind_members').insert({
-      user_id: newUserId,
-      request: newRequest || null,
-      plan: newPlan || null,
-      start_date: newStart || null,
-      end_date: newEnd || null,
-    });
+    const { data, error } = await supabase
+      .from('mastermind_members')
+      .upsert(
+        {
+          user_id: newUserId,
+          group_id: newGroupId,
+          is_active: true,
+          request: newRequest || null,
+          plan: newPlan || null,
+          start_date: newStart || null,
+          end_date: newEnd || null,
+        },
+        { onConflict: 'user_id,group_id' }
+      )
+      .select('id');
     setSaving(false);
     if (error) {
+      console.error('mastermind_members insert error:', error);
       toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      return;
+    }
+    if (!data || data.length === 0) {
+      toast({
+        title: 'Запись не сохранена',
+        description: 'Строка не вернулась после вставки — проверьте права доступа (RLS).',
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'Участник добавлен' });
     setAddOpen(false);
-    setNewUserId(''); setNewRequest(''); setNewPlan(''); setNewStart(''); setNewEnd('');
+    setNewUserId(''); setNewGroupId(''); setNewRequest(''); setNewPlan(''); setNewStart(''); setNewEnd('');
     loadAll();
   };
 
@@ -311,6 +341,20 @@ export const MastermindManagement: React.FC = () => {
                         <SelectItem key={c.user_id} value={c.user_id}>
                           {c.display_name || c.user_id.slice(0, 8)}
                         </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Группа мастермайнда</Label>
+                  <Select value={newGroupId} onValueChange={setNewGroupId}>
+                    <SelectTrigger><SelectValue placeholder="Выберите группу" /></SelectTrigger>
+                    <SelectContent>
+                      {groups.length === 0 && (
+                        <SelectItem value="none" disabled>Нет групп</SelectItem>
+                      )}
+                      {groups.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
