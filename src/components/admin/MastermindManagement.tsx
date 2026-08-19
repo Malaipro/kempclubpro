@@ -140,6 +140,13 @@ export const MastermindManagement: React.FC = () => {
       setTasks((tRes.data || []) as Task[]);
       setEntries((eRes.data || []) as Entry[]);
 
+      // группы мастермайнда
+      const { data: grps } = await supabase
+        .from('mastermind_groups')
+        .select('id, name')
+        .order('name');
+      setGroups((grps || []) as { id: string; name: string }[]);
+
       // candidates: club residents not yet members
       const { data: residents } = await supabase
         .from('profiles')
