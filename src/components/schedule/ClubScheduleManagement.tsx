@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, CalendarIcon, CalendarPlus, Users as UsersIcon, Eye, Search, UserPlus, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+
+const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
 interface ScheduleItem {
   id: string;
@@ -31,6 +33,7 @@ interface ScheduleItem {
   theme?: string;
   description?: string;
   participants_count?: number;
+  mastermind_group_id?: string | null;
 }
 
 interface Trainer {
@@ -38,6 +41,17 @@ interface Trainer {
   name: string;
 }
 
+interface MastermindGroup {
+  id: string;
+  name: string;
+}
+
+interface ProfileOption {
+  user_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
 
 interface Participant {
   id: string;
@@ -50,32 +64,54 @@ interface Participant {
   } | null;
 }
 
+const emptyForm = {
+  date: undefined as Date | undefined,
+  start_time: '19:00',
+  end_time: '21:00',
+  activity: '',
+  instructor_id: '',
+  location: '',
+  theme: '',
+  description: '',
+  stream_id: '',
+  color: '#10b981',
+  mastermind_group_id: '',
+};
+
 export const ClubScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [mastermindGroups, setMastermindGroups] = useState<MastermindGroup[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [viewingDetails, setViewingDetails] = useState<ScheduleItem | null>(null);
-  const [formData, setFormData] = useState({
-    date: undefined as Date | undefined,
-    start_time: '19:00',
-    end_time: '21:00',
-    activity: '',
-    instructor_id: '',
-    location: '',
-    theme: '',
-    description: '',
-    stream_id: '',
-    color: '#10b981',
-  });
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileResults, setProfileResults] = useState<ProfileOption[]>([]);
+  const [searchingProfiles, setSearchingProfiles] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
+  const [formData, setFormData] = useState(emptyForm);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchTrainers();
     fetchSchedules();
+    fetchMastermindGroups();
   }, []);
+
+  const fetchMastermindGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mastermind_groups')
+        .select('id, name')
+        .order('name');
+      if (error) throw error;
+      setMastermindGroups(data || []);
+    } catch (error) {
+      console.error('Error fetching mastermind groups:', error);
+    }
+  };
 
   const fetchSchedules = async () => {
     
@@ -127,7 +163,8 @@ export const ClubScheduleManagement: React.FC = () => {
           theme: theme,
           description: fullDescription,
           color: schedule.color || '#10b981',
-          participants_count: schedule.participants_count
+          participants_count: schedule.participants_count,
+          mastermind_group_id: (schedule as any).mastermind_group_id ?? null,
         };
       });
 
@@ -187,6 +224,11 @@ export const ClubScheduleManagement: React.FC = () => {
         ? `${formData.theme}|||${formData.description}`
         : formData.theme || formData.description || null;
 
+      const mastermindGroupId =
+        formData.activity === MASTERMIND_ACTIVITY && formData.mastermind_group_id
+          ? formData.mastermind_group_id
+          : null;
+
       if (editingId) {
         const { error } = await supabase
           .from('schedules')
@@ -201,6 +243,7 @@ export const ClubScheduleManagement: React.FC = () => {
             stream_id: null,
             color: formData.color,
             schedule_type: 'club',
+            mastermind_group_id: mastermindGroupId,
           })
           .eq('id', editingId);
 
@@ -219,6 +262,7 @@ export const ClubScheduleManagement: React.FC = () => {
           instructor_id: null,
           color: formData.color,
           schedule_type: 'club',
+          mastermind_group_id: mastermindGroupId,
         });
 
         if (error) throw error;
@@ -228,18 +272,7 @@ export const ClubScheduleManagement: React.FC = () => {
       await fetchSchedules();
       setDialogOpen(false);
       setEditingId(null);
-      setFormData({
-        date: undefined,
-        start_time: '19:00',
-        end_time: '21:00',
-        activity: '',
-        instructor_id: '',
-        location: '',
-        theme: '',
-        description: '',
-        stream_id: '',
-        color: '#10b981',
-      });
+      setFormData(emptyForm);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
@@ -267,6 +300,7 @@ export const ClubScheduleManagement: React.FC = () => {
       description: item.description || '',
       stream_id: '',
       color: item.color || '#10b981',
+      mastermind_group_id: item.mastermind_group_id || '',
     });
     setDialogOpen(true);
   };
@@ -340,7 +374,117 @@ export const ClubScheduleManagement: React.FC = () => {
 
   const handleViewParticipants = async (scheduleId: string) => {
     setViewingParticipants(scheduleId);
+    setProfileSearch('');
+    setProfileResults([]);
     await fetchParticipants(scheduleId);
+  };
+
+  const handleSearchProfiles = async () => {
+    const term = profileSearch.trim();
+    if (term.length < 2) {
+      toast({ title: 'Введите минимум 2 символа', variant: 'destructive' });
+      return;
+    }
+    setSearchingProfiles(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, first_name, last_name')
+        .or(
+          `display_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%`
+        )
+        .limit(20);
+
+      if (error) throw error;
+      setProfileResults((data || []) as ProfileOption[]);
+    } catch (error) {
+      console.error('Error searching profiles:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось выполнить поиск',
+        variant: 'destructive',
+      });
+    } finally {
+      setSearchingProfiles(false);
+    }
+  };
+
+  const getProfileName = (p: ProfileOption) =>
+    p.display_name ||
+    [p.first_name, p.last_name].filter(Boolean).join(' ') ||
+    'Без имени';
+
+  const handleAddParticipant = async (scheduleId: string, userId: string) => {
+    if (participants.some(p => p.user_id === userId)) {
+      toast({ title: 'Участник уже записан', variant: 'destructive' });
+      return;
+    }
+    setAddingUserId(userId);
+    try {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .insert({ schedule_id: scheduleId, user_id: userId });
+
+      if (error) throw error;
+
+      // Зеркальное добавление в мастермайнд-группу, если событие к ней привязано
+      const scheduleItem = scheduleItems.find(s => s.id === scheduleId);
+      if (scheduleItem?.mastermind_group_id) {
+        const { error: mmError } = await supabase
+          .from('mastermind_members')
+          .upsert(
+            {
+              user_id: userId,
+              group_id: scheduleItem.mastermind_group_id,
+              is_active: true,
+            },
+            { onConflict: 'user_id,group_id' }
+          );
+        if (mmError) {
+          console.error('Error upserting mastermind member:', mmError);
+          toast({
+            title: 'Внимание',
+            description: 'Участник записан, но не добавлен в мастермайнд-группу',
+            variant: 'destructive',
+          });
+        }
+      }
+
+      toast({ title: 'Успех', description: 'Участник добавлен' });
+      await fetchParticipants(scheduleId);
+      await fetchSchedules();
+    } catch (error) {
+      console.error('Error adding participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось добавить участника',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingUserId(null);
+    }
+  };
+
+  const handleRemoveParticipant = async (scheduleId: string, participantId: string) => {
+    if (!confirm('Удалить участника из мероприятия?')) return;
+    try {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .delete()
+        .eq('id', participantId);
+
+      if (error) throw error;
+      toast({ title: 'Успех', description: 'Участник удалён из мероприятия' });
+      await fetchParticipants(scheduleId);
+      await fetchSchedules();
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить участника',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getActivityBadgeColor = (activity: string) => {
@@ -385,18 +529,7 @@ export const ClubScheduleManagement: React.FC = () => {
             setDialogOpen(open);
             if (!open) {
               setEditingId(null);
-              setFormData({
-                date: undefined,
-                start_time: '19:00',
-                end_time: '21:00',
-                activity: '',
-                instructor_id: '',
-                location: '',
-                theme: '',
-                description: '',
-                stream_id: '',
-                color: '#10b981',
-              });
+              setFormData(emptyForm);
             }
           }}>
             <DialogTrigger asChild>
@@ -484,6 +617,28 @@ export const ClubScheduleManagement: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {formData.activity === MASTERMIND_ACTIVITY && (
+                  <div>
+                    <Label className="text-white">Группа мастермайнда</Label>
+                    <Select
+                      value={formData.mastermind_group_id}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, mastermind_group_id: value }))}
+                    >
+                      <SelectTrigger className="bg-white text-black">
+                        <SelectValue placeholder="Выберите группу" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                        {mastermindGroups.map(group => (
+                          <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      При записи участника на это мероприятие он автоматически добавится в выбранную группу.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-white">Тема мероприятия</Label>
@@ -657,10 +812,63 @@ export const ClubScheduleManagement: React.FC = () => {
                             {item.participants_count || 0}
                           </Button>
                         </SheetTrigger>
-                        <SheetContent className="w-full sm:max-w-md">
+                        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
                           <SheetHeader>
                             <SheetTitle>Список участников</SheetTitle>
                           </SheetHeader>
+
+                          <div className="mt-6 space-y-3">
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <UserPlus className="w-4 h-4" />
+                              Добавить участника
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={profileSearch}
+                                onChange={(e) => setProfileSearch(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSearchProfiles();
+                                  }
+                                }}
+                                placeholder="Имя или фамилия"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleSearchProfiles}
+                                disabled={searchingProfiles}
+                              >
+                                <Search className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            {profileResults.length > 0 && (
+                              <div className="space-y-1 max-h-56 overflow-y-auto border rounded-md p-2">
+                                {profileResults.map(profile => {
+                                  const already = participants.some(p => p.user_id === profile.user_id);
+                                  return (
+                                    <div
+                                      key={profile.user_id}
+                                      className="flex items-center justify-between gap-2 text-sm py-1"
+                                    >
+                                      <span className="truncate">{getProfileName(profile)}</span>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={already || addingUserId === profile.user_id}
+                                        onClick={() => handleAddParticipant(item.id, profile.user_id)}
+                                      >
+                                        {already ? 'Записан' : <Plus className="w-4 h-4" />}
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
                           <div className="mt-6 space-y-4">
                             {participants.length === 0 ? (
                               <p className="text-center text-muted-foreground py-8">
@@ -671,7 +879,7 @@ export const ClubScheduleManagement: React.FC = () => {
                                 {participants.map((participant, index) => (
                                   <Card key={participant.id}>
                                     <CardContent className="p-4">
-                                      <div className="flex items-center justify-between">
+                                      <div className="flex items-center justify-between gap-2">
                                         <div>
                                           <p className="font-medium">
                                             {index + 1}. {getParticipantName(participant)}
@@ -680,6 +888,15 @@ export const ClubScheduleManagement: React.FC = () => {
                                             Записался: {format(new Date(participant.registered_at), 'dd.MM.yyyy HH:mm')}
                                           </p>
                                         </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-destructive hover:text-destructive"
+                                          onClick={() => handleRemoveParticipant(item.id, participant.id)}
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </Button>
                                       </div>
                                     </CardContent>
                                   </Card>
