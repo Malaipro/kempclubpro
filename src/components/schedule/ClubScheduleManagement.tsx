@@ -374,7 +374,117 @@ export const ClubScheduleManagement: React.FC = () => {
 
   const handleViewParticipants = async (scheduleId: string) => {
     setViewingParticipants(scheduleId);
+    setProfileSearch('');
+    setProfileResults([]);
     await fetchParticipants(scheduleId);
+  };
+
+  const handleSearchProfiles = async () => {
+    const term = profileSearch.trim();
+    if (term.length < 2) {
+      toast({ title: 'Введите минимум 2 символа', variant: 'destructive' });
+      return;
+    }
+    setSearchingProfiles(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, first_name, last_name')
+        .or(
+          `display_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%`
+        )
+        .limit(20);
+
+      if (error) throw error;
+      setProfileResults((data || []) as ProfileOption[]);
+    } catch (error) {
+      console.error('Error searching profiles:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось выполнить поиск',
+        variant: 'destructive',
+      });
+    } finally {
+      setSearchingProfiles(false);
+    }
+  };
+
+  const getProfileName = (p: ProfileOption) =>
+    p.display_name ||
+    [p.first_name, p.last_name].filter(Boolean).join(' ') ||
+    'Без имени';
+
+  const handleAddParticipant = async (scheduleId: string, userId: string) => {
+    if (participants.some(p => p.user_id === userId)) {
+      toast({ title: 'Участник уже записан', variant: 'destructive' });
+      return;
+    }
+    setAddingUserId(userId);
+    try {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .insert({ schedule_id: scheduleId, user_id: userId });
+
+      if (error) throw error;
+
+      // Зеркальное добавление в мастермайнд-группу, если событие к ней привязано
+      const scheduleItem = scheduleItems.find(s => s.id === scheduleId);
+      if (scheduleItem?.mastermind_group_id) {
+        const { error: mmError } = await supabase
+          .from('mastermind_members')
+          .upsert(
+            {
+              user_id: userId,
+              group_id: scheduleItem.mastermind_group_id,
+              is_active: true,
+            },
+            { onConflict: 'user_id,group_id' }
+          );
+        if (mmError) {
+          console.error('Error upserting mastermind member:', mmError);
+          toast({
+            title: 'Внимание',
+            description: 'Участник записан, но не добавлен в мастермайнд-группу',
+            variant: 'destructive',
+          });
+        }
+      }
+
+      toast({ title: 'Успех', description: 'Участник добавлен' });
+      await fetchParticipants(scheduleId);
+      await fetchSchedules();
+    } catch (error) {
+      console.error('Error adding participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось добавить участника',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingUserId(null);
+    }
+  };
+
+  const handleRemoveParticipant = async (scheduleId: string, participantId: string) => {
+    if (!confirm('Удалить участника из мероприятия?')) return;
+    try {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .delete()
+        .eq('id', participantId);
+
+      if (error) throw error;
+      toast({ title: 'Успех', description: 'Участник удалён из мероприятия' });
+      await fetchParticipants(scheduleId);
+      await fetchSchedules();
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить участника',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getActivityBadgeColor = (activity: string) => {
