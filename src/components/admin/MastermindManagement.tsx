@@ -217,11 +217,16 @@ export const MastermindManagement: React.FC = () => {
         .from('profiles')
         .select('user_id, display_name, telegram_id')
         .eq('participant_status', 'club_resident');
-      setCandidates(
-        ((residents || []) as any[])
-          .filter((r) => !ids.includes(r.user_id))
-          .map((r) => ({ user_id: r.user_id, display_name: r.display_name, telegram_id: r.telegram_id }))
-      );
+      const candMap = new Map<string, Candidate>();
+      ((residents || []) as any[])
+        .filter((r) => !ids.includes(r.user_id))
+        .forEach((r) => {
+          const key = (r.display_name || r.user_id).trim().toLowerCase();
+          const prev = candMap.get(key);
+          const cur: Candidate = { user_id: r.user_id, display_name: r.display_name, telegram_id: r.telegram_id };
+          if (!prev || (!prev.telegram_id && cur.telegram_id)) candMap.set(key, cur);
+        });
+      setCandidates(Array.from(candMap.values()));
     } catch (e: any) {
       toast({ title: 'Ошибка загрузки', description: e.message, variant: 'destructive' });
     } finally {
