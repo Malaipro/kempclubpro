@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Check, X, Loader2, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
 
 interface Member {
   id: string;
