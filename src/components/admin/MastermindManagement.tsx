@@ -19,6 +19,7 @@ import { Plus, Trash2, Check, X, Loader2, RefreshCw } from 'lucide-react';
 interface Member {
   id: string;
   user_id: string;
+  group_id?: string | null;
   request: string | null;
   plan: string | null;
   start_date: string | null;
