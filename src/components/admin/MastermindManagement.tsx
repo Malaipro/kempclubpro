@@ -88,6 +88,51 @@ export const MastermindManagement: React.FC = () => {
   const [newEnd, setNewEnd] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // edit member dialog
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [editGroupId, setEditGroupId] = useState('');
+  const [editRequest, setEditRequest] = useState('');
+  const [editPlan, setEditPlan] = useState('');
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [editActive, setEditActive] = useState(true);
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEdit = (m: Member) => {
+    setEditMember(m);
+    setEditGroupId(m.group_id || '');
+    setEditRequest(m.request || '');
+    setEditPlan(m.plan || '');
+    setEditStart(m.start_date ? m.start_date.slice(0, 10) : '');
+    setEditEnd(m.end_date ? m.end_date.slice(0, 10) : '');
+    setEditActive(!!m.is_active);
+  };
+
+  const saveEdit = async () => {
+    if (!editMember) return;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from('mastermind_members')
+      .update({
+        group_id: editGroupId || null,
+        request: editRequest || null,
+        plan: editPlan || null,
+        start_date: editStart || null,
+        end_date: editEnd || null,
+        is_active: editActive,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', editMember.id);
+    setEditSaving(false);
+    if (error) {
+      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Карточка обновлена' });
+    setEditMember(null);
+    loadAll();
+  };
+
   // add task dialog
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskMemberId, setTaskMemberId] = useState('');
