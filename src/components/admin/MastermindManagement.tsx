@@ -78,6 +78,7 @@ export const MastermindManagement: React.FC = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [showInactive, setShowInactive] = useState(false);
 
   // add member dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -156,10 +157,27 @@ export const MastermindManagement: React.FC = () => {
   );
 
 
+  // Только реальные записи mastermind_members; по умолчанию — активные.
+  // Дубли по одному и тому же человеку схлопываем, приоритет — профиль с telegram_id.
+  const visibleMembers = React.useMemo(() => {
+    const rows = members.filter((m) => (showInactive ? true : !!m.is_active));
+    const byKey = new Map<string, Member>();
+    rows.forEach((m) => {
+      const key = `${m.group_id ?? 'no-group'}|${(m.profile?.display_name || m.user_id).trim().toLowerCase()}`;
+      const prev = byKey.get(key);
+      if (!prev) { byKey.set(key, m); return; }
+      const prevHasTg = !!prev.profile?.telegram_id;
+      const curHasTg = !!m.profile?.telegram_id;
+      if (!prevHasTg && curHasTg) byKey.set(key, m);
+    });
+    return Array.from(byKey.values());
+  }, [members, showInactive]);
+
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
     return m?.profile?.display_name || 'Участник';
   };
+
 
   const loadAll = async () => {
     setLoading(true);
@@ -199,11 +217,16 @@ export const MastermindManagement: React.FC = () => {
         .from('profiles')
         .select('user_id, display_name, telegram_id')
         .eq('participant_status', 'club_resident');
-      setCandidates(
-        ((residents || []) as any[])
-          .filter((r) => !ids.includes(r.user_id))
-          .map((r) => ({ user_id: r.user_id, display_name: r.display_name, telegram_id: r.telegram_id }))
-      );
+      const candMap = new Map<string, Candidate>();
+      ((residents || []) as any[])
+        .filter((r) => !ids.includes(r.user_id))
+        .forEach((r) => {
+          const key = (r.display_name || r.user_id).trim().toLowerCase();
+          const prev = candMap.get(key);
+          const cur: Candidate = { user_id: r.user_id, display_name: r.display_name, telegram_id: r.telegram_id };
+          if (!prev || (!prev.telegram_id && cur.telegram_id)) candMap.set(key, cur);
+        });
+      setCandidates(Array.from(candMap.values()));
     } catch (e: any) {
       toast({ title: 'Ошибка загрузки', description: e.message, variant: 'destructive' });
     } finally {
@@ -433,12 +456,21 @@ export const MastermindManagement: React.FC = () => {
             </DialogContent>
           </Dialog>
 
-          {members.length === 0 && (
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-xs text-muted-foreground">
+              Показано: {visibleMembers.length} {showInactive ? '(включая неактивных)' : 'активных'}
+            </p>
+            <Button size="sm" variant="ghost" onClick={() => setShowInactive((v) => !v)}>
+              {showInactive ? 'Только активные' : 'Показать неактивных'}
+            </Button>
+          </div>
+
+          {visibleMembers.length === 0 && (
             <p className="text-muted-foreground text-sm">Участников пока нет</p>
           )}
 
           <div className="grid gap-3">
-            {members.map((m) => (
+            {visibleMembers.map((m) => (
               <Card key={m.id} className="bg-card">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-3">
