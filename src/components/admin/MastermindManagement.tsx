@@ -458,7 +458,10 @@ export const MastermindManagement: React.FC = () => {
                   <p className="text-muted-foreground">
                     {fmtDate(m.start_date)} — {fmtDate(m.end_date)}
                   </p>
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
+                      <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => toggleActive(m)}>
                       {m.is_active ? 'Деактивировать' : 'Активировать'}
                     </Button>
