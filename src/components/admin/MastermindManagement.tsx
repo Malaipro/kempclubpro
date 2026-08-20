@@ -157,10 +157,27 @@ export const MastermindManagement: React.FC = () => {
   );
 
 
+  // Только реальные записи mastermind_members; по умолчанию — активные.
+  // Дубли по одному и тому же человеку схлопываем, приоритет — профиль с telegram_id.
+  const visibleMembers = React.useMemo(() => {
+    const rows = members.filter((m) => (showInactive ? true : !!m.is_active));
+    const byKey = new Map<string, Member>();
+    rows.forEach((m) => {
+      const key = `${m.group_id ?? 'no-group'}|${(m.profile?.display_name || m.user_id).trim().toLowerCase()}`;
+      const prev = byKey.get(key);
+      if (!prev) { byKey.set(key, m); return; }
+      const prevHasTg = !!prev.profile?.telegram_id;
+      const curHasTg = !!m.profile?.telegram_id;
+      if (!prevHasTg && curHasTg) byKey.set(key, m);
+    });
+    return Array.from(byKey.values());
+  }, [members, showInactive]);
+
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
     return m?.profile?.display_name || 'Участник';
   };
+
 
   const loadAll = async () => {
     setLoading(true);
