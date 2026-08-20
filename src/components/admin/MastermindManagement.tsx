@@ -451,12 +451,21 @@ export const MastermindManagement: React.FC = () => {
             </DialogContent>
           </Dialog>
 
-          {members.length === 0 && (
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-xs text-muted-foreground">
+              Показано: {visibleMembers.length} {showInactive ? '(включая неактивных)' : 'активных'}
+            </p>
+            <Button size="sm" variant="ghost" onClick={() => setShowInactive((v) => !v)}>
+              {showInactive ? 'Только активные' : 'Показать неактивных'}
+            </Button>
+          </div>
+
+          {visibleMembers.length === 0 && (
             <p className="text-muted-foreground text-sm">Участников пока нет</p>
           )}
 
           <div className="grid gap-3">
-            {members.map((m) => (
+            {visibleMembers.map((m) => (
               <Card key={m.id} className="bg-card">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-3">
