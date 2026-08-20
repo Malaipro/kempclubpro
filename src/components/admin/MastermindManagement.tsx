@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -14,11 +15,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Check, X, Loader2, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
 
 interface Member {
   id: string;
   user_id: string;
+  group_id?: string | null;
   request: string | null;
   plan: string | null;
   start_date: string | null;
@@ -86,6 +88,51 @@ export const MastermindManagement: React.FC = () => {
   const [newStart, setNewStart] = useState('');
   const [newEnd, setNewEnd] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // edit member dialog
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [editGroupId, setEditGroupId] = useState('');
+  const [editRequest, setEditRequest] = useState('');
+  const [editPlan, setEditPlan] = useState('');
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [editActive, setEditActive] = useState(true);
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEdit = (m: Member) => {
+    setEditMember(m);
+    setEditGroupId(m.group_id || '');
+    setEditRequest(m.request || '');
+    setEditPlan(m.plan || '');
+    setEditStart(m.start_date ? m.start_date.slice(0, 10) : '');
+    setEditEnd(m.end_date ? m.end_date.slice(0, 10) : '');
+    setEditActive(!!m.is_active);
+  };
+
+  const saveEdit = async () => {
+    if (!editMember) return;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from('mastermind_members')
+      .update({
+        group_id: editGroupId || null,
+        request: editRequest || null,
+        plan: editPlan || null,
+        start_date: editStart || null,
+        end_date: editEnd || null,
+        is_active: editActive,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', editMember.id);
+    setEditSaving(false);
+    if (error) {
+      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Карточка обновлена' });
+    setEditMember(null);
+    loadAll();
+  };
 
   // add task dialog
   const [taskOpen, setTaskOpen] = useState(false);
@@ -412,7 +459,10 @@ export const MastermindManagement: React.FC = () => {
                   <p className="text-muted-foreground">
                     {fmtDate(m.start_date)} — {fmtDate(m.end_date)}
                   </p>
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 flex-wrap">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
+                      <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => toggleActive(m)}>
                       {m.is_active ? 'Деактивировать' : 'Активировать'}
                     </Button>
@@ -424,7 +474,66 @@ export const MastermindManagement: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          <Dialog open={!!editMember} onOpenChange={(o) => { if (!o && !editSaving) setEditMember(null); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>
+                  Карточка: {editMember?.profile?.display_name || 'участник'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Группа мастермайнда</Label>
+                  <Select value={editGroupId} onValueChange={setEditGroupId}>
+                    <SelectTrigger><SelectValue placeholder="Выберите группу" /></SelectTrigger>
+                    <SelectContent>
+                      {groups.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Запрос</Label>
+                  <Textarea value={editRequest} onChange={(e) => setEditRequest(e.target.value)} rows={3} />
+                </div>
+                <div>
+                  <Label>План</Label>
+                  <Textarea value={editPlan} onChange={(e) => setEditPlan(e.target.value)} rows={3} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Дата начала</Label>
+                    <Input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Дата окончания</Label>
+                    <Input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="mm-edit-active"
+                    checked={editActive}
+                    onCheckedChange={(v) => setEditActive(v === true)}
+                  />
+                  <Label htmlFor="mm-edit-active" className="cursor-pointer">Активен</Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditMember(null)} disabled={editSaving}>
+                  Отмена
+                </Button>
+                <Button onClick={saveEdit} disabled={editSaving}>
+                  {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Сохранить
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
+
+
 
         {/* ЗАДАЧИ */}
         <TabsContent value="tasks" className="space-y-4 mt-4">
