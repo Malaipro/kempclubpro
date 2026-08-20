@@ -473,7 +473,66 @@ export const MastermindManagement: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          <Dialog open={!!editMember} onOpenChange={(o) => { if (!o && !editSaving) setEditMember(null); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>
+                  Карточка: {editMember?.profile?.display_name || 'участник'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Группа мастермайнда</Label>
+                  <Select value={editGroupId} onValueChange={setEditGroupId}>
+                    <SelectTrigger><SelectValue placeholder="Выберите группу" /></SelectTrigger>
+                    <SelectContent>
+                      {groups.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Запрос</Label>
+                  <Textarea value={editRequest} onChange={(e) => setEditRequest(e.target.value)} rows={3} />
+                </div>
+                <div>
+                  <Label>План</Label>
+                  <Textarea value={editPlan} onChange={(e) => setEditPlan(e.target.value)} rows={3} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Дата начала</Label>
+                    <Input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Дата окончания</Label>
+                    <Input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="mm-edit-active"
+                    checked={editActive}
+                    onCheckedChange={(v) => setEditActive(v === true)}
+                  />
+                  <Label htmlFor="mm-edit-active" className="cursor-pointer">Активен</Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditMember(null)} disabled={editSaving}>
+                  Отмена
+                </Button>
+                <Button onClick={saveEdit} disabled={editSaving}>
+                  {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Сохранить
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
+
+
 
         {/* ЗАДАЧИ */}
         <TabsContent value="tasks" className="space-y-4 mt-4">
