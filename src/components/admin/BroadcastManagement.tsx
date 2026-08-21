@@ -223,23 +223,17 @@ export const BroadcastManagement: React.FC = () => {
 
     // Отправка в групповой чат — через telegram-server, минуя обычную рассылку в личку
     if (sendToGroup) {
-      const initData = window.Telegram?.WebApp?.initData;
-      if (!initData) {
-        toast({
-          title: 'Нет авторизации Telegram',
-          description: 'Отправка в группу доступна только из Telegram Mini App',
-          variant: 'destructive',
-        });
-        return;
-      }
+      const ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
       const threadId = GROUP_TOPICS.find((t) => t.value === topic)?.threadId ?? null;
       setSending(true);
       try {
         const res = await fetch(`${SERVER_URL}/api/state`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': ADMIN_KEY,
+          },
           body: JSON.stringify({
-            initData,
             action: 'send_to_group',
             group_text: text.trim(),
             topic_id: threadId,
