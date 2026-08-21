@@ -88,6 +88,9 @@ export const BroadcastManagement: React.FC = () => {
   const { toast } = useToast();
   const [text, setText] = useState('');
   const [audience, setAudience] = useState<Audience>('all');
+  const [sendToGroup, setSendToGroup] = useState(false);
+  const [topic, setTopic] = useState<string>('general');
+
   const [buttons, setButtons] = useState<BroadcastButton[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
