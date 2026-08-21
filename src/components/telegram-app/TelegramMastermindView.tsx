@@ -280,6 +280,8 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   }
 
   const { member, tasks, entries } = data;
+  const completedTasksCount = tasks.filter((t) => t.is_completed).length;
+  const tasksProgressPct = tasks.length > 0 ? Math.round((completedTasksCount / tasks.length) * 100) : 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -311,7 +313,22 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
         )}
 
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold">Задачи</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Задачи</h2>
+            {tasks.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {completedTasksCount}/{tasks.length} · {tasksProgressPct}%
+              </span>
+            )}
+          </div>
+          {tasks.length > 0 && (
+            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-kamp-primary transition-all"
+                style={{ width: `${tasksProgressPct}%` }}
+              />
+            </div>
+          )}
           {tasks.length === 0 ? (
             <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">Пока нет задач</CardContent></Card>
           ) : (
@@ -329,7 +346,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                         : 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40'
                     }
                   >
-                    {task.approval_status === 'pending' ? 'На проверке' : task.approval_status === 'approved' ? 'Одобрена' : 'Отклонена'}
+                    {task.approval_status === 'pending' ? 'На проверке' : task.approval_status === 'approved' ? 'Одобрена' : 'На доработке'}
                   </Badge>
                 );
 
@@ -337,12 +354,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                   <Card key={task.id} className={task.is_completed ? 'border-green-500/30 bg-green-500/5' : undefined}>
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={task.is_completed}
-                          disabled={task.is_completed || completingTaskId === task.id}
-                          onCheckedChange={() => { if (!task.is_completed) openTaskComment(task.id); }}
-                          className="mt-0.5"
-                        />
+                        <Checkbox checked={task.is_completed} disabled className="mt-0.5" />
                         <div className="flex-1 space-y-1">
                           <div className="flex items-start justify-between gap-2 flex-wrap">
                             <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
@@ -351,7 +363,9 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                             {approvalBadge}
                           </div>
                           {task.description && (
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                            <p className={`text-sm whitespace-pre-wrap ${task.is_completed ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                              {task.description}
+                            </p>
                           )}
                           {task.deadline && (
                             <p className={`text-xs ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`}>
@@ -369,64 +383,14 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                         </div>
                       </div>
 
-                      {openTaskId === task.id && (
-                        <div className="space-y-2 pl-8">
-                          <Textarea
-                            value={taskComment}
-                            onChange={(e) => setTaskComment(e.target.value)}
-                            placeholder="Опишите результат выполнения (обязательно)"
-                            rows={3}
-                            disabled={completingTaskId === task.id}
-                          />
-
-                          {taskFileName ? (
-                            <div className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
-                              <span className="truncate flex items-center gap-1">
-                                <Paperclip className="w-3 h-3 shrink-0" />{taskFileName}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => { setTaskFileUrl(null); setTaskFileName(null); }}
-                                disabled={completingTaskId === task.id}
-                                aria-label="Убрать файл"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer w-fit">
-                              <Paperclip className="w-3 h-3" />
-                              {uploadingTaskFile ? 'Загружаем...' : 'Прикрепить файл'}
-                              <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*,.pdf,.doc,.docx"
-                                disabled={completingTaskId === task.id || uploadingTaskFile}
-                                onChange={handleTaskFileChange}
-                              />
-                            </label>
-                          )}
-
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              onClick={cancelTaskComment}
-                              disabled={completingTaskId === task.id}
-                            >
-                              Отмена
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                              onClick={() => handleCompleteTask(task.id)}
-                              disabled={!taskComment.trim() || completingTaskId === task.id || uploadingTaskFile}
-                            >
-                              {completingTaskId === task.id ? 'Отмечаю...' : 'Выполнено'}
-                            </Button>
-                          </div>
-                        </div>
+                      {!task.is_completed && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                          onClick={() => openTaskComment(task.id)}
+                        >
+                          Выполнено
+                        </Button>
                       )}
                     </CardContent>
                   </Card>
@@ -506,6 +470,72 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
           )}
         </div>
       </div>
+
+      <Dialog open={!!openTaskId} onOpenChange={(open) => { if (!open && completingTaskId === null) cancelTaskComment(); }}>
+        <DialogContent className="max-w-[90vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Отметить задачу выполненной</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Комментарий о результате *</label>
+              <Textarea
+                value={taskComment}
+                onChange={(e) => setTaskComment(e.target.value)}
+                placeholder="Опишите результат выполнения (обязательно)"
+                rows={3}
+                disabled={completingTaskId === openTaskId}
+              />
+            </div>
+
+            {taskFileName ? (
+              <div className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
+                <span className="truncate flex items-center gap-1">
+                  <Paperclip className="w-3 h-3 shrink-0" />{taskFileName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setTaskFileUrl(null); setTaskFileName(null); }}
+                  disabled={completingTaskId === openTaskId}
+                  aria-label="Убрать файл"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer w-fit">
+                <Paperclip className="w-3 h-3" />
+                {uploadingTaskFile ? 'Загружаем...' : 'Прикрепить файл'}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx"
+                  disabled={completingTaskId === openTaskId || uploadingTaskFile}
+                  onChange={handleTaskFileChange}
+                />
+              </label>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelTaskComment}
+              disabled={completingTaskId === openTaskId}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={() => { if (openTaskId) handleCompleteTask(openTaskId); }}
+              disabled={!taskComment.trim() || completingTaskId === openTaskId || uploadingTaskFile}
+              className="bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+            >
+              {completingTaskId === openTaskId ? 'Отмечаю...' : 'Выполнено'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addTaskOpen} onOpenChange={(open) => { if (!creatingTask) setAddTaskOpen(open); }}>
         <DialogContent className="max-w-[90vw] rounded-lg">
