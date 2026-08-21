@@ -10,6 +10,7 @@ import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast as sonnerToast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { mskCalendarDate, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
 interface Schedule {
   id: string;
@@ -103,7 +104,7 @@ export function ClubScheduleViewer() {
   }, []);
 
   const getDateLabel = (dateString: string) => {
-    const date = parseISO(dateString);
+    const date = mskCalendarDate(dateString);
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -313,7 +314,7 @@ export function ClubScheduleViewer() {
                         }}
                         className="border font-semibold"
                       >
-                        {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                        {formatMskDate(schedule.start_time)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -325,7 +326,7 @@ export function ClubScheduleViewer() {
                         }}
                         className="border font-semibold"
                       >
-                        {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                        {mskDayOfWeek(schedule.start_time)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -337,7 +338,7 @@ export function ClubScheduleViewer() {
                         }}
                         className="border font-semibold"
                       >
-                        {format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}
+                        {formatMskTimeSec(schedule.start_time)}-{formatMskTimeSec(schedule.end_time)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -443,11 +444,11 @@ export function ClubScheduleViewer() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Дата</h3>
-                  <p>{format(parseISO(viewingDetails.start_time), "dd.MM.yyyy, EEEE", { locale: ru })}</p>
+                  <p>{`${formatMskDate(viewingDetails.start_time)}, ${mskDayOfWeek(viewingDetails.start_time)}`}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Время</h3>
-                  <p className="font-mono">{format(parseISO(viewingDetails.start_time), "HH:mm")}-{format(parseISO(viewingDetails.end_time), "HH:mm")}</p>
+                  <p className="font-mono">{formatMskTime(viewingDetails.start_time)}-{formatMskTime(viewingDetails.end_time)}</p>
                 </div>
               </div>
 

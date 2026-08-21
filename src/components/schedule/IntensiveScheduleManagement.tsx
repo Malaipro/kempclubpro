@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 interface ScheduleItem {
   id: string;
   ascetic_nutrition: string;
@@ -121,9 +122,9 @@ export const IntensiveScheduleManagement: React.FC = () => {
           id: schedule.id,
           ascetic_nutrition: ascetic_nutrition || '-',
           nutrition: nutrition || '-',
-          date: format(startDate, 'dd.MM.yyyy'),
-          dayOfWeek: getDayOfWeek(startDate),
-          time: `${format(startDate, 'HH:mm:ss')}-${format(endDate, 'HH:mm:ss')}`,
+          date: formatMskDate(schedule.start_time),
+          dayOfWeek: mskDayOfWeek(schedule.start_time),
+          time: `${formatMskTimeSec(schedule.start_time)}-${formatMskTimeSec(schedule.end_time)}`,
           activity: schedule.title,
           instructor: schedule.instructor_id ? trainersMap.get(schedule.instructor_id) || '-' : '-',
           instructor_id: schedule.instructor_id,
@@ -166,12 +167,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
       });
       return;
     }
-    const toISO = (date: Date, time: string) => {
-      const [h, m] = time.split(':').map(Number);
-      const d = new Date(date);
-      d.setHours(h || 0, m || 0, 0, 0);
-      return d.toISOString();
-    };
+    const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
     try {
       if (editingId) {
         const {
