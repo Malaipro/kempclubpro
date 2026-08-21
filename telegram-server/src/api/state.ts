@@ -1547,7 +1547,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       body: JSON.stringify(body),
     });
 
-    const tgData = await tgRes.json();
+    const tgData = await tgRes.json() as any;
 
     if (!tgData.ok) {
       console.error('[state/send_to_group] TG error:', tgData.description);
