@@ -1491,6 +1491,74 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'send_to_group') {
+    const group_text = (req.body as any).group_text;
+    const topic_id = (req.body as any).topic_id;
+    const group_buttons = (req.body as any).group_buttons;
+
+    if (!group_text) {
+      res.status(400).json({ ok: false, error: 'missing_text' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: isAdmin } = await supabase.rpc('is_admin', { p_user_id: profile.user_id });
+    if (!isAdmin) {
+      res.status(403).json({ ok: false, error: 'Только для админов' });
+      return;
+    }
+
+    const GROUP_CHAT_ID = '-1002751756177';
+
+    const body: any = {
+      chat_id: GROUP_CHAT_ID,
+      text: group_text,
+      parse_mode: 'HTML',
+    };
+
+    if (topic_id) {
+      body.message_thread_id = Number(topic_id);
+    }
+
+    if (group_buttons && Array.isArray(group_buttons) && group_buttons.length > 0) {
+      const keyboard = group_buttons.map((btn: any, i: number) => {
+        if (btn.type === 'url' && btn.url) {
+          return [{ text: btn.label, url: btn.url }];
+        }
+        return [{ text: btn.label, callback_data: 'gc:' + (btn.schedule_id || btn.target_id || i) + ':' + btn.type }];
+      });
+      body.reply_markup = JSON.stringify({ inline_keyboard: keyboard });
+    }
+
+    const tgRes = await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const tgData = await tgRes.json();
+
+    if (!tgData.ok) {
+      console.error('[state/send_to_group] TG error:', tgData.description);
+      res.status(500).json({ ok: false, error: tgData.description });
+      return;
+    }
+
+    res.json({ ok: true, data: { message_id: tgData.result.message_id } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
