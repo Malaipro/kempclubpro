@@ -19,6 +19,18 @@ import { ru } from 'date-fns/locale';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
+const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
+
+// Темы (topics) группового чата КЭМП
+const GROUP_TOPICS: { value: string; label: string; threadId: number | null }[] = [
+  { value: 'general', label: 'General', threadId: null },
+  { value: '304', label: 'Челендж', threadId: 304 },
+  { value: '13', label: 'Активности', threadId: 13 },
+  { value: '4', label: 'Тренировки', threadId: 4 },
+  { value: '12', label: 'Разговорчики', threadId: 12 },
+];
+
+
 type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
 
 interface BroadcastButton {
