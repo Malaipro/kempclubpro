@@ -8,6 +8,7 @@ import { CalendarPlus, Clock, MapPin } from "lucide-react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast as sonnerToast } from "sonner";
+import { formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
 interface Schedule {
   id: string;
@@ -204,7 +205,7 @@ export function IntensiveScheduleViewer() {
                           }}
                           className="border font-semibold"
                         >
-                          {format(parseISO(schedule.start_time), "dd.MM.yyyy")}
+                          {formatMskDate(schedule.start_time)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -216,7 +217,7 @@ export function IntensiveScheduleViewer() {
                           }}
                           className="border font-semibold"
                         >
-                          {format(parseISO(schedule.start_time), "EEEE", { locale: ru })}
+                          {mskDayOfWeek(schedule.start_time)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -228,7 +229,7 @@ export function IntensiveScheduleViewer() {
                           }}
                           className="border font-semibold"
                         >
-                          {format(parseISO(schedule.start_time), "HH:mm:ss")}-{format(parseISO(schedule.end_time), "HH:mm:ss")}
+                          {formatMskTimeSec(schedule.start_time)}-{formatMskTimeSec(schedule.end_time)}
                         </Badge>
                       </TableCell>
                       <TableCell>
