@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -18,6 +19,18 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
+
+const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
+
+// Темы (topics) группового чата КЭМП
+const GROUP_TOPICS: { value: string; label: string; threadId: number | null }[] = [
+  { value: 'general', label: 'General', threadId: null },
+  { value: '304', label: 'Челендж', threadId: 304 },
+  { value: '13', label: 'Активности', threadId: 13 },
+  { value: '4', label: 'Тренировки', threadId: 4 },
+  { value: '12', label: 'Разговорчики', threadId: 12 },
+];
+
 
 type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
 
@@ -76,6 +89,9 @@ export const BroadcastManagement: React.FC = () => {
   const { toast } = useToast();
   const [text, setText] = useState('');
   const [audience, setAudience] = useState<Audience>('all');
+  const [sendToGroup, setSendToGroup] = useState(false);
+  const [topic, setTopic] = useState<string>('general');
+
   const [buttons, setButtons] = useState<BroadcastButton[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
@@ -179,6 +195,7 @@ export const BroadcastManagement: React.FC = () => {
   const resetForm = () => {
     setText('');
     setAudience('all');
+    setTopic('general');
     setButtons([]);
     setFile(null);
   };
@@ -203,6 +220,51 @@ export const BroadcastManagement: React.FC = () => {
       target_id: b.type === 'book_event' || b.type === 'request_reward' ? b.target_id : undefined,
     }));
 
+
+    // Отправка в групповой чат — через telegram-server, минуя обычную рассылку в личку
+    if (sendToGroup) {
+      const initData = window.Telegram?.WebApp?.initData;
+      if (!initData) {
+        toast({
+          title: 'Нет авторизации Telegram',
+          description: 'Отправка в группу доступна только из Telegram Mini App',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const threadId = GROUP_TOPICS.find((t) => t.value === topic)?.threadId ?? null;
+      setSending(true);
+      try {
+        const res = await fetch(`${SERVER_URL}/api/state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData,
+            action: 'send_to_group',
+            group_text: text.trim(),
+            topic_id: threadId,
+            group_buttons: validButtons.map((b) => ({
+              label: b.label,
+              type: b.type,
+              url: b.url,
+              schedule_id: b.type === 'book_event' ? b.target_id : undefined,
+              target_id: b.target_id,
+            })),
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || (data && data.ok === false)) {
+          throw new Error(data?.error || `Ошибка отправки (${res.status})`);
+        }
+        toast({ title: 'Отправлено в группу', description: 'Сообщение опубликовано в чате КЭМП' });
+        resetForm();
+      } catch (e: any) {
+        toast({ title: 'Ошибка', description: e?.message || 'Не удалось отправить в группу', variant: 'destructive' });
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
 
     setSending(true);
     try {
@@ -279,7 +341,33 @@ export const BroadcastManagement: React.FC = () => {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="send-to-group">Отправить в группу</Label>
+              <p className="text-xs text-muted-foreground">
+                Сообщение уйдёт в групповой чат КЭМП, а не в личные сообщения
+              </p>
+            </div>
+            <Switch id="send-to-group" checked={sendToGroup} onCheckedChange={setSendToGroup} />
+          </div>
+
+          {sendToGroup && (
+            <div className="space-y-2">
+              <Label>Тема</Label>
+              <Select value={topic} onValueChange={setTopic}>
+                <SelectTrigger className="w-full sm:w-72">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUP_TOPICS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className={sendToGroup ? 'hidden' : 'space-y-2'}>
             <Label>Аудитория</Label>
             <Select value={audience} onValueChange={(v) => setAudience(v as Audience)}>
               <SelectTrigger className="w-full sm:w-72">
@@ -408,7 +496,7 @@ export const BroadcastManagement: React.FC = () => {
 
           <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
             {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-            Отправить рассылку
+            {sendToGroup ? 'Отправить в группу' : 'Отправить рассылку'}
           </Button>
         </CardContent>
       </Card>
