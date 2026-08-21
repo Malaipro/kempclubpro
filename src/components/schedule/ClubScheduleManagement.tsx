@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
 const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
@@ -153,9 +154,9 @@ export const ClubScheduleManagement: React.FC = () => {
         
         return {
           id: schedule.id,
-          date: format(startDate, 'dd.MM.yyyy'),
-          dayOfWeek: getDayOfWeek(startDate),
-          time: `${format(startDate, 'HH:mm')}-${format(endDate, 'HH:mm')}`,
+          date: formatMskDate(schedule.start_time),
+          dayOfWeek: mskDayOfWeek(schedule.start_time),
+          time: `${formatMskTime(schedule.start_time)}-${formatMskTime(schedule.end_time)}`,
           activity: schedule.title,
           instructor: schedule.instructor_id ? (trainersMap.get(schedule.instructor_id) || '-') : '-',
           instructor_id: schedule.instructor_id,
@@ -211,12 +212,7 @@ export const ClubScheduleManagement: React.FC = () => {
       return;
     }
 
-    const toISO = (date: Date, time: string) => {
-      const [h, m] = time.split(':').map(Number);
-      const d = new Date(date);
-      d.setHours(h || 0, m || 0, 0, 0);
-      return d.toISOString();
-    };
+    const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
 
     try {
       // Combine theme and description with separator
