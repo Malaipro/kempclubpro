@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Clock, MapPin, User, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -153,6 +153,7 @@ const BookingStatus: React.FC<BookingStatusProps> = ({ booked, isFull, scheduleI
 export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -298,80 +299,73 @@ export const TelegramScheduleView: React.FC<Props> = ({ onBack }) => {
                       item.booked_count >= item.max_participants;
 
                     const activityColor = ACTIVITY_COLORS[getActivityColorKey(item.activity_type, item.title)];
+                    const isExpanded = expandedId === item.id;
 
                     return (
                       <Card
                         key={item.id}
                         className={`border-l-4 ${activityColor.border}`}
                       >
-                        <CardContent className="py-3 px-4">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-3 py-3 px-4 text-left"
+                          onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                        >
+                          <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                            {fmt_time(item.start_time)}–{fmt_time(item.end_time)}
+                          </span>
 
-                          {/* Title */}
-                          <p
-                            className="font-semibold text-sm leading-snug mb-2"
+                          <span
+                            className="flex-1 min-w-0 font-semibold text-sm leading-snug truncate"
                             style={{ color: activityColor.hex }}
                           >
                             {item.title}
-                          </p>
+                          </span>
 
-                          {/* Meta */}
-                          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1.5">
-                              <Clock className="w-3 h-3 shrink-0" />
-                              {fmt_time(item.start_time)}–{fmt_time(item.end_time)}
-                            </span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 shrink-0 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <CardContent className="pt-0 pb-3 px-4">
 
                             {item.location && (
-                              <span className="flex items-center gap-1.5">
+                              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <MapPin className="w-3 h-3 shrink-0" />
                                 {item.location}
                               </span>
                             )}
 
-                            {item.instructor && (
-                              <span className="flex items-center gap-1.5">
-                                <User className="w-3 h-3 shrink-0" />
-                                {item.instructor.name}
-                              </span>
-                            )}
+                            {/* Description */}
+                            {item.description && (() => {
+                              const [descTitle, ...rest] = item.description.split('|||');
+                              const descBody = rest.join('|||').trim();
+                              return (
+                                <div className="mt-2 text-xs leading-relaxed">
+                                  <p className={descBody ? 'font-semibold text-foreground' : 'text-muted-foreground'}>
+                                    {descTitle.trim()}
+                                  </p>
+                                  {descBody && (
+                                    <p className="mt-0.5 text-muted-foreground">{descBody}</p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
-                            {item.max_participants !== null && (
-                              <span className="flex items-center gap-1.5">
-                                <Users className="w-3 h-3 shrink-0" />
-                                {item.booked_count} / {item.max_participants} мест
-                                {isFull && (
-                                  <span className="text-destructive font-medium">· заполнено</span>
-                                )}
-                              </span>
-                            )}
-                          </div>
+                            <BookingStatus
+                              booked={item.booked}
+                              isFull={isFull}
+                              scheduleId={item.id}
+                              onBook={handleBook}
+                              onCancel={handleCancel}
+                              loading={bookingId === item.id}
+                            />
 
-                          {/* Description */}
-                          {item.description && (() => {
-                            const [descTitle, ...rest] = item.description.split('|||');
-                            const descBody = rest.join('|||').trim();
-                            return (
-                              <div className="mt-2 text-xs leading-relaxed">
-                                <p className={descBody ? 'font-semibold text-foreground' : 'text-muted-foreground'}>
-                                  {descTitle.trim()}
-                                </p>
-                                {descBody && (
-                                  <p className="mt-0.5 text-muted-foreground">{descBody}</p>
-                                )}
-                              </div>
-                            );
-                          })()}
-
-                          <BookingStatus
-                            booked={item.booked}
-                            isFull={isFull}
-                            scheduleId={item.id}
-                            onBook={handleBook}
-                            onCancel={handleCancel}
-                            loading={bookingId === item.id}
-                          />
-
-                        </CardContent>
+                          </CardContent>
+                        )}
                       </Card>
                     );
                   })}
