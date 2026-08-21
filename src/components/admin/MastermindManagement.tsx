@@ -113,27 +113,83 @@ export const MastermindManagement: React.FC = () => {
   const saveEdit = async () => {
     if (!editMember) return;
     setEditSaving(true);
+
+    const payload = {
+      group_id: editGroupId || null,
+      request: editRequest || null,
+      plan: editPlan || null,
+      start_date: editStart || null,
+      end_date: editEnd || null,
+      is_active: editActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Если группа меняется — проверяем, нет ли уже записи этого участника в целевой группе
+    if (editGroupId && editGroupId !== (editMember.group_id || '')) {
+      const { data: existing, error: findError } = await supabase
+        .from('mastermind_members')
+        .select('id')
+        .eq('user_id', editMember.user_id)
+        .eq('group_id', editGroupId)
+        .neq('id', editMember.id)
+        .maybeSingle();
+
+      if (findError) {
+        setEditSaving(false);
+        toast({ title: 'Ошибка', description: findError.message, variant: 'destructive' });
+        return;
+      }
+
+      if (existing) {
+        // Переносим данные в существующую запись и деактивируем старую (без нарушения unique)
+        const { error: mergeError } = await supabase
+          .from('mastermind_members')
+          .update(payload)
+          .eq('id', existing.id);
+
+        if (mergeError) {
+          setEditSaving(false);
+          toast({ title: 'Ошибка', description: mergeError.message, variant: 'destructive' });
+          return;
+        }
+
+        await supabase
+          .from('mastermind_members')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', editMember.id);
+
+        setEditSaving(false);
+        toast({
+          title: 'Карточка объединена',
+          description: 'Участник уже был в этой группе — данные перенесены в существующую запись, дубль деактивирован.',
+        });
+        setEditMember(null);
+        loadAll();
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('mastermind_members')
-      .update({
-        group_id: editGroupId || null,
-        request: editRequest || null,
-        plan: editPlan || null,
-        start_date: editStart || null,
-        end_date: editEnd || null,
-        is_active: editActive,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq('id', editMember.id);
     setEditSaving(false);
     if (error) {
-      toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+      const duplicate = error.message.includes('mastermind_members_user_group_unique');
+      toast({
+        title: 'Ошибка',
+        description: duplicate
+          ? 'Этот участник уже состоит в выбранной группе. Откройте его карточку в этой группе.'
+          : error.message,
+        variant: 'destructive',
+      });
       return;
     }
     toast({ title: 'Карточка обновлена' });
     setEditMember(null);
     loadAll();
   };
+
 
   // add task dialog
   const [taskOpen, setTaskOpen] = useState(false);
