@@ -8,7 +8,7 @@ import { CalendarPlus, Clock, MapPin } from "lucide-react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast as sonnerToast } from "sonner";
-import { formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
+import { mskCalendarDate, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
 interface Schedule {
   id: string;
@@ -100,7 +100,7 @@ export function IntensiveScheduleViewer() {
   }, []);
 
   const getDateLabel = (dateString: string) => {
-    const date = parseISO(dateString);
+    const date = mskCalendarDate(dateString);
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
