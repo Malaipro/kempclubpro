@@ -443,7 +443,7 @@ export const BroadcastManagement: React.FC = () => {
                         )}
                         {schedules.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            {s.title} — {format(new Date(s.start_time), 'dd.MM HH:mm', { locale: ru })}
+                            {s.title} — {format(toMoscow(s.start_time), 'dd.MM HH:mm', { locale: ru })}
                           </SelectItem>
                         ))}
                       </SelectContent>
