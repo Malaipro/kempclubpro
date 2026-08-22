@@ -24,7 +24,7 @@ app.use(
         config.server.allowedOrigin,
         'https://kempclubpro.lovable.app',
       ];
-      if (origin === undefined || origin === null || allowed.some(a => origin === a || origin.endsWith('.lovable.app'))) {
+      if (origin === undefined || origin === null || allowed.some(a => origin === a || origin.endsWith('.lovable.app') || origin.endsWith('.lovableproject.com'))) {
         callback(null, true);
       } else {
         callback(new Error('CORS blocked: ' + origin));
