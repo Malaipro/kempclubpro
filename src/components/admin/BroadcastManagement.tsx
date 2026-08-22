@@ -32,6 +32,9 @@ const GROUP_TOPICS: { value: string; label: string; threadId: number | null }[] 
 ];
 
 
+const toMoscow = (iso: string) => new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
+
+
 type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
 
 interface BroadcastButton {
