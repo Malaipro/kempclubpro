@@ -19,7 +19,17 @@ app.set('trust proxy', 1);
 app.use(
   '/api',
   cors({
-    origin: config.server.allowedOrigin,
+    origin: (origin, callback) => {
+      const allowed = [
+        config.server.allowedOrigin,
+        'https://kempclubpro.lovable.app',
+      ];
+      if (origin === undefined || origin === null || allowed.some(a => origin === a || origin.endsWith('.lovable.app'))) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS blocked: ' + origin));
+      }
+    },
     methods: ['POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
   })
