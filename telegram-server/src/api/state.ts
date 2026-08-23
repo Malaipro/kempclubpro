@@ -1525,6 +1525,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
+    // При admin key auth профиль не проверяем
     const GROUP_CHAT_ID = '-1002751756177';
 
     const body: any = {
