@@ -155,3 +155,101 @@ export async function onCallbackQuery(query: TelegramCallbackQuery): Promise<voi
   // 'callback' — просто фиксируем ответ, без побочного действия
   await answerCallbackQuery(query.id, 'Спасибо! Ваш ответ учтён ✅');
 }
+
+
+// Обработка кнопок из группового чата (gc:TARGET_ID:ACTION_TYPE)
+export async function onGroupCallbackQuery(cbq: any): Promise<void> {
+  const data = cbq.data as string;
+  if (!data || !data.startsWith('gc:')) return;
+
+  const parts = data.split(':');
+  const targetId = parts[1];
+  const actionType = parts[2]; // book_event, checkin, request_reward
+  const telegramId = String(cbq.from.id);
+
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, phone, telegram_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      await answerCallbackQuery(cbq.id, 'Профиль не найден. Напишите /start боту в личку.');
+      return;
+    }
+
+    if (actionType === 'book_event' && targetId) {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .insert({ schedule_id: targetId, user_id: profile.user_id });
+
+      if (error) {
+        if (error.code === '23505') {
+          await answerCallbackQuery(cbq.id, 'Вы уже записаны');
+        } else {
+          console.error('[onGroupCallbackQuery] book error:', error.message);
+          await answerCallbackQuery(cbq.id, 'Ошибка записи');
+        }
+        return;
+      }
+      await answerCallbackQuery(cbq.id, 'Записан');
+    } else if (actionType === 'checkin') {
+      await answerCallbackQuery(cbq.id, 'Отмечено');
+    } else {
+      await answerCallbackQuery(cbq.id, 'Принято');
+    }
+  } catch (err: any) {
+    console.error('[onGroupCallbackQuery] error:', err.message);
+    await answerCallbackQuery(cbq.id, 'Ошибка');
+  }
+}
+
+
+// Обработка кнопок из группового чата (gc:TARGET_ID:ACTION_TYPE)
+export async function onGroupCallbackQuery(cbq: any): Promise<void> {
+  const data = cbq.data as string;
+  if (!data || !data.startsWith('gc:')) return;
+
+  const parts = data.split(':');
+  const targetId = parts[1];
+  const actionType = parts[2]; // book_event, checkin, request_reward
+  const telegramId = String(cbq.from.id);
+
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, phone, telegram_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      await answerCallbackQuery(cbq.id, 'Профиль не найден. Напишите /start боту в личку.');
+      return;
+    }
+
+    if (actionType === 'book_event' && targetId) {
+      const { error } = await supabase
+        .from('schedule_participants')
+        .insert({ schedule_id: targetId, user_id: profile.user_id });
+
+      if (error) {
+        if (error.code === '23505') {
+          await answerCallbackQuery(cbq.id, 'Вы уже записаны');
+        } else {
+          console.error('[onGroupCallbackQuery] book error:', error.message);
+          await answerCallbackQuery(cbq.id, 'Ошибка записи');
+        }
+        return;
+      }
+      await answerCallbackQuery(cbq.id, 'Записан');
+    } else if (actionType === 'checkin') {
+      await answerCallbackQuery(cbq.id, 'Отмечено');
+    } else {
+      await answerCallbackQuery(cbq.id, 'Принято');
+    }
+  } catch (err: any) {
+    console.error('[onGroupCallbackQuery] error:', err.message);
+    await answerCallbackQuery(cbq.id, 'Ошибка');
+  }
+}

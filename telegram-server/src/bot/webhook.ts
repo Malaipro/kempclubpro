@@ -4,7 +4,7 @@ import { onStart } from './handlers/onStart';
 import { onContact } from './handlers/onContact';
 import { onLinkCode } from './handlers/onLinkCode';
 import { onUnknown } from './handlers/onUnknown';
-import { onCallbackQuery } from './handlers/onCallbackQuery';
+import { onCallbackQuery, onGroupCallbackQuery } from './handlers/onCallbackQuery';
 
 // Минимальные типы Telegram Update / Message
 export interface TelegramUser {
@@ -63,7 +63,11 @@ webhookRouter.post('/', async (req: Request, res: Response) => {
 
   if (update.callback_query) {
     try {
-      await onCallbackQuery(update.callback_query);
+      if (update.callback_query.data?.startsWith('gc:')) {
+        await onGroupCallbackQuery(update.callback_query);
+      } else {
+        await onCallbackQuery(update.callback_query);
+      }
     } catch (err) {
       console.error('[webhook] Unhandled callback_query error:', err);
     }
