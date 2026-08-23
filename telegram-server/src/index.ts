@@ -32,7 +32,6 @@ app.use(
       }
     },
     methods: ['POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
   })
 );
 
