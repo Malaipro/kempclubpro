@@ -1508,24 +1508,26 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('telegram_id', telegramId)
-      .maybeSingle();
+    // При admin key auth (isAdminKeyAuth) профиль не проверяем
+    if (!isAdminKeyAuth) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('telegram_id', telegramId)
+        .maybeSingle();
 
-    if (!profile) {
-      res.json({ ok: false, error: 'not_linked' });
-      return;
+      if (!profile) {
+        res.json({ ok: false, error: 'not_linked' });
+        return;
+      }
+
+      const { data: adminCheck } = await supabase.rpc('is_admin', { p_user_id: profile.user_id });
+      if (!adminCheck) {
+        res.status(403).json({ ok: false, error: 'Только для админов' });
+        return;
+      }
     }
 
-    const { data: isAdmin } = await supabase.rpc('is_admin', { p_user_id: profile.user_id });
-    if (!isAdmin) {
-      res.status(403).json({ ok: false, error: 'Только для админов' });
-      return;
-    }
-
-    // При admin key auth профиль не проверяем
     const GROUP_CHAT_ID = '-1002751756177';
 
     const body: any = {
