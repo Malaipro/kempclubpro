@@ -19,6 +19,7 @@ app.set('trust proxy', 1);
 app.use(
   '/api',
   cors({
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Key'],
     origin: (origin, callback) => {
       const allowed = [
         config.server.allowedOrigin,
