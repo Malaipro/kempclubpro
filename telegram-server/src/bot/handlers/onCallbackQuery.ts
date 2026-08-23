@@ -1,6 +1,7 @@
 import { TelegramCallbackQuery } from '../webhook';
 import { answerCallbackQuery, BroadcastButtonType } from '../telegram';
 import { supabase } from '../../db/supabase';
+import config from '../../config';
 
 // callback_data формата "bc:BROADCAST_MSG_ID:BUTTON_INDEX" — см. sendBroadcastMessage
 const CALLBACK_DATA_RE = /^bc:([0-9a-f-]{36}):(\d+)$/i;
@@ -193,7 +194,21 @@ export async function onGroupCallbackQuery(cbq: any): Promise<void> {
         }
         return;
       }
-      await answerCallbackQuery(cbq.id, 'Записан');
+      // Показать заметное уведомление
+      await answerCallbackQuery(cbq.id, 'Вы записаны на мероприятие');
+
+      // Изменить текст кнопки на "Записан"
+      try {
+        await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/editMessageReplyMarkup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: cbq.message.chat.id,
+            message_id: cbq.message.message_id,
+            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: 'Записан', callback_data: 'gc:done:noop' }]] }),
+          }),
+        });
+      } catch (e) {}
     } else if (actionType === 'checkin') {
       await answerCallbackQuery(cbq.id, 'Отмечено');
     } else {
