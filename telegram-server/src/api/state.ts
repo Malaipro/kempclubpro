@@ -95,16 +95,22 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     member_id?: string;
   };
 
-  // Базовая валидация тела запроса
-  if (!initData || typeof initData !== 'string') {
-    res.status(400).json({ ok: false, error: 'missing_init_data' });
-    return;
-  }
+  // Обход initData для send_to_group с admin key
+  const adminKeyHeader = req.headers['x-admin-key'] as string;
+  const isAdminKeyAuth = action === 'send_to_group' && adminKeyHeader === config.telegram.webhookSecret;
 
-  // Проверка HMAC-подписи — на сервере, с botToken из ENV
-  if (!verifyInitData(initData, config.telegram.botToken)) {
-    res.status(401).json({ ok: false, error: 'invalid_init_data' });
-    return;
+  if (!isAdminKeyAuth) {
+    // Базовая валидация тела запроса
+    if (!initData || typeof initData !== 'string') {
+      res.status(400).json({ ok: false, error: 'missing_init_data' });
+      return;
+    }
+
+    // Проверка HMAC-подписи — на сервере, с botToken из ENV
+    if (!verifyInitData(initData, config.telegram.botToken)) {
+      res.status(401).json({ ok: false, error: 'invalid_init_data' });
+      return;
+    }
   }
 
   // Проверка свежести auth_date (не старше 24 часов)
