@@ -113,20 +113,20 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
   }
 
-  // Проверка свежести auth_date (не старше 24 часов)
-  if (!checkAuthDate(initData)) {
-    res.status(401).json({ ok: false, error: 'init_data_expired' });
-    return;
+  // Проверка свежести auth_date и извлечение пользователя
+  let telegramId = '';
+  if (!isAdminKeyAuth) {
+    if (!checkAuthDate(initData as string)) {
+      res.status(401).json({ ok: false, error: 'init_data_expired' });
+      return;
+    }
+    const user = extractTelegramUser(initData as string);
+    if (!user) {
+      res.status(400).json({ ok: false, error: 'missing_user' });
+      return;
+    }
+    telegramId = String(user.id);
   }
-
-  // Извлекаем пользователя из initData
-  const user = extractTelegramUser(initData);
-  if (!user) {
-    res.status(400).json({ ok: false, error: 'missing_user' });
-    return;
-  }
-
-  const telegramId = String(user.id);
 
   if (action === 'get_state') {
     const { data, error } = await supabase.rpc(
