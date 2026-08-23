@@ -1,7 +1,7 @@
 import { TelegramCallbackQuery } from '../webhook';
 import { answerCallbackQuery, BroadcastButtonType } from '../telegram';
 import { supabase } from '../../db/supabase';
-import config from '../../config';
+import { config } from '../../config';
 
 // callback_data формата "bc:BROADCAST_MSG_ID:BUTTON_INDEX" — см. sendBroadcastMessage
 const CALLBACK_DATA_RE = /^bc:([0-9a-f-]{36}):(\d+)$/i;
