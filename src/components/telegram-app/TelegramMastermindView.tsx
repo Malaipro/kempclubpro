@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Clock, Send, ListChecks, FileText, Paperclip, X, Plus } from 'lucide-react';
+import { Users, Clock, Send, ListChecks, FileText, Paperclip, X, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,9 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Свёрнутые/развёрнутые задачи (по умолчанию всё свёрнуто)
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
+
   // Комментарий (обязателен) и файл к отметке задачи выполненной
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [taskComment, setTaskComment] = useState('');
@@ -113,6 +116,15 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   }, [groupId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
 
   const openTaskComment = (taskId: string) => {
     setOpenTaskId(taskId);
@@ -335,6 +347,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
             <div className="space-y-2">
               {tasks.map((task) => {
                 const isOverdue = !!task.deadline && !task.is_completed && new Date(task.deadline).getTime() < Date.now();
+                const isExpanded = expandedTaskIds.has(task.id);
                 const approvalBadge = task.approval_status && (
                   <Badge
                     variant="outline"
@@ -353,15 +366,32 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                 return (
                   <Card key={task.id} className={task.is_completed ? 'border-green-500/30 bg-green-500/5' : undefined}>
                     <CardContent className="p-4 space-y-2">
-                      <div className="flex items-start gap-3">
-                        <Checkbox checked={task.is_completed} disabled className="mt-0.5" />
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                            <p className={`text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
-                              {task.title}
-                            </p>
-                            {approvalBadge}
-                          </div>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className="w-full flex items-center gap-3 text-left cursor-pointer"
+                        onClick={() => toggleTaskExpanded(task.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleTaskExpanded(task.id);
+                          }
+                        }}
+                      >
+                        <Checkbox checked={task.is_completed} disabled className="shrink-0" />
+                        <p className={`flex-1 text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                          {task.title}
+                        </p>
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                        )}
+                      </div>
+
+                      {isExpanded && (
+                        <div className="pl-7 space-y-2">
+                          {approvalBadge}
                           {task.description && (
                             <p className={`text-sm whitespace-pre-wrap ${task.is_completed ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
                               {task.description}
@@ -377,20 +407,21 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                               Выполнено {new Date(task.completed_at).toLocaleDateString('ru-RU')}
                             </p>
                           )}
-                          {task.is_completed && task.participant_comment && (
-                            <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
+
+                          {task.is_completed ? (
+                            task.participant_comment && (
+                              <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
+                            )
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                              onClick={() => openTaskComment(task.id)}
+                            >
+                              Выполнено
+                            </Button>
                           )}
                         </div>
-                      </div>
-
-                      {!task.is_completed && (
-                        <Button
-                          size="sm"
-                          className="w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                          onClick={() => openTaskComment(task.id)}
-                        >
-                          Выполнено
-                        </Button>
                       )}
                     </CardContent>
                   </Card>
