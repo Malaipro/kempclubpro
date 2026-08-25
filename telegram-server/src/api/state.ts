@@ -942,8 +942,8 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     const task_id = (req.body as any).task_id;
-    const task_comment = (req.body as any).task_comment;
-    const task_file_url = (req.body as any).task_file_url;
+    const task_comment = (req.body as any).task_comment ?? (req.body as any).completion_comment;
+    const task_file_url = (req.body as any).task_file_url ?? (req.body as any).completion_file_url;
 
     if (!task_id) {
       res.status(400).json({ ok: false, error: 'missing_task_id' });
