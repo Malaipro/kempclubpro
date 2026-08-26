@@ -668,13 +668,18 @@ export const CaptainDashboard: React.FC = () => {
                 <p className="font-medium">Главное достижение</p>
                 <p className="text-muted-foreground">{checkpointView.main_achievement || '—'}</p>
               </div>
-              {Array.isArray(checkpointView.photo_urls) && checkpointView.photo_urls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {(checkpointView.photo_urls as string[]).map((url) => (
-                    <img key={url} src={url} alt="Фото чекпоинта" className="rounded-md w-full h-auto" loading="lazy" />
-                  ))}
-                </div>
+              {Array.isArray(checkpointView.photo_urls) ? (
+                checkpointView.photo_urls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {(checkpointView.photo_urls as string[]).map((url) => (
+                      <img key={url} src={url} alt="Фото чекпоинта" className="rounded-md w-full h-auto" loading="lazy" />
+                    ))}
+                  </div>
+                )
+              ) : (
+                <CheckpointPhotos title="Фото" urls={parsePhotoUrls(checkpointView.photo_urls)} />
               )}
+
             </div>
           )}
         </DialogContent>
