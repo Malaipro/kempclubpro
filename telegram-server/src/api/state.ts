@@ -1568,6 +1568,80 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'upload_checkpoint_photo') {
+    const checkpoint_type = (req.body as any).checkpoint_type || 'A';
+    const photo_type = (req.body as any).photo_type;
+    const file_base64 = (req.body as any).file_base64;
+
+    if (!photo_type || !file_base64) {
+      res.status(400).json({ ok: false, error: 'missing_params' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, current_stream_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile || !profile.current_stream_id) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const fileName = `${profile.user_id}/${checkpoint_type}_${photo_type}.jpg`;
+    const buffer = Buffer.from(file_base64, 'base64');
+
+    const { error: uploadErr } = await supabase.storage
+      .from('checkpoints')
+      .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: true });
+
+    if (uploadErr) {
+      console.error('[state/upload_checkpoint_photo] upload error:', uploadErr.message);
+      res.status(500).json({ ok: false, error: uploadErr.message });
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('checkpoints')
+      .getPublicUrl(fileName);
+
+    const publicUrl = urlData.publicUrl;
+
+    // Обновляем photo_urls в participant_checkpoints
+    const { data: existing } = await supabase
+      .from('participant_checkpoints')
+      .select('id, photo_urls')
+      .eq('user_id', profile.user_id)
+      .eq('stream_id', profile.current_stream_id)
+      .eq('checkpoint_type', checkpoint_type)
+      .maybeSingle();
+
+    const photoUrls = (existing?.photo_urls as any) || {};
+    photoUrls[photo_type] = publicUrl;
+
+    if (existing) {
+      await supabase
+        .from('participant_checkpoints')
+        .update({ photo_urls: photoUrls, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('participant_checkpoints')
+        .insert({
+          user_id: profile.user_id,
+          stream_id: profile.current_stream_id,
+          checkpoint_type,
+          photo_urls: photoUrls,
+          filled_by: profile.user_id,
+        });
+    }
+
+    res.json({ ok: true, data: { url: publicUrl } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
