@@ -37,7 +37,9 @@ interface Checkpoint {
   personal_goal: string | null;
   personal_result: string | null;
   main_achievement: string | null;
+  photo_urls?: unknown;
 }
+
 
 type LoadState =
   | { status: 'loading' }
