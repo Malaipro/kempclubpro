@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckpointPhotos, PhotoSlot, parsePhotoUrls } from '@/components/checkpoints/CheckpointPhotos';
+
 
 const SERVER_URL = (import.meta as any).env?.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -35,7 +37,9 @@ interface Checkpoint {
   personal_goal: string | null;
   personal_result: string | null;
   main_achievement: string | null;
+  photo_urls?: unknown;
 }
+
 
 type LoadState =
   | { status: 'loading' }
@@ -98,6 +102,8 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [busySlot, setBusySlot] = useState<PhotoSlot | null>(null);
+
 
   useEffect(() => {
     const btn = (window as any).Telegram?.WebApp?.BackButton;
@@ -184,6 +190,56 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
       setSaving(false);
     }
   };
+
+  const handlePhotoUpload = async (slot: PhotoSlot, file: File) => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setBusySlot(slot);
+    try {
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+        reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'upload_checkpoint_photo',
+          checkpoint_type: checkpointType,
+          photo_type: slot,
+          file_base64: base64,
+          file_name: file.name,
+        }),
+      });
+      const body = await res.json() as { ok: boolean; error?: string };
+      if (!body.ok) throw new Error(body.error ?? 'upload_failed');
+      await fetchData(checkpointType);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Ошибка загрузки фото');
+    } finally {
+      setBusySlot(null);
+    }
+  };
+
+  const renderPhotos = (cp: Checkpoint | null) => (
+    <Card>
+      <CardContent className="py-4 px-4">
+        <CheckpointPhotos
+          title={`Фото — Точка ${checkpointType}`}
+          urls={parsePhotoUrls(cp?.photo_urls)}
+          editable
+          busySlot={busySlot}
+          onUpload={handlePhotoUpload}
+        />
+      </CardContent>
+    </Card>
+  );
+
+
 
   const renderTabs = () => (
     <div className="px-4 pt-4">
@@ -294,7 +350,10 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </Card>
           )}
 
+          {renderPhotos(checkpoint)}
+
           <Button className="w-full" variant="outline" onClick={() => setEditing(true)}>
+
             Редактировать
           </Button>
         </div>
@@ -403,7 +462,10 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
           </Card>
         )}
 
+        {renderPhotos(checkpoint)}
+
         <div className="flex gap-2">
+
           {checkpoint && (
             <Button variant="outline" className="flex-1" onClick={() => { setForm(checkpointToForm(checkpoint)); setEditing(false); }} disabled={saving}>
               Отмена

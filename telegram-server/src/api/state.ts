@@ -1607,7 +1607,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       .from('checkpoints')
       .getPublicUrl(fileName);
 
-    const publicUrl = urlData.publicUrl;
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
     // Обновляем photo_urls в participant_checkpoints
     const { data: existing } = await supabase
