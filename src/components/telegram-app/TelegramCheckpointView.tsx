@@ -191,6 +191,56 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  const handlePhotoUpload = async (slot: PhotoSlot, file: File) => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setBusySlot(slot);
+    try {
+      const base64: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+        reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'upload_checkpoint_photo',
+          checkpoint_type: checkpointType,
+          photo_type: slot,
+          file_base64: base64,
+          file_name: file.name,
+        }),
+      });
+      const body = await res.json() as { ok: boolean; error?: string };
+      if (!body.ok) throw new Error(body.error ?? 'upload_failed');
+      await fetchData(checkpointType);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Ошибка загрузки фото');
+    } finally {
+      setBusySlot(null);
+    }
+  };
+
+  const renderPhotos = (cp: Checkpoint | null) => (
+    <Card>
+      <CardContent className="py-4 px-4">
+        <CheckpointPhotos
+          title={`Фото — Точка ${checkpointType}`}
+          urls={parsePhotoUrls(cp?.photo_urls)}
+          editable
+          busySlot={busySlot}
+          onUpload={handlePhotoUpload}
+        />
+      </CardContent>
+    </Card>
+  );
+
+
+
   const renderTabs = () => (
     <div className="px-4 pt-4">
       <Tabs value={checkpointType} onValueChange={(v) => setCheckpointType(v as CheckpointType)}>
