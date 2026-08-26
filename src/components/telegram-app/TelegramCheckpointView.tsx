@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckpointPhotos, PhotoSlot, parsePhotoUrls } from '@/components/checkpoints/CheckpointPhotos';
+
 
 const SERVER_URL = (import.meta as any).env?.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
