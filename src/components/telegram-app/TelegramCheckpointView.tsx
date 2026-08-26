@@ -350,7 +350,10 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </Card>
           )}
 
+          {renderPhotos(checkpoint)}
+
           <Button className="w-full" variant="outline" onClick={() => setEditing(true)}>
+
             Редактировать
           </Button>
         </div>
