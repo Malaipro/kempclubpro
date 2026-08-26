@@ -102,6 +102,8 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [busySlot, setBusySlot] = useState<PhotoSlot | null>(null);
+
 
   useEffect(() => {
     const btn = (window as any).Telegram?.WebApp?.BackButton;
