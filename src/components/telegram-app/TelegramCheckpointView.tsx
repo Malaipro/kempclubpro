@@ -462,7 +462,10 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
           </Card>
         )}
 
+        {renderPhotos(checkpoint)}
+
         <div className="flex gap-2">
+
           {checkpoint && (
             <Button variant="outline" className="flex-1" onClick={() => { setForm(checkpointToForm(checkpoint)); setEditing(false); }} disabled={saving}>
               Отмена
