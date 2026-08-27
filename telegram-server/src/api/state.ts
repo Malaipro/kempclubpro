@@ -1642,6 +1642,52 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'delete_checkpoint_photo') {
+    const checkpoint_type = (req.body as any).checkpoint_type || 'A';
+    const photo_type = (req.body as any).photo_type;
+
+    if (!photo_type) {
+      res.status(400).json({ ok: false, error: 'missing_photo_type' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, current_stream_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile || !profile.current_stream_id) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const fileName = profile.user_id + '/' + checkpoint_type + '_' + photo_type + '.jpg';
+
+    await supabase.storage.from('checkpoints').remove([fileName]);
+
+    const { data: existing } = await supabase
+      .from('participant_checkpoints')
+      .select('id, photo_urls')
+      .eq('user_id', profile.user_id)
+      .eq('stream_id', profile.current_stream_id)
+      .eq('checkpoint_type', checkpoint_type)
+      .maybeSingle();
+
+    if (existing) {
+      const photoUrls = (existing.photo_urls as any) || {};
+      delete photoUrls[photo_type];
+      await supabase
+        .from('participant_checkpoints')
+        .update({ photo_urls: photoUrls, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
