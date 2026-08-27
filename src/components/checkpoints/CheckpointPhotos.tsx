@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2, RefreshCw } from 'lucide-react';
@@ -38,6 +38,17 @@ export const CheckpointPhotos: React.FC<Props> = ({
   const [preview, setPreview] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  // cache-busting: bump the key whenever an upload just finished
+  // (busySlot goes from a slot back to null) so <img> refetches the new file
+  const [refreshKey, setRefreshKey] = useState(() => Date.now());
+  const prevBusySlot = useRef(busySlot);
+  useEffect(() => {
+    if (prevBusySlot.current && !busySlot) setRefreshKey(Date.now());
+    prevBusySlot.current = busySlot;
+  }, [busySlot]);
+
+  const bust = (u: string) => `${u}${u.includes('?') ? '&' : '?'}t=${refreshKey}`;
+
   return (
     <div className="space-y-2">
       {title && <h3 className="text-sm font-semibold">{title}</h3>}
@@ -53,7 +64,7 @@ export const CheckpointPhotos: React.FC<Props> = ({
               >
                 {url ? (
                   <img
-                    src={url}
+                    src={bust(url)}
                     alt={label}
                     loading="lazy"
                     className="w-full h-full object-cover cursor-zoom-in"
@@ -102,7 +113,7 @@ export const CheckpointPhotos: React.FC<Props> = ({
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-w-3xl p-2">
-          {preview && <img src={preview} alt="Фото участника" className="w-full h-auto rounded-md" />}
+          {preview && <img src={bust(preview)} alt="Фото участника" className="w-full h-auto rounded-md" />}
         </DialogContent>
       </Dialog>
     </div>
