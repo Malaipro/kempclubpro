@@ -225,6 +225,31 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  const handlePhotoDelete = async (slot: PhotoSlot) => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData) return;
+    setBusySlot(slot);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'delete_checkpoint_photo',
+          checkpoint_type: checkpointType,
+          photo_type: slot,
+        }),
+      });
+      const body = await res.json() as { ok: boolean; error?: string };
+      if (!body.ok) throw new Error(body.error ?? 'delete_failed');
+      await fetchData(checkpointType);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Ошибка удаления фото');
+    } finally {
+      setBusySlot(null);
+    }
+  };
+
   const renderPhotos = (cp: Checkpoint | null) => (
     <Card>
       <CardContent className="py-4 px-4">
@@ -234,6 +259,7 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
           editable
           busySlot={busySlot}
           onUpload={handlePhotoUpload}
+          onDelete={handlePhotoDelete}
         />
       </CardContent>
     </Card>

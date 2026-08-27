@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, Loader2, RefreshCw } from 'lucide-react';
+import { Camera, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 
 export type PhotoSlot = 'front' | 'side';
 
@@ -28,12 +28,13 @@ interface Props {
   editable?: boolean;
   busySlot?: PhotoSlot | null;
   onUpload?: (slot: PhotoSlot, file: File) => void | Promise<void>;
+  onDelete?: (slot: PhotoSlot) => void | Promise<void>;
   title?: string;
   compact?: boolean;
 }
 
 export const CheckpointPhotos: React.FC<Props> = ({
-  urls, editable = false, busySlot = null, onUpload, title, compact = false,
+  urls, editable = false, busySlot = null, onUpload, onDelete, title, compact = false,
 }) => {
   const [preview, setPreview] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -77,6 +78,19 @@ export const CheckpointPhotos: React.FC<Props> = ({
                   <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                   </div>
+                )}
+                {editable && onDelete && url && !busy && (
+                  <button
+                    type="button"
+                    aria-label="Удалить фото"
+                    className="absolute top-1 right-1 z-10 rounded-full bg-background/80 hover:bg-background text-destructive p-1 shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm('Удалить фото?')) void onDelete(key);
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
 
