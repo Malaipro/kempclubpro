@@ -303,6 +303,8 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </CardContent>
           </Card>
 
+          {renderPhotos(checkpoint)}
+
           <Card>
             <CardContent className="py-4 px-4 space-y-2">
               <div className="flex items-center justify-between mb-1">
@@ -350,8 +352,6 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </Card>
           )}
 
-          {renderPhotos(checkpoint)}
-
           <Button className="w-full" variant="outline" onClick={() => setEditing(true)}>
 
             Редактировать
@@ -398,6 +398,8 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </div>
           </CardContent>
         </Card>
+
+        {renderPhotos(checkpoint)}
 
         <Card>
           <CardContent className="py-4 px-4 space-y-4">
@@ -461,8 +463,6 @@ export const TelegramCheckpointView: React.FC<Props> = ({ onBack }) => {
             </CardContent>
           </Card>
         )}
-
-        {renderPhotos(checkpoint)}
 
         <div className="flex gap-2">
 
