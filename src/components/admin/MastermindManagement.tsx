@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
-import { AdminCheckpointPhotos } from '@/components/checkpoints/AdminCheckpointPhotos';
+
 
 
 interface Member {
@@ -549,9 +549,6 @@ export const MastermindManagement: React.FC = () => {
                   <p className="text-muted-foreground">
                     {fmtDate(m.start_date)} — {fmtDate(m.end_date)}
                   </p>
-                  <div className="pt-2 border-t border-border">
-                    <AdminCheckpointPhotos userId={m.user_id} />
-                  </div>
 
                   <div className="flex gap-2 pt-1 flex-wrap">
                     <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
