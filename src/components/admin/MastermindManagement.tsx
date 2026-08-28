@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
-import { AdminCheckpointPhotos } from '@/components/checkpoints/AdminCheckpointPhotos';
+
 
 
 interface Member {
