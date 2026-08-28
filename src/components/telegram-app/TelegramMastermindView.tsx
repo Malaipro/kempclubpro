@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Clock, Send, ListChecks, FileText, Paperclip, X, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Clock, Send, ListChecks, FileText, Paperclip, X, Plus, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,11 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   const [entrySummary, setEntrySummary] = useState('');
   const [entryMyTasks, setEntryMyTasks] = useState('');
   const [submittingEntry, setSubmittingEntry] = useState(false);
+
+  // Редактирование блоков "Мой запрос" / "План развития"
+  const [editingField, setEditingField] = useState<'request' | 'plan' | null>(null);
+  const [draftText, setDraftText] = useState('');
+  const [savingField, setSavingField] = useState(false);
 
   // Форма новой задачи, создаваемой участником
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -267,6 +272,117 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
     }
   };
 
+  const startEditField = (field: 'request' | 'plan', current: string | null) => {
+    setEditingField(field);
+    setDraftText(current ?? '');
+  };
+
+  const cancelEditField = () => {
+    setEditingField(null);
+    setDraftText('');
+  };
+
+  const saveEditField = async (field: 'request' | 'plan') => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData || savingField || !data || !data.is_member) return;
+    setSavingField(true);
+    try {
+      const text = draftText.trim();
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'update_mastermind_profile',
+          member_id: data.member.id,
+          ...(field === 'request' ? { mm_request: text } : { mm_plan: text }),
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка');
+      setData((prev) => {
+        if (!prev || !prev.is_member) return prev;
+        return { ...prev, member: { ...prev.member, [field]: text } };
+      });
+      setEditingField(null);
+      setDraftText('');
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setSavingField(false);
+    }
+  };
+
+  const renderEditableField = (
+    field: 'request' | 'plan',
+    label: string,
+    icon: React.ReactNode,
+    value: string | null,
+  ) => {
+    const isEditing = editingField === field;
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold flex items-center gap-1.5">{icon} {label}</h2>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => startEditField(field, value)}
+              aria-label={`Редактировать: ${label}`}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            {isEditing ? (
+              <>
+                <Textarea
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  rows={4}
+                  autoFocus
+                  disabled={savingField}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                    onClick={() => saveEditField(field)}
+                    disabled={savingField}
+                  >
+                    {savingField ? 'Сохраняем...' : 'Сохранить'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={cancelEditField}
+                    disabled={savingField}
+                  >
+                    Отмена
+                  </Button>
+                </div>
+              </>
+            ) : value ? (
+              <p className="text-sm whitespace-pre-wrap">{value}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => startEditField(field, value)}
+                className="text-sm text-muted-foreground italic text-left"
+              >
+                Нажмите чтобы заполнить
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64 text-gray-400">Загрузка...</div>;
   if (error) {
     return (
@@ -302,27 +418,9 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {member.request && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold flex items-center gap-1.5"><FileText className="w-4 h-4" /> Мой запрос</h2>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm whitespace-pre-wrap">{member.request}</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {renderEditableField('request', 'Мой запрос', <FileText className="w-4 h-4" />, member.request)}
 
-        {member.plan && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold flex items-center gap-1.5"><ListChecks className="w-4 h-4" /> План развития</h2>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm whitespace-pre-wrap">{member.plan}</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {renderEditableField('plan', 'План развития', <ListChecks className="w-4 h-4" />, member.plan)}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
