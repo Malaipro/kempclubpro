@@ -1688,6 +1688,59 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'update_mastermind_profile') {
+    const mm_request = (req.body as any).mm_request;
+    const mm_plan = (req.body as any).mm_plan;
+    const member_id = (req.body as any).member_id;
+
+    if (!member_id) {
+      res.status(400).json({ ok: false, error: 'missing_member_id' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: member } = await supabase
+      .from('mastermind_members')
+      .select('id, user_id')
+      .eq('id', member_id)
+      .eq('user_id', profile.user_id)
+      .maybeSingle();
+
+    if (!member) {
+      res.status(403).json({ ok: false, error: 'not_your_membership' });
+      return;
+    }
+
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (mm_request !== undefined) updateData.request = mm_request;
+    if (mm_plan !== undefined) updateData.plan = mm_plan;
+
+    const { error } = await supabase
+      .from('mastermind_members')
+      .update(updateData)
+      .eq('id', member_id);
+
+    if (error) {
+      console.error('[state/update_mastermind_profile] error:', error.message);
+      res.status(500).json({ ok: false, error: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
