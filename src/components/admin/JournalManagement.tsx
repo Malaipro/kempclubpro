@@ -17,6 +17,7 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useRole } from '@/hooks/useRole';
 import { Loader2, Plus, Pencil, Trash2, Eye } from 'lucide-react';
 
 type DayType = 'weekday' | 'saturday' | 'sunday';
