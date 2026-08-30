@@ -410,20 +410,70 @@ interface SummaryRow {
 
 const SummariesSection: React.FC = () => {
   const { toast } = useToast();
+  const { isAdmin, isSuperAdmin, isCaptain } = useRole();
+  const canManage = isAdmin || isSuperAdmin;
   const [rows, setRows] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('draft');
+
+  useEffect(() => {
+    if (!canManage) return;
+    (async () => {
+      const { data } = await supabase.from('captain_teams').select('id, name').order('name');
+      setTeams((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, [canManage]);
 
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Ограничение по участникам: для капитана — своя команда, для админа — выбранный фильтр
+      let allowedUserIds: string[] | null = null;
+
+      if (canManage && teamFilter !== 'all') {
+        const { data: members } = await supabase
+          .from('captain_team_members')
+          .select('user_id')
+          .eq('team_id', teamFilter);
+        allowedUserIds = Array.from(new Set((members ?? []).map((m: any) => m.user_id)));
+      } else if (!canManage && isCaptain) {
+        const { data: myTeams } = await supabase
+          .from('captain_teams')
+          .select('id')
+          .eq('captain_user_id', (await supabase.auth.getUser()).data.user?.id ?? '');
+        const teamIds = (myTeams ?? []).map((t: any) => t.id);
+        if (teamIds.length === 0) {
+          setRows([]);
+          setLoading(false);
+          return;
+        }
+        const { data: members } = await supabase
+          .from('captain_team_members')
+          .select('user_id')
+          .in('team_id', teamIds);
+        allowedUserIds = Array.from(new Set((members ?? []).map((m: any) => m.user_id)));
+      }
+
+      if (allowedUserIds && allowedUserIds.length === 0) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
         .from('weekly_summaries')
         .select('id, user_id, week_start, summary_text, edited_text, status')
-        .eq('status', 'draft')
         .order('week_start', { ascending: false });
+
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      if (allowedUserIds) query = query.in('user_id', allowedUserIds);
+
+      const { data, error } = await query;
       if (error) throw error;
       const list = (data ?? []) as SummaryRow[];
       const ids = Array.from(new Set(list.map((r) => r.user_id)));
@@ -443,7 +493,8 @@ const SummariesSection: React.FC = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [canManage, isCaptain, teamFilter, statusFilter]);
+
 
   const nameOf = (r: SummaryRow) => {
     const p = r.profile;
