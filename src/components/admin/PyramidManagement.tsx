@@ -69,7 +69,12 @@ const LevelRow: React.FC<{ level: PyramidLevel; onChanged: () => void }> = ({ le
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 50 * 1024 * 1024) {
-      toast({ title: 'Файл слишком большой', description: 'Максимум 50 МБ', variant: 'destructive' });
+      toast({
+        title: 'Файл слишком большой',
+        description: `Максимум 50 МБ (ваш файл ${(f.size / 1024 / 1024).toFixed(1)} МБ). Сожмите PDF или загрузите ссылку.`,
+        variant: 'destructive',
+      });
+      e.target.value = '';
       return;
     }
     setFile(f);
@@ -81,12 +86,21 @@ const LevelRow: React.FC<{ level: PyramidLevel; onChanged: () => void }> = ({ le
       let presentation_url = level.presentation_url;
 
       if (file) {
-        const ext = file.name.split('.').pop() || 'pdf';
+        const ext = (file.name.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '');
         const path = `${level.id}-${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('pyramid-materials')
-          .upload(path, file, { upsert: true });
-        if (uploadError) throw uploadError;
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('pyramid-materials')
+            .upload(path, file, { upsert: true, contentType: file.type || 'application/octet-stream' });
+          if (uploadError) throw uploadError;
+        } catch (uploadErr: any) {
+          const msg = String(uploadErr?.message || '');
+          throw new Error(
+            /failed to fetch|network/i.test(msg)
+              ? 'Не удалось загрузить файл: соединение прервалось. Обычно это слишком большой файл (лимит 50 МБ) или нестабильная сеть. Попробуйте сжать файл и повторить.'
+              : `Ошибка загрузки файла: ${msg}`
+          );
+        }
         presentation_url = path;
       }
 
@@ -105,6 +119,7 @@ const LevelRow: React.FC<{ level: PyramidLevel; onChanged: () => void }> = ({ le
       setSaving(false);
     }
   };
+
 
   return (
     <Card className="bg-card">
