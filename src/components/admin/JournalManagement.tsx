@@ -17,6 +17,7 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useRole } from '@/hooks/useRole';
 import { Loader2, Plus, Pencil, Trash2, Eye } from 'lucide-react';
 
 type DayType = 'weekday' | 'saturday' | 'sunday';
@@ -410,20 +411,70 @@ interface SummaryRow {
 
 const SummariesSection: React.FC = () => {
   const { toast } = useToast();
+  const { isAdmin, isSuperAdmin, isCaptain } = useRole();
+  const canManage = isAdmin || isSuperAdmin;
   const [rows, setRows] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Record<string, string>>({});
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('draft');
+
+  useEffect(() => {
+    if (!canManage) return;
+    (async () => {
+      const { data } = await supabase.from('captain_teams').select('id, name').order('name');
+      setTeams((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, [canManage]);
 
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Ограничение по участникам: для капитана — своя команда, для админа — выбранный фильтр
+      let allowedUserIds: string[] | null = null;
+
+      if (canManage && teamFilter !== 'all') {
+        const { data: members } = await supabase
+          .from('captain_team_members')
+          .select('user_id')
+          .eq('team_id', teamFilter);
+        allowedUserIds = Array.from(new Set((members ?? []).map((m: any) => m.user_id)));
+      } else if (!canManage && isCaptain) {
+        const { data: myTeams } = await supabase
+          .from('captain_teams')
+          .select('id')
+          .eq('captain_user_id', (await supabase.auth.getUser()).data.user?.id ?? '');
+        const teamIds = (myTeams ?? []).map((t: any) => t.id);
+        if (teamIds.length === 0) {
+          setRows([]);
+          setLoading(false);
+          return;
+        }
+        const { data: members } = await supabase
+          .from('captain_team_members')
+          .select('user_id')
+          .in('team_id', teamIds);
+        allowedUserIds = Array.from(new Set((members ?? []).map((m: any) => m.user_id)));
+      }
+
+      if (allowedUserIds && allowedUserIds.length === 0) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
         .from('weekly_summaries')
         .select('id, user_id, week_start, summary_text, edited_text, status')
-        .eq('status', 'draft')
         .order('week_start', { ascending: false });
+
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      if (allowedUserIds) query = query.in('user_id', allowedUserIds);
+
+      const { data, error } = await query;
       if (error) throw error;
       const list = (data ?? []) as SummaryRow[];
       const ids = Array.from(new Set(list.map((r) => r.user_id)));
@@ -443,7 +494,8 @@ const SummariesSection: React.FC = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [canManage, isCaptain, teamFilter, statusFilter]);
+
 
   const nameOf = (r: SummaryRow) => {
     const p = r.profile;
@@ -493,10 +545,41 @@ const SummariesSection: React.FC = () => {
     }
   };
 
+  const statusLabel = (s: string) =>
+    s === 'draft' ? 'Черновик' : s === 'sent' ? 'Отправлено' : s === 'rejected' ? 'Отклонено' : s;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Черновики сводок ({rows.length})</CardTitle>
+      <CardHeader className="space-y-3">
+        <CardTitle>Сводки ({rows.length})</CardTitle>
+        <div className="flex flex-wrap gap-3">
+          {canManage && (
+            <div className="w-56">
+              <Label className="text-xs">Команда</Label>
+              <Select value={teamFilter} onValueChange={setTeamFilter}>
+                <SelectTrigger><SelectValue placeholder="Все команды" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все команды</SelectItem>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="w-56">
+            <Label className="text-xs">Статус</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="draft">Черновики</SelectItem>
+                <SelectItem value="sent">Отправленные</SelectItem>
+                <SelectItem value="rejected">Отклонённые</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -504,7 +587,7 @@ const SummariesSection: React.FC = () => {
             <Loader2 className="w-4 h-4 animate-spin" /> Загрузка...
           </div>
         ) : rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Нет черновиков для отправки</p>
+          <p className="text-muted-foreground text-sm">Сводок не найдено</p>
         ) : (
           rows.map((r) => {
             const isEditing = !!editMode[r.id];
@@ -520,7 +603,7 @@ const SummariesSection: React.FC = () => {
                       Неделя с {new Date(r.week_start).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
-                  <Badge variant="secondary">Черновик</Badge>
+                  <Badge variant="secondary">{statusLabel(r.status)}</Badge>
                 </div>
                 {isEditing ? (
                   <Textarea
@@ -533,45 +616,48 @@ const SummariesSection: React.FC = () => {
                     {currentText}
                   </div>
                 )}
-                <div className="flex gap-2 flex-wrap">
-                  {isEditing ? (
+                {canManage && r.status === 'draft' && (
+                  <div className="flex gap-2 flex-wrap">
+                    {isEditing ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditMode((s) => ({ ...s, [r.id]: false }))}
+                      >
+                        Отмена
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditing((s) => ({ ...s, [r.id]: r.edited_text ?? r.summary_text }));
+                          setEditMode((s) => ({ ...s, [r.id]: true }));
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => setEditMode((s) => ({ ...s, [r.id]: false }))}
+                      disabled={busy === r.id}
+                      onClick={() => send(r)}
                     >
-                      Отмена
+                      {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                      Отправить
                     </Button>
-                  ) : (
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setEditing((s) => ({ ...s, [r.id]: r.edited_text ?? r.summary_text }));
-                        setEditMode((s) => ({ ...s, [r.id]: true }));
-                      }}
+                      variant="destructive"
+                      disabled={busy === r.id}
+                      onClick={() => reject(r)}
                     >
-                      <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                      Отклонить
                     </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    disabled={busy === r.id}
-                    onClick={() => send(r)}
-                  >
-                    {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                    Отправить
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={busy === r.id}
-                    onClick={() => reject(r)}
-                  >
-                    Отклонить
-                  </Button>
-                </div>
+                  </div>
+                )}
               </div>
+
             );
           })
         )}
