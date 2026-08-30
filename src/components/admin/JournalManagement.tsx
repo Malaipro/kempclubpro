@@ -544,10 +544,41 @@ const SummariesSection: React.FC = () => {
     }
   };
 
+  const statusLabel = (s: string) =>
+    s === 'draft' ? 'Черновик' : s === 'sent' ? 'Отправлено' : s === 'rejected' ? 'Отклонено' : s;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Черновики сводок ({rows.length})</CardTitle>
+      <CardHeader className="space-y-3">
+        <CardTitle>Сводки ({rows.length})</CardTitle>
+        <div className="flex flex-wrap gap-3">
+          {canManage && (
+            <div className="w-56">
+              <Label className="text-xs">Команда</Label>
+              <Select value={teamFilter} onValueChange={setTeamFilter}>
+                <SelectTrigger><SelectValue placeholder="Все команды" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все команды</SelectItem>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="w-56">
+            <Label className="text-xs">Статус</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="draft">Черновики</SelectItem>
+                <SelectItem value="sent">Отправленные</SelectItem>
+                <SelectItem value="rejected">Отклонённые</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -555,7 +586,7 @@ const SummariesSection: React.FC = () => {
             <Loader2 className="w-4 h-4 animate-spin" /> Загрузка...
           </div>
         ) : rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Нет черновиков для отправки</p>
+          <p className="text-muted-foreground text-sm">Сводок не найдено</p>
         ) : (
           rows.map((r) => {
             const isEditing = !!editMode[r.id];
@@ -571,7 +602,7 @@ const SummariesSection: React.FC = () => {
                       Неделя с {new Date(r.week_start).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
-                  <Badge variant="secondary">Черновик</Badge>
+                  <Badge variant="secondary">{statusLabel(r.status)}</Badge>
                 </div>
                 {isEditing ? (
                   <Textarea
@@ -584,45 +615,48 @@ const SummariesSection: React.FC = () => {
                     {currentText}
                   </div>
                 )}
-                <div className="flex gap-2 flex-wrap">
-                  {isEditing ? (
+                {canManage && r.status === 'draft' && (
+                  <div className="flex gap-2 flex-wrap">
+                    {isEditing ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditMode((s) => ({ ...s, [r.id]: false }))}
+                      >
+                        Отмена
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditing((s) => ({ ...s, [r.id]: r.edited_text ?? r.summary_text }));
+                          setEditMode((s) => ({ ...s, [r.id]: true }));
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => setEditMode((s) => ({ ...s, [r.id]: false }))}
+                      disabled={busy === r.id}
+                      onClick={() => send(r)}
                     >
-                      Отмена
+                      {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                      Отправить
                     </Button>
-                  ) : (
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setEditing((s) => ({ ...s, [r.id]: r.edited_text ?? r.summary_text }));
-                        setEditMode((s) => ({ ...s, [r.id]: true }));
-                      }}
+                      variant="destructive"
+                      disabled={busy === r.id}
+                      onClick={() => reject(r)}
                     >
-                      <Pencil className="w-4 h-4 mr-1" /> Редактировать
+                      Отклонить
                     </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    disabled={busy === r.id}
-                    onClick={() => send(r)}
-                  >
-                    {busy === r.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                    Отправить
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={busy === r.id}
-                    onClick={() => reject(r)}
-                  >
-                    Отклонить
-                  </Button>
-                </div>
+                  </div>
+                )}
               </div>
+
             );
           })
         )}
