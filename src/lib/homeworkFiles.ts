@@ -32,3 +32,12 @@ export function fileNameFromUrl(url: string): string {
     return 'Файл';
   }
 }
+
+/** Безопасное имя файла для ключа Supabase Storage (только ASCII). */
+export function safeStorageName(name: string): string {
+  const dot = name.lastIndexOf('.');
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot + 1).replace(/[^a-zA-Z0-9]/g, '') : '';
+  const safeBase = base.replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'file';
+  return ext ? `${safeBase}.${ext.toLowerCase()}` : safeBase;
+}

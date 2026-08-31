@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
-import { parseHomeworkFiles, HomeworkFile } from '@/lib/homeworkFiles';
+import { parseHomeworkFiles, HomeworkFile, safeStorageName } from '@/lib/homeworkFiles';
 
 interface Stream {
   id: string;
@@ -168,7 +168,7 @@ export const HomeworkManagement: React.FC = () => {
     // Загрузка прикреплённых файлов в бакет homework-files
     const files: HomeworkFile[] = [...form.files];
     for (const f of assignmentFiles) {
-      const path = `assignments/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
+      const path = `assignments/${Date.now()}-${safeStorageName(f.name)}`;
       const { error: uploadError } = await supabase.storage.from('homework-files').upload(path, f);
       if (uploadError) {
         setSaving(false);

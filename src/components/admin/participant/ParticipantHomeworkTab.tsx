@@ -85,7 +85,7 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
     try {
       let filePath: string | null = form.file_url || null;
       if (file) {
-        const ext = file.name.split('.').pop() || 'bin';
+        const ext = (file.name.split('.').pop() || 'bin').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'bin';
         const path = `assignments/${userId}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('homework-files')
