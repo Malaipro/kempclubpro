@@ -630,6 +630,34 @@ export const CaptainDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Сводки */}
+        <TabsContent value="summaries" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Еженедельные сводки команды</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {summaries.length === 0 && (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  Сводки пока не сформированы. Формируются по воскресеньям автоматически.
+                </p>
+              )}
+              {summaries.map((s) => (
+                <Card key={s.id} className="border-l-4 border-kamp-primary">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Период: {fmtDate(s.week_start)} — {fmtDate(s.week_end)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <MarkdownText text={s.summary} />
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Диалог смены светофора */}
