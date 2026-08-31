@@ -104,6 +104,17 @@ interface PromptRow {
   question_text: string;
 }
 
+interface SummaryRow {
+  id: string;
+  team_id: string;
+  captain_user_id: string;
+  week_start: string;
+  week_end: string;
+  summary: string;
+  raw_data: unknown;
+  created_at: string | null;
+}
+
 const LIGHT_LABEL: Record<TrafficLight, string> = {
   green: 'Зелёный',
   yellow: 'Жёлтый',
@@ -143,6 +154,7 @@ export const CaptainDashboard: React.FC = () => {
   const [entries, setEntries] = useState<JournalEntryRow[]>([]);
   const [answers, setAnswers] = useState<JournalAnswerRow[]>([]);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
+  const [summaries, setSummaries] = useState<SummaryRow[]>([]);
 
   const [comments, setComments] = useState<Record<string, string>>({});
   const [savingComment, setSavingComment] = useState<string | null>(null);
@@ -195,7 +207,7 @@ export const CaptainDashboard: React.FC = () => {
       const userIds = mem.map((m) => m.user_id);
       const memberIds = mem.map((m) => m.id);
 
-      const [profRes, tlrRes, cpRes, lbRes, jeRes, ratingRes, promptRes] = await Promise.all([
+      const [profRes, tlrRes, cpRes, lbRes, jeRes, ratingRes, promptRes, sumRes] = await Promise.all([
         userIds.length
           ? supabase.from('profiles').select('user_id, display_name, telegram_id').in('user_id', userIds)
           : Promise.resolve({ data: [] }),
@@ -233,6 +245,13 @@ export const CaptainDashboard: React.FC = () => {
               .maybeSingle()
           : Promise.resolve({ data: null }),
         supabase.from('journal_prompts').select('id, question_text'),
+        team
+          ? supabase
+              .from('team_weekly_summaries')
+              .select('id, team_id, captain_user_id, week_start, week_end, summary, raw_data, created_at')
+              .eq('team_id', selectedTeam)
+              .order('week_start', { ascending: false })
+          : Promise.resolve({ data: [] }),
       ]);
 
       setProfiles((profRes.data || []) as ProfileRow[]);
@@ -243,6 +262,7 @@ export const CaptainDashboard: React.FC = () => {
       setEntries(journalRows);
       setRatings((ratingRes.data || null) as { team_rating: number | null } | null);
       setPrompts((promptRes.data || []) as PromptRow[]);
+      setSummaries((sumRes.data || []) as SummaryRow[]);
 
       if (journalRows.length) {
         const { data: ansRows } = await supabase
@@ -383,6 +403,7 @@ export const CaptainDashboard: React.FC = () => {
           <TabsTrigger value="checkpoints">Точка А/Б</TabsTrigger>
           <TabsTrigger value="rating">Рейтинг</TabsTrigger>
           <TabsTrigger value="journal">Ежедневник</TabsTrigger>
+          <TabsTrigger value="summaries">Сводки</TabsTrigger>
         </TabsList>
 
         {/* Моя команда */}
@@ -609,6 +630,34 @@ export const CaptainDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Сводки */}
+        <TabsContent value="summaries" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Еженедельные сводки команды</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {summaries.length === 0 && (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  Сводки пока не сформированы. Формируются по воскресеньям автоматически.
+                </p>
+              )}
+              {summaries.map((s) => (
+                <Card key={s.id} className="border-l-4 border-kamp-primary">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Период: {fmtDate(s.week_start)} — {fmtDate(s.week_end)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <MarkdownText text={s.summary} />
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Диалог смены светофора */}
@@ -711,6 +760,72 @@ export const CaptainDashboard: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const MarkdownText: React.FC<{ text: string }> = ({ text }) => {
+  const blocks = text.split(/\n\n+/);
+
+  const renderInline = (line: string) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+    return (
+      <>
+        {parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i}>{part.slice(2, -2)}</strong>;
+          }
+          if (part.startsWith('*') && part.endsWith('*')) {
+            return <em key={i}>{part.slice(1, -1)}</em>;
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </>
+    );
+  };
+
+  return (
+    <div className="text-sm space-y-2 leading-relaxed">
+      {blocks.map((block, idx) => {
+        const lines = block.split('\n').filter((l) => l.trim() !== '');
+        if (lines.length === 0) return null;
+
+        const headerMatch = lines[0].match(/^(#{1,3})\s+(.*)/);
+        if (headerMatch) {
+          const level = headerMatch[1].length;
+          const content = headerMatch[2];
+          const Heading = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
+          return (
+            <Heading key={idx} className="font-semibold text-base mt-3">
+              {renderInline(content)}
+            </Heading>
+          );
+        }
+
+        if (lines.every((l) => /^[-*+]\s/.test(l))) {
+          return (
+            <ul key={idx} className="list-disc pl-5 space-y-1">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^[-*+]\s+/, ''))}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (lines.every((l) => /^\d+\.\s/.test(l))) {
+          return (
+            <ol key={idx} className="list-decimal pl-5 space-y-1">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^\d+\.\s+/, ''))}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        return (
+          <p key={idx}>{renderInline(block.replace(/\n/g, ' '))}</p>
+        );
+      })}
     </div>
   );
 };
