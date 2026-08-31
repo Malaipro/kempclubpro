@@ -141,6 +141,7 @@ const fmtDate = (v?: string | null) =>
 
 export const CaptainDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
