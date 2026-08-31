@@ -86,7 +86,7 @@ export const HomeworkManagement: React.FC = () => {
   const [form, setForm] = useState({ ...emptyForm });
   const [reviewDialog, setReviewDialog] = useState<Submission | null>(null);
   const [reviewComment, setReviewComment] = useState('');
-  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [assignmentFiles, setAssignmentFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
