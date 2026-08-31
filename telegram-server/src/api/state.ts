@@ -1763,6 +1763,65 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'send_team_summaries') {
+    if (!isAdminKeyAuth && !telegramId) {
+      res.status(401).json({ ok: false, error: 'unauthorized' });
+      return;
+    }
+
+    const week_start = (req.body as any).week_start;
+
+    const { data: summaries, error } = await supabase
+      .from('team_weekly_summaries')
+      .select('summary, captain_user_id, team_id, captain_teams(name), profiles!team_weekly_summaries_captain_user_id_fkey(telegram_id, display_name)')
+      .eq('week_start', week_start || new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
+
+    if (error || !summaries || summaries.length === 0) {
+      res.json({ ok: false, error: error?.message || 'no_summaries' });
+      return;
+    }
+
+    let sent = 0;
+    for (const s of summaries) {
+      const tgId = (s as any).profiles?.telegram_id;
+      const teamName = (s as any).captain_teams?.name || 'Команда';
+      if (!tgId) continue;
+
+      const text = '📊 Недельная сводка: ' + teamName + '\n\n' + s.summary;
+
+      await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tgId,
+          text: text.substring(0, 4000),
+          parse_mode: 'Markdown',
+        }),
+      });
+      sent++;
+    }
+
+    // Отправить админу (Дмитрию)
+    const adminChatId = '777972440';
+    const allSummaries = summaries.map((s: any) =>
+      '📊 ' + ((s as any).captain_teams?.name || 'Команда') + '\n' + s.summary
+    ).join('\n\n---\n\n');
+
+    await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: ('📋 Все сводки за неделю:\n\n' + allSummaries).substring(0, 4000),
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    res.json({ ok: true, data: { sent_to_captains: sent, sent_to_admin: true } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
