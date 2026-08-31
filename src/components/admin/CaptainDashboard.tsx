@@ -763,3 +763,69 @@ export const CaptainDashboard: React.FC = () => {
     </div>
   );
 };
+
+const MarkdownText: React.FC<{ text: string }> = ({ text }) => {
+  const blocks = text.split(/\n\n+/);
+
+  const renderInline = (line: string) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+    return (
+      <>
+        {parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i}>{part.slice(2, -2)}</strong>;
+          }
+          if (part.startsWith('*') && part.endsWith('*')) {
+            return <em key={i}>{part.slice(1, -1)}</em>;
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </>
+    );
+  };
+
+  return (
+    <div className="text-sm space-y-2 leading-relaxed">
+      {blocks.map((block, idx) => {
+        const lines = block.split('\n').filter((l) => l.trim() !== '');
+        if (lines.length === 0) return null;
+
+        const headerMatch = lines[0].match(/^(#{1,3})\s+(.*)/);
+        if (headerMatch) {
+          const level = headerMatch[1].length;
+          const content = headerMatch[2];
+          const Heading = level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3';
+          return (
+            <Heading key={idx} className="font-semibold text-base mt-3">
+              {renderInline(content)}
+            </Heading>
+          );
+        }
+
+        if (lines.every((l) => /^[-*+]\s/.test(l))) {
+          return (
+            <ul key={idx} className="list-disc pl-5 space-y-1">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^[-*+]\s+/, ''))}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (lines.every((l) => /^\d+\.\s/.test(l))) {
+          return (
+            <ol key={idx} className="list-decimal pl-5 space-y-1">
+              {lines.map((l, i) => (
+                <li key={i}>{renderInline(l.replace(/^\d+\.\s+/, ''))}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        return (
+          <p key={idx}>{renderInline(block.replace(/\n/g, ' '))}</p>
+        );
+      })}
+    </div>
+  );
+};
