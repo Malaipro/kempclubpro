@@ -155,7 +155,7 @@ export const TeamsManagement: React.FC = () => {
   );
 
   const streamTeams = useMemo(
-    () => teams.filter((t) => t.stream_id === selectedStream),
+    () => (selectedStream ? teams.filter((t) => t.stream_id === selectedStream) : teams),
     [teams, selectedStream]
   );
 
