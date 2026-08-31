@@ -1786,20 +1786,37 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     for (const s of summaries) {
       const tgId = (s as any).profiles?.telegram_id;
       const teamName = (s as any).captain_teams?.name || 'Команда';
-      if (!tgId) continue;
-
       const text = '📊 Недельная сводка: ' + teamName + '\n\n' + s.summary;
 
-      await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: tgId,
-          text: text.substring(0, 4000),
-          parse_mode: 'Markdown',
-        }),
-      });
-      sent++;
+      // Отправить капитану
+      if (tgId) {
+        await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: tgId, text: text.substring(0, 4000), parse_mode: 'Markdown' }),
+        });
+        sent++;
+      }
+
+      // Отправить участникам команды
+      const { data: members } = await supabase
+        .from('captain_team_members')
+        .select('user_id, profiles!captain_team_members_user_id_fkey(telegram_id)')
+        .eq('team_id', s.team_id);
+
+      if (members) {
+        for (const m of members) {
+          const memberTgId = (m as any).profiles?.telegram_id;
+          if (memberTgId && memberTgId !== tgId) {
+            await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: memberTgId, text: text.substring(0, 4000), parse_mode: 'Markdown' }),
+            });
+            sent++;
+          }
+        }
+      }
     }
 
     // Отправить админу (Дмитрию)
