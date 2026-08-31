@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner';
 import { Clock, Send, CheckCircle, RotateCcw, Paperclip, X } from 'lucide-react';
 import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
+import { parseHomeworkFiles } from '@/lib/homeworkFiles';
 
 interface Assignment {
   id: string;
@@ -18,7 +19,10 @@ interface Assignment {
   content: string;
   deadline: string | null;
   points_reward: number;
+  file_url?: string | null;
+  file_urls?: unknown;
 }
+
 
 interface Submission {
   id: string;
@@ -238,6 +242,11 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
                   </div>
                   {a.theme && <p className="text-sm text-muted-foreground">{a.theme}</p>}
                   <p className="text-sm mt-2 whitespace-pre-wrap">{a.content}</p>
+                  {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
+                    <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                      <Paperclip className="w-3 h-3" /> {f.name}
+                    </a>
+                  ))}
                   {a.deadline && (
                     <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                       <Clock className="w-3 h-3" /> До {new Date(a.deadline).toLocaleString('ru-RU')}

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
+import { parseHomeworkFiles, HomeworkFile } from '@/lib/homeworkFiles';
 
 interface Stream {
   id: string;
@@ -40,7 +41,9 @@ interface Assignment {
   is_active: boolean;
   created_at: string;
   file_url: string | null;
+  file_urls?: unknown;
 }
+
 
 interface Submission {
   id: string;
@@ -68,6 +71,7 @@ const emptyForm = {
   points_reward: 10,
   is_active: true,
   file_url: '',
+  files: [] as HomeworkFile[],
 };
 
 export const HomeworkManagement: React.FC = () => {
@@ -82,7 +86,7 @@ export const HomeworkManagement: React.FC = () => {
   const [form, setForm] = useState({ ...emptyForm });
   const [reviewDialog, setReviewDialog] = useState<Submission | null>(null);
   const [reviewComment, setReviewComment] = useState('');
-  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+  const [assignmentFiles, setAssignmentFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
@@ -127,7 +131,7 @@ export const HomeworkManagement: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyForm });
-    setAssignmentFile(null);
+    setAssignmentFiles([]);
     setDialogOpen(true);
   };
 
@@ -143,8 +147,9 @@ export const HomeworkManagement: React.FC = () => {
       points_reward: a.points_reward,
       is_active: a.is_active,
       file_url: a.file_url || '',
+      files: parseHomeworkFiles(a.file_urls, a.file_url),
     });
-    setAssignmentFile(null);
+    setAssignmentFiles([]);
     setDialogOpen(true);
   };
 
@@ -160,19 +165,20 @@ export const HomeworkManagement: React.FC = () => {
 
     setSaving(true);
 
-    // Загрузка прикреплённого файла в бакет homework-files
-    let fileUrl: string | null = form.file_url || null;
-    if (assignmentFile) {
-      const path = `assignments/${Date.now()}-${assignmentFile.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
-      const { error: uploadError } = await supabase.storage
-        .from('homework-files')
-        .upload(path, assignmentFile);
+    // Загрузка прикреплённых файлов в бакет homework-files
+    const files: HomeworkFile[] = [...form.files];
+    for (const f of assignmentFiles) {
+      const path = `assignments/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
+      const { error: uploadError } = await supabase.storage.from('homework-files').upload(path, f);
       if (uploadError) {
         setSaving(false);
         toast.error('Ошибка загрузки файла: ' + uploadError.message);
         return;
       }
-      fileUrl = supabase.storage.from('homework-files').getPublicUrl(path).data.publicUrl;
+      files.push({
+        url: supabase.storage.from('homework-files').getPublicUrl(path).data.publicUrl,
+        name: f.name,
+      });
     }
 
     const payload = {
@@ -185,8 +191,10 @@ export const HomeworkManagement: React.FC = () => {
       points_reward: Number(form.points_reward) || 10,
       is_active: form.is_active,
       created_by: user?.id,
-      file_url: fileUrl,
+      file_url: files[0]?.url || null,
+      file_urls: files,
     };
+
     const { error } = editing
       ? await (supabase as any).from('homework_assignments').update(payload).eq('id', editing.id)
       : await (supabase as any).from('homework_assignments').insert(payload);
@@ -277,11 +285,12 @@ export const HomeworkManagement: React.FC = () => {
                       </div>
                       {a.theme && <p className="text-sm text-muted-foreground mt-1">{a.theme}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{a.content}</p>
-                      {a.file_url && (
-                        <a href={a.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
-                          <Paperclip className="w-3 h-3" /> Файл к заданию
+                      {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
+                        <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                          <Paperclip className="w-3 h-3" /> {f.name}
                         </a>
-                      )}
+                      ))}
+
                       {a.deadline && (
                         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                           <Clock className="w-3 h-3" /> До {new Date(a.deadline).toLocaleString('ru-RU')}
@@ -399,33 +408,49 @@ export const HomeworkManagement: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label>Файл к заданию</Label>
-              {assignmentFile ? (
-                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
-                  <span className="truncate flex items-center gap-1">
-                    <Paperclip className="w-3.5 h-3.5 shrink-0" />{assignmentFile.name}
-                  </span>
-                  <button type="button" onClick={() => setAssignmentFile(null)} aria-label="Убрать файл">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : form.file_url ? (
-                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
-                  <a href={form.file_url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
-                    <Paperclip className="w-3.5 h-3.5 shrink-0" /> Текущий файл
-                  </a>
-                  <button type="button" onClick={() => setForm({ ...form, file_url: '' })} aria-label="Убрать файл">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
+              <Label>Файлы к заданию</Label>
+              <div className="space-y-1.5 mt-1">
+                {form.files.map((f, i) => (
+                  <div key={`${f.url}-${i}`} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5">
+                    <a href={f.url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
+                      <Paperclip className="w-3.5 h-3.5 shrink-0" /> {f.name}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, files: form.files.filter((_, idx) => idx !== i) })}
+                      aria-label="Удалить файл"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                {assignmentFiles.map((f, i) => (
+                  <div key={`new-${f.name}-${i}`} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5">
+                    <span className="truncate flex items-center gap-1">
+                      <Paperclip className="w-3.5 h-3.5 shrink-0" />{f.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentFiles(assignmentFiles.filter((_, idx) => idx !== i))}
+                      aria-label="Убрать файл"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
                 <Input
                   type="file"
-                  className="mt-1"
-                  onChange={(e) => setAssignmentFile(e.target.files?.[0] ?? null)}
+                  multiple
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files || []);
+                    if (picked.length) setAssignmentFiles((prev) => [...prev, ...picked]);
+                    e.target.value = '';
+                  }}
                 />
-              )}
+                <p className="text-xs text-muted-foreground">Можно выбрать несколько файлов</p>
+              </div>
             </div>
+
             <div className="flex items-center gap-2">
               <input
                 id="is_active"

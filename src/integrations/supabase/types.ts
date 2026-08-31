@@ -1303,6 +1303,7 @@ export type Database = {
           created_by: string | null
           deadline: string | null
           file_url: string | null
+          file_urls: Json
           id: string
           is_active: boolean
           points_reward: number
@@ -1318,6 +1319,7 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           file_url?: string | null
+          file_urls?: Json
           id?: string
           is_active?: boolean
           points_reward?: number
@@ -1333,6 +1335,7 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           file_url?: string | null
+          file_urls?: Json
           id?: string
           is_active?: boolean
           points_reward?: number
