@@ -403,6 +403,7 @@ export const CaptainDashboard: React.FC = () => {
           <TabsTrigger value="checkpoints">Точка А/Б</TabsTrigger>
           <TabsTrigger value="rating">Рейтинг</TabsTrigger>
           <TabsTrigger value="journal">Ежедневник</TabsTrigger>
+          <TabsTrigger value="summaries">Сводки</TabsTrigger>
         </TabsList>
 
         {/* Моя команда */}
