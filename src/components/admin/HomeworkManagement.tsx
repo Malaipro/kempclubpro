@@ -168,7 +168,7 @@ export const HomeworkManagement: React.FC = () => {
     // Загрузка прикреплённых файлов в бакет homework-files
     const files: HomeworkFile[] = [...form.files];
     for (const f of assignmentFiles) {
-      const path = `assignments/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
+      const path = `assignments/${Date.now()}-${safeStorageName(f.name)}`;
       const { error: uploadError } = await supabase.storage.from('homework-files').upload(path, f);
       if (uploadError) {
         setSaving(false);
