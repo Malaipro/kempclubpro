@@ -20,6 +20,21 @@ interface Prompt {
   sort_order: number;
 }
 
+interface DailyPrompt {
+  id: string;
+  question_text: string;
+  activity_type: string | null;
+  sort_order: number;
+}
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  bjj: 'BJJ',
+  kickboxing: 'Кикбоксинг',
+  ofp: 'ОФП',
+  nutrition: 'Питание',
+  kamp_pyramid: 'Пирамида',
+};
+
 interface EntryEmotion {
   emotion_name: string;
   intensity: number;
@@ -60,6 +75,7 @@ interface Props {
 
 export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
   const [loadState, setLoadState] = useState<LoadState>({ status: 'loading' });
+  const [dailyPrompts, setDailyPrompts] = useState<DailyPrompt[]>([]);
   const [intensities, setIntensities] = useState<Record<string, number>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -98,6 +114,31 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : 'Ошибка загрузки';
         setLoadState({ status: 'error', message: msg });
+      });
+  }, []);
+
+  // Динамические вопросы рефлексии по дню недели — подсказки поверх формы
+  useEffect(() => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
+
+    fetch(`${SERVER_URL}/api/state`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData, action: 'get_daily_prompts' }),
+    })
+      .then(async (res) => {
+        const body = await res.json() as { ok: boolean; data?: { prompts: DailyPrompt[]; day_of_week: number }; error?: string };
+        if (!body.ok || !body.data) throw new Error(body.error ?? 'rpc_error');
+        return body.data.prompts ?? [];
+      })
+      .then((prompts) => {
+        const sorted = [...prompts].sort((a, b) => a.sort_order - b.sort_order);
+        setDailyPrompts(sorted);
+      })
+      .catch(() => {
+        // Подсказки необязательны — молча пропускаем при ошибке
+        setDailyPrompts([]);
       });
   }, []);
 
@@ -194,6 +235,29 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {dailyPrompts.length > 0 && (
+          <Card>
+            <CardContent className="py-4 px-4 space-y-3">
+              <p className="text-sm font-semibold">Рефлексия дня</p>
+              <ul className="space-y-2.5">
+                {dailyPrompts.map((prompt) => {
+                  const activityLabel = prompt.activity_type
+                    ? ACTIVITY_LABELS[prompt.activity_type] ?? prompt.activity_type
+                    : null;
+                  return (
+                    <li key={prompt.id} className="space-y-1">
+                      {activityLabel && (
+                        <Badge variant="outline" className="text-[11px]">{activityLabel}</Badge>
+                      )}
+                      <p className="text-sm text-muted-foreground">{prompt.question_text}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         {data.entry ? (
           // ---------- Режим просмотра: запись за сегодня уже есть ----------
           <>
