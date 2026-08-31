@@ -104,6 +104,17 @@ interface PromptRow {
   question_text: string;
 }
 
+interface SummaryRow {
+  id: string;
+  team_id: string;
+  captain_user_id: string;
+  week_start: string;
+  week_end: string;
+  summary: string;
+  raw_data: unknown;
+  created_at: string | null;
+}
+
 const LIGHT_LABEL: Record<TrafficLight, string> = {
   green: 'Зелёный',
   yellow: 'Жёлтый',
