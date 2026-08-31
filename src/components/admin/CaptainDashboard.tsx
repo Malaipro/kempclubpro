@@ -154,6 +154,7 @@ export const CaptainDashboard: React.FC = () => {
   const [entries, setEntries] = useState<JournalEntryRow[]>([]);
   const [answers, setAnswers] = useState<JournalAnswerRow[]>([]);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
+  const [summaries, setSummaries] = useState<SummaryRow[]>([]);
 
   const [comments, setComments] = useState<Record<string, string>>({});
   const [savingComment, setSavingComment] = useState<string | null>(null);
