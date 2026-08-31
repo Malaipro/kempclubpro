@@ -75,7 +75,7 @@ export const CaptainsRatingDashboard: React.FC = () => {
       setTeams((teamsRes.data || []) as TeamRow[]);
       setMembers((membersRes.data || []) as MemberRow[]);
 
-      setSelectedStream((prev) => prev || streamRows.find((s) => s.is_active)?.id || streamRows[0]?.id || '');
+      setSelectedStream((prev) => prev ?? '');
     } finally {
       setLoading(false);
     }
