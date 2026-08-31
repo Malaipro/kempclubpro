@@ -131,7 +131,7 @@ export const HomeworkManagement: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyForm });
-    setAssignmentFile(null);
+    setAssignmentFiles([]);
     setDialogOpen(true);
   };
 
@@ -147,8 +147,9 @@ export const HomeworkManagement: React.FC = () => {
       points_reward: a.points_reward,
       is_active: a.is_active,
       file_url: a.file_url || '',
+      files: parseHomeworkFiles(a.file_urls, a.file_url),
     });
-    setAssignmentFile(null);
+    setAssignmentFiles([]);
     setDialogOpen(true);
   };
 
@@ -164,19 +165,20 @@ export const HomeworkManagement: React.FC = () => {
 
     setSaving(true);
 
-    // Загрузка прикреплённого файла в бакет homework-files
-    let fileUrl: string | null = form.file_url || null;
-    if (assignmentFile) {
-      const path = `assignments/${Date.now()}-${assignmentFile.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
-      const { error: uploadError } = await supabase.storage
-        .from('homework-files')
-        .upload(path, assignmentFile);
+    // Загрузка прикреплённых файлов в бакет homework-files
+    const files: HomeworkFile[] = [...form.files];
+    for (const f of assignmentFiles) {
+      const path = `assignments/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]+/g, '_')}`;
+      const { error: uploadError } = await supabase.storage.from('homework-files').upload(path, f);
       if (uploadError) {
         setSaving(false);
         toast.error('Ошибка загрузки файла: ' + uploadError.message);
         return;
       }
-      fileUrl = supabase.storage.from('homework-files').getPublicUrl(path).data.publicUrl;
+      files.push({
+        url: supabase.storage.from('homework-files').getPublicUrl(path).data.publicUrl,
+        name: f.name,
+      });
     }
 
     const payload = {
@@ -189,8 +191,10 @@ export const HomeworkManagement: React.FC = () => {
       points_reward: Number(form.points_reward) || 10,
       is_active: form.is_active,
       created_by: user?.id,
-      file_url: fileUrl,
+      file_url: files[0]?.url || null,
+      file_urls: files,
     };
+
     const { error } = editing
       ? await (supabase as any).from('homework_assignments').update(payload).eq('id', editing.id)
       : await (supabase as any).from('homework_assignments').insert(payload);
