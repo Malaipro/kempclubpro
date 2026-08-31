@@ -178,17 +178,20 @@ export const CaptainDashboard: React.FC = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('captain_teams')
         .select('id, name, stream_id, captain_user_id')
-        .eq('captain_user_id', user.id);
+        .order('name');
+      // Админ видит все команды, капитан — только свои
+      if (!isAdmin) query = query.eq('captain_user_id', user.id);
+      const { data } = await query;
       const rows = (data || []) as TeamRow[];
       setTeams(rows);
-      setSelectedTeam((prev) => prev || rows[0]?.id || '');
+      setSelectedTeam((prev) => (prev && rows.some((r) => r.id === prev) ? prev : rows[0]?.id || ''));
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   const loadTeamData = useCallback(async () => {
     if (!selectedTeam) {
