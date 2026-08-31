@@ -207,7 +207,7 @@ export const CaptainDashboard: React.FC = () => {
       const userIds = mem.map((m) => m.user_id);
       const memberIds = mem.map((m) => m.id);
 
-      const [profRes, tlrRes, cpRes, lbRes, jeRes, ratingRes, promptRes] = await Promise.all([
+      const [profRes, tlrRes, cpRes, lbRes, jeRes, ratingRes, promptRes, sumRes] = await Promise.all([
         userIds.length
           ? supabase.from('profiles').select('user_id, display_name, telegram_id').in('user_id', userIds)
           : Promise.resolve({ data: [] }),
@@ -245,6 +245,13 @@ export const CaptainDashboard: React.FC = () => {
               .maybeSingle()
           : Promise.resolve({ data: null }),
         supabase.from('journal_prompts').select('id, question_text'),
+        team
+          ? supabase
+              .from('team_weekly_summaries')
+              .select('id, team_id, captain_user_id, week_start, week_end, summary, raw_data, created_at')
+              .eq('team_id', selectedTeam)
+              .order('week_start', { ascending: false })
+          : Promise.resolve({ data: [] }),
       ]);
 
       setProfiles((profRes.data || []) as ProfileRow[]);
@@ -255,6 +262,7 @@ export const CaptainDashboard: React.FC = () => {
       setEntries(journalRows);
       setRatings((ratingRes.data || null) as { team_rating: number | null } | null);
       setPrompts((promptRes.data || []) as PromptRow[]);
+      setSummaries((sumRes.data || []) as SummaryRow[]);
 
       if (journalRows.length) {
         const { data: ansRows } = await supabase
