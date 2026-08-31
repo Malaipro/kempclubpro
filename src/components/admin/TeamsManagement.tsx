@@ -92,8 +92,8 @@ export const TeamsManagement: React.FC = () => {
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
 
-  const [selectedStream, setSelectedStream] = useState<string>('');
-  const [rosterStream, setRosterStream] = useState<string>('');
+  const [selectedStream, setSelectedStream] = useState<string>('all');
+  const [rosterStream, setRosterStream] = useState<string>('all');
   const [rosterFilter, setRosterFilter] = useState<string>('all');
 
   // dialogs
@@ -155,7 +155,7 @@ export const TeamsManagement: React.FC = () => {
   );
 
   const streamTeams = useMemo(
-    () => (selectedStream ? teams.filter((t) => t.stream_id === selectedStream) : teams),
+    () => (selectedStream !== 'all' ? teams.filter((t) => t.stream_id === selectedStream) : teams),
     [teams, selectedStream]
   );
 
@@ -166,14 +166,14 @@ export const TeamsManagement: React.FC = () => {
 
   const assignedUserIdsInStream = useMemo(() => {
     const teamIds = new Set(
-      (selectedStream ? teams.filter((t) => t.stream_id === selectedStream) : teams).map((t) => t.id)
+      (selectedStream !== 'all' ? teams.filter((t) => t.stream_id === selectedStream) : teams).map((t) => t.id)
     );
     return new Set(members.filter((m) => teamIds.has(m.team_id)).map((m) => m.user_id));
   }, [teams, members, selectedStream]);
 
   const availableParticipants = useMemo(
     () =>
-      selectedStream
+      selectedStream !== 'all'
         ? profiles.filter(
             (p) =>
               p.participant_status === 'intensive_active' &&
@@ -201,7 +201,7 @@ export const TeamsManagement: React.FC = () => {
       const { error } = await supabase.from('captain_teams').insert({
         name,
         captain_user_id: newTeamCaptain,
-        stream_id: selectedStream,
+        stream_id: selectedStream === 'all' ? null : selectedStream,
       });
       if (error) throw error;
       toast({ title: 'Команда создана', description: name });
@@ -298,12 +298,18 @@ export const TeamsManagement: React.FC = () => {
 
   // ---- roster ----
   const rosterRows = useMemo(() => {
-    const teamIdsOfStream = new Set(teams.filter((t) => t.stream_id === rosterStream).map((t) => t.id));
+    const teamIdsOfStream = new Set(
+      (rosterStream === 'all' ? teams : teams.filter((t) => t.stream_id === rosterStream)).map((t) => t.id)
+    );
     const memberByUser = new Map<string, MemberRow>();
     members.filter((m) => teamIdsOfStream.has(m.team_id)).forEach((m) => memberByUser.set(m.user_id, m));
 
     return profiles
-      .filter((p) => p.participant_status === 'intensive_active' && p.current_stream_id === rosterStream)
+      .filter(
+        (p) =>
+          p.participant_status === 'intensive_active' &&
+          (rosterStream === 'all' || p.current_stream_id === rosterStream)
+      )
       .map((p) => {
         const member = memberByUser.get(p.user_id);
         const team = member ? teams.find((t) => t.id === member.team_id) : undefined;
@@ -336,7 +342,7 @@ export const TeamsManagement: React.FC = () => {
         <SelectValue placeholder="Выберите поток" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">Все потоки</SelectItem>
+        <SelectItem value="all">Все потоки</SelectItem>
         {streams.map((s) => (
           <SelectItem key={s.id} value={s.id}>
             {s.name}
@@ -369,7 +375,7 @@ export const TeamsManagement: React.FC = () => {
         <TabsContent value="teams" className="space-y-4 mt-4">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             {streamSelect(selectedStream, setSelectedStream)}
-            <Button onClick={() => setTeamDialogOpen(true)} disabled={!selectedStream}>
+            <Button onClick={() => setTeamDialogOpen(true)} disabled={selectedStream === 'all'}>
               <Plus className="w-4 h-4 mr-2" /> Добавить команду
             </Button>
           </div>
