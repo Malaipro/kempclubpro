@@ -97,7 +97,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
   // Обход initData для send_to_group с admin key
   const adminKeyHeader = req.headers['x-admin-key'] as string;
-  const isAdminKeyAuth = action === 'send_to_group' && adminKeyHeader === config.telegram.webhookSecret;
+  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries') && adminKeyHeader === config.telegram.webhookSecret;
 
   if (!isAdminKeyAuth) {
     // Базовая валидация тела запроса
