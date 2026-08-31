@@ -336,6 +336,7 @@ export const TeamsManagement: React.FC = () => {
         <SelectValue placeholder="Выберите поток" />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="">Все потоки</SelectItem>
         {streams.map((s) => (
           <SelectItem key={s.id} value={s.id}>
             {s.name}
