@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
+import { parseHomeworkFiles, HomeworkFile } from '@/lib/homeworkFiles';
 
 interface Stream {
   id: string;
