@@ -1741,6 +1741,28 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'get_daily_prompts') {
+    const today = new Date();
+    const moscowDay = new Date(today.getTime() + 3 * 60 * 60 * 1000).getUTCDay();
+
+    const { data, error } = await supabase
+      .from('daily_prompts')
+      .select('id, question_text, activity_type, sort_order')
+      .eq('day_of_week', moscowDay)
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (error) {
+      console.error('[state/get_daily_prompts] error:', error.message);
+      res.status(500).json({ ok: false, error: 'rpc_error' });
+      return;
+    }
+
+    res.json({ ok: true, data: { prompts: data || [], day_of_week: moscowDay } });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
