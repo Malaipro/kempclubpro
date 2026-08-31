@@ -165,7 +165,9 @@ export const TeamsManagement: React.FC = () => {
   );
 
   const assignedUserIdsInStream = useMemo(() => {
-    const teamIds = new Set(teams.filter((t) => t.stream_id === selectedStream).map((t) => t.id));
+    const teamIds = new Set(
+      (selectedStream ? teams.filter((t) => t.stream_id === selectedStream) : teams).map((t) => t.id)
+    );
     return new Set(members.filter((m) => teamIds.has(m.team_id)).map((m) => m.user_id));
   }, [teams, members, selectedStream]);
 
