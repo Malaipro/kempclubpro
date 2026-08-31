@@ -2982,6 +2982,54 @@ export type Database = {
         }
         Relationships: []
       }
+      team_weekly_summaries: {
+        Row: {
+          captain_user_id: string
+          created_at: string | null
+          id: string
+          raw_data: Json | null
+          summary: string
+          team_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          captain_user_id: string
+          created_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          summary: string
+          team_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          captain_user_id?: string
+          created_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          summary?: string
+          team_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_weekly_summaries_captain_user_id_fkey"
+            columns: ["captain_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "team_weekly_summaries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "captain_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_bot_logs: {
         Row: {
           created_at: string
