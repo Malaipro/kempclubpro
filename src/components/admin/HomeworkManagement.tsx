@@ -40,7 +40,9 @@ interface Assignment {
   is_active: boolean;
   created_at: string;
   file_url: string | null;
+  file_urls?: unknown;
 }
+
 
 interface Submission {
   id: string;
