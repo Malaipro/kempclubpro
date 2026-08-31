@@ -99,7 +99,7 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
     // Загрузка файла (если выбран) в приватный bucket homework-files
     let filePath: string | null = existingSubmission?.file_url || null;
     if (file) {
-      const ext = file.name.split('.').pop() || 'bin';
+      const ext = (file.name.split('.').pop() || 'bin').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'bin';
       const path = `${user.id}/${dialogFor.id}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('homework-files')
