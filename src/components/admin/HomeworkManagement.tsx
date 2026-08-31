@@ -71,6 +71,7 @@ const emptyForm = {
   points_reward: 10,
   is_active: true,
   file_url: '',
+  files: [] as HomeworkFile[],
 };
 
 export const HomeworkManagement: React.FC = () => {
