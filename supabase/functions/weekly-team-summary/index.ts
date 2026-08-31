@@ -8,7 +8,9 @@ const JOURNAL_TARGET = 7
 
 const SYSTEM_PROMPT =
   'Ты куратор мужского клуба КЭМП. Делаешь еженедельную сводку для капитана команды. ' +
-  'Стиль: мужской, прямой, конкретный, без мотивационного пафоса.'
+  'Стиль: мужской, прямой, конкретный, без мотивационного пафоса. ' +
+  'Обрати внимание на содержание дневника — если участник пишет о трудностях или демотивации, отметь это. ' +
+  'Если не заполняет дневник — это красный флаг, обязательно упомяни.'
 
 interface RequestBody {
   team_id?: string
@@ -31,6 +33,17 @@ interface Emotion {
   intensity: number
 }
 
+interface JournalAnswer {
+  prompt_id: string
+  text: string
+}
+
+interface JournalText {
+  entry_date: string
+  day_type: string
+  answers: JournalAnswer[]
+}
+
 interface MemberStats {
   user_id: string
   display_name: string
@@ -40,6 +53,11 @@ interface MemberStats {
   homework_count: number
   journal_days: number
   last_emotions: Emotion[]
+  journal_texts: JournalText[]
+}
+
+function joinAnswers(answers: JournalAnswer[]): string {
+  return answers.map((a) => a.text).filter((t) => t && t.trim().length > 0).join(' ').trim()
 }
 
 serve(async (req) => {
@@ -183,10 +201,10 @@ serve(async (req) => {
           homeworkByUser.set(row.user_id, (homeworkByUser.get(row.user_id) ?? 0) + 1)
         }
 
-        // Дневник
+        // Дневник — счётчик дней, последние эмоции и тексты записей за неделю
         const { data: entries } = await supabase
           .from('journal_entries')
-          .select('user_id, entry_date, journal_emotions ( emotion_name, intensity )')
+          .select('user_id, entry_date, day_type, journal_emotions ( emotion_name, intensity ), journal_answers ( prompt_id, answer_text )')
           .in('user_id', memberIds)
           .gte('entry_date', weekStartStr)
           .lte('entry_date', weekEndStr)
@@ -194,10 +212,13 @@ serve(async (req) => {
 
         const journalDaysByUser = new Map<string, number>()
         const lastEmotionsByUser = new Map<string, Emotion[]>()
+        const journalTextsByUser = new Map<string, JournalText[]>()
         for (const row of (entries ?? []) as Array<{
           user_id: string
           entry_date: string
+          day_type: string
           journal_emotions: Emotion[] | null
+          journal_answers: Array<{ prompt_id: string; answer_text: string | null }> | null
         }>) {
           journalDaysByUser.set(row.user_id, (journalDaysByUser.get(row.user_id) ?? 0) + 1)
           const emotions = row.journal_emotions ?? []
@@ -205,6 +226,12 @@ serve(async (req) => {
             // записи отсортированы по возрастанию даты — перезаписываем более свежими
             lastEmotionsByUser.set(row.user_id, emotions)
           }
+          const answers: JournalAnswer[] = (row.journal_answers ?? [])
+            .filter((a) => a.answer_text && a.answer_text.trim().length > 0)
+            .map((a) => ({ prompt_id: a.prompt_id, text: a.answer_text!.trim() }))
+          const list = journalTextsByUser.get(row.user_id) ?? []
+          list.push({ entry_date: row.entry_date, day_type: row.day_type, answers })
+          journalTextsByUser.set(row.user_id, list)
         }
 
         const stats: MemberStats[] = members.map((m) => ({
@@ -216,6 +243,7 @@ serve(async (req) => {
           homework_count: homeworkByUser.get(m.user_id) ?? 0,
           journal_days: journalDaysByUser.get(m.user_id) ?? 0,
           last_emotions: lastEmotionsByUser.get(m.user_id) ?? [],
+          journal_texts: journalTextsByUser.get(m.user_id) ?? [],
         }))
 
         const teamName = team.name?.trim() || 'Без названия'
@@ -226,15 +254,20 @@ serve(async (req) => {
             const emotionsText = s.last_emotions
               .map((e) => `${e.emotion_name} (${e.intensity}/10)`)
               .join(', ')
-            return (
+            const head =
               `- ${s.display_name}: тренировок ${s.trainings}/${TRAINING_TARGET}, ` +
               `ДЗ ${s.homework_submitted ? 'сдал' : 'нет'}, ` +
               `дневник ${s.journal_days}/${JOURNAL_TARGET} дней, ` +
               `статус ${s.traffic_light}` +
               (emotionsText ? `, эмоции: ${emotionsText}` : '')
-            )
+            const journalBlock = s.journal_texts.length > 0
+              ? '  Записи дневника:\n' + s.journal_texts
+                  .map((t) => `  ${t.entry_date}: ${joinAnswers(t.answers).slice(0, 100)}`)
+                  .join('\n')
+              : '  Дневник: НЕ ЗАПОЛНЯЛ всю неделю ⚠️'
+            return `${head}\n${journalBlock}`
           })
-          .join('\n')
+          .join('\n\n')
 
         const prompt =
           `Команда: ${teamName}, Капитан: ${captainName}\n` +
@@ -303,7 +336,7 @@ async function requestSummary(
     },
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
-      max_tokens: 500,
+      max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],
       system: systemPrompt,
     }),
