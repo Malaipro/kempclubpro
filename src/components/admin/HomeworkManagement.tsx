@@ -407,33 +407,49 @@ export const HomeworkManagement: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label>Файл к заданию</Label>
-              {assignmentFile ? (
-                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
-                  <span className="truncate flex items-center gap-1">
-                    <Paperclip className="w-3.5 h-3.5 shrink-0" />{assignmentFile.name}
-                  </span>
-                  <button type="button" onClick={() => setAssignmentFile(null)} aria-label="Убрать файл">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : form.file_url ? (
-                <div className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5 mt-1">
-                  <a href={form.file_url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
-                    <Paperclip className="w-3.5 h-3.5 shrink-0" /> Текущий файл
-                  </a>
-                  <button type="button" onClick={() => setForm({ ...form, file_url: '' })} aria-label="Убрать файл">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
+              <Label>Файлы к заданию</Label>
+              <div className="space-y-1.5 mt-1">
+                {form.files.map((f, i) => (
+                  <div key={`${f.url}-${i}`} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5">
+                    <a href={f.url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
+                      <Paperclip className="w-3.5 h-3.5 shrink-0" /> {f.name}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, files: form.files.filter((_, idx) => idx !== i) })}
+                      aria-label="Удалить файл"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                {assignmentFiles.map((f, i) => (
+                  <div key={`new-${f.name}-${i}`} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5">
+                    <span className="truncate flex items-center gap-1">
+                      <Paperclip className="w-3.5 h-3.5 shrink-0" />{f.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentFiles(assignmentFiles.filter((_, idx) => idx !== i))}
+                      aria-label="Убрать файл"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
                 <Input
                   type="file"
-                  className="mt-1"
-                  onChange={(e) => setAssignmentFile(e.target.files?.[0] ?? null)}
+                  multiple
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files || []);
+                    if (picked.length) setAssignmentFiles((prev) => [...prev, ...picked]);
+                    e.target.value = '';
+                  }}
                 />
-              )}
+                <p className="text-xs text-muted-foreground">Можно выбрать несколько файлов</p>
+              </div>
             </div>
+
             <div className="flex items-center gap-2">
               <input
                 id="is_active"
