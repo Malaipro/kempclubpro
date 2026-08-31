@@ -285,11 +285,12 @@ export const HomeworkManagement: React.FC = () => {
                       </div>
                       {a.theme && <p className="text-sm text-muted-foreground mt-1">{a.theme}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{a.content}</p>
-                      {a.file_url && (
-                        <a href={a.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
-                          <Paperclip className="w-3 h-3" /> Файл к заданию
+                      {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
+                        <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                          <Paperclip className="w-3 h-3" /> {f.name}
                         </a>
-                      )}
+                      ))}
+
                       {a.deadline && (
                         <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
                           <Clock className="w-3 h-3" /> До {new Date(a.deadline).toLocaleString('ru-RU')}
