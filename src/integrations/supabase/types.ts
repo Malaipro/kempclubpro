@@ -1219,6 +1219,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_prompts: {
+        Row: {
+          activity_type: string | null
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_active: boolean | null
+          question_text: string
+          sort_order: number | null
+        }
+        Insert: {
+          activity_type?: string | null
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_active?: boolean | null
+          question_text: string
+          sort_order?: number | null
+        }
+        Update: {
+          activity_type?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_active?: boolean | null
+          question_text?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       habit_progress: {
         Row: {
           completed: boolean | null
