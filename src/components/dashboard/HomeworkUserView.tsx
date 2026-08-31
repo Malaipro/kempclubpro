@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner';
 import { Clock, Send, CheckCircle, RotateCcw, Paperclip, X } from 'lucide-react';
 import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
+import { parseHomeworkFiles } from '@/lib/homeworkFiles';
 
 interface Assignment {
   id: string;
@@ -18,7 +19,10 @@ interface Assignment {
   content: string;
   deadline: string | null;
   points_reward: number;
+  file_url?: string | null;
+  file_urls?: unknown;
 }
+
 
 interface Submission {
   id: string;
