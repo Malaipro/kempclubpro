@@ -57,7 +57,7 @@ export const CaptainsRatingDashboard: React.FC = () => {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
-  const [selectedStream, setSelectedStream] = useState<string>('');
+  const [selectedStream, setSelectedStream] = useState<string>('all');
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -75,7 +75,7 @@ export const CaptainsRatingDashboard: React.FC = () => {
       setTeams((teamsRes.data || []) as TeamRow[]);
       setMembers((membersRes.data || []) as MemberRow[]);
 
-      setSelectedStream((prev) => prev ?? '');
+      setSelectedStream((prev) => prev ?? 'all');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export const CaptainsRatingDashboard: React.FC = () => {
   }, [profiles]);
 
   const stats: CaptainStat[] = useMemo(() => {
-    const streamTeams = teams.filter((t) => !selectedStream || t.stream_id === selectedStream);
+    const streamTeams = teams.filter((t) => selectedStream === 'all' || t.stream_id === selectedStream);
     const teamIds = new Set(streamTeams.map((t) => t.id));
     const byCaptain = new Map<string, CaptainStat>();
 
@@ -157,7 +157,7 @@ export const CaptainsRatingDashboard: React.FC = () => {
               <SelectValue placeholder="Выберите поток" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все потоки</SelectItem>
+              <SelectItem value="all">Все потоки</SelectItem>
               {streams.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
