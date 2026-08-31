@@ -134,8 +134,8 @@ export const TeamsManagement: React.FC = () => {
       setTeams((teamsRes.data || []) as TeamRow[]);
       setMembers((membersRes.data || []) as MemberRow[]);
 
-      const defaultStream = streamList.find((s) => s.is_active)?.id || streamList[0]?.id || '';
-      setSelectedStream((prev) => prev || defaultStream);
+      const defaultStream = streamList.find((s) => s.is_active)?.id || '';
+      setSelectedStream((prev) => prev ?? '');
       setRosterStream((prev) => prev || defaultStream);
     } catch (error) {
       console.error('Ошибка загрузки данных команд:', error);
