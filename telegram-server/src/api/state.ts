@@ -1839,6 +1839,115 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+
+  if (action === 'update_homework_submission') {
+    const submission_id = (req.body as any).submission_id;
+    const content = (req.body as any).content;
+    const file_urls = (req.body as any).file_urls;
+
+    if (!submission_id) {
+      res.status(400).json({ ok: false, error: 'missing_submission_id' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: submission } = await supabase
+      .from('homework_submissions')
+      .select('id, user_id, status')
+      .eq('id', submission_id)
+      .eq('user_id', profile.user_id)
+      .maybeSingle();
+
+    if (!submission) {
+      res.status(404).json({ ok: false, error: 'submission_not_found' });
+      return;
+    }
+
+    if (submission.status !== 'pending') {
+      res.status(403).json({ ok: false, error: 'Нельзя редактировать после проверки' });
+      return;
+    }
+
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (content !== undefined) updateData.content = content;
+    if (file_urls !== undefined) updateData.file_urls = file_urls;
+
+    const { error } = await supabase
+      .from('homework_submissions')
+      .update(updateData)
+      .eq('id', submission_id);
+
+    if (error) {
+      console.error('[state/update_homework] error:', error.message);
+      res.status(500).json({ ok: false, error: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'update_journal_entry') {
+    const entry_id = (req.body as any).entry_id;
+    const answers = (req.body as any).answers;
+
+    if (!entry_id || !answers) {
+      res.status(400).json({ ok: false, error: 'missing_params' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    const { data: entry } = await supabase
+      .from('journal_entries')
+      .select('id, user_id, is_reviewed')
+      .eq('id', entry_id)
+      .eq('user_id', profile.user_id)
+      .maybeSingle();
+
+    if (!entry) {
+      res.status(404).json({ ok: false, error: 'entry_not_found' });
+      return;
+    }
+
+    if (entry.is_reviewed) {
+      res.status(403).json({ ok: false, error: 'Нельзя редактировать после проверки' });
+      return;
+    }
+
+    for (const a of answers) {
+      if (a.id && a.text !== undefined) {
+        await supabase
+          .from('journal_answers')
+          .update({ answer_text: a.text, updated_at: new Date().toISOString() })
+          .eq('id', a.id)
+          .eq('entry_id', entry_id);
+      }
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
   // Неизвестный action — зарезервировано для будущих расширений
   res.status(400).json({ ok: false, error: 'unknown_action' });
 });
