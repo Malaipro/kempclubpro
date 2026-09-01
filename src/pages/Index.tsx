@@ -47,6 +47,7 @@ const Index = () => {
       <Hero />
       <AboutUs />
       <Program />
+      <PersonalCoachingCTA />
       <Suspense fallback={<SectionFallback />}>
         <TrialTrainingCTA />
         <Trainers />
@@ -59,7 +60,6 @@ const Index = () => {
         <RegisteredParticipants />
         <Achievements />
         <ContactForm />
-        <PersonalCoachingCTA />
       </Suspense>
       
       {/* Fixed Personal Cabinet Button */}
