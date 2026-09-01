@@ -1,8 +1,9 @@
 import React from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import founderPhotoAsset from '@/assets/dmitry-andreev.jpg.asset.json';
 
-const FOUNDER_PHOTO = '/lovable-uploads/dmitry-andreev.jpg';
+const FOUNDER_PHOTO = founderPhotoAsset.url;
 const PERSONAL_SITE_URL = 'https://andreevmentor.ru/';
 
 export const PersonalCoachingCTA: React.FC = () => {
