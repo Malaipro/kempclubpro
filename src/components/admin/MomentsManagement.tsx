@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, X, Video, Image as ImageIcon, Eye } from 'lucide-re
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Moment {
   id: string;
@@ -259,7 +260,7 @@ export const MomentsManagement: React.FC = () => {
             <div className="aspect-square relative">
               {moment.image_url && (
                 <img 
-                  src={moment.image_url} 
+                  src={proxyStorageUrl(moment.image_url)} 
                   alt={moment.title || 'Момент КЭМП'}
                   className="w-full h-full object-cover"
                 />
@@ -499,7 +500,7 @@ export const MomentsManagement: React.FC = () => {
               ) : (
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
                   <video
-                    src={previewOpen.url}
+                    src={proxyStorageUrl(previewOpen.url)}
                     controls
                     className="w-full h-full object-cover"
                     onError={() => toast({
@@ -518,7 +519,7 @@ export const MomentsManagement: React.FC = () => {
               <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
               <div className="flex justify-center bg-gray-50 rounded-lg p-4">
                 <img
-                  src={previewOpen.url}
+                  src={proxyStorageUrl(previewOpen.url)}
                   alt="Предпросмотр"
                   className="max-w-full max-h-96 object-contain rounded-lg"
                   onError={() => toast({
