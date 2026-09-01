@@ -1392,6 +1392,7 @@ export type Database = {
           content: string | null
           created_at: string
           file_url: string | null
+          file_urls: Json
           homework_type: string
           id: string
           notes: string | null
@@ -1410,6 +1411,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           file_url?: string | null
+          file_urls?: Json
           homework_type: string
           id?: string
           notes?: string | null
@@ -1428,6 +1430,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           file_url?: string | null
+          file_urls?: Json
           homework_type?: string
           id?: string
           notes?: string | null
@@ -1566,6 +1569,7 @@ export type Database = {
           day_type: string
           entry_date: string
           id: string
+          is_reviewed: boolean
           updated_at: string
           user_id: string
         }
@@ -1574,6 +1578,7 @@ export type Database = {
           day_type: string
           entry_date: string
           id?: string
+          is_reviewed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -1582,6 +1587,7 @@ export type Database = {
           day_type?: string
           entry_date?: string
           id?: string
+          is_reviewed?: boolean
           updated_at?: string
           user_id?: string
         }

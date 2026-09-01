@@ -171,6 +171,27 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
         return;
       }
 
+      // Уведомление тренерам о сданной работе
+      try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        const studentName = [tgUser?.first_name, tgUser?.last_name].filter(Boolean).join(' ') || tgUser?.username || 'Участник';
+        const hwTitle = loadState.status === 'ok'
+          ? loadState.data.find((i) => i.id === assignmentId)?.title ?? 'Домашнее задание'
+          : 'Домашнее задание';
+        await fetch(`${SERVER_URL}/api/state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData,
+            action: 'notify_homework_submitted',
+            student_name: studentName,
+            hw_title: hwTitle,
+          }),
+        });
+      } catch {
+        // уведомление не критично
+      }
+
       const submittedText = text.trim();
       setLoadState((prev) => {
         if (prev.status !== 'ok') return prev;
@@ -197,7 +218,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
     } catch {
       setSubmitState('error');
     }
-  }, [text, file, submitState]);
+  }, [text, file, submitState, loadState]);
 
   const openEdit = useCallback((item: HomeworkItem) => {
     setEditSubmissionId(item.submission_id);
