@@ -243,7 +243,7 @@ export const TestimonialManagement: React.FC = () => {
       });
       return;
     }
-    setPreviewOpen({ type, url: url.trim() });
+    setPreviewOpen({ type, url: proxyStorageUrl(url.trim()) });
   };
 
   const closePreview = () => {
@@ -537,7 +537,7 @@ export const TestimonialManagement: React.FC = () => {
               ) : (
                 <div className="aspect-video bg-black rounded-lg overflow-hidden">
                   <video
-                    src={previewOpen.url}
+                    src={proxyStorageUrl(previewOpen.url)}
                     controls
                     className="w-full h-full object-cover"
                     onError={() => toast({
@@ -556,7 +556,7 @@ export const TestimonialManagement: React.FC = () => {
               <p className="text-sm text-muted-foreground">URL: {previewOpen.url}</p>
               <div className="flex justify-center bg-gray-50 rounded-lg p-4">
                 <img
-                  src={previewOpen.url}
+                  src={proxyStorageUrl(previewOpen.url)}
                   alt="Предпросмотр"
                   className="max-w-full max-h-96 object-contain rounded-lg"
                   onError={() => toast({

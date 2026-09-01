@@ -246,7 +246,7 @@ export const RewardsManagement: React.FC = () => {
                 <Card key={r.id} className={!r.is_active ? 'opacity-60' : ''}>
                   <CardContent className="p-4 space-y-3">
                     {r.image_url ? (
-                      <img src={r.image_url} alt={r.title} className="w-full h-40 object-cover rounded" />
+                      <img src={proxyStorageUrl(r.image_url)} alt={r.title} className="w-full h-40 object-cover rounded" />
                     ) : (
                       <div className="w-full h-40 bg-muted rounded flex items-center justify-center">
                         <ImageIcon className="w-8 h-8 text-muted-foreground" />
@@ -359,7 +359,7 @@ export const RewardsManagement: React.FC = () => {
                 disabled={uploading}
               />
               {form.image_url && (
-                <img src={form.image_url} alt="" className="mt-2 w-32 h-32 object-cover rounded" />
+                <img src={proxyStorageUrl(form.image_url)} alt="" className="mt-2 w-32 h-32 object-cover rounded" />
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
