@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, Paperclip, X, AlertTriangle, FileText, Pencil } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

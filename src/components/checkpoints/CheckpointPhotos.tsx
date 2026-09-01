@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 export type PhotoSlot = 'front' | 'side';
 

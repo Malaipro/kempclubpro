@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, FileText, Lock, ExternalLink, Download, AlertCircle } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Material {
   id: string;

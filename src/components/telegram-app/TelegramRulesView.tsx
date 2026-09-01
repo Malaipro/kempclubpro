@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollText, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 

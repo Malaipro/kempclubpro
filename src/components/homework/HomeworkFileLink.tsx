@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Paperclip, FileText, Loader2 } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface HomeworkFileLinkProps {
   /** Путь к файлу в bucket "homework-files" */
