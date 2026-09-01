@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, FileText, Save, Lock, Unlock } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface PyramidLevel {
   id: string;
@@ -33,17 +34,18 @@ const PresentationLink: React.FC<{ path: string }> = ({ path }) => {
     return () => { active = false; };
   }, [path]);
 
+  const displayUrl = proxyStorageUrl(url);
   if (!url) return <span className="text-xs text-muted-foreground">Загрузка ссылки…</span>;
   if (isImage(path)) {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block mt-1">
-        <img src={url} alt="Презентация" className="max-h-32 rounded border object-cover" />
+      <a href={displayUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-1">
+        <img src={displayUrl} alt="Презентация" className="max-h-32 rounded border object-cover" />
       </a>
     );
   }
   return (
     <a
-      href={url}
+      href={displayUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
