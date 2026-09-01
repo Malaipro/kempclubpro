@@ -27,6 +27,7 @@ interface Profile {
   last_name: string | null;
   participant_status: string | null;
   current_stream_id: string | null;
+  telegram_id?: number | string | null;
 }
 
 interface Assignment {
@@ -60,6 +61,18 @@ interface Submission {
   profile?: Profile;
   assignment?: Assignment;
 }
+
+const TG_SERVER_URL = 'https://tg.kempclub.pro';
+const TG_ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
+
+const notifyTelegram = async (payload: Record<string, unknown>) => {
+  const res = await fetch(`${TG_SERVER_URL}/api/state`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': TG_ADMIN_KEY },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`notify_failed_${res.status}`);
+};
 
 const emptyForm = {
   title: '',
@@ -95,7 +108,7 @@ export const HomeworkManagement: React.FC = () => {
       supabase.from('homework_assignments').select('*').order('created_at', { ascending: false }),
       supabase.from('homework_submissions').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('streams').select('id, name, is_active').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, display_name, first_name, last_name, participant_status, current_stream_id').eq('participant_status', 'intensive_active'),
+      supabase.from('profiles').select('user_id, display_name, first_name, last_name, participant_status, current_stream_id, telegram_id').eq('participant_status', 'intensive_active'),
     ]);
     setAssignments(a || []);
     setStreams(st || []);
@@ -110,7 +123,7 @@ export const HomeworkManagement: React.FC = () => {
     if (missingIds.length) {
       const { data: ex } = await supabase
         .from('profiles')
-        .select('user_id, display_name, first_name, last_name, participant_status, current_stream_id')
+        .select('user_id, display_name, first_name, last_name, participant_status, current_stream_id, telegram_id')
         .in('user_id', missingIds as string[]);
       extra = ex || [];
       extra.forEach((pr) => profileMap.set(pr.user_id, pr));
@@ -195,15 +208,28 @@ export const HomeworkManagement: React.FC = () => {
       file_urls: files,
     };
 
-    const { error } = editing
-      ? await (supabase as any).from('homework_assignments').update(payload).eq('id', editing.id)
-      : await (supabase as any).from('homework_assignments').insert(payload);
+    const { data: saved, error } = editing
+      ? await (supabase as any).from('homework_assignments').update(payload).eq('id', editing.id).select('id').maybeSingle()
+      : await (supabase as any).from('homework_assignments').insert(payload).select('id').maybeSingle();
     setSaving(false);
     if (error) {
       toast.error('Ошибка: ' + error.message);
       return;
     }
     toast.success(editing ? 'Задание обновлено' : 'Задание создано');
+
+    if (!editing && saved?.id) {
+      try {
+        await notifyTelegram({
+          action: 'notify_new_homework',
+          assignment_id: saved.id,
+          hw_title: payload.title,
+        });
+        toast.success('Уведомления отправлены участникам');
+      } catch {
+        toast.error('Не удалось отправить уведомления в Telegram');
+      }
+    }
     setDialogOpen(false);
     loadData();
   };
@@ -231,6 +257,22 @@ export const HomeworkManagement: React.FC = () => {
       return;
     }
     toast.success(status === 'accepted' ? 'Принято' : 'Отправлено на доработку');
+
+    const tgId = reviewDialog.profile?.telegram_id;
+    if (tgId) {
+      try {
+        await notifyTelegram({
+          action: 'notify_homework_reviewed',
+          target_telegram_id: tgId,
+          hw_title: reviewDialog.assignment?.title || 'Домашнее задание',
+          new_status: status,
+          comment: reviewComment.trim() || null,
+        });
+      } catch {
+        toast.error('Не удалось отправить уведомление участнику');
+      }
+    }
+
     setReviewDialog(null);
     setReviewComment('');
     loadData();
