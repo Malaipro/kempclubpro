@@ -160,7 +160,7 @@ export const TelegramRulesView: React.FC<Props> = ({ onBack }) => {
                   size="sm"
                   variant="outline"
                   className="mt-4 gap-1.5"
-                  onClick={() => window.Telegram?.WebApp?.openLink(doc.file_url!)}
+                  onClick={() => window.Telegram?.WebApp?.openLink(proxyStorageUrl(doc.file_url!))}
                 >
                   <FileText className="w-4 h-4" />
                   Открыть файл

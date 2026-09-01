@@ -136,7 +136,7 @@ export const MaterialsViewer: React.FC = () => {
                     )}
                     {m.file_url && (
                       <Button asChild size="sm" variant="outline">
-                        <a href={m.file_url} target="_blank" rel="noreferrer">
+                        <a href={proxyStorageUrl(m.file_url)} target="_blank" rel="noreferrer">
                           <Download className="w-4 h-4 mr-1" /> Файл
                         </a>
                       </Button>
