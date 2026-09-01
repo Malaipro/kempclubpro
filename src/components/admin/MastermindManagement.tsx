@@ -379,15 +379,31 @@ export const MastermindManagement: React.FC = () => {
     setSaving(false);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
 
+    // Уведомление участнику в Telegram
     const member = members.find((m) => m.id === taskMemberId);
-    const tgId = member?.profile?.telegram_id;
-    if (tgId) {
+    if (member?.user_id) {
       try {
-        await fetch(SERVER_URL + '/api/state', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
-          body: JSON.stringify({ action: 'notify_mastermind_task_assigned', target_telegram_id: tgId, task_title: title }),
-        });
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_id')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        const telegramId = profile?.telegram_id || member?.profile?.telegram_id;
+        if (telegramId) {
+          const res = await fetch(SERVER_URL + '/api/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+            body: JSON.stringify({
+              action: 'notify_mastermind_task_assigned',
+              target_telegram_id: telegramId,
+              task_title: title,
+            }),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            console.warn('notify_mastermind_task_assigned non-ok', res.status, text);
+          }
+        }
       } catch (e) {
         console.warn('notify_mastermind_task_assigned failed', e);
       }
