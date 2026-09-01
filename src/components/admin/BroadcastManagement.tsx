@@ -17,6 +17,7 @@ import {
 import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
@@ -142,7 +143,7 @@ export const BroadcastManagement: React.FC = () => {
     try {
       const { data, error } = await supabase.storage.from('broadcasts').createSignedUrl(path, 60 * 10);
       if (error) throw error;
-      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+      if (data?.signedUrl) window.open(proxyStorageUrl(data.signedUrl), '_blank');
     } catch (e: any) {
       toast({ title: 'Ошибка', description: e?.message || 'Не удалось открыть файл', variant: 'destructive' });
     }
