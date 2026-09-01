@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Testimonial {
   id: string;
