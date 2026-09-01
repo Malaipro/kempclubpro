@@ -1878,7 +1878,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const updateData: any = { updated_at: new Date().toISOString() };
+    const updateData: any = {};
     if (content !== undefined) updateData.content = content;
     if (file_urls !== undefined) updateData.file_urls = file_urls;
 
