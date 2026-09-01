@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, Upload, X, Video, Image as ImageIcon, Eye, EyeOff }
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Testimonial {
   id: string;

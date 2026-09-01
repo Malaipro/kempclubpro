@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Upload, X, Image as ImageIcon, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface ContentBlock {
   id: string;
