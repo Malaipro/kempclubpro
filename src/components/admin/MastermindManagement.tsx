@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 const ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
 const SERVER_URL = 'https://tg.kempclub.pro';
@@ -757,8 +758,8 @@ export const MastermindManagement: React.FC = () => {
                     <p className="text-sm"><span className="text-muted-foreground">Комментарий тренера:</span> {t.admin_comment}</p>
                   )}
                   {t.file_url && (
-                    <a href={t.file_url} target="_blank" rel="noreferrer" className="text-sm underline text-primary block">
-                      Файл
+                    <a href={proxyStorageUrl(t.file_url)} target="_blank" rel="noreferrer" className="text-sm underline text-primary block">
+                      Открыть прикреплённый файл
                     </a>
                   )}
                   {pending && (

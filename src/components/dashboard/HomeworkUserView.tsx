@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Clock, Send, CheckCircle, RotateCcw, Paperclip, X } from 'lucide-react';
 import { HomeworkFileLink } from '@/components/homework/HomeworkFileLink';
 import { parseHomeworkFiles } from '@/lib/homeworkFiles';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Assignment {
   id: string;
@@ -243,7 +244,7 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
                   {a.theme && <p className="text-sm text-muted-foreground">{a.theme}</p>}
                   <p className="text-sm mt-2 whitespace-pre-wrap">{a.content}</p>
                   {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
-                    <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                    <a key={`${f.url}-${i}`} href={proxyStorageUrl(f.url)} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
                       <Paperclip className="w-3 h-3" /> {f.name}
                     </a>
                   ))}

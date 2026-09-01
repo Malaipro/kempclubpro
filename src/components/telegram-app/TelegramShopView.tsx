@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 // ---------- Types ----------
 
@@ -190,7 +191,7 @@ export const TelegramShopView: React.FC<Props> = ({ onBack }) => {
                   <Card key={reward.id} className="overflow-hidden flex flex-col">
                     {reward.image_url ? (
                       <img
-                        src={reward.image_url}
+                        src={proxyStorageUrl(reward.image_url)}
                         alt={reward.title}
                         loading="lazy"
                         referrerPolicy="no-referrer"

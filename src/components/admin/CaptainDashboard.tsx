@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckpointPhotos, parsePhotoUrls } from '@/components/checkpoints/CheckpointPhotos';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
@@ -728,7 +729,7 @@ export const CaptainDashboard: React.FC = () => {
                 checkpointView.photo_urls.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     {(checkpointView.photo_urls as string[]).map((url) => (
-                      <img key={url} src={url} alt="Фото чекпоинта" className="rounded-md w-full h-auto" loading="lazy" />
+                      <img key={url} src={proxyStorageUrl(url)} alt="Фото чекпоинта" className="rounded-md w-full h-auto" loading="lazy" />
                     ))}
                   </div>
                 )

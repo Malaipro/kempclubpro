@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -475,7 +476,7 @@ export const ContractManagement: React.FC = () => {
                         </div>
                         {contract.signed_pdf_url && (
                           <Button variant="outline" size="sm" asChild>
-                            <a href={contract.signed_pdf_url} target="_blank" rel="noopener noreferrer">
+                            <a href={proxyStorageUrl(contract.signed_pdf_url)} target="_blank" rel="noopener noreferrer">
                               <Download className="w-4 h-4 mr-1" />
                               Скачать
                             </a>

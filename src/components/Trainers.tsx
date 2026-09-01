@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 interface Trainer {
   id: string;
   name: string;
@@ -104,7 +105,7 @@ const TrainerAvatarImage: React.FC<{
 
   return (
     <AvatarImage
-      src={currentSrc}
+      src={proxyStorageUrl(currentSrc)}
       alt={alt}
       className={className}
       loading="lazy"

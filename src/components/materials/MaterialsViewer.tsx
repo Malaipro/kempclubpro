@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, FileText, Lock, ExternalLink, Download, AlertCircle } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Material {
   id: string;
@@ -135,7 +136,7 @@ export const MaterialsViewer: React.FC = () => {
                     )}
                     {m.file_url && (
                       <Button asChild size="sm" variant="outline">
-                        <a href={m.file_url} target="_blank" rel="noreferrer">
+                        <a href={proxyStorageUrl(m.file_url)} target="_blank" rel="noreferrer">
                           <Download className="w-4 h-4 mr-1" /> Файл
                         </a>
                       </Button>

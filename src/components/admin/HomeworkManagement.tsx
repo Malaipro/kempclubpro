@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
 import { parseHomeworkFiles, HomeworkFile, safeStorageName } from '@/lib/homeworkFiles';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Stream {
   id: string;
@@ -328,7 +329,7 @@ export const HomeworkManagement: React.FC = () => {
                       {a.theme && <p className="text-sm text-muted-foreground mt-1">{a.theme}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{a.content}</p>
                       {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
-                        <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                        <a key={`${f.url}-${i}`} href={proxyStorageUrl(f.url)} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
                           <Paperclip className="w-3 h-3" /> {f.name}
                         </a>
                       ))}
@@ -369,7 +370,7 @@ export const HomeworkManagement: React.FC = () => {
                       )}
                       {s.content && <p className="text-sm mt-2 whitespace-pre-wrap">{s.content}</p>}
                       {s.file_url && (
-                        <a href={s.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                        <a href={proxyStorageUrl(s.file_url)} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
                           <Paperclip className="w-3 h-3" /> Прикреплённый файл
                         </a>
                       )}
@@ -454,7 +455,7 @@ export const HomeworkManagement: React.FC = () => {
               <div className="space-y-1.5 mt-1">
                 {form.files.map((f, i) => (
                   <div key={`${f.url}-${i}`} className="flex items-center justify-between text-sm bg-muted/40 rounded px-2 py-1.5">
-                    <a href={f.url} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
+                    <a href={proxyStorageUrl(f.url)} target="_blank" rel="noreferrer" className="truncate underline flex items-center gap-1">
                       <Paperclip className="w-3.5 h-3.5 shrink-0" /> {f.name}
                     </a>
                     <button
@@ -528,7 +529,7 @@ export const HomeworkManagement: React.FC = () => {
                 <div className="p-3 bg-muted/50 rounded text-sm whitespace-pre-wrap">{reviewDialog.content}</div>
               )}
               {reviewDialog.file_url && (
-                <a href={reviewDialog.file_url} target="_blank" rel="noreferrer" className="text-sm text-primary underline flex items-center gap-1 w-fit">
+                <a href={proxyStorageUrl(reviewDialog.file_url)} target="_blank" rel="noreferrer" className="text-sm text-primary underline flex items-center gap-1 w-fit">
                   <Paperclip className="w-3.5 h-3.5" /> Прикреплённый файл
                 </a>
               )}
