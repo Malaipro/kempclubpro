@@ -97,7 +97,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
   // Обход initData для send_to_group с admin key
   const adminKeyHeader = req.headers['x-admin-key'] as string;
-  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries' || action === 'send_evening_reminders' || action === 'notify_new_homework' || action === 'notify_homework_submitted' || action === 'notify_homework_reviewed') && adminKeyHeader === config.telegram.webhookSecret;
+  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries' || action === 'send_evening_reminders' || action === 'notify_new_homework' || action === 'notify_homework_submitted' || action === 'notify_homework_reviewed' || action === 'notify_mastermind_task_assigned' || action === 'notify_mastermind_task_completed' || action === 'notify_mastermind_task_created_by_participant' || action === 'check_mastermind_deadlines') && adminKeyHeader === config.telegram.webhookSecret;
 
   if (!isAdminKeyAuth) {
     // Базовая валидация тела запроса
@@ -2113,6 +2113,100 @@ stateRouter.post('/', async (req: Request, res: Response) => {
           }),
         });
         sent++;
+      }
+    }
+    res.json({ ok: true, data: { sent } });
+    return;
+  }
+
+
+  if (action === 'notify_mastermind_task_assigned') {
+    const target_telegram_id = (req.body as any).target_telegram_id;
+    const task_title = (req.body as any).task_title;
+
+    if (target_telegram_id) {
+      await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: target_telegram_id,
+          text: '📌 Новая задача в мастермайнде: ' + (task_title || 'Задача') + '\n\nОткрой Mini App → Мастермайнд',
+          reply_markup: JSON.stringify({
+            inline_keyboard: [[{ text: 'Открыть КЭМП', url: 'https://t.me/kempclub_bot/app' }]],
+          }),
+        }),
+      });
+    }
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'notify_mastermind_task_completed') {
+    const student_name = (req.body as any).student_name;
+    const task_title = (req.body as any).task_title;
+
+    const adminChatId = '777972440';
+    await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: '✅ ' + (student_name || 'Участник') + ' выполнил задачу: ' + (task_title || 'Задача') + '\n\nПроверить в админке → Мастермайнд',
+      }),
+    });
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'notify_mastermind_task_created_by_participant') {
+    const student_name = (req.body as any).student_name;
+    const task_title = (req.body as any).task_title;
+
+    const adminChatId = '777972440';
+    await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: '🆕 ' + (student_name || 'Участник') + ' поставил себе задачу: ' + (task_title || 'Задача') + '\n\nПроверить и утвердить в админке → Мастермайнд',
+      }),
+    });
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'check_mastermind_deadlines') {
+    if (!isAdminKeyAuth) {
+      res.status(401).json({ ok: false, error: 'unauthorized' });
+      return;
+    }
+
+    const tomorrow = new Date(Date.now() + 3 * 3600000 + 86400000).toISOString().split('T')[0];
+
+    const { data: tasks } = await supabase
+      .from('mastermind_tasks')
+      .select('id, title, deadline, member_id, is_completed, mastermind_members!inner(user_id, profiles!inner(telegram_id, display_name))')
+      .eq('is_completed', false)
+      .eq('deadline', tomorrow);
+
+    let sent = 0;
+    if (tasks) {
+      for (const t of tasks) {
+        const tgId = (t as any).mastermind_members?.profiles?.telegram_id;
+        if (tgId) {
+          await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: tgId,
+              text: '⏰ Завтра дедлайн по задаче: ' + t.title + '\n\nОткрой Mini App → Мастермайнд',
+              reply_markup: JSON.stringify({
+                inline_keyboard: [[{ text: 'Открыть КЭМП', url: 'https://t.me/kempclub_bot/app' }]],
+              }),
+            }),
+          });
+          sent++;
+        }
       }
     }
     res.json({ ok: true, data: { sent } });
