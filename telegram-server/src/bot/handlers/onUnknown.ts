@@ -12,5 +12,6 @@ export async function onUnknown(msg: TelegramMessage): Promise<void> {
     payload: { text: msg.text ?? null },
   });
 
-  await sendMessage(chatId, 'Отправь /start для начала работы.');
+  // Молчим на неизвестные сообщения — не спамим пользователя
+  return;
 }
