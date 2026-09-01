@@ -8,6 +8,7 @@ import { Gift, Coins, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Reward {
   id: string;
@@ -146,9 +147,9 @@ export const RewardsShop: React.FC<RewardsShopProps> = ({ canRedeem = true }) =>
             return (
               <Card key={r.id}>
                 <CardContent className="p-4 space-y-3">
-                  {r.image_url ? (
-                    <img src={r.image_url} alt={r.title} className="w-full h-40 object-cover rounded" />
-                  ) : (
+                    {r.image_url ? (
+                      <img src={proxyStorageUrl(r.image_url)} alt={r.title} className="w-full h-40 object-cover rounded" />
+                    ) : (
                     <div className="w-full h-40 bg-muted rounded flex items-center justify-center">
                       <ImageIcon className="w-8 h-8 text-muted-foreground" />
                     </div>

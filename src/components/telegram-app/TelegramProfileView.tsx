@@ -3,6 +3,7 @@ import { Camera, Trophy, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 import { Label } from '@/components/ui/label';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
@@ -223,9 +224,9 @@ export const TelegramProfileView: React.FC<Props> = ({ onBack }) => {
           <CardContent className="py-4 px-4 space-y-4">
             <div className="flex flex-col items-center gap-2">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt={fullName} className="w-full h-full object-cover" />
-                ) : (
+                  {profile.avatar_url ? (
+                    <img src={proxyStorageUrl(profile.avatar_url)} alt={fullName} className="w-full h-full object-cover" />
+                  ) : (
                   <span className="text-primary text-3xl font-black">
                     {fullName.trim().charAt(0).toUpperCase() || 'K'}
                   </span>

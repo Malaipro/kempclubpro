@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { ParticipantFullState } from '@/services/participantService';
 import type { Section } from './TelegramAppShell';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 const BOT_USERNAME = 'kempclub_bot';
 

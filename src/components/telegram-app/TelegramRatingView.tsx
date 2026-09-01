@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Trophy, Star, Swords, Flame, Dumbbell, Pyramid, Salad, Target, BookOpen, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -254,7 +255,7 @@ export const TelegramRatingView: React.FC<Props> = ({ onBack }) => {
                     </span>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
                       {row.avatar_url ? (
-                        <img src={row.avatar_url} alt={name} className="w-full h-full object-cover" />
+                        <img src={proxyStorageUrl(row.avatar_url)} alt={name} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-primary text-xs font-black">{initialOf(name)}</span>
                       )}

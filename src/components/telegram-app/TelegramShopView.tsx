@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 // ---------- Types ----------
 
