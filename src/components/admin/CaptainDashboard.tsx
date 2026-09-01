@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckpointPhotos, parsePhotoUrls } from '@/components/checkpoints/CheckpointPhotos';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useRole } from '@/hooks/useRole';
