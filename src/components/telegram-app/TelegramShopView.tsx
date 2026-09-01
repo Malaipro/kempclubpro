@@ -191,7 +191,7 @@ export const TelegramShopView: React.FC<Props> = ({ onBack }) => {
                   <Card key={reward.id} className="overflow-hidden flex flex-col">
                     {reward.image_url ? (
                       <img
-                        src={reward.image_url}
+                        src={proxyStorageUrl(reward.image_url)}
                         alt={reward.title}
                         loading="lazy"
                         referrerPolicy="no-referrer"

@@ -134,7 +134,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
       >
         <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+            <img src={proxyStorageUrl(profile.avatar_url)} alt={displayName} className="w-full h-full object-cover" />
           ) : (
             <span className="text-white text-2xl font-black">K</span>
           )}
