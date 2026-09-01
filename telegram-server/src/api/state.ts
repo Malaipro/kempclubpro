@@ -97,7 +97,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
   // Обход initData для send_to_group с admin key
   const adminKeyHeader = req.headers['x-admin-key'] as string;
-  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries') && adminKeyHeader === config.telegram.webhookSecret;
+  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries' || action === 'send_evening_reminders' || action === 'notify_new_homework' || action === 'notify_homework_submitted' || action === 'notify_homework_reviewed') && adminKeyHeader === config.telegram.webhookSecret;
 
   if (!isAdminKeyAuth) {
     // Базовая валидация тела запроса
@@ -1945,6 +1945,177 @@ stateRouter.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ ok: true });
+    return;
+  }
+
+
+  if (action === 'notify_new_homework') {
+    const assignment_id = (req.body as any).assignment_id;
+    const hw_title = (req.body as any).hw_title;
+
+    if (!assignment_id) {
+      res.status(400).json({ ok: false, error: 'missing_assignment_id' });
+      return;
+    }
+
+    const { data: assignment } = await supabase
+      .from('homework_assignments')
+      .select('id, title, stream_id')
+      .eq('id', assignment_id)
+      .maybeSingle();
+
+    if (!assignment) {
+      res.status(404).json({ ok: false, error: 'assignment_not_found' });
+      return;
+    }
+
+    const { data: participants } = await supabase
+      .from('profiles')
+      .select('telegram_id')
+      .eq('current_stream_id', assignment.stream_id)
+      .eq('participant_status', 'intensive_active')
+      .not('telegram_id', 'is', null);
+
+    let sent = 0;
+    if (participants) {
+      for (const p of participants) {
+        if (p.telegram_id) {
+          await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: p.telegram_id,
+              text: '📝 Новое домашнее задание: ' + (hw_title || assignment.title) + '\n\nОткрой Mini App → ДЗ',
+            }),
+          });
+          sent++;
+        }
+      }
+    }
+    res.json({ ok: true, data: { sent } });
+    return;
+  }
+
+  if (action === 'notify_homework_submitted') {
+    const student_name = (req.body as any).student_name;
+    const hw_title = (req.body as any).hw_title;
+
+    const adminChatId = '777972440';
+    await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: '📋 ' + (student_name || 'Участник') + ' сдал ДЗ: ' + (hw_title || 'Задание') + '\n\nПроверить в админке → ДЗ',
+      }),
+    });
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'notify_homework_reviewed') {
+    const target_telegram_id = (req.body as any).target_telegram_id;
+    const hw_title = (req.body as any).hw_title;
+    const new_status = (req.body as any).new_status;
+    const comment = (req.body as any).comment;
+
+    if (!target_telegram_id) {
+      res.status(400).json({ ok: false, error: 'missing_telegram_id' });
+      return;
+    }
+
+    let text = '';
+    if (new_status === 'accepted') {
+      text = '✅ Ваше ДЗ «' + (hw_title || 'Задание') + '» принято!';
+    } else if (new_status === 'rework') {
+      text = '🔄 ДЗ «' + (hw_title || 'Задание') + '» на доработке';
+      if (comment) text += '\n\nКомментарий: ' + comment;
+    }
+
+    if (text) {
+      await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: target_telegram_id, text }),
+      });
+    }
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'send_evening_reminders') {
+    if (!isAdminKeyAuth) {
+      res.status(401).json({ ok: false, error: 'unauthorized' });
+      return;
+    }
+
+    const today = new Date(Date.now() + 3 * 3600000).toISOString().split('T')[0];
+
+    const { data: activeStream } = await supabase
+      .from('streams')
+      .select('id')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!activeStream) {
+      res.json({ ok: true, data: { sent: 0, reason: 'no_active_stream' } });
+      return;
+    }
+
+    const { data: participants } = await supabase
+      .from('profiles')
+      .select('user_id, telegram_id, display_name')
+      .eq('current_stream_id', activeStream.id)
+      .eq('participant_status', 'intensive_active')
+      .not('telegram_id', 'is', null);
+
+    if (!participants) {
+      res.json({ ok: true, data: { sent: 0 } });
+      return;
+    }
+
+    let sent = 0;
+    for (const p of participants) {
+      const reminders: string[] = [];
+
+      const { data: checkin } = await supabase
+        .from('activity_checkins')
+        .select('id')
+        .eq('user_id', p.user_id)
+        .eq('checked_at', today)
+        .maybeSingle();
+
+      if (!checkin) {
+        reminders.push('📍 Не забудь отметиться за сегодня');
+      }
+
+      const { data: journal } = await supabase
+        .from('journal_entries')
+        .select('id')
+        .eq('user_id', p.user_id)
+        .eq('entry_date', today)
+        .maybeSingle();
+
+      if (!journal) {
+        reminders.push('📓 Заполни ежедневник за сегодня');
+      }
+
+      if (reminders.length > 0 && p.telegram_id) {
+        await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: p.telegram_id,
+            text: reminders.join('\n') + '\n\nОткрой Mini App 👇',
+            reply_markup: JSON.stringify({
+              inline_keyboard: [[{ text: 'Открыть КЭМП', url: 'https://t.me/kempclub_bot/app' }]],
+            }),
+          }),
+        });
+        sent++;
+      }
+    }
+    res.json({ ok: true, data: { sent } });
     return;
   }
 
