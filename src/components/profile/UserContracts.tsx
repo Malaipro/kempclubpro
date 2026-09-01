@@ -128,7 +128,7 @@ export const UserContracts: React.FC = () => {
 
             {contract.signed_pdf_url && (
               <Button variant="outline" size="sm" asChild>
-                <a href={contract.signed_pdf_url} target="_blank" rel="noopener noreferrer" download>
+                <a href={proxyStorageUrl(contract.signed_pdf_url)} target="_blank" rel="noopener noreferrer" download>
                   <Download className="w-4 h-4 mr-2" />
                   Скачать PDF
                 </a>
