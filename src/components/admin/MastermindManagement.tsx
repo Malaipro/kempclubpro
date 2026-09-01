@@ -368,15 +368,31 @@ export const MastermindManagement: React.FC = () => {
       return;
     }
     setSaving(true);
+    const title = taskTitle.trim();
     const { error } = await supabase.from('mastermind_tasks').insert({
       member_id: taskMemberId,
-      title: taskTitle.trim(),
+      title,
       description: taskDesc || null,
       deadline: taskDeadline || null,
       sort_order: tasks.filter((t) => t.member_id === taskMemberId).length,
     });
     setSaving(false);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+
+    const member = members.find((m) => m.id === taskMemberId);
+    const tgId = member?.profile?.telegram_id;
+    if (tgId) {
+      try {
+        await fetch(SERVER_URL + '/api/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+          body: JSON.stringify({ action: 'notify_mastermind_task_assigned', target_telegram_id: tgId, task_title: title }),
+        });
+      } catch (e) {
+        console.warn('notify_mastermind_task_assigned failed', e);
+      }
+    }
+
     toast({ title: 'Задача добавлена' });
     setTaskOpen(false);
     setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
