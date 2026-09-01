@@ -183,6 +183,23 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
     }
   };
 
+  const getStudentName = () => {
+    const u = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+    return [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Участник';
+  };
+
+  const notify = async (initData: string, action: string, title: string) => {
+    try {
+      await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, action, student_name: getStudentName(), task_title: title }),
+      });
+    } catch (e) {
+      console.warn(action + ' failed', e);
+    }
+  };
+
   const handleCompleteTask = async (taskId: string) => {
     const initData = (window as any).Telegram?.WebApp?.initData;
     if (!initData || !taskComment.trim()) return;
@@ -201,6 +218,9 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Ошибка');
+      const completedTitle =
+        (data && data.is_member ? data.tasks.find((t) => t.id === taskId)?.title : null) || 'Задача';
+      await notify(initData, 'notify_mastermind_task_completed', completedTitle);
       setOpenTaskId(null);
       setTaskComment('');
       setTaskFileUrl(null);
@@ -218,6 +238,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
     if (!initData || !newTaskTitle.trim() || creatingTask || !data || !data.is_member) return;
     setCreatingTask(true);
     try {
+      const title = newTaskTitle.trim();
       const res = await fetch(`${SERVER_URL}/api/state`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -225,13 +246,14 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
           initData,
           action: 'create_mastermind_task',
           member_id: data.member.id,
-          task_title: newTaskTitle.trim(),
+          task_title: title,
           task_description: newTaskDescription.trim() || null,
           task_deadline: newTaskDeadline || null,
         }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Ошибка');
+      await notify(initData, 'notify_mastermind_task_created_by_participant', title);
       setAddTaskOpen(false);
       setNewTaskTitle('');
       setNewTaskDescription('');
