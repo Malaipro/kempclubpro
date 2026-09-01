@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, CheckCircle, RotateCcw, Clock, Paperclip, X } from 'lucide-react';
 import { parseHomeworkFiles, HomeworkFile, safeStorageName } from '@/lib/homeworkFiles';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Stream {
   id: string;
@@ -328,7 +329,7 @@ export const HomeworkManagement: React.FC = () => {
                       {a.theme && <p className="text-sm text-muted-foreground mt-1">{a.theme}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{a.content}</p>
                       {parseHomeworkFiles(a.file_urls, a.file_url).map((f, i) => (
-                        <a key={`${f.url}-${i}`} href={f.url} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
+                        <a key={`${f.url}-${i}`} href={proxyStorageUrl(f.url)} target="_blank" rel="noreferrer" className="text-xs text-primary underline flex items-center gap-1 mt-1 w-fit">
                           <Paperclip className="w-3 h-3" /> {f.name}
                         </a>
                       ))}

@@ -569,7 +569,7 @@ export const BroadcastManagement: React.FC = () => {
                                         (b.type ?? 'url') === 'url' && b.url ? (
                                           <a
                                             key={b.id || i}
-                                            href={b.url}
+                                            href={proxyStorageUrl(b.url)}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="inline-flex items-center gap-1 px-2 py-1 border rounded text-xs hover:bg-muted"
