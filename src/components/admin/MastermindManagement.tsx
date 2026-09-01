@@ -17,6 +17,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
 
+const ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
+const SERVER_URL = 'https://tg.kempclub.pro';
+
 
 
 interface Member {
