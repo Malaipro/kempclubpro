@@ -105,7 +105,7 @@ const TrainerAvatarImage: React.FC<{
 
   return (
     <AvatarImage
-      src={currentSrc}
+      src={proxyStorageUrl(currentSrc)}
       alt={alt}
       className={className}
       loading="lazy"
