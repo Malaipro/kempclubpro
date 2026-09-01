@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import { Hero } from '@/components/Hero';
 import { AboutUs } from '@/components/AboutUs';
 import { Program } from '@/components/Program';
+import { PersonalCoachingCTA } from '@/components/PersonalCoachingCTA';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 
