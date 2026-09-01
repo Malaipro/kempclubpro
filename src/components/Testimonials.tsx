@@ -244,7 +244,7 @@ export const Testimonials: React.FC = () => {
                 ) : testimonial.image_url ? (
                   <div className="aspect-[3/4] bg-gray-800 overflow-hidden">
                     <img 
-                      src={testimonial.image_url}
+                      src={proxyStorageUrl(testimonial.image_url)}
                       alt={testimonial.display_name}
                       loading="lazy"
                       decoding="async"

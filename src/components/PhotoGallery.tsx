@@ -87,7 +87,7 @@ export const PhotoGallery: React.FC = () => {
                   onClick={() => setSelectedMedia(moment)}
                 >
                   <img
-                    src={moment.image_url}
+                    src={proxyStorageUrl(moment.image_url)}
                     alt={moment.title || `Момент КЭМП ${moment.id}`}
                     loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-110"
