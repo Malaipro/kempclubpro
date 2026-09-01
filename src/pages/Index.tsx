@@ -60,7 +60,6 @@ const Index = () => {
         <RegisteredParticipants />
         <Achievements />
         <ContactForm />
-        <PersonalCoachingCTA />
       </Suspense>
       
       {/* Fixed Personal Cabinet Button */}
