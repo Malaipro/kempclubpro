@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Pencil } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ interface EntryEmotion {
 }
 
 interface EntryAnswer {
+  id: string;
   prompt_id: string;
   answer_text: string | null;
 }
@@ -49,6 +51,9 @@ interface Entry {
   id: string;
   entry_date: string;
   day_type: string;
+  // Колонка появилась в миграции 20260901120000. Пока её нет — поле undefined,
+  // запись считается редактируемой.
+  is_reviewed?: boolean;
   emotions: EntryEmotion[];
   answers: EntryAnswer[];
 }
@@ -79,6 +84,11 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
   const [intensities, setIntensities] = useState<Record<string, number>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<SaveState>('idle');
+
+  // Редактирование уже сохранённой записи (до проверки тренером)
+  const [editing, setEditing] = useState(false);
+  const [editAnswers, setEditAnswers] = useState<Record<string, string>>({});
+  const [editState, setEditState] = useState<SaveState>('idle');
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -196,6 +206,81 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
     }
   }, [loadState, intensities, answers, saveState]);
 
+  const startEdit = useCallback(() => {
+    if (loadState.status !== 'ok' || !loadState.data.entry) return;
+    const seed: Record<string, string> = {};
+    for (const a of loadState.data.entry.answers) {
+      seed[a.id] = a.answer_text ?? '';
+    }
+    setEditAnswers(seed);
+    setEditState('idle');
+    setEditing(true);
+  }, [loadState]);
+
+  const cancelEdit = useCallback(() => {
+    setEditing(false);
+    setEditAnswers({});
+    setEditState('idle');
+  }, []);
+
+  const saveEdit = useCallback(async () => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData || loadState.status !== 'ok' || !loadState.data.entry || editState === 'loading') return;
+
+    const entry = loadState.data.entry;
+    const answersPayload = entry.answers
+      .filter((a) => a.id && editAnswers[a.id] !== undefined)
+      .map((a) => ({ id: a.id, text: editAnswers[a.id].trim() }));
+
+    if (answersPayload.length === 0) {
+      setEditing(false);
+      return;
+    }
+
+    setEditState('loading');
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'update_journal_entry',
+          entry_id: entry.id,
+          answers: answersPayload,
+        }),
+      });
+
+      const body = await res.json() as { ok: boolean; error?: string };
+      if (!body.ok) {
+        setEditState('error');
+        return;
+      }
+
+      const textById = new Map(answersPayload.map((a) => [a.id, a.text]));
+      setLoadState((prev) => {
+        if (prev.status !== 'ok' || !prev.data.entry) return prev;
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            entry: {
+              ...prev.data.entry,
+              answers: prev.data.entry.answers.map((a) =>
+                textById.has(a.id) ? { ...a, answer_text: textById.get(a.id) ?? '' } : a
+              ),
+            },
+          },
+        };
+      });
+      setEditing(false);
+      setEditAnswers({});
+      setEditState('idle');
+    } catch {
+      setEditState('error');
+    }
+  }, [loadState, editAnswers, editState]);
+
   // ---------- Render: loading ----------
   if (loadState.status === 'loading') {
     return (
@@ -224,6 +309,11 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
 
   const canSave =
     Object.keys(intensities).length > 0 || Object.values(answers).some((v) => v.trim().length > 0);
+
+  // Запись редактируема, пока тренер её не проверил (is_reviewed отсутствует → считаем редактируемой)
+  const entryEditable = !!data.entry && !data.entry.is_reviewed;
+  const questionTextFor = (promptId: string) =>
+    data.prompts.find((p) => p.id === promptId)?.question_text ?? 'Вопрос дня';
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -259,8 +349,17 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
         )}
 
         {data.entry ? (
-          // ---------- Режим просмотра: запись за сегодня уже есть ----------
+          // ---------- Режим просмотра / редактирования: запись уже есть ----------
           <>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold capitalize">{todayLabel}</p>
+              {entryEditable && !editing && (
+                <Button size="sm" variant="outline" onClick={startEdit}>
+                  <Pencil className="w-3.5 h-3.5 mr-1" /> Редактировать
+                </Button>
+              )}
+            </div>
+
             <Card>
               <CardContent className="py-4 px-4 space-y-3">
                 <p className="text-sm font-semibold">Эмоции дня</p>
@@ -278,23 +377,72 @@ export const TelegramJournalView: React.FC<Props> = ({ onBack }) => {
               </CardContent>
             </Card>
 
-            {data.prompts.map((prompt) => {
-              const answer = data.entry!.answers.find((a) => a.prompt_id === prompt.id);
-              return (
-                <Card key={prompt.id}>
-                  <CardContent className="py-4 px-4 space-y-1.5">
-                    <p className="text-sm font-semibold">{prompt.question_text}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {answer?.answer_text?.trim() ? answer.answer_text : '—'}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {editing ? (
+              <>
+                {data.entry.answers.map((answer) => (
+                  <Card key={answer.id}>
+                    <CardContent className="py-4 px-4 space-y-2">
+                      <p className="text-sm font-semibold">{questionTextFor(answer.prompt_id)}</p>
+                      <Textarea
+                        value={editAnswers[answer.id] ?? ''}
+                        onChange={(e) => setEditAnswers((prev) => ({ ...prev, [answer.id]: e.target.value }))}
+                        placeholder="Твой ответ..."
+                        rows={3}
+                        disabled={editState === 'loading'}
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
 
-            <p className="text-xs text-muted-foreground text-center pt-1">
-              Запись за сегодня уже сохранена
-            </p>
+                {data.entry.answers.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    В этой записи нет ответов для редактирования
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    disabled={editState === 'loading'}
+                    onClick={cancelEdit}
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                    disabled={editState === 'loading' || data.entry.answers.length === 0}
+                    onClick={() => void saveEdit()}
+                  >
+                    {editState === 'loading' ? 'Сохраняем...' : editState === 'error' ? 'Ошибка — повторить' : 'Сохранить'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {data.prompts.map((prompt) => {
+                  const answer = data.entry!.answers.find((a) => a.prompt_id === prompt.id);
+                  return (
+                    <Card key={prompt.id}>
+                      <CardContent className="py-4 px-4 space-y-1.5">
+                        <p className="text-sm font-semibold">{prompt.question_text}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {answer?.answer_text?.trim() ? answer.answer_text : '—'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  {entryEditable
+                    ? 'Запись сохранена — можно редактировать до проверки тренером'
+                    : 'Запись проверена тренером'}
+                </p>
+              </>
+            )}
           </>
         ) : (
           // ---------- Форма заполнения ----------

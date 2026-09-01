@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, Paperclip, X, AlertTriangle, FileText } from 'lucide-react';
+import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, Paperclip, X, AlertTriangle, FileText, Pencil } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,29 @@ interface HomeworkItem {
   file_url: string | null;
   file_signed_url?: string | null;
   status: SubmissionStatus | null;
+  submission_id: string | null;
   submission_content: string | null;
-  submission_file_url: string | null;
+  submission_file_url?: string | null;
+  submission_file_urls?: unknown;
   admin_comment: string | null;
 }
+
+/** Ссылки на файлы ответа: новое поле submission_file_urls (массив) + legacy submission_file_url. */
+const submissionFiles = (item: HomeworkItem): string[] => {
+  const arr = Array.isArray(item.submission_file_urls)
+    ? item.submission_file_urls.filter((u): u is string => typeof u === 'string' && u.length > 0)
+    : [];
+  if (arr.length === 0 && item.submission_file_url) return [item.submission_file_url];
+  return arr;
+};
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(new Error('file_read_error'));
+    reader.readAsDataURL(file);
+  });
 
 type LoadState =
   | { status: 'loading' }
@@ -45,6 +64,13 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
   const [text, setText] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [file, setFile] = useState<File | null>(null);
+
+  // Редактирование уже отправленного ответа (до проверки тренером)
+  const [editSubmissionId, setEditSubmissionId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [editKeptFiles, setEditKeptFiles] = useState<string[]>([]);
+  const [editNewFile, setEditNewFile] = useState<File | null>(null);
+  const [editState, setEditState] = useState<SubmitState>('idle');
 
   // Telegram BackButton — показываем при маунте, скрываем при размонтировании
   useEffect(() => {
@@ -104,12 +130,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
       // 1. Если прикреплён файл — сначала загружаем его через сервер
       let fileUrl: string | null = null;
       if (file) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
-          reader.onerror = () => reject(new Error('file_read_error'));
-          reader.readAsDataURL(file);
-        });
+        const base64 = await fileToBase64(file);
 
         const uploadRes = await fetch(`${SERVER_URL}/api/state`, {
           method: 'POST',
@@ -162,6 +183,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                   status: body.data!.status,
                   submission_content: submittedText || null,
                   submission_file_url: fileUrl,
+                  submission_file_urls: fileUrl ? [fileUrl] : [],
                   admin_comment: null,
                 }
               : item
@@ -176,6 +198,93 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
       setSubmitState('error');
     }
   }, [text, file, submitState]);
+
+  const openEdit = useCallback((item: HomeworkItem) => {
+    setEditSubmissionId(item.submission_id);
+    setEditText(item.submission_content ?? '');
+    setEditKeptFiles(submissionFiles(item));
+    setEditNewFile(null);
+    setEditState('idle');
+  }, []);
+
+  const closeEdit = useCallback(() => {
+    setEditSubmissionId(null);
+    setEditText('');
+    setEditKeptFiles([]);
+    setEditNewFile(null);
+    setEditState('idle');
+  }, []);
+
+  const saveEdit = useCallback(async (item: HomeworkItem) => {
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData || !item.submission_id || editState === 'loading') return;
+    if (!editText.trim() && editKeptFiles.length === 0 && !editNewFile) return;
+
+    setEditState('loading');
+
+    try {
+      const fileUrls = [...editKeptFiles];
+
+      if (editNewFile) {
+        const base64 = await fileToBase64(editNewFile);
+        const uploadRes = await fetch(`${SERVER_URL}/api/state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData,
+            action: 'upload_homework_file',
+            file_name: editNewFile.name,
+            file_base64: base64,
+          }),
+        });
+        const uploadBody = await uploadRes.json() as { ok: boolean; data?: { file_url: string } };
+        if (!uploadBody.ok || !uploadBody.data) {
+          setEditState('error');
+          return;
+        }
+        fileUrls.push(uploadBody.data.file_url);
+      }
+
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'update_homework_submission',
+          submission_id: item.submission_id,
+          content: editText.trim(),
+          file_urls: fileUrls,
+        }),
+      });
+
+      const body = await res.json() as { ok: boolean; error?: string };
+      if (!body.ok) {
+        setEditState('error');
+        return;
+      }
+
+      const newText = editText.trim();
+      setLoadState((prev) => {
+        if (prev.status !== 'ok') return prev;
+        return {
+          ...prev,
+          data: prev.data.map((it) =>
+            it.id === item.id
+              ? {
+                  ...it,
+                  submission_content: newText || null,
+                  submission_file_urls: fileUrls,
+                  submission_file_url: fileUrls[0] ?? null,
+                }
+              : it
+          ),
+        };
+      });
+      closeEdit();
+    } catch {
+      setEditState('error');
+    }
+  }, [editText, editKeptFiles, editNewFile, editState, closeEdit]);
 
   // ---------- Render: loading ----------
   if (loadState.status === 'loading') {
@@ -268,6 +377,11 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
         {data.map((item) => {
           const canSubmit = !item.status || item.status === 'rework';
           const isOpen = openId === item.id;
+          // Редактировать можно только ответ, который ещё на проверке ('submitted').
+          // После проверки ('accepted' / 'rework') кнопки нет.
+          const canEdit = item.status === 'submitted' && !!item.submission_id;
+          const isEditing = canEdit && editSubmissionId === item.submission_id;
+          const files = submissionFiles(item);
 
           return (
             <Card key={item.id}>
@@ -311,22 +425,121 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                   </div>
                 )}
 
-                {(item.submission_content || item.submission_file_url) && item.status !== 'rework' && (
+                {(item.submission_content || files.length > 0) && item.status !== 'rework' && !isEditing && (
                   <div className="p-2 bg-muted/30 rounded text-sm">
                     <strong>Твой ответ:</strong>
                     {item.submission_content && (
                       <p className="whitespace-pre-wrap mt-1">{item.submission_content}</p>
                     )}
-                    {item.submission_file_url && (
+                    {files.map((url, i) => (
                       <a
-                        href={item.submission_file_url}
+                        key={url}
+                        href={url}
                         target="_blank"
                         rel="noreferrer"
                         className="text-kamp-primary underline flex items-center gap-1 w-fit mt-1"
                       >
-                        <Paperclip className="w-3.5 h-3.5" /> Прикреплённый файл
+                        <Paperclip className="w-3.5 h-3.5" /> Прикреплённый файл{files.length > 1 ? ` ${i + 1}` : ''}
                       </a>
+                    ))}
+                  </div>
+                )}
+
+                {canEdit && !isEditing && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => openEdit(item)}
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1" /> Редактировать
+                  </Button>
+                )}
+
+                {isEditing && (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs text-muted-foreground">Ответ можно изменить, пока тренер его не проверил</p>
+                    <Textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      placeholder="Опиши выполнение, добавь ссылки..."
+                      rows={4}
+                      disabled={editState === 'loading'}
+                    />
+
+                    {editKeptFiles.map((url, i) => (
+                      <div key={url} className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate flex items-center gap-1 text-kamp-primary underline"
+                        >
+                          <Paperclip className="w-3 h-3 shrink-0" /> Файл {i + 1}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setEditKeptFiles((prev) => prev.filter((u) => u !== url))}
+                          disabled={editState === 'loading'}
+                          aria-label="Убрать файл"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {editNewFile ? (
+                      <div className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
+                        <span className="truncate flex items-center gap-1">
+                          <Paperclip className="w-3 h-3 shrink-0" />{editNewFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditNewFile(null)}
+                          disabled={editState === 'loading'}
+                          aria-label="Убрать файл"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer w-fit">
+                        <Paperclip className="w-3 h-3" /> Прикрепить файл (до 10 МБ)
+                        <input
+                          type="file"
+                          className="hidden"
+                          disabled={editState === 'loading'}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            if (f && f.size > 10 * 1024 * 1024) {
+                              e.target.value = '';
+                              return;
+                            }
+                            setEditNewFile(f);
+                          }}
+                        />
+                      </label>
                     )}
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        disabled={editState === 'loading'}
+                        onClick={closeEdit}
+                      >
+                        Отмена
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                        disabled={(!editText.trim() && editKeptFiles.length === 0 && !editNewFile) || editState === 'loading'}
+                        onClick={() => void saveEdit(item)}
+                      >
+                        {editState === 'loading' ? 'Сохраняем...' : editState === 'error' ? 'Ошибка — повторить' : 'Сохранить'}
+                      </Button>
+                    </div>
                   </div>
                 )}
 

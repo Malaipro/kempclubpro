@@ -1873,7 +1873,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    if (submission.status !== 'pending') {
+    if (submission.status !== 'submitted') {
       res.status(403).json({ ok: false, error: 'Нельзя редактировать после проверки' });
       return;
     }
