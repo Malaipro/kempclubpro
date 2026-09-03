@@ -111,9 +111,11 @@ export const RegisteredParticipants: React.FC = () => {
 
         // Объединяем данные
         const enrichedParticipants = publicProfiles?.map(profile => {
-          const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          const userBreakdown = ((breakdownData as any[]) || [])
+            .filter((b: any) => b.user_id === profile.user_id)
+            .map((b: any) => ({ category: b.category as string, points: Number(b.points) || 0 }));
           
           // Получаем тесты "начало" и "конец"
           const userCooperTests = cooperTestsData?.filter(c => c.user_id === profile.user_id) || [];
@@ -122,18 +124,14 @@ export const RegisteredParticipants: React.FC = () => {
           
           return {
             ...profile,
-            bjj_points: leaderboardEntry?.bjj_points || 0,
-            kickboxing_points: leaderboardEntry?.kickboxing_points || 0,
-            ofp_points: leaderboardEntry?.ofp_points || 0,
-            theory_points: leaderboardEntry?.theory_points || 0,
-            tactical_points: leaderboardEntry?.tactical_points || 0,
-            kamp_pyramid_points: leaderboardEntry?.kamp_pyramid_points || 0,
-            nutrition_points: leaderboardEntry?.nutrition_points || 0,
+            breakdown: userBreakdown,
             totems: userTotems,
             crash_tests: userCrashTests,
             cooper_test_before: cooperTestBefore,
             cooper_test_after: cooperTestAfter,
           };
+        }) || [];
+
         }) || [];
 
         setParticipants(enrichedParticipants);
