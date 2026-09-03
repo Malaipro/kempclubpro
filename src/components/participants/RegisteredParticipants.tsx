@@ -13,13 +13,8 @@ interface Participant {
   display_name: string | null;
   total_points: number;
   rank_position: number;
-  bjj_points?: number;
-  kickboxing_points?: number;
-  ofp_points?: number;
-  theory_points?: number;
-  tactical_points?: number;
-  kamp_pyramid_points?: number;
-  nutrition_points?: number;
+  breakdown?: Array<{ category: string; points: number }>;
+
   totems?: Array<{
     name: string;
     discipline: string;
@@ -73,14 +68,13 @@ export const RegisteredParticipants: React.FC = () => {
 
         if (profilesError) throw profilesError;
 
-        // Получаем детализацию баллов для каждого участника
+        // Получаем реальную детализацию баллов (по формуле рейтинга)
         const userIds = publicProfiles?.map(p => p.user_id) || [];
-        const { data: leaderboardData, error: leaderboardError } = await supabase
-          .from('leaderboard')
-          .select('user_id, bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, kamp_pyramid_points, nutrition_points')
-          .in('user_id', userIds);
+        const { data: breakdownData, error: breakdownError } = await (supabase as any)
+          .rpc('get_public_rating_breakdown', { p_user_ids: userIds });
 
-        if (leaderboardError) throw leaderboardError;
+        if (breakdownError) console.error('Error fetching rating breakdown:', breakdownError);
+
 
         // Получаем тотемы для каждого участника
         const { data: totemsData, error: totemsError } = await supabase
@@ -117,9 +111,11 @@ export const RegisteredParticipants: React.FC = () => {
 
         // Объединяем данные
         const enrichedParticipants = publicProfiles?.map(profile => {
-          const leaderboardEntry = leaderboardData?.find(l => l.user_id === profile.user_id);
           const userTotems = totemsData?.filter(t => t.user_id === profile.user_id).map(t => t.totems) || [];
           const userCrashTests = crashTestsData?.filter(c => c.user_id === profile.user_id) || [];
+          const userBreakdown = ((breakdownData as any[]) || [])
+            .filter((b: any) => b.user_id === profile.user_id)
+            .map((b: any) => ({ category: b.category as string, points: Number(b.points) || 0 }));
           
           // Получаем тесты "начало" и "конец"
           const userCooperTests = cooperTestsData?.filter(c => c.user_id === profile.user_id) || [];
@@ -128,19 +124,15 @@ export const RegisteredParticipants: React.FC = () => {
           
           return {
             ...profile,
-            bjj_points: leaderboardEntry?.bjj_points || 0,
-            kickboxing_points: leaderboardEntry?.kickboxing_points || 0,
-            ofp_points: leaderboardEntry?.ofp_points || 0,
-            theory_points: leaderboardEntry?.theory_points || 0,
-            tactical_points: leaderboardEntry?.tactical_points || 0,
-            kamp_pyramid_points: leaderboardEntry?.kamp_pyramid_points || 0,
-            nutrition_points: leaderboardEntry?.nutrition_points || 0,
+            breakdown: userBreakdown,
             totems: userTotems,
             crash_tests: userCrashTests,
             cooper_test_before: cooperTestBefore,
             cooper_test_after: cooperTestAfter,
           };
         }) || [];
+
+
 
         setParticipants(enrichedParticipants);
       } catch (error) {
@@ -181,65 +173,41 @@ export const RegisteredParticipants: React.FC = () => {
     });
   };
 
-  const getCategoryBadges = (participant: Participant) => {
-    const badges = [];
-    
-    if (participant.bjj_points && participant.bjj_points > 0) {
-      badges.push({ 
-        label: `БЖЖ: ${participant.bjj_points}`, 
-        icon: <Target className="w-3 h-3" />,
-        color: 'bg-blue-100 text-blue-800' 
-      });
-    }
-    
-    if (participant.kickboxing_points && participant.kickboxing_points > 0) {
-      badges.push({ 
-        label: `Кикбоксинг: ${participant.kickboxing_points}`, 
-        icon: <Zap className="w-3 h-3" />,
-        color: 'bg-red-100 text-red-800' 
-      });
-    }
-    
-    if (participant.ofp_points && participant.ofp_points > 0) {
-      badges.push({ 
-        label: `ОФП: ${participant.ofp_points}`, 
-        icon: <Dumbbell className="w-3 h-3" />,
-        color: 'bg-green-100 text-green-800' 
-      });
-    }
-    
-    if (participant.theory_points && participant.theory_points > 0) {
-      badges.push({ 
-        label: `Теория: ${participant.theory_points}`, 
-        icon: <Book className="w-3 h-3" />,
-        color: 'bg-purple-100 text-purple-800' 
-      });
-    }
-    
-    badges.push({ 
-      label: `Тактика: ${participant.tactical_points || 0}`, 
-      icon: <Shield className="w-3 h-3" />,
-      color: 'bg-orange-100 text-orange-800' 
-    });
-    
-    if (participant.kamp_pyramid_points && participant.kamp_pyramid_points > 0) {
-      badges.push({ 
-        label: `Пирамида КЭМП: ${participant.kamp_pyramid_points}`, 
-        icon: <Target className="w-3 h-3" />,
-        color: 'bg-yellow-100 text-yellow-800' 
-      });
-    }
-    
-    if (participant.nutrition_points && participant.nutrition_points > 0) {
-      badges.push({ 
-        label: `Нутрициология: ${participant.nutrition_points}`, 
-        icon: <Book className="w-3 h-3" />,
-        color: 'bg-teal-100 text-teal-800' 
-      });
-    }
-
-    return badges;
+  const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    attendance: { label: 'Посещение', icon: <Dumbbell className="w-3 h-3" />, color: 'bg-green-100 text-green-800' },
+    tactics: { label: 'Тактика', icon: <Shield className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800' },
+    homework: { label: 'Домашние задания', icon: <Book className="w-3 h-3" />, color: 'bg-purple-100 text-purple-800' },
+    journal: { label: 'Ежедневник', icon: <Book className="w-3 h-3" />, color: 'bg-indigo-100 text-indigo-800' },
+    crash_bjj: { label: 'Краш-тест БЖЖ', icon: <Target className="w-3 h-3" />, color: 'bg-blue-100 text-blue-800' },
+    crash_kick: { label: 'Краш-тест Кикбоксинг', icon: <Zap className="w-3 h-3" />, color: 'bg-red-100 text-red-800' },
+    hero_race: { label: 'Гонка Героев', icon: <Award className="w-3 h-3" />, color: 'bg-amber-100 text-amber-800' },
+    ascetics: { label: 'Аскезы', icon: <CheckCircle className="w-3 h-3" />, color: 'bg-teal-100 text-teal-800' },
+    pyramid: { label: 'Пирамида КЭМП', icon: <Target className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' },
   };
+
+  const CATEGORY_ORDER = ['attendance', 'homework', 'journal', 'crash_bjj', 'crash_kick', 'hero_race', 'tactics', 'ascetics', 'pyramid'];
+
+  const formatPoints = (value: number) => (Number.isInteger(value) ? `${value}` : value.toFixed(1));
+
+  const getCategoryBadges = (participant: Participant) => {
+    const items = participant.breakdown || [];
+    return [...items]
+      .filter(item => item.points > 0)
+      .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
+      .map(item => {
+        const meta = CATEGORY_META[item.category] || {
+          label: item.category,
+          icon: <Star className="w-3 h-3" />,
+          color: 'bg-gray-100 text-gray-800',
+        };
+        return {
+          label: `${meta.label}: ${formatPoints(item.points)}`,
+          icon: meta.icon,
+          color: meta.color,
+        };
+      });
+  };
+
 
   const formatCooperTime = (minutes: number | null, seconds: number | null) => {
     if (minutes === null && seconds === null) return 'Нет данных';

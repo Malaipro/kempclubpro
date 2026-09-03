@@ -4123,6 +4123,14 @@ export type Database = {
         }[]
       }
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_public_rating_breakdown: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          category: string
+          points: number
+          user_id: string
+        }[]
+      }
       get_pyramid_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_rules_for_user: {
