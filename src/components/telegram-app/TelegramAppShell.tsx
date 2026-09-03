@@ -193,4 +193,11 @@ export const TelegramAppShell: React.FC = () => {
       onNavigate={setActiveSection}
     />
   );
+  };
+
+  return (
+    <AppApiProvider environment="telegram" initData={initData}>
+      {renderContent()}
+    </AppApiProvider>
+  );
 };
