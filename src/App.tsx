@@ -18,6 +18,9 @@ const AdminViewParticipant = lazy(() => import("./pages/AdminViewParticipant"));
 const TelegramApp = lazy(() => import("./pages/TelegramApp"));
 // OAuth consent screen for MCP agent integrations
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+// Веб-версия Mini App (kemp-app.ru)
+const WebApp = lazy(() => import("./pages/WebApp"));
+const AppLogin = lazy(() => import("./pages/AppLogin"));
 
 const queryClient = new QueryClient();
 
@@ -36,6 +39,8 @@ const App = () => (
             <Route path="/join" element={<Join />} />
             <Route path="/admin/view-participant/:userId" element={<AdminViewParticipant />} />
             <Route path="/telegram" element={<TelegramApp />} />
+            <Route path="/app" element={<WebApp />} />
+            <Route path="/app/login" element={<AppLogin />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
