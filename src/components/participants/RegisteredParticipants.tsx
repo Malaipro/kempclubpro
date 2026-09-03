@@ -173,65 +173,41 @@ export const RegisteredParticipants: React.FC = () => {
     });
   };
 
-  const getCategoryBadges = (participant: Participant) => {
-    const badges = [];
-    
-    if (participant.bjj_points && participant.bjj_points > 0) {
-      badges.push({ 
-        label: `БЖЖ: ${participant.bjj_points}`, 
-        icon: <Target className="w-3 h-3" />,
-        color: 'bg-blue-100 text-blue-800' 
-      });
-    }
-    
-    if (participant.kickboxing_points && participant.kickboxing_points > 0) {
-      badges.push({ 
-        label: `Кикбоксинг: ${participant.kickboxing_points}`, 
-        icon: <Zap className="w-3 h-3" />,
-        color: 'bg-red-100 text-red-800' 
-      });
-    }
-    
-    if (participant.ofp_points && participant.ofp_points > 0) {
-      badges.push({ 
-        label: `ОФП: ${participant.ofp_points}`, 
-        icon: <Dumbbell className="w-3 h-3" />,
-        color: 'bg-green-100 text-green-800' 
-      });
-    }
-    
-    if (participant.theory_points && participant.theory_points > 0) {
-      badges.push({ 
-        label: `Теория: ${participant.theory_points}`, 
-        icon: <Book className="w-3 h-3" />,
-        color: 'bg-purple-100 text-purple-800' 
-      });
-    }
-    
-    badges.push({ 
-      label: `Тактика: ${participant.tactical_points || 0}`, 
-      icon: <Shield className="w-3 h-3" />,
-      color: 'bg-orange-100 text-orange-800' 
-    });
-    
-    if (participant.kamp_pyramid_points && participant.kamp_pyramid_points > 0) {
-      badges.push({ 
-        label: `Пирамида КЭМП: ${participant.kamp_pyramid_points}`, 
-        icon: <Target className="w-3 h-3" />,
-        color: 'bg-yellow-100 text-yellow-800' 
-      });
-    }
-    
-    if (participant.nutrition_points && participant.nutrition_points > 0) {
-      badges.push({ 
-        label: `Нутрициология: ${participant.nutrition_points}`, 
-        icon: <Book className="w-3 h-3" />,
-        color: 'bg-teal-100 text-teal-800' 
-      });
-    }
-
-    return badges;
+  const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    attendance: { label: 'Посещение', icon: <Dumbbell className="w-3 h-3" />, color: 'bg-green-100 text-green-800' },
+    tactics: { label: 'Тактика', icon: <Shield className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800' },
+    homework: { label: 'Домашние задания', icon: <Book className="w-3 h-3" />, color: 'bg-purple-100 text-purple-800' },
+    journal: { label: 'Ежедневник', icon: <Book className="w-3 h-3" />, color: 'bg-indigo-100 text-indigo-800' },
+    crash_bjj: { label: 'Краш-тест БЖЖ', icon: <Target className="w-3 h-3" />, color: 'bg-blue-100 text-blue-800' },
+    crash_kick: { label: 'Краш-тест Кикбоксинг', icon: <Zap className="w-3 h-3" />, color: 'bg-red-100 text-red-800' },
+    hero_race: { label: 'Гонка Героев', icon: <Award className="w-3 h-3" />, color: 'bg-amber-100 text-amber-800' },
+    ascetics: { label: 'Аскезы', icon: <CheckCircle className="w-3 h-3" />, color: 'bg-teal-100 text-teal-800' },
+    pyramid: { label: 'Пирамида КЭМП', icon: <Target className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' },
   };
+
+  const CATEGORY_ORDER = ['attendance', 'homework', 'journal', 'crash_bjj', 'crash_kick', 'hero_race', 'tactics', 'ascetics', 'pyramid'];
+
+  const formatPoints = (value: number) => (Number.isInteger(value) ? `${value}` : value.toFixed(1));
+
+  const getCategoryBadges = (participant: Participant) => {
+    const items = participant.breakdown || [];
+    return [...items]
+      .filter(item => item.points > 0)
+      .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
+      .map(item => {
+        const meta = CATEGORY_META[item.category] || {
+          label: item.category,
+          icon: <Star className="w-3 h-3" />,
+          color: 'bg-gray-100 text-gray-800',
+        };
+        return {
+          label: `${meta.label}: ${formatPoints(item.points)}`,
+          icon: meta.icon,
+          color: meta.color,
+        };
+      });
+  };
+
 
   const formatCooperTime = (minutes: number | null, seconds: number | null) => {
     if (minutes === null && seconds === null) return 'Нет данных';
