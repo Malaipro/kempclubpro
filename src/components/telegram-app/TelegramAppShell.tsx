@@ -102,8 +102,11 @@ export const TelegramAppShell: React.FC = () => {
       });
   }, []);
 
+  const renderContent = () => {
   if (state.status === 'loading') return <TelegramLoading />;
   if (state.status === 'error') return <TelegramNoAccess reason={state.reason} />;
+
+
 
   if (activeSection === 'schedule') {
     return <TelegramScheduleView onBack={() => setActiveSection('home')} />;
