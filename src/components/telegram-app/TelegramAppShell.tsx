@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AppApiProvider } from '@/components/app-shared/apiAdapter';
 import { TelegramLoading } from './TelegramLoading';
 import { TelegramNoAccess, NoAccessReason } from './TelegramNoAccess';
 import { TelegramParticipantView } from './TelegramParticipantView';
@@ -85,6 +86,7 @@ export const TelegramAppShell: React.FC = () => {
       setState({ status: 'error', reason: 'missing_init_data' });
       return;
     }
+    setInitData(initData);
 
     if (!webapp.initDataUnsafe?.user) {
       setState({ status: 'error', reason: 'missing_user' });
