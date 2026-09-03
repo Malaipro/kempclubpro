@@ -132,7 +132,7 @@ export const RegisteredParticipants: React.FC = () => {
           };
         }) || [];
 
-        }) || [];
+
 
         setParticipants(enrichedParticipants);
       } catch (error) {
