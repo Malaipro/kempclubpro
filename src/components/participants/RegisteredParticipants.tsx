@@ -13,13 +13,8 @@ interface Participant {
   display_name: string | null;
   total_points: number;
   rank_position: number;
-  bjj_points?: number;
-  kickboxing_points?: number;
-  ofp_points?: number;
-  theory_points?: number;
-  tactical_points?: number;
-  kamp_pyramid_points?: number;
-  nutrition_points?: number;
+  breakdown?: Array<{ category: string; points: number }>;
+
   totems?: Array<{
     name: string;
     discipline: string;
