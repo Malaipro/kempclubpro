@@ -67,6 +67,7 @@ function toReason(msg: string): NoAccessReason {
 export const TelegramAppShell: React.FC = () => {
   const [state, setState] = useState<AppState>({ status: 'loading' });
   const [activeSection, setActiveSection] = useState<Section>('home');
+  const [initData, setInitData] = useState('');
 
   useEffect(() => {
     const webapp = window.Telegram?.WebApp;
