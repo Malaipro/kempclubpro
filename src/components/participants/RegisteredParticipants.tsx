@@ -68,14 +68,13 @@ export const RegisteredParticipants: React.FC = () => {
 
         if (profilesError) throw profilesError;
 
-        // Получаем детализацию баллов для каждого участника
+        // Получаем реальную детализацию баллов (по формуле рейтинга)
         const userIds = publicProfiles?.map(p => p.user_id) || [];
-        const { data: leaderboardData, error: leaderboardError } = await supabase
-          .from('leaderboard')
-          .select('user_id, bjj_points, kickboxing_points, ofp_points, theory_points, tactical_points, kamp_pyramid_points, nutrition_points')
-          .in('user_id', userIds);
+        const { data: breakdownData, error: breakdownError } = await (supabase as any)
+          .rpc('get_public_rating_breakdown', { p_user_ids: userIds });
 
-        if (leaderboardError) throw leaderboardError;
+        if (breakdownError) console.error('Error fetching rating breakdown:', breakdownError);
+
 
         // Получаем тотемы для каждого участника
         const { data: totemsData, error: totemsError } = await supabase
