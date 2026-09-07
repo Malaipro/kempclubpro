@@ -2262,6 +2262,51 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_weekly_summaries: {
+        Row: {
+          created_at: string | null
+          id: string
+          summary: string
+          team_id: string
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          summary: string
+          team_id: string
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          summary?: string
+          team_id?: string
+          user_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_weekly_summaries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "captain_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_weekly_summaries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       platform_documents: {
         Row: {
           content: string | null
