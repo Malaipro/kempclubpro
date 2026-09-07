@@ -12,6 +12,10 @@ const SYSTEM_PROMPT =
   'Обрати внимание на содержание дневника — если участник пишет о трудностях или демотивации, отметь это. ' +
   'Если не заполняет дневник — это красный флаг, обязательно упомяни.'
 
+const PERSONAL_SYSTEM_PROMPT =
+  'Ты куратор мужского клуба КЭМП. Пишешь краткую личную сводку участнику за неделю. ' +
+  'Тон: мужской, прямой, поддерживающий но без сюсюканья. 3-4 предложения.'
+
 interface RequestBody {
   team_id?: string
 }
@@ -58,6 +62,28 @@ interface MemberStats {
 
 function joinAnswers(answers: JournalAnswer[]): string {
   return answers.map((a) => a.text).filter((t) => t && t.trim().length > 0).join(' ').trim()
+}
+
+function buildPersonalPrompt(s: MemberStats, weekStartStr: string, weekEndStr: string): string {
+  const journalCombinedText = s.journal_texts
+    .map((t) => joinAnswers(t.answers))
+    .filter((t) => t.length > 0)
+    .join(' ')
+    .trim()
+
+  const journalLine = journalCombinedText.length > 0
+    ? `Из твоего дневника: ${journalCombinedText.slice(0, 150)}`
+    : 'Дневник не заполнял'
+
+  return (
+    `${s.display_name}, твоя неделя ${weekStartStr} — ${weekEndStr}:\n` +
+    `Тренировок: ${s.trainings} из ${TRAINING_TARGET}\n` +
+    `ДЗ: ${s.homework_submitted ? 'сдал' : 'не сдал'}\n` +
+    `Ежедневник: ${s.journal_days} из ${JOURNAL_TARGET} дней\n` +
+    `Статус: ${s.traffic_light}\n` +
+    `${journalLine}\n\n` +
+    `Напиши краткую сводку: что получилось, над чем поработать, что делать на следующей неделе.`
+  )
 }
 
 serve(async (req) => {
@@ -303,6 +329,31 @@ serve(async (req) => {
           continue
         }
 
+        // Персональные сводки для каждого участника
+        for (const s of stats) {
+          try {
+            const personalPrompt = buildPersonalPrompt(s, weekStartStr, weekEndStr)
+            const personalSummary = await requestSummary(anthropicKey, PERSONAL_SYSTEM_PROMPT, personalPrompt, 300)
+            if (!personalSummary) continue
+
+            const { error: personalInsertError } = await supabase
+              .from('participant_weekly_summaries')
+              .insert({
+                user_id: s.user_id,
+                team_id: team.id,
+                week_start: weekStartStr,
+                week_end: weekEndStr,
+                summary: personalSummary,
+              })
+
+            if (personalInsertError) {
+              console.error(`Failed to save personal summary for user ${s.user_id}:`, personalInsertError)
+            }
+          } catch (personalError) {
+            console.error(`Error generating personal summary for user ${s.user_id}:`, personalError)
+          }
+        }
+
         processed++
       } catch (innerError) {
         console.error(`Error processing team ${team.id}:`, innerError)
@@ -325,7 +376,8 @@ serve(async (req) => {
 async function requestSummary(
   anthropicKey: string,
   systemPrompt: string,
-  prompt: string
+  prompt: string,
+  maxTokens = 800
 ): Promise<string | null> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -336,7 +388,7 @@ async function requestSummary(
     },
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
-      max_tokens: 800,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
       system: systemPrompt,
     }),
