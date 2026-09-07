@@ -33,7 +33,15 @@ const GROUP_TOPICS: { value: string; label: string; threadId: number | null }[] 
 ];
 
 
-const toMoscow = (iso: string) => new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
+// Форматируем момент времени в московском поясе (UTC+3) независимо от часового пояса устройства
+const fmtMoscow = (iso: string) =>
+  new Date(iso).toLocaleString('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).replace(',', '');
 
 
 type ButtonType = 'url' | 'checkin' | 'book_event' | 'request_reward';
