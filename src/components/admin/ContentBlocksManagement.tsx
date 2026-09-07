@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Upload, X, Image as ImageIcon, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface ContentBlock {
   id: string;
@@ -391,7 +392,7 @@ export const ContentBlocksManagement: React.FC = () => {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(formData.image_url, '_blank')}
+                      onClick={() => window.open(proxyStorageUrl(formData.image_url), '_blank')}
                     >
                       <Eye className="w-3 h-3" />
                     </Button>

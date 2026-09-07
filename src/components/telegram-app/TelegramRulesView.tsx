@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollText, FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
@@ -159,7 +160,7 @@ export const TelegramRulesView: React.FC<Props> = ({ onBack }) => {
                   size="sm"
                   variant="outline"
                   className="mt-4 gap-1.5"
-                  onClick={() => window.Telegram?.WebApp?.openLink(doc.file_url!)}
+                  onClick={() => window.Telegram?.WebApp?.openLink(proxyStorageUrl(doc.file_url!))}
                 >
                   <FileText className="w-4 h-4" />
                   Открыть файл

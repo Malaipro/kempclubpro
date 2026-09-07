@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { X, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Moment {
   id: string;
@@ -86,7 +87,7 @@ export const PhotoGallery: React.FC = () => {
                   onClick={() => setSelectedMedia(moment)}
                 >
                   <img
-                    src={moment.image_url}
+                    src={proxyStorageUrl(moment.image_url)}
                     alt={moment.title || `Момент КЭМП ${moment.id}`}
                     loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-110"
@@ -138,15 +139,15 @@ export const PhotoGallery: React.FC = () => {
             <div className="relative rounded-lg overflow-hidden bg-black">
               {selectedMedia.video_url ? (
                 <video
-                  src={selectedMedia.video_url}
+                  src={proxyStorageUrl(selectedMedia.video_url)}
                   controls
-                  autoPlay
                   className="w-full max-h-[80vh] object-contain"
+                  autoPlay
                 />
               ) : (
                 <img
-                  src={selectedMedia.image_url}
-                  alt={selectedMedia.title || 'Момент КЭМП'}
+                  src={proxyStorageUrl(selectedMedia.image_url)}
+                  alt={selectedMedia.title || 'Фото КЭМП'}
                   className="w-full max-h-[80vh] object-contain"
                 />
               )}

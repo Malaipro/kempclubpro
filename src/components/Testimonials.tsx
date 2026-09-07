@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { getVideoEmbedUrl, getVideoType } from '@/lib/videoUtils';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 interface Testimonial {
   id: string;
@@ -243,7 +244,7 @@ export const Testimonials: React.FC = () => {
                 ) : testimonial.image_url ? (
                   <div className="aspect-[3/4] bg-gray-800 overflow-hidden">
                     <img 
-                      src={testimonial.image_url}
+                      src={proxyStorageUrl(testimonial.image_url)}
                       alt={testimonial.display_name}
                       loading="lazy"
                       decoding="async"

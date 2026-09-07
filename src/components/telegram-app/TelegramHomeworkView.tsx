@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Clock, CheckCircle, RotateCcw, Send, ClipboardList, Paperclip, X, AlertTriangle, FileText, Pencil } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -427,12 +428,12 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                 {item.file_signed_url && (
                   <div>
                     {/\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(item.file_url ?? '') ? (
-                      <a href={item.file_signed_url} target="_blank" rel="noopener noreferrer">
-                        <img src={item.file_signed_url} alt="Файл задания" className="max-h-48 rounded border object-cover" />
+                      <a href={proxyStorageUrl(item.file_signed_url)} target="_blank" rel="noopener noreferrer">
+                        <img src={proxyStorageUrl(item.file_signed_url)} alt="Файл задания" className="max-h-48 rounded border object-cover" />
                       </a>
                     ) : (
                       <Button variant="outline" size="sm" className="w-fit" asChild>
-                        <a href={item.file_signed_url} target="_blank" rel="noopener noreferrer">
+                        <a href={proxyStorageUrl(item.file_signed_url)} target="_blank" rel="noopener noreferrer">
                           <FileText className="w-3.5 h-3.5 mr-1" /> Открыть файл задания
                         </a>
                       </Button>
@@ -455,7 +456,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                     {files.map((url, i) => (
                       <a
                         key={url}
-                        href={url}
+                        href={proxyStorageUrl(url)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-kamp-primary underline flex items-center gap-1 w-fit mt-1"
@@ -491,7 +492,7 @@ export const TelegramHomeworkView: React.FC<Props> = ({ onBack }) => {
                     {editKeptFiles.map((url, i) => (
                       <div key={url} className="flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5">
                         <a
-                          href={url}
+                          href={proxyStorageUrl(url)}
                           target="_blank"
                           rel="noreferrer"
                           className="truncate flex items-center gap-1 text-kamp-primary underline"

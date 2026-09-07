@@ -16,6 +16,10 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check, X, Loader2, RefreshCw, Pencil } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
+
+const ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
+const SERVER_URL = 'https://tg.kempclub.pro';
 
 
 
@@ -365,15 +369,47 @@ export const MastermindManagement: React.FC = () => {
       return;
     }
     setSaving(true);
+    const title = taskTitle.trim();
     const { error } = await supabase.from('mastermind_tasks').insert({
       member_id: taskMemberId,
-      title: taskTitle.trim(),
+      title,
       description: taskDesc || null,
       deadline: taskDeadline || null,
       sort_order: tasks.filter((t) => t.member_id === taskMemberId).length,
     });
     setSaving(false);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+
+    // Уведомление участнику в Telegram
+    const member = members.find((m) => m.id === taskMemberId);
+    if (member?.user_id) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_id')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        const telegramId = profile?.telegram_id || member?.profile?.telegram_id;
+        if (telegramId) {
+          const res = await fetch(SERVER_URL + '/api/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+            body: JSON.stringify({
+              action: 'notify_mastermind_task_assigned',
+              target_telegram_id: telegramId,
+              task_title: title,
+            }),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            console.warn('notify_mastermind_task_assigned non-ok', res.status, text);
+          }
+        }
+      } catch (e) {
+        console.warn('notify_mastermind_task_assigned failed', e);
+      }
+    }
+
     toast({ title: 'Задача добавлена' });
     setTaskOpen(false);
     setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
@@ -722,8 +758,8 @@ export const MastermindManagement: React.FC = () => {
                     <p className="text-sm"><span className="text-muted-foreground">Комментарий тренера:</span> {t.admin_comment}</p>
                   )}
                   {t.file_url && (
-                    <a href={t.file_url} target="_blank" rel="noreferrer" className="text-sm underline text-primary block">
-                      Файл
+                    <a href={proxyStorageUrl(t.file_url)} target="_blank" rel="noreferrer" className="text-sm underline text-primary block">
+                      Открыть прикреплённый файл
                     </a>
                   )}
                   {pending && (

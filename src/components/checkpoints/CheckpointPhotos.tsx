@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { proxyStorageUrl } from '@/lib/storageUrl';
 
 export type PhotoSlot = 'front' | 'side';
 
@@ -65,7 +66,7 @@ export const CheckpointPhotos: React.FC<Props> = ({
               >
                 {url ? (
                   <img
-                    src={bust(url)}
+                    src={proxyStorageUrl(bust(url))}
                     alt={label}
                     loading="lazy"
                     className="w-full h-full object-cover cursor-zoom-in"
@@ -127,7 +128,7 @@ export const CheckpointPhotos: React.FC<Props> = ({
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-w-3xl p-2">
-          {preview && <img src={bust(preview)} alt="Фото участника" className="w-full h-auto rounded-md" />}
+          {preview && <img src={proxyStorageUrl(bust(preview))} alt="Фото участника" className="w-full h-auto rounded-md" />}
         </DialogContent>
       </Dialog>
     </div>
