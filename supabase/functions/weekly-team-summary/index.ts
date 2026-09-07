@@ -219,7 +219,7 @@ serve(async (req) => {
           .from('homework_submissions')
           .select('user_id')
           .in('user_id', memberIds)
-          .in('status', ['approved', 'pending'])
+          .in('status', ['accepted', 'submitted', 'approved', 'pending'])
           .gte('submitted_at', weekStartIso)
 
         const homeworkByUser = new Map<string, number>()
