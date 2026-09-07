@@ -1798,20 +1798,23 @@ stateRouter.post('/', async (req: Request, res: Response) => {
         sent++;
       }
 
-      // Отправить участникам команды
-      const { data: members } = await supabase
-        .from('captain_team_members')
-        .select('user_id, profiles!captain_team_members_user_id_fkey(telegram_id)')
-        .eq('team_id', s.team_id);
+      // Отправить участникам персональные сводки
+      const { data: personalSummaries } = await supabase
+        .from('participant_weekly_summaries')
+        .select('user_id, summary, profiles!participant_weekly_summaries_user_id_fkey(telegram_id, display_name)')
+        .eq('team_id', s.team_id)
+        .eq('week_start', week_start || new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
 
-      if (members) {
-        for (const m of members) {
-          const memberTgId = (m as any).profiles?.telegram_id;
-          if (memberTgId && memberTgId !== tgId) {
+      if (personalSummaries) {
+        for (const ps of personalSummaries) {
+          const memberTgId = (ps as any).profiles?.telegram_id;
+          const memberName = (ps as any).profiles?.display_name || '';
+          if (memberTgId) {
+            const personalText = '📊 ' + memberName + ', твоя сводка за неделю:\n\n' + ps.summary;
             await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: memberTgId, text: text.substring(0, 4000), parse_mode: 'Markdown' }),
+              body: JSON.stringify({ chat_id: memberTgId, text: personalText.substring(0, 4000), parse_mode: 'Markdown' }),
             });
             sent++;
           }
