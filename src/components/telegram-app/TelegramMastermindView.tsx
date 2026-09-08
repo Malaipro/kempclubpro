@@ -74,7 +74,6 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   const [taskFileName, setTaskFileName] = useState<string | null>(null);
   const [uploadingTaskFile, setUploadingTaskFile] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
-  const [failingTaskId, setFailingTaskId] = useState<string | null>(null);
 
   // Форма нового отчёта
   const [entrySummary, setEntrySummary] = useState('');
@@ -232,31 +231,6 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
       alert(e.message);
     } finally {
       setCompletingTaskId(null);
-    }
-  };
-
-  const handleFailTask = async (taskId: string) => {
-    const initData = (window as any).Telegram?.WebApp?.initData;
-    if (!initData || failingTaskId) return;
-    if (!window.confirm('Отметить задачу как невыполненную?')) return;
-    setFailingTaskId(taskId);
-    try {
-      const res = await fetch(`${SERVER_URL}/api/state`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData,
-          action: 'fail_mastermind_task',
-          task_id: taskId,
-        }),
-      });
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || 'Ошибка');
-      await fetchData();
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setFailingTaskId(null);
     }
   };
 
@@ -580,24 +554,13 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                               <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
                             )
                           ) : task.is_failed === true ? null : (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                                onClick={() => openTaskComment(task.id)}
-                              >
-                                Выполнено
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 text-red-500 border-red-300 hover:text-red-500"
-                                onClick={() => handleFailTask(task.id)}
-                                disabled={failingTaskId === task.id}
-                              >
-                                {failingTaskId === task.id ? 'Отмечаю...' : 'Не выполнено'}
-                              </Button>
-                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                              onClick={() => openTaskComment(task.id)}
+                            >
+                              Выполнено
+                            </Button>
                           )}
                         </div>
                       )}
