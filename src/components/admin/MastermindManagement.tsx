@@ -51,6 +51,8 @@ interface Task {
   created_by: string | null;
   approval_status: string | null;
   admin_comment: string | null;
+  is_failed: boolean | null;
+  failed_at: string | null;
 }
 
 interface Entry {
