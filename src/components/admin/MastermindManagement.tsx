@@ -445,6 +445,47 @@ export const MastermindManagement: React.FC = () => {
     loadAll();
   };
 
+  const markTaskFailed = async (t: Task) => {
+    if (!confirm('Отметить задачу как не выполненную?')) return;
+    const { error } = await supabase
+      .from('mastermind_tasks')
+      .update({ is_failed: true, failed_at: new Date().toISOString() })
+      .eq('id', t.id);
+    if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+
+    const member = members.find((m) => m.id === t.member_id);
+    if (member?.user_id) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_id')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        const telegramId = profile?.telegram_id || member?.profile?.telegram_id;
+        if (telegramId) {
+          const res = await fetch(SERVER_URL + '/api/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+            body: JSON.stringify({
+              action: 'notify_mastermind_task_assigned',
+              target_telegram_id: telegramId,
+              task_title: '⚠️ Задача не выполнена: ' + t.title,
+            }),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            console.warn('notify_mastermind_task_failed non-ok', res.status, text);
+          }
+        }
+      } catch (e) {
+        console.warn('notify_mastermind_task_failed failed', e);
+      }
+    }
+
+    toast({ title: 'Задача отмечена как не выполненная' });
+    loadAll();
+  };
+
   const reviewEntry = async (e: Entry, status: 'approved' | 'rejected') => {
     const { error } = await supabase
       .from('mastermind_entries')
