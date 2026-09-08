@@ -31,6 +31,7 @@ interface MastermindTask {
   title: string;
   description: string | null;
   is_completed: boolean;
+  is_failed?: boolean;
   completed_at: string | null;
   participant_comment: string | null;
   sort_order: number;
@@ -73,6 +74,7 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
   const [taskFileName, setTaskFileName] = useState<string | null>(null);
   const [uploadingTaskFile, setUploadingTaskFile] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+  const [failingTaskId, setFailingTaskId] = useState<string | null>(null);
 
   // Форма нового отчёта
   const [entrySummary, setEntrySummary] = useState('');
@@ -230,6 +232,31 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
       alert(e.message);
     } finally {
       setCompletingTaskId(null);
+    }
+  };
+
+  const handleFailTask = async (taskId: string) => {
+    const initData = (window as any).Telegram?.WebApp?.initData;
+    if (!initData || failingTaskId) return;
+    if (!window.confirm('Отметить задачу как невыполненную?')) return;
+    setFailingTaskId(taskId);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData,
+          action: 'fail_mastermind_task',
+          task_id: taskId,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Ошибка');
+      await fetchData();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setFailingTaskId(null);
     }
   };
 
@@ -431,7 +458,10 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
 
   const { member, tasks, entries } = data;
   const completedTasksCount = tasks.filter((t) => t.is_completed).length;
-  const tasksProgressPct = tasks.length > 0 ? Math.round((completedTasksCount / tasks.length) * 100) : 0;
+  const failedTasksCount = tasks.filter((t) => t.is_failed === true).length;
+  const closedTasksCount = completedTasksCount + failedTasksCount;
+  const tasksProgressPct = tasks.length > 0 ? Math.round((closedTasksCount / tasks.length) * 100) : 0;
+  const progressIsRed = closedTasksCount > 0 && failedTasksCount / closedTasksCount > 0.5;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -449,14 +479,14 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
             <h2 className="text-sm font-semibold">Задачи</h2>
             {tasks.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                {completedTasksCount}/{tasks.length} · {tasksProgressPct}%
+                {closedTasksCount}/{tasks.length} · {tasksProgressPct}%
               </span>
             )}
           </div>
           {tasks.length > 0 && (
             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full bg-kamp-primary transition-all"
+                className={`h-full transition-all ${progressIsRed ? 'bg-red-500' : 'bg-green-500'}`}
                 style={{ width: `${tasksProgressPct}%` }}
               />
             </div>
@@ -484,7 +514,16 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                 );
 
                 return (
-                  <Card key={task.id} className={task.is_completed ? 'border-green-500/30 bg-green-500/5' : undefined}>
+                  <Card
+                    key={task.id}
+                    className={
+                      task.is_failed === true
+                        ? 'border-red-500/30 bg-red-500/5'
+                        : task.is_completed
+                        ? 'border-green-500/30 bg-green-500/5'
+                        : undefined
+                    }
+                  >
                     <CardContent className="p-4 space-y-2">
                       <div
                         role="button"
@@ -499,9 +538,17 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                         }}
                       >
                         <Checkbox checked={task.is_completed} disabled className="shrink-0" />
-                        <p className={`flex-1 text-sm font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                        <p className={`flex-1 text-sm font-medium ${task.is_completed || task.is_failed === true ? 'line-through text-muted-foreground' : ''}`}>
                           {task.title}
                         </p>
+                        {task.is_failed === true && (
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40"
+                          >
+                            Не выполнено
+                          </Badge>
+                        )}
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
                         ) : (
@@ -532,14 +579,25 @@ export const TelegramMastermindView: React.FC<Props> = ({ onBack, groupId, group
                             task.participant_comment && (
                               <p className="text-xs bg-muted/50 rounded p-2 mt-1 whitespace-pre-wrap">{task.participant_comment}</p>
                             )
-                          ) : (
-                            <Button
-                              size="sm"
-                              className="w-full bg-kamp-primary hover:bg-kamp-primary/90 text-white"
-                              onClick={() => openTaskComment(task.id)}
-                            >
-                              Выполнено
-                            </Button>
+                          ) : task.is_failed === true ? null : (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-kamp-primary hover:bg-kamp-primary/90 text-white"
+                                onClick={() => openTaskComment(task.id)}
+                              >
+                                Выполнено
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 text-red-500 border-red-300 hover:text-red-500"
+                                onClick={() => handleFailTask(task.id)}
+                                disabled={failingTaskId === task.id}
+                              >
+                                {failingTaskId === task.id ? 'Отмечаю...' : 'Не выполнено'}
+                              </Button>
+                            </div>
                           )}
                         </div>
                       )}
