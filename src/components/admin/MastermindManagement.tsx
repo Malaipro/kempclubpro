@@ -756,17 +756,21 @@ export const MastermindManagement: React.FC = () => {
             {sortedTasks.map((t) => {
               const overdue = isOverdue(t);
               const pending = t.approval_status === 'pending';
+              const failed = !!t.is_failed;
               return (
-              <Card key={t.id} className={`bg-card ${pending ? 'border-primary' : ''}`}>
+              <Card key={t.id} className={`bg-card ${pending && !failed ? 'border-primary' : ''}`}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-card-foreground break-words">{t.title}</p>
+                      <p className={`font-medium text-card-foreground break-words ${failed ? 'line-through text-muted-foreground' : ''}`}>
+                        {t.title}
+                      </p>
                       <p className="text-xs text-muted-foreground">{memberName(t.member_id)}</p>
                     </div>
                     <div className="flex flex-wrap gap-1 justify-end">
                       {t.created_by && <Badge variant="secondary">От участника</Badge>}
-                      {t.approval_status && (
+                      {failed && <Badge variant="destructive">Не выполнено</Badge>}
+                      {!failed && t.approval_status && (
                         <Badge
                           variant={
                             t.approval_status === 'approved'
@@ -783,9 +787,11 @@ export const MastermindManagement: React.FC = () => {
                             : 'На проверке'}
                         </Badge>
                       )}
-                      <Badge variant={t.is_completed ? 'default' : 'outline'}>
-                        {t.is_completed ? 'Выполнена' : 'В работе'}
-                      </Badge>
+                      {!failed && (
+                        <Badge variant={t.is_completed ? 'default' : 'outline'}>
+                          {t.is_completed ? 'Выполнена' : 'В работе'}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   {t.deadline && (
@@ -805,7 +811,7 @@ export const MastermindManagement: React.FC = () => {
                       Открыть прикреплённый файл
                     </a>
                   )}
-                  {pending && (
+                  {pending && !failed && (
                     <div className="space-y-2 pt-1">
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => setApproval(t, 'approved')}>
@@ -834,14 +840,26 @@ export const MastermindManagement: React.FC = () => {
                       )}
                     </div>
                   )}
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" variant="outline" onClick={() => toggleTask(t)}>
-                      {t.is_completed ? 'Вернуть в работу' : 'Отметить выполненной'}
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => removeTask(t)}>
-                      <Trash2 className="w-4 h-4 mr-1" /> Удалить
-                    </Button>
-                  </div>
+                  {!failed && (
+                    <div className="flex gap-2 pt-1 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => toggleTask(t)}>
+                        {t.is_completed ? 'Вернуть в работу' : 'Отметить выполненной'}
+                      </Button>
+                      {!t.is_completed && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-500 border-red-300"
+                          onClick={() => markTaskFailed(t)}
+                        >
+                          Не выполнено
+                        </Button>
+                      )}
+                      <Button size="sm" variant="destructive" onClick={() => removeTask(t)}>
+                        <Trash2 className="w-4 h-4 mr-1" /> Удалить
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               );
