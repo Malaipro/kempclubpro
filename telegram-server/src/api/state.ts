@@ -97,7 +97,7 @@ stateRouter.post('/', async (req: Request, res: Response) => {
 
   // Обход initData для send_to_group с admin key
   const adminKeyHeader = req.headers['x-admin-key'] as string;
-  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries' || action === 'send_evening_reminders' || action === 'notify_new_homework' || action === 'notify_homework_submitted' || action === 'notify_homework_reviewed' || action === 'notify_mastermind_task_assigned' || action === 'notify_mastermind_task_completed' || action === 'notify_mastermind_task_created_by_participant' || action === 'check_mastermind_deadlines') && adminKeyHeader === config.telegram.webhookSecret;
+  const isAdminKeyAuth = (action === 'send_to_group' || action === 'send_team_summaries' || action === 'send_evening_reminders' || action === 'notify_new_homework' || action === 'notify_homework_submitted' || action === 'notify_homework_reviewed' || action === 'notify_mastermind_task_assigned' || action === 'notify_mastermind_task_completed' || action === 'notify_mastermind_task_created_by_participant' || action === 'check_mastermind_deadlines' || action === 'auto_fail_overdue_tasks') && adminKeyHeader === config.telegram.webhookSecret;
 
   if (!isAdminKeyAuth) {
     // Базовая валидация тела запроса
@@ -2213,6 +2213,115 @@ stateRouter.post('/', async (req: Request, res: Response) => {
       }
     }
     res.json({ ok: true, data: { sent } });
+    return;
+  }
+
+
+  if (action === 'fail_mastermind_task') {
+    const task_id = (req.body as any).task_id;
+
+    if (!task_id) {
+      res.status(400).json({ ok: false, error: 'missing_task_id' });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (!profile) {
+      res.json({ ok: false, error: 'not_linked' });
+      return;
+    }
+
+    // Проверяем что задача принадлежит участнику
+    const { data: task } = await supabase
+      .from('mastermind_tasks')
+      .select('id, member_id, is_completed, is_failed, mastermind_members!inner(user_id)')
+      .eq('id', task_id)
+      .maybeSingle();
+
+    if (!task || (task as any).mastermind_members?.user_id !== profile.user_id) {
+      res.status(403).json({ ok: false, error: 'not_your_task' });
+      return;
+    }
+
+    if (task.is_completed) {
+      res.status(400).json({ ok: false, error: 'Задача уже выполнена' });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('mastermind_tasks')
+      .update({ is_failed: true, failed_at: new Date().toISOString() })
+      .eq('id', task_id);
+
+    if (error) {
+      res.status(500).json({ ok: false, error: error.message });
+      return;
+    }
+
+    res.json({ ok: true });
+    return;
+  }
+
+  if (action === 'auto_fail_overdue_tasks') {
+    if (!isAdminKeyAuth) {
+      res.status(401).json({ ok: false, error: 'unauthorized' });
+      return;
+    }
+
+    const today = new Date(Date.now() + 3 * 3600000).toISOString().split('T')[0];
+
+    const { data: overdue, error } = await supabase
+      .from('mastermind_tasks')
+      .select('id, title, member_id, mastermind_members!inner(user_id, profiles!inner(telegram_id, display_name))')
+      .eq('is_completed', false)
+      .eq('is_failed', false)
+      .lt('deadline', today)
+      .not('deadline', 'is', null);
+
+    if (error || !overdue || overdue.length === 0) {
+      res.json({ ok: true, data: { failed: 0 } });
+      return;
+    }
+
+    let failed = 0;
+    for (const t of overdue) {
+      await supabase
+        .from('mastermind_tasks')
+        .update({ is_failed: true, failed_at: new Date().toISOString() })
+        .eq('id', t.id);
+
+      // Уведомить участника
+      const tgId = (t as any).mastermind_members?.profiles?.telegram_id;
+      if (tgId) {
+        await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgId,
+            text: '⚠️ Задача просрочена: ' + t.title + '\n\nСтатус изменён на «Не выполнено»',
+          }),
+        });
+      }
+
+      // Уведомить админа
+      await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: '777972440',
+          text: '⚠️ ' + ((t as any).mastermind_members?.profiles?.display_name || 'Участник') + ' не выполнил задачу: ' + t.title,
+        }),
+      });
+
+      failed++;
+    }
+
+    res.json({ ok: true, data: { failed } });
     return;
   }
 
