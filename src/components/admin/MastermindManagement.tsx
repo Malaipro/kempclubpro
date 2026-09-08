@@ -51,6 +51,8 @@ interface Task {
   created_by: string | null;
   approval_status: string | null;
   admin_comment: string | null;
+  is_failed: boolean | null;
+  failed_at: string | null;
 }
 
 interface Entry {
@@ -443,6 +445,47 @@ export const MastermindManagement: React.FC = () => {
     loadAll();
   };
 
+  const markTaskFailed = async (t: Task) => {
+    if (!confirm('Отметить задачу как не выполненную?')) return;
+    const { error } = await supabase
+      .from('mastermind_tasks')
+      .update({ is_failed: true, failed_at: new Date().toISOString() })
+      .eq('id', t.id);
+    if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
+
+    const member = members.find((m) => m.id === t.member_id);
+    if (member?.user_id) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_id')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        const telegramId = profile?.telegram_id || member?.profile?.telegram_id;
+        if (telegramId) {
+          const res = await fetch(SERVER_URL + '/api/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+            body: JSON.stringify({
+              action: 'notify_mastermind_task_assigned',
+              target_telegram_id: telegramId,
+              task_title: '⚠️ Задача не выполнена: ' + t.title,
+            }),
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            console.warn('notify_mastermind_task_failed non-ok', res.status, text);
+          }
+        }
+      } catch (e) {
+        console.warn('notify_mastermind_task_failed failed', e);
+      }
+    }
+
+    toast({ title: 'Задача отмечена как не выполненная' });
+    loadAll();
+  };
+
   const reviewEntry = async (e: Entry, status: 'approved' | 'rejected') => {
     const { error } = await supabase
       .from('mastermind_entries')
@@ -713,17 +756,21 @@ export const MastermindManagement: React.FC = () => {
             {sortedTasks.map((t) => {
               const overdue = isOverdue(t);
               const pending = t.approval_status === 'pending';
+              const failed = !!t.is_failed;
               return (
-              <Card key={t.id} className={`bg-card ${pending ? 'border-primary' : ''}`}>
+              <Card key={t.id} className={`bg-card ${pending && !failed ? 'border-primary' : ''}`}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-card-foreground break-words">{t.title}</p>
+                      <p className={`font-medium text-card-foreground break-words ${failed ? 'line-through text-muted-foreground' : ''}`}>
+                        {t.title}
+                      </p>
                       <p className="text-xs text-muted-foreground">{memberName(t.member_id)}</p>
                     </div>
                     <div className="flex flex-wrap gap-1 justify-end">
                       {t.created_by && <Badge variant="secondary">От участника</Badge>}
-                      {t.approval_status && (
+                      {failed && <Badge variant="destructive">Не выполнено</Badge>}
+                      {!failed && t.approval_status && (
                         <Badge
                           variant={
                             t.approval_status === 'approved'
@@ -740,9 +787,11 @@ export const MastermindManagement: React.FC = () => {
                             : 'На проверке'}
                         </Badge>
                       )}
-                      <Badge variant={t.is_completed ? 'default' : 'outline'}>
-                        {t.is_completed ? 'Выполнена' : 'В работе'}
-                      </Badge>
+                      {!failed && (
+                        <Badge variant={t.is_completed ? 'default' : 'outline'}>
+                          {t.is_completed ? 'Выполнена' : 'В работе'}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   {t.deadline && (
@@ -762,7 +811,7 @@ export const MastermindManagement: React.FC = () => {
                       Открыть прикреплённый файл
                     </a>
                   )}
-                  {pending && (
+                  {pending && !failed && (
                     <div className="space-y-2 pt-1">
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => setApproval(t, 'approved')}>
@@ -791,14 +840,26 @@ export const MastermindManagement: React.FC = () => {
                       )}
                     </div>
                   )}
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" variant="outline" onClick={() => toggleTask(t)}>
-                      {t.is_completed ? 'Вернуть в работу' : 'Отметить выполненной'}
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => removeTask(t)}>
-                      <Trash2 className="w-4 h-4 mr-1" /> Удалить
-                    </Button>
-                  </div>
+                  {!failed && (
+                    <div className="flex gap-2 pt-1 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => toggleTask(t)}>
+                        {t.is_completed ? 'Вернуть в работу' : 'Отметить выполненной'}
+                      </Button>
+                      {!t.is_completed && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-500 border-red-300"
+                          onClick={() => markTaskFailed(t)}
+                        >
+                          Не выполнено
+                        </Button>
+                      )}
+                      <Button size="sm" variant="destructive" onClick={() => removeTask(t)}>
+                        <Trash2 className="w-4 h-4 mr-1" /> Удалить
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               );

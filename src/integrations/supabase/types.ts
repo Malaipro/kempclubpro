@@ -1855,9 +1855,11 @@ export type Database = {
           created_by: string | null
           deadline: string | null
           description: string | null
+          failed_at: string | null
           file_url: string | null
           id: string
           is_completed: boolean | null
+          is_failed: boolean
           member_id: string
           participant_comment: string | null
           sort_order: number | null
@@ -1871,9 +1873,11 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           description?: string | null
+          failed_at?: string | null
           file_url?: string | null
           id?: string
           is_completed?: boolean | null
+          is_failed?: boolean
           member_id: string
           participant_comment?: string | null
           sort_order?: number | null
@@ -1887,9 +1891,11 @@ export type Database = {
           created_by?: string | null
           deadline?: string | null
           description?: string | null
+          failed_at?: string | null
           file_url?: string | null
           id?: string
           is_completed?: boolean | null
+          is_failed?: boolean
           member_id?: string
           participant_comment?: string | null
           sort_order?: number | null
