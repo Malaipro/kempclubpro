@@ -66,8 +66,20 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       const { data, error } = await supabase.rpc('get_participant_full_state', {
         p_user_id: userId,
       });
-      if (error) throw new Error(error.message);
-      return data as T;
+      if (error) {
+        console.error('[webApi:get_state] RPC error', error);
+        throw new Error(error.message);
+      }
+      if (!data) throw new Error('Данные участника не получены');
+
+      const payload = data as Record<string, unknown>;
+      if (payload.error === 'profile_not_found') {
+        throw new Error('Профиль участника не найден для этого аккаунта');
+      }
+      if (typeof payload.error === 'string') {
+        throw new Error(payload.error);
+      }
+      return payload as T;
     }
     default:
       // Остальные действия подключаются на следующих этапах.
