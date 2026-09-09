@@ -107,7 +107,11 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
   const displayName = profile?.display_name || fullName || 'Участник';
   const statusLabel = status ? (STATUS_LABELS[status] ?? status) : null;
   const totem = current_totem as { name?: string; discipline?: string } | null;
-  const homework = upcoming_homework as { title?: string; deadline?: string | null } | null;
+  const homeworkRaw = upcoming_homework as
+    | { title?: string; deadline?: string | null }
+    | Array<{ title?: string; deadline?: string | null }>
+    | null;
+  const homework = Array.isArray(homeworkRaw) ? (homeworkRaw[0] ?? null) : homeworkRaw;
 
   const referralCode = profile?.referral_code;
   const referralLink = referralCode ? `https://kempclub.pro/join?ref=${referralCode}` : null;
