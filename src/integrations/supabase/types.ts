@@ -4111,10 +4111,15 @@ export type Database = {
         Args: { p_activity_type: string; p_telegram_id: string }
         Returns: Json
       }
+      check_in_activity_web: {
+        Args: { p_activity_type: string }
+        Returns: Json
+      }
       checkin_ascetic: {
         Args: { p_ascetic_id: string; p_telegram_id: string }
         Returns: Json
       }
+      checkin_ascetic_web: { Args: { p_ascetic_id: string }; Returns: Json }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       confirm_referral_lead: { Args: { _lead_id: string }; Returns: undefined }
@@ -4147,6 +4152,7 @@ export type Database = {
         Returns: Json
       }
       get_ascetic_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_ascetic_web: { Args: never; Returns: Json }
       get_broadcast_audience: {
         Args: { filter_json: Json }
         Returns: {
@@ -4155,6 +4161,7 @@ export type Database = {
         }[]
       }
       get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_homework_web: { Args: never; Returns: Json }
       get_journal_for_user: {
         Args: { p_date?: string; p_telegram_id: string }
         Returns: Json
@@ -4195,6 +4202,10 @@ export type Database = {
       }
       get_schedule_for_user: {
         Args: { p_days?: number; p_from?: string; p_telegram_id: string }
+        Returns: Json
+      }
+      get_schedule_web: {
+        Args: { p_days?: number; p_from?: string }
         Returns: Json
       }
       get_stream_team_ratings: {
@@ -4265,6 +4276,7 @@ export type Database = {
         Args: { p_stream_id: string }
         Returns: undefined
       }
+      register_for_event_web: { Args: { p_schedule_id: string }; Returns: Json }
       review_homework_submission: {
         Args: {
           p_admin_comment?: string
@@ -4351,13 +4363,26 @@ export type Database = {
             }
             Returns: Json
           }
+      submit_homework_web: {
+        Args: {
+          p_assignment_id: string
+          p_content: string
+          p_file_url?: string
+        }
+        Returns: Json
+      }
       take_ascetic: {
         Args: { p_telegram_id: string; p_text: string }
         Returns: Json
       }
+      take_ascetic_web: { Args: { p_text: string }; Returns: Json }
       unlink_telegram_profile: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      unregister_from_event_web: {
+        Args: { p_schedule_id: string }
+        Returns: Json
       }
       update_avatar_for_user: {
         Args: { p_avatar_url: string; p_telegram_id: string }
