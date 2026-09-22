@@ -115,7 +115,7 @@ const WebAppInner: React.FC = () => {
 
       <WebBottomNav
         active={activeSection}
-        onNavigate={(s) => setActiveSection(SOON_SECTIONS.includes(s) || s === 'home' ? s : 'home')}
+        onNavigate={(s) => setActiveSection(s)}
         status={status}
       />
     </div>
