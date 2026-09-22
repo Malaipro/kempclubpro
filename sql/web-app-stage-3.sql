@@ -613,7 +613,12 @@ BEGIN
     RETURN jsonb_build_object('found', false, 'error', 'not_authenticated');
   END IF;
 
-  SELECT COALESCE(to_jsonb(public.get_rules_for_user(v_user_id)), '[]'::jsonb) INTO v_docs;
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+           'doc_type', r.doc_type, 'title', r.title,
+           'content',  r.content,  'file_url', r.file_url
+         )), '[]'::jsonb)
+  INTO   v_docs
+  FROM   public.get_rules_for_user(v_user_id) r;
 
   RETURN jsonb_build_object('found', true, 'documents', v_docs);
 END;
