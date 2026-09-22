@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, Calendar, ClipboardList, BarChart2, User } from 'lucide-react';
+import { Home, Calendar, ClipboardList, Activity, Flame } from 'lucide-react';
 import type { Section } from '@/components/telegram-app/TelegramAppShell';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   active: Section;
@@ -18,9 +19,9 @@ interface Item {
 const ITEMS: Item[] = [
   { section: 'home', label: 'Главная', icon: <Home className="w-5 h-5" /> },
   { section: 'schedule', label: 'Расписание', icon: <Calendar className="w-5 h-5" /> },
+  { section: 'activities', label: 'Отметки', icon: <Activity className="w-5 h-5" />, intensiveOnly: true },
+  { section: 'ascetics', label: 'Аскезы', icon: <Flame className="w-5 h-5" />, intensiveOnly: true },
   { section: 'homework', label: 'ДЗ', icon: <ClipboardList className="w-5 h-5" />, intensiveOnly: true },
-  { section: 'rating', label: 'Рейтинг', icon: <BarChart2 className="w-5 h-5" />, intensiveOnly: true },
-  { section: 'profile', label: 'Профиль', icon: <User className="w-5 h-5" /> },
 ];
 
 export const WebBottomNav: React.FC<Props> = ({ active, onNavigate, status }) => {
@@ -32,17 +33,18 @@ export const WebBottomNav: React.FC<Props> = ({ active, onNavigate, status }) =>
         {items.map((item) => {
           const isActive = active === item.section;
           return (
-            <button
+            <Button
               key={item.section}
               type="button"
+              variant="ghost"
               onClick={() => onNavigate(item.section)}
-              className={`flex flex-col items-center gap-1 py-2.5 transition-colors ${
+              className={`h-auto min-w-0 rounded-none px-1 py-2.5 flex flex-col items-center gap-1 transition-colors ${
                 isActive ? 'text-kamp-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {item.icon}
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>
