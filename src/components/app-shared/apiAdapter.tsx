@@ -59,6 +59,16 @@ async function currentUserId(): Promise<string> {
 }
 
 const webApi: CallApi = async <T,>(action: string, payload: Record<string, unknown> = {}) => {
+  const rpc = async (name: keyof typeof supabase.rpc extends never ? never : string, args?: Record<string, unknown>) => {
+    await currentUserId();
+    const { data, error } = await (supabase.rpc as (fn: string, params?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)(name, args);
+    if (error) throw new Error(error.message);
+    const result = data as Record<string, unknown> | null;
+    if (result && result.ok === false) throw new Error(typeof result.error === 'string' ? result.error : 'Операция не выполнена');
+    if (result && result.found === false) throw new Error(typeof result.error === 'string' ? result.error : 'Данные не найдены');
+    return data;
+  };
+
   switch (action) {
     case 'get_state': {
       const userId = await currentUserId();
@@ -155,6 +165,54 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       if (error) throw new Error(error.message);
       return data as T;
     }
+    case 'get_rating': return await rpc('get_rating_web') as T;
+    case 'get_profile': return await rpc('get_profile_web') as T;
+    case 'update_profile': return await rpc('update_profile_web', {
+      p_weight_kg: typeof payload.weight === 'number' ? payload.weight : null,
+      p_height_cm: typeof payload.height === 'number' ? payload.height : null,
+      p_date_of_birth: typeof payload.birth_date === 'string' ? payload.birth_date : null,
+    }) as T;
+    case 'update_avatar': return await rpc('update_avatar_web', { p_avatar_url: payload.avatar_url }) as T;
+    case 'get_journal': return await rpc('get_journal_web', {
+      p_date: typeof payload.date === 'string' ? payload.date : undefined,
+    }) as T;
+    case 'save_journal': return await rpc('save_journal_web', {
+      p_entry_date: payload.entry_date,
+      p_day_type: payload.day_type,
+      p_emotions: payload.emotions ?? [],
+      p_answers: payload.answers ?? [],
+    }) as T;
+    case 'get_shop': return await rpc('get_shop_web') as T;
+    case 'purchase_reward': return await rpc('purchase_reward_web', {
+      p_reward_id: payload.reward_id,
+      p_user_comment: typeof payload.comment === 'string' ? payload.comment : null,
+    }) as T;
+    case 'get_challenges': return await rpc('get_challenges_web') as T;
+    case 'challenge_checkin': return await rpc('challenge_checkin_web', { p_challenge_id: payload.challenge_id }) as T;
+    case 'get_mastermind': return await rpc('get_mastermind_web', {
+      p_group_id: typeof payload.group_id === 'string' ? payload.group_id : undefined,
+    }) as T;
+    case 'complete_mastermind_task': return await rpc('complete_mastermind_task_web', {
+      p_task_id: payload.task_id,
+      p_comment: typeof payload.comment === 'string' ? payload.comment : null,
+      p_file_url: typeof payload.file_url === 'string' ? payload.file_url : null,
+    }) as T;
+    case 'create_mastermind_task': return await rpc('create_mastermind_task_web', {
+      p_title: payload.title,
+      p_description: typeof payload.description === 'string' ? payload.description : null,
+      p_deadline: typeof payload.deadline === 'string' && payload.deadline ? payload.deadline : null,
+    }) as T;
+    case 'submit_mastermind_entry': return await rpc('submit_mastermind_entry_web', {
+      p_summary: payload.summary,
+      p_my_tasks: typeof payload.my_tasks === 'string' ? payload.my_tasks : null,
+    }) as T;
+    case 'get_pyramid': return await rpc('get_pyramid_web') as T;
+    case 'get_rules': return await rpc('get_rules_web') as T;
+    case 'get_checkpoint': return await rpc('get_checkpoint_web', { p_checkpoint_type: payload.checkpoint_type ?? 'A' }) as T;
+    case 'save_checkpoint': return await rpc('save_checkpoint_web', {
+      p_checkpoint_type: payload.checkpoint_type,
+      p_data: payload.checkpoint_data,
+    }) as T;
     default:
       throw new Error(`unsupported_action:${action}`);
   }
