@@ -6,6 +6,10 @@ import { LogOut, Loader2 } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { TelegramParticipantView } from '@/components/telegram-app/TelegramParticipantView';
 import { WebBottomNav } from './WebBottomNav';
+import { WebScheduleView } from './WebScheduleView';
+import { WebActivitiesView } from './WebActivitiesView';
+import { WebAsceticsView } from './WebAsceticsView';
+import { WebHomeworkView } from './WebHomeworkView';
 import type { Section } from '@/components/telegram-app/TelegramAppShell';
 import type { ParticipantFullState } from '@/services/participantService';
 
@@ -15,7 +19,7 @@ type State =
   | { status: 'ok'; data: ParticipantFullState };
 
 const SOON_SECTIONS: Section[] = [
-  'schedule', 'nutrition', 'activities', 'ascetics', 'homework', 'rating',
+  'nutrition', 'rating',
   'profile', 'pyramid', 'journal', 'shop', 'challenges',
   'mastermind_personal', 'mastermind_business', 'rules', 'captain', 'checkpoint',
 ];
@@ -82,6 +86,14 @@ const WebAppInner: React.FC = () => {
             activeSection={activeSection}
             onNavigate={setActiveSection}
           />
+        ) : activeSection === 'schedule' ? (
+          <WebScheduleView />
+        ) : activeSection === 'activities' ? (
+          <WebActivitiesView />
+        ) : activeSection === 'ascetics' ? (
+          <WebAsceticsView />
+        ) : activeSection === 'homework' ? (
+          <WebHomeworkView />
         ) : (
           <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="text-muted-foreground text-sm">
