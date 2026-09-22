@@ -4107,6 +4107,7 @@ export type Database = {
         Returns: number
       }
       calculate_team_rating: { Args: { p_team_id: string }; Returns: number }
+      challenge_checkin_web: { Args: { p_challenge_id: string }; Returns: Json }
       check_in_activity: {
         Args: { p_activity_type: string; p_telegram_id: string }
         Returns: Json
@@ -4122,7 +4123,15 @@ export type Database = {
       checkin_ascetic_web: { Args: { p_ascetic_id: string }; Returns: Json }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      complete_mastermind_task_web: {
+        Args: { p_comment?: string; p_file_url?: string; p_task_id: string }
+        Returns: Json
+      }
       confirm_referral_lead: { Args: { _lead_id: string }; Returns: undefined }
+      create_mastermind_task_web: {
+        Args: { p_deadline?: string; p_description?: string; p_title: string }
+        Returns: Json
+      }
       create_reward_request: {
         Args: { p_reward_id: string; p_user_comment?: string }
         Returns: string
@@ -4160,12 +4169,19 @@ export type Database = {
           user_ids: string[]
         }[]
       }
+      get_challenges_web: { Args: never; Returns: Json }
+      get_checkpoint_web: {
+        Args: { p_checkpoint_type?: string }
+        Returns: Json
+      }
       get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_homework_web: { Args: never; Returns: Json }
       get_journal_for_user: {
         Args: { p_date?: string; p_telegram_id: string }
         Returns: Json
       }
+      get_journal_web: { Args: { p_date?: string }; Returns: Json }
+      get_mastermind_web: { Args: { p_group_id?: string }; Returns: Json }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_participant_full_state_by_telegram: {
         Args: { p_telegram_id: string }
@@ -4181,6 +4197,7 @@ export type Database = {
         }[]
       }
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_profile_web: { Args: never; Returns: Json }
       get_public_rating_breakdown: {
         Args: { p_user_ids: string[] }
         Returns: {
@@ -4190,7 +4207,9 @@ export type Database = {
         }[]
       }
       get_pyramid_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_pyramid_web: { Args: never; Returns: Json }
       get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
+      get_rating_web: { Args: never; Returns: Json }
       get_rules_for_user: {
         Args: { p_user_id: string }
         Returns: {
@@ -4200,6 +4219,7 @@ export type Database = {
           title: string
         }[]
       }
+      get_rules_web: { Args: never; Returns: Json }
       get_schedule_for_user: {
         Args: { p_days?: number; p_from?: string; p_telegram_id: string }
         Returns: Json
@@ -4208,6 +4228,7 @@ export type Database = {
         Args: { p_days?: number; p_from?: string }
         Returns: Json
       }
+      get_shop_web: { Args: never; Returns: Json }
       get_stream_team_ratings: {
         Args: { p_stream_id: string }
         Returns: {
@@ -4271,6 +4292,10 @@ export type Database = {
       mask_phone_number: { Args: { phone_number: string }; Returns: string }
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
       normalize_phone: { Args: { p_phone: string }; Returns: string }
+      purchase_reward_web: {
+        Args: { p_reward_id: string; p_user_comment?: string }
+        Returns: Json
+      }
       recalculate_all_ranks: { Args: never; Returns: undefined }
       recalculate_stream_ratings: {
         Args: { p_stream_id: string }
@@ -4293,6 +4318,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_checkpoint_web: {
+        Args: { p_checkpoint_type: string; p_data: Json }
+        Returns: Json
+      }
       save_journal_entry: {
         Args: {
           p_answers: Json
@@ -4300,6 +4329,15 @@ export type Database = {
           p_emotions: Json
           p_entry_date: string
           p_telegram_id: string
+        }
+        Returns: Json
+      }
+      save_journal_web: {
+        Args: {
+          p_answers: Json
+          p_day_type: string
+          p_emotions: Json
+          p_entry_date: string
         }
         Returns: Json
       }
@@ -4371,6 +4409,10 @@ export type Database = {
         }
         Returns: Json
       }
+      submit_mastermind_entry_web: {
+        Args: { p_my_tasks?: string; p_summary: string }
+        Returns: Json
+      }
       take_ascetic: {
         Args: { p_telegram_id: string; p_text: string }
         Returns: Json
@@ -4388,6 +4430,7 @@ export type Database = {
         Args: { p_avatar_url: string; p_telegram_id: string }
         Returns: Json
       }
+      update_avatar_web: { Args: { p_avatar_url: string }; Returns: Json }
       update_participant_status: {
         Args: {
           p_new_status: Database["public"]["Enums"]["participant_status_type"]
@@ -4400,6 +4443,14 @@ export type Database = {
           p_date_of_birth: string
           p_height_cm: number
           p_telegram_id: string
+          p_weight_kg: number
+        }
+        Returns: Json
+      }
+      update_profile_web: {
+        Args: {
+          p_date_of_birth: string
+          p_height_cm: number
           p_weight_kg: number
         }
         Returns: Json
