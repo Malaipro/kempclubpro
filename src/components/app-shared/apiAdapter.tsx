@@ -59,9 +59,13 @@ async function currentUserId(): Promise<string> {
 }
 
 const webApi: CallApi = async <T,>(action: string, payload: Record<string, unknown> = {}) => {
-  const rpc = async (name: keyof typeof supabase.rpc extends never ? never : string, args?: Record<string, unknown>) => {
+  const rpc = async (name: string, args?: Record<string, unknown>) => {
     await currentUserId();
-    const { data, error } = await (supabase.rpc as (fn: string, params?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)(name, args);
+    const callRpc = supabase.rpc as unknown as (
+      fn: string,
+      params?: Record<string, unknown>,
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+    const { data, error } = await callRpc(name, args);
     if (error) throw new Error(error.message);
     const result = data as Record<string, unknown> | null;
     if (result && result.ok === false) throw new Error(typeof result.error === 'string' ? result.error : 'Операция не выполнена');
