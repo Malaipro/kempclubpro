@@ -10,6 +10,9 @@ import { WebScheduleView } from './WebScheduleView';
 import { WebActivitiesView } from './WebActivitiesView';
 import { WebAsceticsView } from './WebAsceticsView';
 import { WebHomeworkView } from './WebHomeworkView';
+import { WebProfileView, WebPyramidView, WebRatingView, WebRulesView } from './WebProgressViews';
+import { WebChallengesView, WebJournalView, WebShopView } from './WebEngagementViews';
+import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
 import type { Section } from '@/components/telegram-app/TelegramAppShell';
 import type { ParticipantFullState } from '@/services/participantService';
 
@@ -19,9 +22,7 @@ type State =
   | { status: 'ok'; data: ParticipantFullState };
 
 const SOON_SECTIONS: Section[] = [
-  'nutrition', 'rating',
-  'profile', 'pyramid', 'journal', 'shop', 'challenges',
-  'mastermind_personal', 'mastermind_business', 'rules', 'captain', 'checkpoint',
+  'nutrition', 'captain',
 ];
 
 const WebAppInner: React.FC = () => {
@@ -94,6 +95,26 @@ const WebAppInner: React.FC = () => {
           <WebAsceticsView />
         ) : activeSection === 'homework' ? (
           <WebHomeworkView />
+        ) : activeSection === 'rating' ? (
+          <WebRatingView />
+        ) : activeSection === 'profile' ? (
+          <WebProfileView />
+        ) : activeSection === 'journal' ? (
+          <WebJournalView />
+        ) : activeSection === 'shop' ? (
+          <WebShopView />
+        ) : activeSection === 'challenges' ? (
+          <WebChallengesView />
+        ) : activeSection === 'mastermind_personal' ? (
+          <WebMastermindView groupId="c7f38e3a-796b-40be-9062-7e65e574988f" groupName="Личная эффективность" />
+        ) : activeSection === 'mastermind_business' ? (
+          <WebMastermindView groupId="d387a138-c3d0-4711-b41c-6ccb76efd901" groupName="Система в бизнесе" />
+        ) : activeSection === 'pyramid' ? (
+          <WebPyramidView />
+        ) : activeSection === 'rules' ? (
+          <WebRulesView />
+        ) : activeSection === 'checkpoint' ? (
+          <WebCheckpointView />
         ) : (
           <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="text-muted-foreground text-sm">
