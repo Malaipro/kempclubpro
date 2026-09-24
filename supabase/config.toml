@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.phone-signin]
 verify_jwt = false
+
+[functions.nutrition-chat]
+verify_jwt = true
