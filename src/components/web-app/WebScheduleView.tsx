@@ -43,8 +43,8 @@ export const WebScheduleView: React.FC = () => {
     setError(null);
     try {
       const response = await callApi<ScheduleResponse>('get_schedule', { days: 90 });
-      if (!response.found) throw new Error(response.error ?? 'Расписание недоступно');
-      setData(response);
+      if (!response || !response.found) throw new Error(response?.error ?? 'Расписание недоступно');
+      setData({ ...response, schedule: Array.isArray(response.schedule) ? response.schedule : [] });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить расписание');
     }
@@ -91,7 +91,7 @@ export const WebScheduleView: React.FC = () => {
           </div>
         )}
         {!data && !error && <p className="pt-10 text-center text-sm text-muted-foreground">Загрузка расписания...</p>}
-        {data?.schedule.length === 0 && <p className="pt-10 text-center text-sm text-muted-foreground">Ближайших занятий нет</p>}
+        {data && data.schedule.length === 0 && <p className="pt-10 text-center text-sm text-muted-foreground">Ближайших занятий нет</p>}
 
         {groups.map(([key, items]) => (
           <section key={key}>

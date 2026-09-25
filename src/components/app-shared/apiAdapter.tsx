@@ -68,8 +68,9 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
     const { data, error } = await callRpc(name, args);
     if (error) throw new Error(error.message);
     const result = data as Record<string, unknown> | null;
-    if (result && result.ok === false) throw new Error(typeof result.error === 'string' ? result.error : 'Операция не выполнена');
-    if (result && result.found === false) throw new Error(typeof result.error === 'string' ? result.error : 'Данные не найдены');
+    if (!result || typeof result !== 'object') throw new Error('Пустой ответ сервера');
+    if (result.ok === false) throw new Error(typeof result.error === 'string' ? result.error : 'Операция не выполнена');
+    if (result.found === false) throw new Error(typeof result.error === 'string' ? result.error : 'Данные не найдены');
     return data;
   };
 
@@ -100,6 +101,7 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
         p_days: typeof payload.days === 'number' ? payload.days : 90,
       });
       if (error) throw new Error(error.message);
+      if (!data || typeof data !== 'object') throw new Error('Пустой ответ сервера');
       return data as T;
     }
     case 'book_session': {
@@ -172,8 +174,9 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
     case 'get_rating': return await rpc('get_rating_web') as T;
     case 'get_profile': return await rpc('get_profile_web') as T;
     case 'update_profile': return await rpc('update_profile_web', {
-      p_weight_kg: typeof payload.weight === 'number' ? payload.weight : null,
-      p_height_cm: typeof payload.height === 'number' ? payload.height : null,
+      // колонки integer — дробное значение ("75.5") иначе даёт ошибку Postgres
+      p_weight_kg: typeof payload.weight === 'number' ? Math.round(payload.weight) : null,
+      p_height_cm: typeof payload.height === 'number' ? Math.round(payload.height) : null,
       p_date_of_birth: typeof payload.birth_date === 'string' ? payload.birth_date : null,
     }) as T;
     case 'update_avatar': return await rpc('update_avatar_web', { p_avatar_url: payload.avatar_url }) as T;

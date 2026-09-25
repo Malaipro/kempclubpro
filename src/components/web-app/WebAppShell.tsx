@@ -6,6 +6,7 @@ import { LogOut, Loader2 } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { TelegramParticipantView } from '@/components/telegram-app/TelegramParticipantView';
 import { WebBottomNav } from './WebBottomNav';
+import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { WebScheduleView } from './WebScheduleView';
 import { WebActivitiesView } from './WebActivitiesView';
 import { WebAsceticsView } from './WebAsceticsView';
@@ -81,50 +82,52 @@ const WebAppInner: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-lg pb-20">
-        {activeSection === 'home' ? (
-          <TelegramParticipantView
-            data={state.data}
-            activeSection={activeSection}
-            onNavigate={setActiveSection}
-          />
-        ) : activeSection === 'schedule' ? (
-          <WebScheduleView />
-        ) : activeSection === 'activities' ? (
-          <WebActivitiesView />
-        ) : activeSection === 'ascetics' ? (
-          <WebAsceticsView />
-        ) : activeSection === 'homework' ? (
-          <WebHomeworkView />
-        ) : activeSection === 'rating' ? (
-          <WebRatingView />
-        ) : activeSection === 'profile' ? (
-          <WebProfileView />
-        ) : activeSection === 'journal' ? (
-          <WebJournalView />
-        ) : activeSection === 'shop' ? (
-          <WebShopView />
-        ) : activeSection === 'challenges' ? (
-          <WebChallengesView />
-        ) : activeSection === 'mastermind_personal' ? (
-          <WebMastermindView groupId="c7f38e3a-796b-40be-9062-7e65e574988f" groupName="Личная эффективность" />
-        ) : activeSection === 'mastermind_business' ? (
-          <WebMastermindView groupId="d387a138-c3d0-4711-b41c-6ccb76efd901" groupName="Система в бизнесе" />
-        ) : activeSection === 'pyramid' ? (
-          <WebPyramidView />
-        ) : activeSection === 'rules' ? (
-          <WebRulesView />
-        ) : activeSection === 'checkpoint' ? (
-          <WebCheckpointView />
-        ) : (
-          <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              Раздел появится в веб-версии на следующем этапе.
-            </p>
-            <Button variant="outline" onClick={() => setActiveSection('home')}>
-              На главную
-            </Button>
-          </div>
-        )}
+        <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
+          {activeSection === 'home' ? (
+            <TelegramParticipantView
+              data={state.data}
+              activeSection={activeSection}
+              onNavigate={setActiveSection}
+            />
+          ) : activeSection === 'schedule' ? (
+            <WebScheduleView />
+          ) : activeSection === 'activities' ? (
+            <WebActivitiesView />
+          ) : activeSection === 'ascetics' ? (
+            <WebAsceticsView />
+          ) : activeSection === 'homework' ? (
+            <WebHomeworkView />
+          ) : activeSection === 'rating' ? (
+            <WebRatingView />
+          ) : activeSection === 'profile' ? (
+            <WebProfileView />
+          ) : activeSection === 'journal' ? (
+            <WebJournalView />
+          ) : activeSection === 'shop' ? (
+            <WebShopView />
+          ) : activeSection === 'challenges' ? (
+            <WebChallengesView />
+          ) : activeSection === 'mastermind_personal' ? (
+            <WebMastermindView groupId="c7f38e3a-796b-40be-9062-7e65e574988f" groupName="Личная эффективность" />
+          ) : activeSection === 'mastermind_business' ? (
+            <WebMastermindView groupId="d387a138-c3d0-4711-b41c-6ccb76efd901" groupName="Система в бизнесе" />
+          ) : activeSection === 'pyramid' ? (
+            <WebPyramidView />
+          ) : activeSection === 'rules' ? (
+            <WebRulesView />
+          ) : activeSection === 'checkpoint' ? (
+            <WebCheckpointView />
+          ) : (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
+              <p className="text-muted-foreground text-sm">
+                Раздел появится в веб-версии на следующем этапе.
+              </p>
+              <Button variant="outline" onClick={() => setActiveSection('home')}>
+                На главную
+              </Button>
+            </div>
+          )}
+        </SectionErrorBoundary>
 
         <div className="px-4 pb-6 pt-2">
           <Button variant="ghost" className="w-full gap-2 text-muted-foreground" onClick={handleSignOut}>
