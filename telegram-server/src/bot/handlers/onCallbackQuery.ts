@@ -14,7 +14,7 @@ interface BroadcastButtonRow {
   target_id?: string;
 }
 
-const ALREADY_MARKED = 'Уже отмечено';
+const ALREADY_MARKED = 'Уже отмечено ✓';
 
 // Убирает broadcast_responses-отметку, если само действие кнопки не удалось —
 // иначе пользователь навсегда останется с false-положительной галочкой без результата.
@@ -154,7 +154,7 @@ export async function onCallbackQuery(query: TelegramCallbackQuery): Promise<voi
   }
 
   // 'callback' — просто фиксируем ответ, без побочного действия
-  await answerCallbackQuery(query.id, 'Спасибо! Ваш ответ учтён ✅');
+  await answerCallbackQuery(query.id, 'Ответ принят: ' + button.label);
 }
 
 
