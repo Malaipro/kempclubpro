@@ -5,16 +5,26 @@ import { corsHeaders } from "../_shared/cors.ts"
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 const TRAINING_TARGET = 3
 const JOURNAL_TARGET = 7
+const LEADER_TELEGRAM_ID = '777972440'
+const TELEGRAM_MAX_LENGTH = 4096
 
 const SYSTEM_PROMPT =
-  'Ты куратор мужского клуба КЭМП. Делаешь еженедельную сводку для капитана команды. ' +
-  'Стиль: мужской, прямой, конкретный, без мотивационного пафоса. ' +
+  'Ты куратор мужского клуба КЭМП. Сделай сводку команды за неделю. ' +
+  'По каждому участнику кратко: посещаемость, ДЗ, настроение из дневника. ' +
+  'Выдели лидеров и тех, кто проседает. ' +
+  'Тон мужской, прямой, без пафоса. ' +
   'Обрати внимание на содержание дневника — если участник пишет о трудностях или демотивации, отметь это. ' +
   'Если не заполняет дневник — это красный флаг, обязательно упомяни.'
 
 const PERSONAL_SYSTEM_PROMPT =
   'Ты куратор мужского клуба КЭМП. Пишешь краткую личную сводку участнику за неделю. ' +
   'Тон: мужской, прямой, поддерживающий но без сюсюканья. 3-4 предложения.'
+
+const LEADER_SYSTEM_PROMPT =
+  'Ты куратор мужского клуба КЭМП. Тебе приходят сводки по командам потока за неделю. ' +
+  'Сделай краткую сводку по всем командам потока для лидера клуба: какие команды в форме, какие проседают, ' +
+  'кого из капитанов и участников стоит отметить или подтянуть. ' +
+  'Тон мужской, прямой, без пафоса. Не длиннее 15 строк.'
 
 interface RequestBody {
   team_id?: string
@@ -25,6 +35,12 @@ interface CaptainTeam {
   name: string | null
   captain_user_id: string
   stream_id: string
+}
+
+interface TeamResult {
+  name: string
+  captainName: string
+  summary: string
 }
 
 interface TeamMember {
@@ -166,6 +182,7 @@ serve(async (req) => {
     }
 
     let processed = 0
+    const teamResults: TeamResult[] = []
 
     for (const team of (teams ?? []) as CaptainTeam[]) {
       try {
@@ -189,7 +206,7 @@ serve(async (req) => {
         // Профили (имена)
         const { data: profileRows, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, display_name')
+          .select('user_id, display_name, telegram_id')
           .in('user_id', allProfileIds)
 
         if (profilesError) {
@@ -198,8 +215,10 @@ serve(async (req) => {
         }
 
         const nameByUser = new Map<string, string>()
-        for (const p of (profileRows ?? []) as Array<{ user_id: string; display_name: string | null }>) {
+        const telegramByUser = new Map<string, string>()
+        for (const p of (profileRows ?? []) as Array<{ user_id: string; display_name: string | null; telegram_id: string | null }>) {
           nameByUser.set(p.user_id, p.display_name?.trim() || 'Без имени')
+          if (p.telegram_id) telegramByUser.set(p.user_id, String(p.telegram_id))
         }
 
         // Тренировки
@@ -299,7 +318,7 @@ serve(async (req) => {
           `Команда: ${teamName}, Капитан: ${captainName}\n` +
           `Период: ${weekStartStr} — ${weekEndStr}\n\n` +
           `Участники:\n${membersBlock}\n\n` +
-          `Сделай краткую сводку:\n` +
+          `Сделай краткую сводку (по каждому участнику — одна строка: посещаемость, ДЗ, настроение из дневника):\n` +
           `1. Общая картина команды (1-2 предложения)\n` +
           `2. Лидеры недели (кто молодец и почему)\n` +
           `3. Нужно внимание (кто проседает и в чём)\n` +
@@ -327,6 +346,19 @@ serve(async (req) => {
         if (insertError) {
           console.error(`Failed to save summary for team ${team.id}:`, insertError)
           continue
+        }
+
+        teamResults.push({ name: teamName, captainName, summary })
+
+        // Сводка капитану в Telegram
+        const captainTelegramId = telegramByUser.get(team.captain_user_id)
+        if (captainTelegramId) {
+          await sendTelegram(
+            captainTelegramId,
+            `📋 Сводка команды «${teamName}» за ${weekStartStr} — ${weekEndStr}\n\n${summary}`
+          )
+        } else {
+          console.warn(`Captain ${team.captain_user_id} of team ${team.id} has no telegram_id`)
         }
 
         // Персональные сводки для каждого участника
@@ -360,8 +392,31 @@ serve(async (req) => {
       }
     }
 
+    // Общая сводка для лидера — только при полном прогоне по всем командам
+    let leaderSent = false
+    if (!targetTeamId && teamResults.length > 0) {
+      try {
+        const teamsBlock = teamResults
+          .map((t) => `Команда «${t.name}» (капитан ${t.captainName}):\n${t.summary}`)
+          .join('\n\n---\n\n')
+        const leaderSummary = await requestSummary(
+          anthropicKey,
+          LEADER_SYSTEM_PROMPT,
+          `Период: ${weekStartStr} — ${weekEndStr}\n\n${teamsBlock}\n\nКраткая сводка по всем командам потока.`
+        )
+        if (leaderSummary) {
+          leaderSent = await sendTelegram(
+            LEADER_TELEGRAM_ID,
+            `🏕 Краткая сводка по всем командам потока (${weekStartStr} — ${weekEndStr})\n\n${leaderSummary}`
+          )
+        }
+      } catch (leaderError) {
+        console.error('Error generating leader summary:', leaderError)
+      }
+    }
+
     return new Response(
-      JSON.stringify({ ok: true, processed }),
+      JSON.stringify({ ok: true, processed, leader_sent: leaderSent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
@@ -403,4 +458,30 @@ async function requestSummary(
   const text = data?.content?.find((block: { type: string }) => block.type === 'text')?.text
 
   return typeof text === 'string' ? text.trim() : null
+}
+
+// Telegram ограничивает сообщение 4096 символами; ошибка отправки не должна валить прогон
+async function sendTelegram(chatId: string, text: string): Promise<boolean> {
+  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
+  if (!botToken) {
+    console.error('TELEGRAM_BOT_TOKEN is not configured')
+    return false
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: text.slice(0, TELEGRAM_MAX_LENGTH) }),
+    })
+
+    if (!response.ok) {
+      console.error(`Telegram error ${response.status}: ${await response.text()}`)
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error('Telegram request failed:', error)
+    return false
+  }
 }
