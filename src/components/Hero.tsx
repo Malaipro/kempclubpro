@@ -59,12 +59,12 @@ export const Hero: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-1.5 pt-4">
-            <p className="text-white/60 text-xs md:text-sm">Номинант премии</p>
+          <div className="flex flex-col items-center gap-3 pt-4">
+            <p className="text-white/60 text-2xl md:text-3xl">Номинант премии</p>
             <img 
               src="/lovable-uploads/russia-opportunities-logo.svg" 
               alt="Россия — страна возможностей" 
-              className="h-10 md:h-14 object-contain"
+              className="h-20 md:h-28 object-contain"
             />
           </div>
         </div>
