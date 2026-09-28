@@ -61,7 +61,9 @@ async function currentUserId(): Promise<string> {
 const webApi: CallApi = async <T,>(action: string, payload: Record<string, unknown> = {}) => {
   const rpc = async (name: string, args?: Record<string, unknown>) => {
     await currentUserId();
-    const callRpc = supabase.rpc as unknown as (
+    // Метод привязываем к клиенту: без этого Supabase-клиент теряет
+    // внутренний контекст (`this.rest`) и падает на "undefined is not an object".
+    const callRpc = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       params?: Record<string, unknown>,
     ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
