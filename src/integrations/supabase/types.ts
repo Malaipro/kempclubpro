@@ -622,6 +622,7 @@ export type Database = {
           comment_updated_at: string | null
           created_at: string
           id: string
+          is_active: boolean
           team_id: string
           traffic_light: string
           user_id: string
@@ -631,6 +632,7 @@ export type Database = {
           comment_updated_at?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           team_id: string
           traffic_light?: string
           user_id: string
@@ -640,6 +642,7 @@ export type Database = {
           comment_updated_at?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           team_id?: string
           traffic_light?: string
           user_id?: string
@@ -792,6 +795,112 @@ export type Database = {
           target_tag_ids?: Json | null
         }
         Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          deleted_by: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          is_deleted: boolean
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          deleted_by?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_deleted?: boolean
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          deleted_by?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_deleted?: boolean
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "chat_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_spaces: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          target_status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          target_status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          target_status?: string
+        }
+        Relationships: []
+      }
+      chat_topics: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          space_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          space_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_topics_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "chat_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checkpoint_questions: {
         Row: {
