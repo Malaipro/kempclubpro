@@ -142,6 +142,16 @@ const AppLogin: React.FC = () => {
             />
           </div>
 
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="w-4 h-4 accent-kamp-primary"
+            />
+            <span className="text-white/60 text-sm">Запомнить меня</span>
+          </label>
+
           {error && (
             <p className="text-sm text-kamp-primary font-medium text-center">{error}</p>
           )}

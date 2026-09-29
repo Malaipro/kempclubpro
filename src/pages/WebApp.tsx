@@ -15,7 +15,20 @@ const WebApp: React.FC = () => {
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setAuthed(!!data.session);
+      if (!mounted) return;
+      // Вход без «Запомнить меня»: сессия живёт только до закрытия вкладки.
+      // При новом визите (флаг sessionStorage пуст) завершаем её.
+      if (data.session && localStorage.getItem('kamp_session_temporary') === '1') {
+        if (!sessionStorage.getItem('kamp_tab_active')) {
+          localStorage.removeItem('kamp_session_temporary');
+          supabase.auth.signOut().then(() => {
+            if (mounted) setAuthed(false);
+          });
+          return;
+        }
+      }
+      if (data.session) sessionStorage.setItem('kamp_tab_active', '1');
+      setAuthed(!!data.session);
     });
 
     return () => {
