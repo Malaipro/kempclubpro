@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { requireSuperAdmin } from "../_shared/requireSuperAdmin.ts"
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -9,6 +10,13 @@ serve(async (req) => {
   }
 
   try {
+    const guard = await requireSuperAdmin(req)
+    if (!guard.ok) {
+      return new Response(JSON.stringify({ error: guard.error }), {
+        status: guard.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const { userId, newPassword } = await req.json()
 
     if (!userId || !newPassword) {
@@ -27,10 +35,7 @@ serve(async (req) => {
     }
 
     // Create a Supabase client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseAdmin = guard.admin
 
     console.log(`Resetting password for user: ${userId}`)
 
