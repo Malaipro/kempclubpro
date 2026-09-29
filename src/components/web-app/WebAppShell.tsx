@@ -14,7 +14,21 @@ import { WebHomeworkView } from './WebHomeworkView';
 import { WebProfileView, WebPyramidView, WebRatingView, WebRulesView } from './WebProgressViews';
 import { WebChallengesView, WebJournalView, WebShopView } from './WebEngagementViews';
 import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
-import type { Section } from '@/components/telegram-app/TelegramAppShell';
+import type { Section as TgSection } from '@/components/telegram-app/TelegramAppShell';
+import { WebChatView } from './WebChatView';
+import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
+import { Card, CardContent } from '@/components/ui/card';
+
+export type Section = TgSection | 'chat' | 'history';
+
+const RESIDENT_TILES: { section: Section; label: string }[] = [
+  { section: 'rating', label: 'Рейтинг' },
+  { section: 'challenges', label: 'Челленджи' },
+  { section: 'shop', label: 'Магазин' },
+  { section: 'history', label: 'История' },
+  { section: 'mastermind_business', label: 'Мастермайнд: бизнес' },
+  { section: 'chat', label: 'Чат' },
+];
 import type { ParticipantFullState } from '@/services/participantService';
 
 type State =
@@ -78,17 +92,35 @@ const WebAppInner: React.FC = () => {
   }
 
   const status = state.data.status ?? null;
+  const isResident = status === 'club_resident';
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
-            <TelegramParticipantView
-              data={state.data}
-              activeSection={activeSection}
-              onNavigate={setActiveSection}
-            />
+            <>
+              {isResident && (
+                <div className="grid grid-cols-3 gap-2 px-4 pt-4">
+                  {RESIDENT_TILES.map((t) => (
+                    <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
+                      <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              <TelegramParticipantView
+                data={state.data}
+                activeSection={activeSection as TgSection}
+                onNavigate={setActiveSection}
+              />
+            </>
+          ) : activeSection === 'chat' ? (
+            <WebChatView status={status} />
+          ) : activeSection === 'history' ? (
+            <WebHistoryView />
+          ) : activeSection === 'rating' && isResident ? (
+            <WebResidentRatingView />
           ) : activeSection === 'schedule' ? (
             <WebScheduleView />
           ) : activeSection === 'activities' ? (
