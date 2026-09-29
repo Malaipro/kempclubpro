@@ -54,7 +54,7 @@ BEGIN
            'status', hs.status,
            'submitted_at', hs.submitted_at,
            'reviewed_at', hs.reviewed_at,
-           'feedback', hs.feedback
+           'feedback', hs.admin_comment
          ) ORDER BY hs.submitted_at DESC), '[]'::jsonb)
     INTO v_homework
     FROM homework_submissions hs
@@ -64,25 +64,23 @@ BEGIN
   -- Отметки об активностях
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
            'id', ac.id,
-           'activity_id', ac.activity_id,
-           'activity_title', a.title,
-           'activity_type', a.activity_type,
-           'checked_in_at', ac.checked_in_at
-         ) ORDER BY ac.checked_in_at DESC), '[]'::jsonb)
+           'activity_type', ac.activity_type,
+           'checked_in_at', ac.checked_at
+         ) ORDER BY ac.checked_at DESC), '[]'::jsonb)
     INTO v_checkins
     FROM activity_checkins ac
-    LEFT JOIN activities a ON a.id = ac.activity_id
    WHERE ac.user_id = v_uid;
 
   -- Аскезы
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
            'id', aa.id,
            'ascetic_type', at.name,
-           'start_date', aa.start_date,
-           'end_date', aa.end_date,
-           'status', aa.status,
-           'checkins_count', aa.checkins_count
-         ) ORDER BY aa.start_date DESC), '[]'::jsonb)
+           'challenge_name', aa.challenge_name,
+           'streak', aa.streak,
+           'completion_percentage', aa.completion_percentage,
+           'completed_at', aa.completed_at,
+           'points_earned', aa.points_earned
+         ) ORDER BY aa.created_at DESC), '[]'::jsonb)
     INTO v_ascetics
     FROM ascetic_activities aa
     LEFT JOIN ascetic_types at ON at.id = aa.ascetic_type_id
