@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { requireSuperAdmin } from "../_shared/requireSuperAdmin.ts"
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -9,20 +10,28 @@ serve(async (req) => {
   }
 
   try {
+    const guard = await requireSuperAdmin(req)
+    if (!guard.ok) {
+      return new Response(JSON.stringify({ error: guard.error }), {
+        status: guard.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const supabaseAdmin = guard.admin
+
     const { userId } = await req.json()
 
-    if (!userId) {
+    if (!userId || typeof userId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'User ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Create a Supabase client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    if (userId === guard.callerId) {
+      return new Response(
+        JSON.stringify({ error: 'Нельзя удалить свою учётку' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     console.log(`Deleting user: ${userId}`)
 
