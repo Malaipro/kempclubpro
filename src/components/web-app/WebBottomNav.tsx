@@ -1,6 +1,6 @@
 import React from 'react';
-import { Home, Calendar, ClipboardList, Activity, Flame } from 'lucide-react';
-import type { Section } from '@/components/telegram-app/TelegramAppShell';
+import { Home, Calendar, ClipboardList, Activity, Flame, MessageCircle, Users, User } from 'lucide-react';
+import type { Section } from './WebAppShell';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Item {
   label: string;
   icon: React.ReactNode;
   intensiveOnly?: boolean;
+  residentOnly?: boolean;
 }
 
 const ITEMS: Item[] = [
@@ -22,10 +23,13 @@ const ITEMS: Item[] = [
   { section: 'activities', label: 'Отметки', icon: <Activity className="w-5 h-5" />, intensiveOnly: true },
   { section: 'ascetics', label: 'Аскезы', icon: <Flame className="w-5 h-5" />, intensiveOnly: true },
   { section: 'homework', label: 'ДЗ', icon: <ClipboardList className="w-5 h-5" />, intensiveOnly: true },
+  { section: 'chat', label: 'Чат', icon: <MessageCircle className="w-5 h-5" />, residentOnly: true },
+  { section: 'mastermind_personal', label: 'Мастермайнд', icon: <Users className="w-5 h-5" />, residentOnly: true },
+  { section: 'profile', label: 'Профиль', icon: <User className="w-5 h-5" />, residentOnly: true },
 ];
 
 export const WebBottomNav: React.FC<Props> = ({ active, onNavigate, status }) => {
-  const items = ITEMS.filter((i) => !i.intensiveOnly || status === 'intensive_active');
+  const items = ITEMS.filter((i) => (!i.intensiveOnly || status === 'intensive_active') && (!i.residentOnly || status === 'club_resident'));
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
