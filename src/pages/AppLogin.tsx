@@ -41,8 +41,24 @@ const AppLogin: React.FC = () => {
     setLoading(true);
 
     try {
+      const login = phone.trim();
+
+      // Вход по email — напрямую через Supabase
+      if (login.includes('@')) {
+        const { error: emailError } = await supabase.auth.signInWithPassword({
+          email: login,
+          password,
+        });
+        if (emailError) {
+          setError('Неверный email или пароль');
+          return;
+        }
+        navigate('/app', { replace: true });
+        return;
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke('phone-signin', {
-        body: { phone, password },
+        body: { phone: login, password },
       });
 
       const result = data as
@@ -86,15 +102,18 @@ const AppLogin: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-white/70 text-xs uppercase tracking-wider">
-              Телефон
+              Телефон или email
             </Label>
             <Input
               id="phone"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+7 (999) 123-45-67"
+              autoComplete="username"
+              placeholder="+7 (999) 123-45-67 или email"
               value={phone}
-              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                // Форматируем как телефон, только если нет букв и @
+                setPhone(/[a-zA-Z@]/.test(v) ? v : formatPhone(v));
+              }}
               className="h-12 bg-white/5 border-white/15 text-white placeholder:text-white/30 focus-visible:ring-kamp-primary"
             />
           </div>
