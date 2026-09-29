@@ -4285,6 +4285,7 @@ export type Database = {
       }
       get_homework_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_homework_web: { Args: never; Returns: Json }
+      get_intensive_history_web: { Args: never; Returns: Json }
       get_journal_for_user: {
         Args: { p_date?: string; p_telegram_id: string }
         Returns: Json
@@ -4319,6 +4320,7 @@ export type Database = {
       get_pyramid_web: { Args: never; Returns: Json }
       get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_rating_web: { Args: never; Returns: Json }
+      get_resident_rating_web: { Args: never; Returns: Json }
       get_rules_for_user: {
         Args: { p_user_id: string }
         Returns: {
