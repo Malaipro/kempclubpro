@@ -146,7 +146,7 @@ BEGIN
   )
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
            'user_id', r.user_id,
-           'display_name', mask_participant_name(pr.first_name, pr.last_name),
+           'display_name', mask_participant_name(trim(pr.first_name || ' ' || pr.last_name)),
            'total_points', r.total_points,
            'position', r.pos,
            'is_me', r.user_id = v_uid
