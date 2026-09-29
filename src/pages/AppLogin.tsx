@@ -26,6 +26,7 @@ const AppLogin: React.FC = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +43,14 @@ const AppLogin: React.FC = () => {
 
     try {
       const login = phone.trim();
+
+      // «Запомнить меня»: если выключено — помечаем сессию как временную,
+      // WebApp завершит её при следующем открытии /app
+      if (remember) {
+        localStorage.removeItem('kamp_session_temporary');
+      } else {
+        localStorage.setItem('kamp_session_temporary', '1');
+      }
 
       // Вход по email — напрямую через Supabase
       if (login.includes('@')) {
@@ -106,7 +115,7 @@ const AppLogin: React.FC = () => {
             </Label>
             <Input
               id="phone"
-              autoComplete="username"
+              autoComplete="email"
               placeholder="+7 (999) 123-45-67 или email"
               value={phone}
               onChange={(e) => {
