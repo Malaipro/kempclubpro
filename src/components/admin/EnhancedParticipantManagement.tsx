@@ -594,6 +594,26 @@ export const EnhancedParticipantManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteParticipant = async (participant: Participant) => {
+    const name = formatParticipantName(participant);
+    if (!window.confirm(`Удалить участника «${name}»? Учётка и все её данные будут удалены безвозвратно.`)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: participant.user_id },
+      });
+      const payload = data as { error?: string } | null;
+      if (error || payload?.error) {
+        let msg = payload?.error;
+        try { msg = msg || (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+        throw new Error(msg || 'Не удалось удалить участника');
+      }
+      setParticipants(prev => prev.filter(p => p.user_id !== participant.user_id));
+      toast({ title: 'Участник удалён', description: name });
+    } catch (e) {
+      toast({ title: 'Ошибка', description: e instanceof Error ? e.message : 'Не удалось удалить участника', variant: 'destructive' });
+    }
+  };
+
   const formatParticipantName = (participant: Participant) => {
     const first = (participant.first_name || '').trim();
     const last = (participant.last_name || '').trim();
@@ -1210,6 +1230,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                       size="sm" 
                       className="text-destructive hover:text-destructive"
                       title="Удалить"
+                      onClick={() => handleDeleteParticipant(participant)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1498,6 +1519,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                             size="sm" 
                             className="text-destructive hover:text-destructive"
                             title="Удалить"
+                            onClick={() => handleDeleteParticipant(participant)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
