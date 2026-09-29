@@ -51,6 +51,7 @@ const AppLogin: React.FC = () => {
       } else {
         localStorage.setItem('kamp_session_temporary', '1');
       }
+      sessionStorage.setItem('kamp_tab_active', '1');
 
       // Вход по email — напрямую через Supabase
       if (login.includes('@')) {
