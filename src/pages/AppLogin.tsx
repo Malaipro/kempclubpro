@@ -26,6 +26,7 @@ const AppLogin: React.FC = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +43,15 @@ const AppLogin: React.FC = () => {
 
     try {
       const login = phone.trim();
+
+      // «Запомнить меня»: если выключено — помечаем сессию как временную,
+      // WebApp завершит её при следующем открытии /app
+      if (remember) {
+        localStorage.removeItem('kamp_session_temporary');
+      } else {
+        localStorage.setItem('kamp_session_temporary', '1');
+      }
+      sessionStorage.setItem('kamp_tab_active', '1');
 
       // Вход по email — напрямую через Supabase
       if (login.includes('@')) {
@@ -106,7 +116,7 @@ const AppLogin: React.FC = () => {
             </Label>
             <Input
               id="phone"
-              autoComplete="username"
+              autoComplete="email"
               placeholder="+7 (999) 123-45-67 или email"
               value={phone}
               onChange={(e) => {
@@ -132,6 +142,16 @@ const AppLogin: React.FC = () => {
               className="h-12 bg-white/5 border-white/15 text-white placeholder:text-white/30 focus-visible:ring-kamp-primary"
             />
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="w-4 h-4 accent-kamp-primary"
+            />
+            <span className="text-white/60 text-sm">Запомнить меня</span>
+          </label>
 
           {error && (
             <p className="text-sm text-kamp-primary font-medium text-center">{error}</p>
