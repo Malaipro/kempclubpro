@@ -24,6 +24,15 @@ const AppLogin = lazy(() => import("./pages/AppLogin"));
 
 const queryClient = new QueryClient();
 
+// На домене kemp-app.ru корень ведёт сразу в кабинет; на kempclub.pro — лендинг.
+const RootRoute = () => {
+  const host = window.location.hostname;
+  if (host === 'kemp-app.ru' || host === 'www.kemp-app.ru') {
+    return <Navigate to="/app" replace />;
+  }
+  return <Index />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
