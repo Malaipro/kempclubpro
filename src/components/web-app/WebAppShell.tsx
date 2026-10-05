@@ -100,13 +100,19 @@ const WebAppInner: React.FC = () => {
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
             <>
-              {isResident && (
+              {isResident ? (
                 <div className="grid grid-cols-3 gap-2 px-4 pt-4">
                   {RESIDENT_TILES.map((t) => (
                     <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
                       <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
                     </Card>
                   ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 px-4 pt-4">
+                  <Card className="cursor-pointer" onClick={() => setActiveSection('chat')}>
+                    <CardContent className="p-3 text-center text-xs font-medium">Чат</CardContent>
+                  </Card>
                 </div>
               )}
               <TelegramParticipantView
