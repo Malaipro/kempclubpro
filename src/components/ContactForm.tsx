@@ -62,7 +62,7 @@ export const ContactForm: React.FC = () => {
           .limit(1)
           .maybeSingle();
         if (data && !error) setStartDate(new Date(data.start_date));
-        else setStartDate(new Date('2026-08-24T00:00:00'));
+        else setStartDate(new Date('2026-11-02T00:00:00'));
       } catch (e) {
         console.error('Error fetching active stream:', e);
       }
