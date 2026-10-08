@@ -152,7 +152,7 @@ export const ContactForm: React.FC = () => {
 
 
   const effectiveDate = FIXED_TARGET_DATE;
-  const formattedDate = format(effectiveDate, 'd MMMM yyyy', { locale: ru });
+  const formattedDate = format(effectiveDate, 'd MMMM', { locale: ru });
 
   return (
     <section id="contact" className="kamp-section bg-black text-white py-6 md:py-16">
