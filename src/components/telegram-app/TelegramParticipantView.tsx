@@ -18,6 +18,7 @@ interface Props {
   data: ParticipantFullState;
   activeSection: Section;
   onNavigate: (section: Section) => void;
+  hideSectionsGrid?: boolean;
 }
 
 // ---------- Stat card ----------
@@ -96,7 +97,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 // ---------- View ----------
 
-export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate }) => {
+export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate, hideSectionsGrid = false }) => {
   const {
     profile, status, coins_balance, total_points,
     rank_position, current_totem, totems_count,
@@ -219,6 +220,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
       )}
 
       {/* ── Sections grid ── */}
+      {!hideSectionsGrid && (
       <div className="px-4 pt-6">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Разделы КЭМП
@@ -359,6 +361,7 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           />
         </div>
       </div>
+      )}
 
     </div>
   );

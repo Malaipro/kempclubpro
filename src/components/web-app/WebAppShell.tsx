@@ -31,6 +31,9 @@ const RESIDENT_TILES: { section: Section; label: string }[] = [
   { section: 'mastermind_personal', label: 'Мастермайнд: личное' },
   { section: 'nutrition', label: 'Нутрициолог' },
   { section: 'chat', label: 'Чат' },
+  { section: 'rules', label: 'Правила' },
+  { section: 'journal', label: 'Ежедневник' },
+  { section: 'pyramid', label: 'Пирамида КЭМП' },
 ];
 import type { ParticipantFullState } from '@/services/participantService';
 
@@ -132,6 +135,13 @@ const WebAppInner: React.FC = () => {
                     { section: 'activities', label: 'Отметки' },
                     { section: 'ascetics', label: 'Аскезы' },
                     { section: 'homework', label: 'ДЗ' },
+                    { section: 'rating', label: 'Рейтинг' },
+                    { section: 'shop', label: 'Магазин' },
+                    { section: 'challenges', label: 'Челленджи' },
+                    { section: 'checkpoint', label: 'Точка А/Б' },
+                    { section: 'rules', label: 'Правила' },
+                    { section: 'journal', label: 'Ежедневник' },
+                    { section: 'pyramid', label: 'Пирамида КЭМП' },
                   ] as { section: Section; label: string }[]).map((t) => (
                     <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
                       <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
@@ -143,6 +153,7 @@ const WebAppInner: React.FC = () => {
                 data={state.data}
                 activeSection={activeSection as TgSection}
                 onNavigate={setActiveSection}
+                hideSectionsGrid
               />
             </>
           ) : activeSection === 'chat' ? (

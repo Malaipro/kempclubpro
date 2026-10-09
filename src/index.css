@@ -7,6 +7,10 @@
 
 @layer base {
   :root {
+    --app-nav: 0 0% 12%;
+    --app-nav-border: 0 0% 20%;
+    --app-nav-active: 0 100% 27%;
+    --app-nav-inactive: 0 0% 53%;
     --background: 0 0% 100%; /* White background */
     --foreground: 240 10% 3.9%; /* Black text */
     --card: 0 0% 100%;
