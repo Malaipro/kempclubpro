@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { proxyStorageUrl } from '@/lib/storageUrl';
-import dmitryAndreevPhoto from '@/assets/dmitry-andreev.jpg.asset.json';
+import dmitryAndreevPhoto from '@/assets/dmitry-andreev-restored.jpg.asset.json';
 interface Trainer {
   id: string;
   name: string;
