@@ -19,6 +19,7 @@ export default {
 		},
 		extend: {
 			colors: {
+				'home-tactical': { background: 'hsl(var(--home-background))', surface: 'hsl(var(--home-surface))', tile: 'hsl(var(--home-tile))', foreground: 'hsl(var(--home-foreground))', muted: 'hsl(var(--home-muted))', accent: 'hsl(var(--home-accent))', border: 'hsl(var(--home-border))' },
 				'app-nav': { DEFAULT: 'hsl(var(--app-nav))', border: 'hsl(var(--app-nav-border))', active: 'hsl(var(--app-nav-active))', inactive: 'hsl(var(--app-nav-inactive))' },
 				tile: { DEFAULT: 'hsl(var(--tile))', foreground: 'hsl(var(--tile-foreground))' },
 				chat: {

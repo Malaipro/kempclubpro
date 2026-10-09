@@ -20,6 +20,7 @@ interface Props {
   onNavigate: (section: Section) => void;
   hideSectionsGrid?: boolean;
   tilesSlot?: React.ReactNode;
+  appearance?: 'default' | 'tactical';
 }
 
 // ---------- Stat card ----------
@@ -28,9 +29,18 @@ interface StatCardProps {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
+  tactical?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value }) => (
+const StatCard: React.FC<StatCardProps> = ({ icon, label, value, tactical = false }) => tactical ? (
+  <div className="tactical-panel tactical-stat flex min-w-0 items-center gap-3 px-4 py-4">
+    <div className="shrink-0 text-home-tactical-accent">{icon}</div>
+    <div className="min-w-0">
+      <p className="text-xs text-home-tactical-muted">{label}</p>
+      <p className="tactical-stat-value text-2xl font-extrabold text-home-tactical-foreground">{value}</p>
+    </div>
+  </div>
+) : (
   <Card>
     <CardContent className="flex items-center gap-3 py-3">
       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
@@ -98,7 +108,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 // ---------- View ----------
 
-export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate, hideSectionsGrid = false, tilesSlot }) => {
+export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate, hideSectionsGrid = false, tilesSlot, appearance = 'default' }) => {
+  const tactical = appearance === 'tactical';
   const {
     profile, status, coins_balance, total_points,
     rank_position, current_totem, totems_count,
@@ -134,6 +145,21 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
     <div className="min-h-screen bg-background pb-8">
 
       {/* ── Header ── */}
+      {tactical ? (
+        <Button variant="ghost" className="tactical-profile w-full rounded-none" onClick={() => onNavigate('profile')} aria-label="Открыть профиль">
+          <span className="tactical-avatar-frame">
+            <span className="tactical-avatar">
+              {profile?.avatar_url ? (
+                <img src={proxyStorageUrl(profile.avatar_url)} alt={displayName} className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-10 w-10 text-home-tactical-foreground" />
+              )}
+            </span>
+          </span>
+          <h1 className="tactical-name">{displayName}</h1>
+          {statusLabel && <span className="tactical-status"><span>{statusLabel}</span></span>}
+        </Button>
+      ) : (
       <div
         className="bg-kamp-primary px-4 pt-8 pb-6 flex flex-col items-center gap-2 cursor-pointer"
         onClick={() => onNavigate('profile')}
@@ -152,31 +178,32 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           </Badge>
         )}
       </div>
+      )}
 
       {/* ── Stats grid ── */}
       <div className="px-4 pt-4 grid grid-cols-2 gap-3">
-        <StatCard icon={<Coins className="w-4 h-4" />} label="Коины" value={coins_balance ?? 0} />
-        <StatCard icon={<Trophy className="w-4 h-4" />} label="Очки" value={total_points ?? 0} />
+        <StatCard tactical={tactical} icon={<Coins className="w-6 h-6" />} label="Коины" value={coins_balance ?? 0} />
+        <StatCard tactical={tactical} icon={<Trophy className="w-6 h-6" />} label="Очки" value={total_points ?? 0} />
         {rank_position != null && (
-          <StatCard icon={<Star className="w-4 h-4" />} label="Место в рейтинге" value={`#${rank_position}`} />
+          <StatCard tactical={tactical} icon={<Star className="w-4 h-4" />} label="Место в рейтинге" value={`#${rank_position}`} />
         )}
         {referrals_count != null && referrals_count > 0 && (
-          <StatCard icon={<Users className="w-4 h-4" />} label="Рефералы" value={referrals_count} />
+          <StatCard tactical={tactical} icon={<Users className="w-4 h-4" />} label="Рефералы" value={referrals_count} />
         )}
       </div>
 
       {/* ── Referral ── */}
       {referralCode && (
         <div className="px-4 pt-3">
-          <Card>
+          <Card className={tactical ? 'tactical-panel tactical-referral' : undefined}>
             <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground mb-1">Реферальный код</p>
                 <p className="font-semibold truncate">{referralCode}</p>
               </div>
-              <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={handleShareReferral}>
+              <Button size="sm" variant="outline" className={tactical ? 'tactical-share shrink-0' : 'shrink-0 gap-1.5'} onClick={handleShareReferral} aria-label="Поделиться реферальной ссылкой" title="Поделиться реферальной ссылкой">
                 <Share2 className="w-4 h-4" />
-                Поделиться
+                {!tactical && 'Поделиться'}
               </Button>
             </CardContent>
           </Card>

@@ -68,13 +68,14 @@ const SOON_SECTIONS: Section[] = [
 ];
 
 const TileButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
-  <button
+  <Button
+    variant="ghost"
     onClick={onClick}
-    className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-tile px-2 py-3 text-center transition-colors hover:bg-tile/80"
+    className="tactical-tile flex h-[104px] min-w-0 flex-col items-center justify-center gap-3 rounded-none px-1.5 py-3 text-center"
   >
-    <span className="text-tile-foreground">{icon}</span>
-    <span className="text-xs font-medium leading-tight text-tile-foreground">{label}</span>
-  </button>
+    <span className="tactical-tile-icon">{icon}</span>
+    <span className="tactical-tile-label text-xs font-semibold leading-tight">{label}</span>
+  </Button>
 );
 
 const WebAppInner: React.FC = () => {
@@ -132,7 +133,7 @@ const WebAppInner: React.FC = () => {
   const isResident = status === 'club_resident';
 
   return (
-    <div className={`min-h-screen bg-background ${activeSection === 'chat' || activeSection === 'nutrition' ? 'web-chat-theme text-foreground' : ''}`}>
+    <div className={`min-h-screen bg-background ${activeSection === 'home' ? 'web-home-theme text-foreground' : activeSection === 'chat' || activeSection === 'nutrition' ? 'web-chat-theme text-foreground' : ''}`}>
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
@@ -141,9 +142,10 @@ const WebAppInner: React.FC = () => {
               activeSection={activeSection as TgSection}
               onNavigate={setActiveSection}
               hideSectionsGrid
+              appearance="tactical"
               tilesSlot={
                 <div className="px-4 pt-4">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="tactical-tiles grid grid-cols-3 gap-2.5">
                     {(isResident ? RESIDENT_TILES : INTENSIVE_TILES).map((t) => (
                       <TileButton
                         key={t.section}
