@@ -56,6 +56,17 @@ const INTENSIVE_TILES: Tile[] = [
   { section: 'pyramid', label: 'Пирамида КЭМП', icon: <Pyramid className="h-5 w-5" /> },
 ];
 
+import type { ParticipantFullState } from '@/services/participantService';
+
+type State =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ok'; data: ParticipantFullState };
+
+const SOON_SECTIONS: Section[] = [
+  'captain',
+];
+
 const TileButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
   <button
     onClick={onClick}
