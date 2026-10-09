@@ -2,7 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LogOut, Loader2, MessageCircle } from 'lucide-react';
+import {
+  LogOut, Loader2, MessageCircle, Salad, Activity, Flame, ClipboardList,
+  Trophy, ShoppingBag, Target, ScrollText, NotebookPen, Pyramid,
+  History, Briefcase, Users, Flag,
+} from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { TelegramParticipantView } from '@/components/telegram-app/TelegramParticipantView';
 import { WebBottomNav } from './WebBottomNav';
@@ -18,43 +22,48 @@ import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
 import type { Section as TgSection } from '@/components/telegram-app/TelegramAppShell';
 import { WebChatView } from './WebChatView';
 import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
-import { Card, CardContent } from '@/components/ui/card';
 
 export type Section = TgSection | 'chat' | 'history';
 
-const RESIDENT_TILES: { section: Section; label: string }[] = [
-  { section: 'rating', label: 'Рейтинг' },
-  { section: 'challenges', label: 'Челленджи' },
-  { section: 'shop', label: 'Магазин' },
-  { section: 'history', label: 'История' },
-  { section: 'mastermind_business', label: 'Мастермайнд: бизнес' },
-  { section: 'mastermind_personal', label: 'Мастермайнд: личное' },
-  { section: 'nutrition', label: 'Нутрициолог' },
-  { section: 'chat', label: 'Чат' },
-  { section: 'rules', label: 'Правила' },
-  { section: 'journal', label: 'Ежедневник' },
-  { section: 'pyramid', label: 'Пирамида КЭМП' },
-];
-import type { ParticipantFullState } from '@/services/participantService';
+type Tile = { section: Section; label: string; icon: React.ReactNode };
 
-type State =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ok'; data: ParticipantFullState };
-
-const SOON_SECTIONS: Section[] = [
-  'captain',
+const RESIDENT_TILES: Tile[] = [
+  { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
+  { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
+  { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
+  { section: 'history', label: 'История', icon: <History className="h-5 w-5" /> },
+  { section: 'mastermind_business', label: 'Мастермайнд: бизнес', icon: <Briefcase className="h-5 w-5" /> },
+  { section: 'mastermind_personal', label: 'Мастермайнд: личное', icon: <Users className="h-5 w-5" /> },
+  { section: 'nutrition', label: 'Нутрициолог', icon: <Salad className="h-5 w-5" /> },
+  { section: 'chat', label: 'Чат', icon: <MessageCircle className="h-5 w-5" /> },
+  { section: 'rules', label: 'Правила', icon: <ScrollText className="h-5 w-5" /> },
+  { section: 'journal', label: 'Ежедневник', icon: <NotebookPen className="h-5 w-5" /> },
+  { section: 'pyramid', label: 'Пирамида КЭМП', icon: <Pyramid className="h-5 w-5" /> },
 ];
 
-const ChatHomeTile: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <Button
-    variant="outline"
+const INTENSIVE_TILES: Tile[] = [
+  { section: 'chat', label: 'Чат', icon: <MessageCircle className="h-5 w-5" /> },
+  { section: 'nutrition', label: 'Нутрициолог', icon: <Salad className="h-5 w-5" /> },
+  { section: 'activities', label: 'Отметки', icon: <Activity className="h-5 w-5" /> },
+  { section: 'ascetics', label: 'Аскезы', icon: <Flame className="h-5 w-5" /> },
+  { section: 'homework', label: 'ДЗ', icon: <ClipboardList className="h-5 w-5" /> },
+  { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
+  { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
+  { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
+  { section: 'checkpoint', label: 'Точка А/Б', icon: <Flag className="h-5 w-5" /> },
+  { section: 'rules', label: 'Правила', icon: <ScrollText className="h-5 w-5" /> },
+  { section: 'journal', label: 'Ежедневник', icon: <NotebookPen className="h-5 w-5" /> },
+  { section: 'pyramid', label: 'Пирамида КЭМП', icon: <Pyramid className="h-5 w-5" /> },
+];
+
+const TileButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
+  <button
     onClick={onClick}
-    className="col-span-2 h-20 gap-3 rounded-lg border-chat-send/60 bg-chat-outgoing text-chat-outgoing-foreground hover:bg-chat-outgoing/90 hover:text-chat-outgoing-foreground"
+    className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-tile px-2 py-3 text-center transition-colors hover:bg-tile/80"
   >
-    <MessageCircle className="h-7 w-7 shrink-0" />
-    <span className="text-base font-semibold">Чат</span>
-  </Button>
+    <span className="text-foreground">{icon}</span>
+    <span className="text-xs font-medium leading-tight text-foreground">{label}</span>
+  </button>
 );
 
 const WebAppInner: React.FC = () => {
