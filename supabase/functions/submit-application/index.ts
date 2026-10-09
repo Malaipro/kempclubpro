@@ -20,6 +20,7 @@ interface ApplicationPayload {
   message?: string
   ref_code?: string
   utm_data?: UtmData
+  source?: string // contact | trial | referral
   hp_field?: string // honeypot — реальные пользователи это поле не видят и не заполняют
   website?: string // legacy honeypot (обратная совместимость)
 }
@@ -118,6 +119,49 @@ serve(async (req) => {
     )
   }
 
+  // Тег формы для уведомления в Telegram
+  const SOURCES: Record<string, { tag: string; title: string }> = {
+    contact: { tag: '#заявка_сайт', title: 'Заявка в клуб (форма «Записаться»)' },
+    trial: { tag: '#пробная_тренировка', title: 'Запись на пробную тренировку' },
+    referral: { tag: '#реферал', title: 'Реферальная заявка (/join)' },
+  }
+  const sourceKey = typeof payload.source === 'string' && SOURCES[payload.source] ? payload.source : 'contact'
+  const src = SOURCES[sourceKey]
+
+  const sendTelegram = async (): Promise<string | null> => {
+    try {
+      const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
+      const chatId = Deno.env.get('ADMIN_TELEGRAM_CHAT_ID')
+      if (!botToken || !chatId) return 'telegram_not_configured'
+      const lines = [`🆕 ${src.title}`, src.tag, `Имя: ${name}`, `Телефон: ${phone}`]
+      if (social) lines.push(`Соцсеть: ${social}`)
+      if (message) lines.push(`Сообщение: ${message}`)
+      if (refCode) lines.push(`Реф. код: ${refCode}`)
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: lines.join('\n') }),
+      })
+      if (!res.ok) {
+        console.error(`Telegram notify failed: ${res.status}`)
+        return `telegram_http_${res.status}`
+      }
+      return null
+    } catch {
+      console.error('Telegram notify error')
+      return 'telegram_request_failed'
+    }
+  }
+
+  // Реферальные заявки уже сохранены в referral_leads — только уведомление
+  if (sourceKey === 'referral') {
+    const err = await sendTelegram()
+    return new Response(
+      JSON.stringify({ ok: !err, notified: !err, error: err }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   let referrerUserId: string | null = null
   if (refCode) {
     const { data: referrer } = await supabaseAdmin
@@ -129,13 +173,18 @@ serve(async (req) => {
     referrerUserId = referrer?.user_id ?? null
   }
 
+  const dbMessage = sourceKey === 'trial'
+    ? ['[Пробная тренировка]', message].filter(Boolean).join(' ')
+    : message
+
   const { data: submission, error: insertError } = await supabaseAdmin
     .from('contact_submissions')
     .insert({
       name,
       phone,
       social,
-      message,
+      message: dbMessage,
+      course: sourceKey === 'trial' ? 'Пробная тренировка' : undefined,
       ref_code: refCode,
       referral_code: refCode,
       referrer_user_id: referrerUserId,
@@ -156,38 +205,7 @@ serve(async (req) => {
   }
 
   // Уведомление в Telegram — некритично, заявка уже сохранена
-  let notifyError: string | null = null
-  try {
-    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
-    const chatId = Deno.env.get('ADMIN_TELEGRAM_CHAT_ID')
-
-    if (!botToken || !chatId) {
-      notifyError = 'telegram_not_configured'
-    } else {
-      const lines = [
-        '🆕 Новая заявка с сайта',
-        `Имя: ${name}`,
-        `Телефон: ${phone}`,
-      ]
-      if (social) lines.push(`Соцсеть: ${social}`)
-      if (message) lines.push(`Сообщение: ${message}`)
-      if (refCode) lines.push(`Реф. код: ${refCode}`)
-
-      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: lines.join('\n') }),
-      })
-
-      if (!res.ok) {
-        notifyError = `telegram_http_${res.status}`
-        console.error(`Telegram notify failed: ${res.status}`)
-      }
-    }
-  } catch (_notifyError) {
-    notifyError = 'telegram_request_failed'
-    console.error('Telegram notify error')
-  }
+  const notifyError = await sendTelegram()
 
   if (notifyError) {
     const { error: flagError } = await supabaseAdmin
