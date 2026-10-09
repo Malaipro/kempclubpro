@@ -72,8 +72,8 @@ const TileButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () =
     onClick={onClick}
     className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-tile px-2 py-3 text-center transition-colors hover:bg-tile/80"
   >
-    <span className="text-foreground">{icon}</span>
-    <span className="text-xs font-medium leading-tight text-foreground">{label}</span>
+    <span className="text-tile-foreground">{icon}</span>
+    <span className="text-xs font-medium leading-tight text-tile-foreground">{label}</span>
   </button>
 );
 
