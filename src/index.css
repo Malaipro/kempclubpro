@@ -107,6 +107,146 @@
 }
 
 @layer components {
+  /* Opt-in tactical /app Home. No overrides outside this scope. */
+  .web-home-theme {
+    --home-background: 0 0% 7%;
+    --home-surface: 0 0% 10.196%;
+    --home-tile: 0 0% 13.333%;
+    --home-foreground: 0 0% 100%;
+    --home-muted: 0 0% 65%;
+    --home-accent: 0 100% 45.098%;
+    --home-border: 0 0% 22%;
+    --background: var(--home-background);
+    --foreground: var(--home-foreground);
+    --card: var(--home-surface);
+    --card-foreground: var(--home-foreground);
+    --muted-foreground: var(--home-muted);
+    --border: var(--home-border);
+    --accent: var(--home-tile);
+    --accent-foreground: var(--home-foreground);
+    --ring: var(--home-accent);
+  }
+
+  .web-home-theme p { color: inherit; }
+  .web-home-theme .text-muted-foreground,
+  .web-home-theme .text-home-tactical-muted { color: hsl(var(--home-muted)); }
+
+  .web-home-theme .tactical-profile {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 250px;
+    gap: 14px;
+    padding: 28px 24px 24px;
+    overflow: hidden;
+    white-space: normal;
+    background: hsl(var(--home-surface));
+    border-bottom: 1px solid hsl(var(--home-accent) / .45);
+  }
+  .web-home-theme .tactical-profile::before,
+  .web-home-theme .tactical-profile::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    width: 145px;
+    height: 210px;
+    top: -46px;
+    transform: skewX(-32deg);
+    border: 1px solid hsl(var(--home-accent) / .65);
+    border-left-width: 9px;
+    background: hsl(var(--home-accent) / .07);
+    pointer-events: none;
+  }
+  .web-home-theme .tactical-profile::before { left: -100px; }
+  .web-home-theme .tactical-profile::after { right: -100px; top: 65px; transform: skewX(-32deg) rotate(180deg); }
+  .web-home-theme .tactical-avatar-frame,
+  .web-home-theme .tactical-avatar {
+    clip-path: polygon(28% 0, 72% 0, 100% 28%, 100% 72%, 72% 100%, 28% 100%, 0 72%, 0 28%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .web-home-theme .tactical-avatar-frame { width: 86px; height: 86px; padding: 2px; background: hsl(var(--home-accent)); }
+  .web-home-theme .tactical-avatar { width: 100%; height: 100%; background: hsl(var(--home-tile)); overflow: hidden; }
+  .web-home-theme .tactical-avatar svg { width: 40px; height: 40px; }
+  .web-home-theme .tactical-name {
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    text-align: center;
+    color: hsl(var(--home-foreground));
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .web-home-theme .tactical-status {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 1px;
+    background: hsl(var(--home-accent));
+    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  }
+  .web-home-theme .tactical-status > span {
+    padding: 6px 18px;
+    background: hsl(var(--home-surface));
+    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .web-home-theme .tactical-panel {
+    position: relative;
+    border: 1px solid hsl(var(--home-border));
+    border-radius: 0;
+    background: hsl(var(--home-surface));
+    box-shadow: none;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .web-home-theme .tactical-panel::before,
+  .web-home-theme .tactical-panel::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+  }
+  .web-home-theme .tactical-panel::before { left: -1px; top: -1px; border-top: 2px solid hsl(var(--home-accent)); border-left: 2px solid hsl(var(--home-accent)); }
+  .web-home-theme .tactical-panel::after { right: -1px; bottom: -1px; border-right: 2px solid hsl(var(--home-accent)); border-bottom: 2px solid hsl(var(--home-accent)); }
+  .web-home-theme .tactical-stat { min-height: 82px; }
+  .web-home-theme .tactical-stat-value { line-height: 1.2; overflow-wrap: anywhere; }
+  .web-home-theme .tactical-referral { color: hsl(var(--home-foreground)); }
+  .web-home-theme .tactical-share { color: hsl(var(--home-accent)); border-color: hsl(var(--home-border)); border-radius: 0; width: 40px; height: 40px; padding: 0; }
+  .web-home-theme .tactical-tile {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid hsl(var(--home-border));
+    background: hsl(var(--home-tile));
+    color: hsl(var(--home-foreground));
+    transition: border-color .15s, background-color .15s;
+  }
+  .web-home-theme .tactical-tile::after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    top: 5px;
+    width: 18px;
+    height: 2px;
+    transform: rotate(45deg);
+    background: hsl(var(--home-accent));
+    box-shadow: 0 5px 0 hsl(var(--home-accent) / .35);
+    pointer-events: none;
+  }
+  .web-home-theme .tactical-tile:hover { border-color: hsl(var(--home-accent)); background: hsl(var(--home-surface)); }
+  .web-home-theme .tactical-tile-icon svg { width: 28px; height: 28px; stroke-width: 1.5; }
+  .web-home-theme .tactical-tile-label { white-space: normal; overflow-wrap: anywhere; width: 100%; min-height: 28px; display: flex; align-items: center; justify-content: center; }
+  @media (max-width: 360px) { .web-home-theme .tactical-tile-label { font-size: 10px; overflow-wrap: normal; } }
+  @media (prefers-reduced-motion: reduce) { .web-home-theme .tactical-tile { transition: none; } }
+
   .web-chat-theme {
     --background: var(--chat-background);
     --foreground: var(--chat-foreground);
