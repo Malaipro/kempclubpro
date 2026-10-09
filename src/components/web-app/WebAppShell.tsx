@@ -136,46 +136,26 @@ const WebAppInner: React.FC = () => {
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
-            <>
-              {isResident ? (
-                <div className="grid grid-cols-3 gap-2 px-4 pt-4">
-                  {RESIDENT_TILES.map((t) => t.section === 'chat' ? (
-                    <ChatHomeTile key={t.section} onClick={() => setActiveSection('chat')} />
-                  ) : (
-                    <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
-                      <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
-                    </Card>
-                  ))}
+            <TelegramParticipantView
+              data={state.data}
+              activeSection={activeSection as TgSection}
+              onNavigate={setActiveSection}
+              hideSectionsGrid
+              tilesSlot={
+                <div className="px-4 pt-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    {(isResident ? RESIDENT_TILES : INTENSIVE_TILES).map((t) => (
+                      <TileButton
+                        key={t.section}
+                        icon={t.icon}
+                        label={t.label}
+                        onClick={() => setActiveSection(t.section)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 px-4 pt-4">
-                  <ChatHomeTile onClick={() => setActiveSection('chat')} />
-                  {([
-                    { section: 'nutrition', label: 'Нутрициолог' },
-                    { section: 'activities', label: 'Отметки' },
-                    { section: 'ascetics', label: 'Аскезы' },
-                    { section: 'homework', label: 'ДЗ' },
-                    { section: 'rating', label: 'Рейтинг' },
-                    { section: 'shop', label: 'Магазин' },
-                    { section: 'challenges', label: 'Челленджи' },
-                    { section: 'checkpoint', label: 'Точка А/Б' },
-                    { section: 'rules', label: 'Правила' },
-                    { section: 'journal', label: 'Ежедневник' },
-                    { section: 'pyramid', label: 'Пирамида КЭМП' },
-                  ] as { section: Section; label: string }[]).map((t) => (
-                    <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
-                      <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-              <TelegramParticipantView
-                data={state.data}
-                activeSection={activeSection as TgSection}
-                onNavigate={setActiveSection}
-                hideSectionsGrid
-              />
-            </>
+              }
+            />
           ) : activeSection === 'chat' ? (
             <WebChatView status={status} />
           ) : activeSection === 'history' ? (
