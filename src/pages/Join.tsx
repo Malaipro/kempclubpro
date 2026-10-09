@@ -98,6 +98,19 @@ const Join: React.FC = () => {
         bonus_awarded: false,
       });
       if (error) throw error;
+      // Уведомление в Telegram (некритично)
+      fetch('https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/submit-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'referral',
+          name: parsed.data.name,
+          phone: parsed.data.phone,
+          social: parsed.data.telegram || undefined,
+          message: parsed.data.comment || undefined,
+          ref_code: ref,
+        }),
+      }).catch(() => {});
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
