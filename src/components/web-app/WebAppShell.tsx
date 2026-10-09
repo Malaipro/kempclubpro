@@ -11,6 +11,7 @@ import { WebScheduleView } from './WebScheduleView';
 import { WebActivitiesView } from './WebActivitiesView';
 import { WebAsceticsView } from './WebAsceticsView';
 import { WebHomeworkView } from './WebHomeworkView';
+import { WebNutritionView } from './WebNutritionView';
 import { WebProfileView, WebPyramidView, WebRatingView, WebRulesView } from './WebProgressViews';
 import { WebChallengesView, WebJournalView, WebShopView } from './WebEngagementViews';
 import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
@@ -27,6 +28,7 @@ const RESIDENT_TILES: { section: Section; label: string }[] = [
   { section: 'shop', label: 'Магазин' },
   { section: 'history', label: 'История' },
   { section: 'mastermind_business', label: 'Мастермайнд: бизнес' },
+  { section: 'nutrition', label: 'Нутрициолог' },
   { section: 'chat', label: 'Чат' },
 ];
 import type { ParticipantFullState } from '@/services/participantService';
@@ -37,7 +39,7 @@ type State =
   | { status: 'ok'; data: ParticipantFullState };
 
 const SOON_SECTIONS: Section[] = [
-  'nutrition', 'captain',
+  'captain',
 ];
 
 const WebAppInner: React.FC = () => {
@@ -113,6 +115,9 @@ const WebAppInner: React.FC = () => {
                   <Card className="cursor-pointer" onClick={() => setActiveSection('chat')}>
                     <CardContent className="p-3 text-center text-xs font-medium">Чат</CardContent>
                   </Card>
+                  <Card className="cursor-pointer" onClick={() => setActiveSection('nutrition')}>
+                    <CardContent className="p-3 text-center text-xs font-medium">Нутрициолог</CardContent>
+                  </Card>
                 </div>
               )}
               <TelegramParticipantView
@@ -125,6 +130,8 @@ const WebAppInner: React.FC = () => {
             <WebChatView status={status} />
           ) : activeSection === 'history' ? (
             <WebHistoryView />
+          ) : activeSection === 'nutrition' ? (
+            <WebNutritionView />
           ) : activeSection === 'rating' && isResident ? (
             <WebResidentRatingView />
           ) : activeSection === 'schedule' ? (
