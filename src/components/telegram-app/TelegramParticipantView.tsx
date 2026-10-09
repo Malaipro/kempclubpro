@@ -182,8 +182,8 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
 
       {/* ── Stats grid ── */}
       <div className="px-4 pt-4 grid grid-cols-2 gap-3">
-        <StatCard tactical={tactical} icon={<Coins className="w-6 h-6" />} label="Коины" value={coins_balance ?? 0} />
-        <StatCard tactical={tactical} icon={<Trophy className="w-6 h-6" />} label="Очки" value={total_points ?? 0} />
+        <StatCard tactical={tactical} icon={<Coins className={tactical ? 'w-6 h-6' : 'w-4 h-4'} />} label="Коины" value={coins_balance ?? 0} />
+        <StatCard tactical={tactical} icon={<Trophy className={tactical ? 'w-6 h-6' : 'w-4 h-4'} />} label="Очки" value={total_points ?? 0} />
         {rank_position != null && (
           <StatCard tactical={tactical} icon={<Star className="w-4 h-4" />} label="Место в рейтинге" value={`#${rank_position}`} />
         )}
