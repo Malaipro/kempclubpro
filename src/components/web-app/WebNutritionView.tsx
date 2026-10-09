@@ -41,15 +41,15 @@ export const WebNutritionView: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col">
-      <header className="bg-kamp-primary px-4 pb-5 pt-8">
+    <div className="web-chat-theme flex min-h-[calc(100vh-5rem)] flex-col bg-background text-foreground">
+      <header className="border-b border-border bg-background px-4 pb-5 pt-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-foreground/15">
-            <Salad className="h-6 w-6 text-primary-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-chat-incoming">
+            <Salad className="h-6 w-6 text-chat-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-primary-foreground">Макс</h1>
-            <p className="text-xs text-primary-foreground/80">Нутрициолог КЭМП</p>
+            <h1 className="text-lg font-bold text-foreground">Макс</h1>
+            <p className="text-xs text-chat-foreground/80">Нутрициолог КЭМП</p>
           </div>
         </div>
       </header>
@@ -64,7 +64,7 @@ export const WebNutritionView: React.FC = () => {
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                m.role === 'user' ? 'bg-kamp-primary text-primary-foreground' : 'bg-muted'
+                m.role === 'user' ? 'bg-chat-outgoing text-chat-outgoing-foreground' : 'bg-chat-incoming text-chat-foreground'
               }`}
             >
               <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>
@@ -73,7 +73,7 @@ export const WebNutritionView: React.FC = () => {
         ))}
         {sending && (
           <div className="flex justify-start">
-            <div className="rounded-lg bg-muted px-3 py-2">
+            <div className="rounded-lg bg-chat-incoming text-chat-foreground px-3 py-2">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           </div>
@@ -84,6 +84,7 @@ export const WebNutritionView: React.FC = () => {
       {error && <p className="px-4 pb-1 text-xs text-destructive">{error}</p>}
       <div className="sticky bottom-20 flex items-center gap-2 border-t border-border bg-background p-2">
         <Input
+          className="bg-chat-input text-chat-foreground"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Вопрос по питанию…"
@@ -94,7 +95,7 @@ export const WebNutritionView: React.FC = () => {
             }
           }}
         />
-        <Button size="icon" disabled={sending || !text.trim()} onClick={send}>
+        <Button size="icon" className="bg-chat-send text-chat-outgoing-foreground hover:bg-chat-send/90" aria-label="Отправить сообщение" disabled={sending || !text.trim()} onClick={send}>
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>

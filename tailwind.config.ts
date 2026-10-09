@@ -19,6 +19,15 @@ export default {
 		},
 		extend: {
 			colors: {
+				chat: {
+					background: 'hsl(var(--chat-background))',
+					foreground: 'hsl(var(--chat-foreground))',
+					incoming: 'hsl(var(--chat-incoming))',
+					input: 'hsl(var(--chat-input))',
+					outgoing: 'hsl(var(--chat-outgoing))',
+					'outgoing-foreground': 'hsl(var(--chat-outgoing-foreground))',
+					send: 'hsl(var(--chat-send))',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

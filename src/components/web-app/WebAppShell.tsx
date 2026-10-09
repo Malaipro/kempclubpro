@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LogOut, Loader2 } from 'lucide-react';
+import { LogOut, Loader2, MessageCircle } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { TelegramParticipantView } from '@/components/telegram-app/TelegramParticipantView';
 import { WebBottomNav } from './WebBottomNav';
@@ -41,6 +41,17 @@ type State =
 const SOON_SECTIONS: Section[] = [
   'captain',
 ];
+
+const ChatHomeTile: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <Button
+    variant="outline"
+    onClick={onClick}
+    className="col-span-2 h-20 gap-3 rounded-lg border-chat-send/60 bg-chat-outgoing text-chat-outgoing-foreground hover:bg-chat-outgoing/90 hover:text-chat-outgoing-foreground"
+  >
+    <MessageCircle className="h-7 w-7 shrink-0" />
+    <span className="text-base font-semibold">Чат</span>
+  </Button>
+);
 
 const WebAppInner: React.FC = () => {
   const navigate = useNavigate();
@@ -97,14 +108,16 @@ const WebAppInner: React.FC = () => {
   const isResident = status === 'club_resident';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${activeSection === 'chat' || activeSection === 'nutrition' ? 'web-chat-theme text-foreground' : ''}`}>
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
             <>
               {isResident ? (
                 <div className="grid grid-cols-3 gap-2 px-4 pt-4">
-                  {RESIDENT_TILES.map((t) => (
+                  {RESIDENT_TILES.map((t) => t.section === 'chat' ? (
+                    <ChatHomeTile key={t.section} onClick={() => setActiveSection('chat')} />
+                  ) : (
                     <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
                       <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
                     </Card>
@@ -112,9 +125,7 @@ const WebAppInner: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2 px-4 pt-4">
-                  <Card className="cursor-pointer" onClick={() => setActiveSection('chat')}>
-                    <CardContent className="p-3 text-center text-xs font-medium">Чат</CardContent>
-                  </Card>
+                  <ChatHomeTile onClick={() => setActiveSection('chat')} />
                   <Card className="cursor-pointer" onClick={() => setActiveSection('nutrition')}>
                     <CardContent className="p-3 text-center text-xs font-medium">Нутрициолог</CardContent>
                   </Card>

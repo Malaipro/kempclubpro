@@ -103,8 +103,8 @@ export const WebChatView: React.FC<{ status: string | null }> = ({ status }) => 
 
   if (!topic) {
     return (
-      <div>
-        <header className="bg-kamp-primary px-4 pb-6 pt-8 text-center"><h1 className="text-xl font-bold text-primary-foreground">Чат клуба</h1></header>
+      <div className="web-chat-theme min-h-[calc(100vh-5rem)] bg-background text-foreground">
+        <header className="border-b border-border bg-background px-4 pb-6 pt-8 text-center"><h1 className="text-xl font-bold text-foreground">Чат клуба</h1></header>
         <div className="space-y-2 p-4">
           {error && <p className="text-sm text-destructive">{error}</p>}
           {topics === null && !error ? <p className="py-12 text-center text-sm text-muted-foreground">Загрузка…</p>
@@ -120,10 +120,10 @@ export const WebChatView: React.FC<{ status: string | null }> = ({ status }) => 
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col">
+    <div className="web-chat-theme flex min-h-[calc(100vh-5rem)] flex-col bg-background text-foreground">
       <header className="flex items-center gap-2 border-b border-border px-2 py-3">
-        <Button size="icon" variant="ghost" onClick={() => { setTopic(null); setMessages([]); }}><ArrowLeft className="h-5 w-5" /></Button>
-        <h1 className="font-semibold">{topic.name}</h1>
+        <Button size="icon" variant="ghost" aria-label="Назад к темам" onClick={() => { setTopic(null); setMessages([]); }}><ArrowLeft className="h-5 w-5" /></Button>
+        <h1 className="font-semibold text-foreground">{topic.name}</h1>
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">Сообщений пока нет</p>}
@@ -131,7 +131,7 @@ export const WebChatView: React.FC<{ status: string | null }> = ({ status }) => 
           const mine = m.user_id === uid;
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-lg px-3 py-2 ${mine ? 'bg-kamp-primary text-primary-foreground' : 'bg-muted'}`}>
+              <div className={`max-w-[80%] rounded-lg px-3 py-2 ${mine ? 'bg-chat-outgoing text-chat-outgoing-foreground' : 'bg-chat-incoming text-chat-foreground'}`}>
                 {!mine && <p className="text-xs font-semibold opacity-80">{names[m.user_id] ?? '…'}</p>}
                 {m.content && <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>}
                 {m.file_url && <ChatImage path={m.file_url} />}
@@ -145,9 +145,9 @@ export const WebChatView: React.FC<{ status: string | null }> = ({ status }) => 
       {error && <p className="px-4 text-xs text-destructive">{error}</p>}
       <div className="sticky bottom-20 flex items-center gap-2 border-t border-border bg-background p-2">
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) send(f); e.target.value = ''; }} />
-        <Button size="icon" variant="ghost" disabled={sending} onClick={() => fileRef.current?.click()}><ImagePlus className="h-5 w-5" /></Button>
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Сообщение" onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
-        <Button size="icon" disabled={sending || !text.trim()} onClick={() => send()}>{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
+        <Button size="icon" variant="ghost" aria-label="Прикрепить фото" disabled={sending} onClick={() => fileRef.current?.click()}><ImagePlus className="h-5 w-5" /></Button>
+        <Input className="bg-chat-input text-chat-foreground" value={text} onChange={(e) => setText(e.target.value)} placeholder="Сообщение" onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
+        <Button size="icon" className="bg-chat-send text-chat-outgoing-foreground hover:bg-chat-send/90" aria-label="Отправить сообщение" disabled={sending || !text.trim()} onClick={() => send()}>{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
       </div>
     </div>
   );
