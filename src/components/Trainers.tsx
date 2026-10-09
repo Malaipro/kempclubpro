@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { proxyStorageUrl } from '@/lib/storageUrl';
+import dmitryAndreevPhoto from '@/assets/dmitry-andreev-restored.jpg.asset.json';
 interface Trainer {
   id: string;
   name: string;
@@ -134,6 +135,9 @@ export const Trainers: React.FC = () => {
       if (error) throw error;
       return data.map(trainer => ({
         ...trainer,
+        image_url: trainer.image_url === '/lovable-uploads/dmitry-andreev.jpg'
+          ? dmitryAndreevPhoto.url
+          : trainer.image_url,
         experience: trainer.experience ? trainer.experience.toString() : undefined // Handle null values
       })) as Trainer[];
     }
