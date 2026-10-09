@@ -19,6 +19,7 @@ interface Props {
   activeSection: Section;
   onNavigate: (section: Section) => void;
   hideSectionsGrid?: boolean;
+  tilesSlot?: React.ReactNode;
 }
 
 // ---------- Stat card ----------
@@ -97,7 +98,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 // ---------- View ----------
 
-export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate, hideSectionsGrid = false }) => {
+export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, onNavigate, hideSectionsGrid = false, tilesSlot }) => {
   const {
     profile, status, coins_balance, total_points,
     rank_position, current_totem, totems_count,
@@ -181,6 +182,9 @@ export const TelegramParticipantView: React.FC<Props> = ({ data, activeSection, 
           </Card>
         </div>
       )}
+
+      {/* ── Home tiles slot (web) ── */}
+      {tilesSlot}
 
       {/* ── Totem ── */}
       {totem?.name && (

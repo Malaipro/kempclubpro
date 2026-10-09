@@ -20,6 +20,7 @@ export default {
 		extend: {
 			colors: {
 				'app-nav': { DEFAULT: 'hsl(var(--app-nav))', border: 'hsl(var(--app-nav-border))', active: 'hsl(var(--app-nav-active))', inactive: 'hsl(var(--app-nav-inactive))' },
+				tile: { DEFAULT: 'hsl(var(--tile))', foreground: 'hsl(var(--tile-foreground))' },
 				chat: {
 					background: 'hsl(var(--chat-background))',
 					foreground: 'hsl(var(--chat-foreground))',
