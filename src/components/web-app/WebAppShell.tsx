@@ -28,6 +28,7 @@ const RESIDENT_TILES: { section: Section; label: string }[] = [
   { section: 'shop', label: 'Магазин' },
   { section: 'history', label: 'История' },
   { section: 'mastermind_business', label: 'Мастермайнд: бизнес' },
+  { section: 'mastermind_personal', label: 'Мастермайнд: личное' },
   { section: 'nutrition', label: 'Нутрициолог' },
   { section: 'chat', label: 'Чат' },
 ];
@@ -126,9 +127,16 @@ const WebAppInner: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-3 gap-2 px-4 pt-4">
                   <ChatHomeTile onClick={() => setActiveSection('chat')} />
-                  <Card className="cursor-pointer" onClick={() => setActiveSection('nutrition')}>
-                    <CardContent className="p-3 text-center text-xs font-medium">Нутрициолог</CardContent>
-                  </Card>
+                  {([
+                    { section: 'nutrition', label: 'Нутрициолог' },
+                    { section: 'activities', label: 'Отметки' },
+                    { section: 'ascetics', label: 'Аскезы' },
+                    { section: 'homework', label: 'ДЗ' },
+                  ] as { section: Section; label: string }[]).map((t) => (
+                    <Card key={t.section} className="cursor-pointer" onClick={() => setActiveSection(t.section)}>
+                      <CardContent className="p-3 text-center text-xs font-medium">{t.label}</CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
               <TelegramParticipantView
