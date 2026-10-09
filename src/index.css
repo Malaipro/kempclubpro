@@ -50,6 +50,8 @@
     --badge-legendary: 15 100% 50%;
     --totem-earned: 120 100% 50%;
     --progress-complete: 140 100% 40%;
+    /* /app home tiles */
+    --tile: 0 0% 17.647%;
     /* Isolated /app messenger palette */
     --chat-background: 0 0% 10.196%;
     --chat-foreground: 0 0% 94.118%;
