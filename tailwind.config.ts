@@ -19,6 +19,7 @@ export default {
 		},
 		extend: {
 			colors: {
+				'app-nav': { DEFAULT: 'hsl(var(--app-nav))', border: 'hsl(var(--app-nav-border))', active: 'hsl(var(--app-nav-active))', inactive: 'hsl(var(--app-nav-inactive))' },
 				chat: {
 					background: 'hsl(var(--chat-background))',
 					foreground: 'hsl(var(--chat-foreground))',
