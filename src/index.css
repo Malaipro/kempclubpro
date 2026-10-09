@@ -46,6 +46,14 @@
     --badge-legendary: 15 100% 50%;
     --totem-earned: 120 100% 50%;
     --progress-complete: 140 100% 40%;
+    /* Isolated /app messenger palette */
+    --chat-background: 0 0% 10.196%;
+    --chat-foreground: 0 0% 94.118%;
+    --chat-incoming: 0 0% 17.647%;
+    --chat-input: 0 0% 13.333%;
+    --chat-outgoing: 0 100% 27.255%;
+    --chat-outgoing-foreground: 0 0% 100%;
+    --chat-send: 0 100% 45.098%;
   }
 }
 
@@ -92,6 +100,26 @@
 }
 
 @layer components {
+  .web-chat-theme {
+    --background: var(--chat-background);
+    --foreground: var(--chat-foreground);
+    --card: var(--chat-incoming);
+    --card-foreground: var(--chat-foreground);
+    --muted: var(--chat-incoming);
+    --muted-foreground: 0 0% 70%;
+    --accent: var(--chat-incoming);
+    --accent-foreground: var(--chat-foreground);
+    --primary: var(--chat-outgoing);
+    --primary-foreground: var(--chat-outgoing-foreground);
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    --ring: var(--chat-send);
+  }
+
+  .web-chat-theme p {
+    color: inherit;
+  }
+
   .kamp-container {
     @apply container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
