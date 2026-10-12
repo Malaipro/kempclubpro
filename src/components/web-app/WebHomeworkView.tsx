@@ -78,7 +78,7 @@ export const WebHomeworkView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <header className="bg-kamp-primary px-4 pb-6 pt-8 text-center text-primary-foreground">
+      <header className="app-section-header px-4 pb-6 pt-8 text-center text-primary-foreground">
         <ClipboardList className="mx-auto mb-2 h-6 w-6" />
         <h1 className="text-xl font-bold text-primary-foreground">Домашние задания</h1>
         <p className="text-sm text-primary-foreground/75">Выполняй и получай баллы</p>

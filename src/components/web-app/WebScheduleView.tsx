@@ -77,7 +77,7 @@ export const WebScheduleView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <header className="bg-kamp-primary px-4 pb-6 pt-8 text-center text-primary-foreground">
+      <header className="app-section-header px-4 pb-6 pt-8 text-center text-primary-foreground">
         <CalendarDays className="mx-auto mb-2 h-6 w-6" />
         <h1 className="text-xl font-bold text-primary-foreground">Расписание</h1>
         <p className="text-sm text-primary-foreground/75">Занятия и запись</p>
@@ -101,10 +101,11 @@ export const WebScheduleView: React.FC = () => {
                 const expanded = expandedId === item.id;
                 const full = item.max_participants !== null && item.booked_count >= item.max_participants;
                 return (
-                  <Card key={item.id} className="overflow-hidden border-l-4 border-l-kamp-primary">
-                    <button
+                  <Card key={item.id} className="overflow-hidden border-l-4 border-l-primary">
+                    <Button
+                      variant="ghost"
                       type="button"
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                      className="flex h-auto w-full items-center gap-3 rounded-none px-4 py-3 text-left"
                       onClick={() => setExpandedId(expanded ? null : item.id)}
                     >
                       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -112,7 +113,7 @@ export const WebScheduleView: React.FC = () => {
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-semibold">{item.title}</span>
                       {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
+                    </Button>
                     {expanded && (
                       <CardContent className="space-y-3 px-4 pb-4 pt-0">
                         {item.location && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}
