@@ -29,6 +29,9 @@ const AppLogin: React.FC = () => {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
