@@ -2495,6 +2495,7 @@ export type Database = {
           avatar_url: string | null
           club_joined_at: string | null
           coaching_type: string
+          codex_accepted_at: string | null
           created_at: string
           current_stream_id: string | null
           date_of_birth: string | null
@@ -2543,6 +2544,7 @@ export type Database = {
           avatar_url?: string | null
           club_joined_at?: string | null
           coaching_type?: string
+          codex_accepted_at?: string | null
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null
@@ -2591,6 +2593,7 @@ export type Database = {
           avatar_url?: string | null
           club_joined_at?: string | null
           coaching_type?: string
+          codex_accepted_at?: string | null
           created_at?: string
           current_stream_id?: string | null
           date_of_birth?: string | null
@@ -4163,6 +4166,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_codex_web: { Args: never; Returns: string }
       admin_adjust_coins: {
         Args: { p_amount: number; p_reason: string; p_user_id: string }
         Returns: number

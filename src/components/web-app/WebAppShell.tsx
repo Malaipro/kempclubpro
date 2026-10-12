@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   LogOut, Loader2, MessageCircle, Salad, Activity, Flame, ClipboardList,
   Trophy, ShoppingBag, Target, ScrollText, NotebookPen, Pyramid,
-  History, Briefcase, Users, Flag,
+  History, Briefcase, Users, Flag, Calendar,
 } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { WebHomeView, WebHomeTile } from './WebHomeView';
@@ -22,23 +22,22 @@ import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
 import type { Section as TgSection } from '@/components/telegram-app/TelegramAppShell';
 import { WebChatView } from './WebChatView';
 import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
+import { WebCodexView, CodexAcceptModal } from './WebCodexView';
 
-export type Section = TgSection | 'chat' | 'history';
+export type Section = TgSection | 'chat' | 'history' | 'codex';
 
 type Tile = { section: Section; label: string; icon: React.ReactNode };
 
 const RESIDENT_TILES: Tile[] = [
+  { section: 'schedule', label: 'Расписание', icon: <Calendar className="h-5 w-5" /> },
   { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
   { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
   { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
   { section: 'history', label: 'История', icon: <History className="h-5 w-5" /> },
   { section: 'mastermind_business', label: 'Мастермайнд: бизнес', icon: <Briefcase className="h-5 w-5" /> },
   { section: 'mastermind_personal', label: 'Мастермайнд: личное', icon: <Users className="h-5 w-5" /> },
-  { section: 'nutrition', label: 'Нутрициолог', icon: <Salad className="h-5 w-5" /> },
   { section: 'chat', label: 'Чат', icon: <MessageCircle className="h-5 w-5" /> },
-  { section: 'rules', label: 'Правила', icon: <ScrollText className="h-5 w-5" /> },
-  { section: 'journal', label: 'Ежедневник', icon: <NotebookPen className="h-5 w-5" /> },
-  { section: 'pyramid', label: 'Пирамида КЭМП', icon: <Pyramid className="h-5 w-5" /> },
+  { section: 'codex', label: 'Кодекс КЭМП', icon: <ScrollText className="h-5 w-5" /> },
 ];
 
 const INTENSIVE_TILES: Tile[] = [
@@ -145,6 +144,8 @@ const WebAppInner: React.FC = () => {
             />
           ) : activeSection === 'chat' ? (
             <WebChatView status={status} />
+          ) : activeSection === 'codex' ? (
+            <WebCodexView />
           ) : activeSection === 'history' ? (
             <WebHistoryView />
           ) : activeSection === 'nutrition' ? (
@@ -199,6 +200,7 @@ const WebAppInner: React.FC = () => {
         </div>
       </div>
 
+      {isResident && <CodexAcceptModal />}
       <WebBottomNav
         active={activeSection}
         onNavigate={(s) => setActiveSection(s)}

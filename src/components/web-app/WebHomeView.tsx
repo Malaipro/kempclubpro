@@ -22,7 +22,7 @@ import pyramid from '@/assets/app-tile-pyramid.jpg';
 const TILE_IMAGES: Record<string, string> = {
   chat, nutrition, activities, ascetics, homework, rating, shop, challenges,
   checkpoint, rules, journal, pyramid,
-  history: homework, mastermind_business: rating, mastermind_personal: activities,
+  codex: rules, schedule: checkpoint, history: homework, mastermind_business: rating, mastermind_personal: activities,
 };
 
 export const WebHomeTile: React.FC<{
