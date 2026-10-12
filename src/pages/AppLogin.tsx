@@ -238,7 +238,16 @@ const AppLogin: React.FC = () => {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Войти'}
           </Button>
+
+          <button
+            type="button"
+            onClick={() => { setResetMode(true); setError(null); }}
+            className="w-full text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
+          >
+            Забыли пароль?
+          </button>
         </form>
+        )}
 
         <p className="text-muted-foreground text-xs text-center mt-8 leading-relaxed">
           Доступ выдаёт администратор клуба.

@@ -21,6 +21,7 @@ const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 // Веб-версия Mini App (kemp-app.ru)
 const WebApp = lazy(() => import("./pages/WebApp"));
 const AppLogin = lazy(() => import("./pages/AppLogin"));
+const AppResetPassword = lazy(() => import("./pages/AppResetPassword"));
 
 const queryClient = new QueryClient();
 
