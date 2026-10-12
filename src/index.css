@@ -107,15 +107,21 @@
 }
 
 @layer components {
-  /* Opt-in tactical /app Home. No overrides outside this scope. */
+  /* Web-only sports photo Home. */
   .web-home-theme {
-    --home-background: 0 0% 7%;
+    --home-background: 0 0% 6%;
     --home-surface: 0 0% 10.196%;
     --home-tile: 0 0% 13.333%;
     --home-foreground: 0 0% 100%;
-    --home-muted: 0 0% 65%;
+    --home-muted: 0 0% 66%;
     --home-accent: 0 100% 45.098%;
-    --home-border: 0 0% 22%;
+    --home-border: 0 0% 27%;
+    --home-glass: 0 0% 18%;
+    --home-shadow: 0 0% 0%;
+    --home-banner-overlay: linear-gradient(180deg, hsl(var(--home-background) / .12), hsl(var(--home-background) / .08) 50%, hsl(var(--home-background)) 100%);
+    --home-tile-overlay: linear-gradient(180deg, hsl(var(--home-shadow) / .12), hsl(var(--home-shadow) / .04) 30%, hsl(var(--home-shadow) / .88) 100%);
+    --home-glass-gradient: linear-gradient(120deg, hsl(var(--home-glass) / .8), hsl(var(--home-surface) / .62));
+    --home-panel-shadow: 0 8px 24px hsl(var(--home-shadow) / .25), inset 0 1px 0 hsl(var(--home-foreground) / .06);
     --background: var(--home-background);
     --foreground: var(--home-foreground);
     --card: var(--home-surface);
@@ -125,127 +131,65 @@
     --accent: var(--home-tile);
     --accent-foreground: var(--home-foreground);
     --ring: var(--home-accent);
+    --app-nav-active: var(--home-accent);
   }
-
   .web-home-theme p { color: inherit; }
-  .web-home-theme .text-muted-foreground,
-  .web-home-theme .text-home-tactical-muted { color: hsl(var(--home-muted)); }
-
-  .web-home-theme .tactical-profile {
-    position: relative;
-    isolation: isolate;
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 250px;
-    gap: 14px;
-    padding: 28px 24px 24px;
-    overflow: hidden;
-    white-space: normal;
-    background: hsl(var(--home-surface));
-    border-bottom: 1px solid hsl(var(--home-accent) / .45);
+  .web-home-theme .text-muted-foreground { color: hsl(var(--home-muted)); }
+  .photo-home-banner { position: relative; isolation: isolate; min-height: 338px; overflow: hidden; }
+  .photo-home-athlete { position: absolute; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 40% center; }
+  .photo-home-banner::after { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--home-banner-overlay); pointer-events: none; }
+  .photo-home-brand { position: absolute; top: 22px; left: 22px; display: flex; flex-direction: column; }
+  .photo-home-wordmark { font-family: 'Montserrat', sans-serif; font-size: 42px; line-height: 1; font-weight: 900; font-style: italic; letter-spacing: 0; color: hsl(var(--home-foreground)); clip-path: polygon(0 0, 100% 0, 100% 32%, 60% 36%, 100% 35%, 100% 70%, 35% 76%, 100% 73%, 100% 100%, 0 100%, 0 64%, 44% 60%, 0 61%); }
+  .photo-home-slogan { font-size: 9px; margin-top: 8px; font-weight: 700; letter-spacing: 0; color: hsl(var(--home-foreground)); }
+  .photo-home-profile { position: relative; margin-left: auto; width: 56%; height: auto; min-height: 338px; padding: 116px 12px 30px; display: flex; flex-direction: column; gap: 10px; white-space: normal; background: transparent; border-radius: 0; }
+  .photo-home-profile:hover { background: transparent; }
+  .photo-home-avatar { display: flex; align-items: center; justify-content: center; width: 84px; height: 84px; flex-shrink: 0; border-radius: 12px; border: 2px solid hsl(var(--home-accent)); background: hsl(var(--home-accent) / .75); overflow: hidden; box-shadow: 0 6px 22px hsl(var(--home-shadow) / .4); }
+  .photo-home-avatar img { height: 100%; width: 100%; object-fit: cover; }
+  .photo-home-avatar svg { height: 44px; width: 44px; color: hsl(var(--home-foreground)); }
+  .photo-home-name { margin: 0; font-size: 19px; line-height: 1.25; letter-spacing: 0; text-align: center; text-transform: uppercase; color: hsl(var(--home-foreground)); overflow-wrap: anywhere; }
+  .photo-home-status { display: inline-flex; align-items: center; justify-content: center; border: 1px solid hsl(var(--home-accent)); border-radius: 7px; background: hsl(var(--home-shadow) / .35); backdrop-filter: blur(8px); padding: 5px 15px; max-width: 100%; font-size: 11px; line-height: 1.4; color: hsl(var(--home-foreground)); }
+  .photo-home-content { position: relative; margin-top: -12px; padding: 0 16px 16px; }
+  .photo-glass { border: 1px solid hsl(var(--home-border) / .7); background: var(--home-glass-gradient); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--home-panel-shadow); border-radius: 8px; }
+  .photo-home-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .photo-home-stat { position: relative; isolation: isolate; display: flex; justify-content: flex-start; align-items: center; gap: 9px; height: 90px; min-width: 0; padding: 12px; overflow: hidden; color: hsl(var(--home-foreground)); }
+  .photo-home-stat:hover { background: var(--home-glass-gradient); border-color: hsl(var(--home-accent) / .7); }
+  .photo-stat-art { position: absolute; z-index: -1; height: 95px; width: 95px; right: 6px; top: 4px; object-fit: cover; opacity: .28; mix-blend-mode: screen; }
+  .photo-stat-icon { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: hsl(var(--home-accent)); display: flex; align-items: center; justify-content: center; }
+  .photo-stat-icon svg { width: 17px; height: 17px; }
+  .photo-stat-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+  .web-home-theme .photo-stat-caption { font-size: 10px; line-height: 1.4; color: hsl(var(--home-muted)); font-weight: 500; }
+  .photo-stat-value { font-size: 25px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; white-space: normal; }
+  .photo-stat-arrow { width: 14px; height: 14px; flex-shrink: 0; margin-left: auto; }
+  .photo-home-referral { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 18px; padding: 12px; }
+  .web-home-theme .photo-referral-code { font-size: 15px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+  .photo-share { flex-shrink: 0; gap: 6px; font-size: 10px; padding: 0 10px; color: hsl(var(--home-foreground)); background: hsl(var(--home-foreground) / .05); border: 1px solid hsl(var(--home-border)); border-radius: 6px; }
+  .photo-share:hover { background: hsl(var(--home-accent) / .18); color: hsl(var(--home-foreground)); border-color: hsl(var(--home-accent)); }
+  .photo-home-tiles { margin-top: 16px; }
+  .photo-home-tile { position: relative; isolation: isolate; width: 100%; min-width: 0; height: auto; aspect-ratio: 1 / 1.12; display: block; padding: 11px; border-radius: 8px; overflow: hidden; border: 1px solid hsl(var(--home-foreground) / .13); background: hsl(var(--home-tile) / .7); backdrop-filter: blur(10px); color: hsl(var(--home-foreground)); box-shadow: var(--home-panel-shadow); transition: border-color .2s; }
+  .photo-tile-image { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+  .photo-home-tile::after { content: ''; position: absolute; z-index: -1; inset: 0; background: var(--home-tile-overlay); pointer-events: none; }
+  .photo-home-tile:hover { color: hsl(var(--home-foreground)); border-color: hsl(var(--home-accent) / .75); background: hsl(var(--home-tile)); }
+  .photo-home-tile:hover .photo-tile-image { transform: scale(1.045); }
+  .photo-tile-icon { position: absolute; top: 10px; left: 10px; }
+  .photo-tile-icon svg { width: 21px; height: 21px; stroke-width: 1.6; }
+  .photo-tile-label { position: absolute; left: 10px; bottom: 10px; right: 20px; white-space: normal; text-align: left; font-size: 11px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+  .photo-tile-arrow { position: absolute; right: 5px; bottom: 10px; width: 13px; height: 13px; }
+  .photo-home-secondary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 22px; padding: 14px 0; border-top: 1px solid hsl(var(--home-border) / .5); font-size: 10px; color: hsl(var(--home-muted)); }
+  .photo-home-secondary > span { display: flex; align-items: center; gap: 6px; }
+  .photo-home-secondary strong { color: hsl(var(--home-foreground)); }
+  .photo-home-detail { padding: 12px 0; border-top: 1px solid hsl(var(--home-border) / .5); }
+  .photo-nav-indicator { position: absolute; bottom: 6px; height: 3px; width: 24px; border-radius: 2px; background: currentColor; }
+  .web-photo-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  @media (max-width: 360px) {
+    .photo-home-content { padding-inline: 12px; }
+    .photo-home-stat { padding: 9px; gap: 6px; }
+    .photo-stat-icon { width: 26px; height: 26px; }
+    .photo-stat-value { font-size: 21px; }
+    .photo-home-name { font-size: 16px; }
+    .photo-tile-label { font-size: 10px; left: 8px; right: 16px; }
+    .photo-share { padding-inline: 7px; gap: 4px; }
   }
-  .web-home-theme .tactical-profile::before,
-  .web-home-theme .tactical-profile::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    width: 145px;
-    height: 210px;
-    top: -46px;
-    transform: skewX(-32deg);
-    border: 1px solid hsl(var(--home-accent) / .65);
-    border-left-width: 9px;
-    background: hsl(var(--home-accent) / .07);
-    pointer-events: none;
-  }
-  .web-home-theme .tactical-profile::before { left: -100px; }
-  .web-home-theme .tactical-profile::after { right: -100px; top: 65px; transform: skewX(-32deg) rotate(180deg); }
-  .web-home-theme .tactical-avatar-frame,
-  .web-home-theme .tactical-avatar {
-    clip-path: polygon(28% 0, 72% 0, 100% 28%, 100% 72%, 72% 100%, 28% 100%, 0 72%, 0 28%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .web-home-theme .tactical-avatar-frame { width: 86px; height: 86px; padding: 2px; background: hsl(var(--home-accent)); }
-  .web-home-theme .tactical-avatar { width: 100%; height: 100%; background: hsl(var(--home-tile)); overflow: hidden; }
-  .web-home-theme .tactical-avatar svg { width: 40px; height: 40px; }
-  .web-home-theme .tactical-name {
-    font-size: 24px;
-    line-height: 1.2;
-    font-weight: 800;
-    letter-spacing: 0;
-    text-transform: uppercase;
-    text-align: center;
-    color: hsl(var(--home-foreground));
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-  .web-home-theme .tactical-status {
-    display: inline-flex;
-    max-width: 100%;
-    padding: 1px;
-    background: hsl(var(--home-accent));
-    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
-  }
-  .web-home-theme .tactical-status > span {
-    padding: 6px 18px;
-    background: hsl(var(--home-surface));
-    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
-    font-size: 11px;
-    text-transform: uppercase;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-  }
-  .web-home-theme .tactical-panel {
-    position: relative;
-    border: 1px solid hsl(var(--home-border));
-    border-radius: 0;
-    background: hsl(var(--home-surface));
-    box-shadow: none;
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-  }
-  .web-home-theme .tactical-panel::before,
-  .web-home-theme .tactical-panel::after {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    pointer-events: none;
-  }
-  .web-home-theme .tactical-panel::before { left: -1px; top: -1px; border-top: 2px solid hsl(var(--home-accent)); border-left: 2px solid hsl(var(--home-accent)); }
-  .web-home-theme .tactical-panel::after { right: -1px; bottom: -1px; border-right: 2px solid hsl(var(--home-accent)); border-bottom: 2px solid hsl(var(--home-accent)); }
-  .web-home-theme .tactical-stat { min-height: 82px; }
-  .web-home-theme .tactical-stat-value { line-height: 1.2; overflow-wrap: anywhere; }
-  .web-home-theme .tactical-referral { color: hsl(var(--home-foreground)); }
-  .web-home-theme .tactical-share { color: hsl(var(--home-accent)); border-color: hsl(var(--home-border)); border-radius: 0; width: 40px; height: 40px; padding: 0; }
-  .web-home-theme .tactical-tile {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid hsl(var(--home-border));
-    background: hsl(var(--home-tile));
-    color: hsl(var(--home-foreground));
-    transition: border-color .15s, background-color .15s;
-  }
-  .web-home-theme .tactical-tile::after {
-    content: '';
-    position: absolute;
-    right: 4px;
-    top: 5px;
-    width: 18px;
-    height: 2px;
-    transform: rotate(45deg);
-    background: hsl(var(--home-accent));
-    box-shadow: 0 5px 0 hsl(var(--home-accent) / .35);
-    pointer-events: none;
-  }
-  .web-home-theme .tactical-tile:hover { border-color: hsl(var(--home-accent)); background: hsl(var(--home-surface)); }
-  .web-home-theme .tactical-tile-icon svg { width: 28px; height: 28px; stroke-width: 1.5; }
-  .web-home-theme .tactical-tile-label { white-space: normal; overflow-wrap: anywhere; width: 100%; min-height: 28px; display: flex; align-items: center; justify-content: center; }
-  @media (max-width: 360px) { .web-home-theme .tactical-tile-label { font-size: 10px; overflow-wrap: normal; } }
-  @media (prefers-reduced-motion: reduce) { .web-home-theme .tactical-tile { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .photo-home-tile, .photo-tile-image { transition: none; } }
 
   .web-chat-theme {
     --background: var(--chat-background);
