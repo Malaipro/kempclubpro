@@ -39,8 +39,8 @@ const WebApp: React.FC = () => {
 
   if (authed === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 animate-spin text-kamp-primary" />
+      <div className="web-app-theme min-h-screen flex items-center justify-center bg-background text-foreground">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }

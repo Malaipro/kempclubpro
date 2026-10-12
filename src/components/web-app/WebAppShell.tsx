@@ -100,7 +100,7 @@ const WebAppInner: React.FC = () => {
 
   if (state.status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="web-app-theme min-h-screen flex items-center justify-center bg-background text-foreground">
         <Loader2 className="w-6 h-6 animate-spin text-kamp-primary" />
       </div>
     );
@@ -108,7 +108,7 @@ const WebAppInner: React.FC = () => {
 
   if (state.status === 'error') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="web-app-theme min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center text-foreground">
         <p className="text-muted-foreground">{state.message}</p>
         <div className="flex gap-3">
           <Button variant="outline" onClick={load}>Повторить</Button>
@@ -122,7 +122,7 @@ const WebAppInner: React.FC = () => {
   const isResident = status === 'club_resident';
 
   return (
-    <div className={`min-h-screen bg-background ${activeSection === 'home' ? 'web-home-theme text-foreground' : activeSection === 'chat' || activeSection === 'nutrition' ? 'web-chat-theme text-foreground' : ''}`}>
+    <div className={`min-h-screen bg-background ${activeSection === 'home' ? 'web-home-theme text-foreground' : 'web-app-theme text-foreground'}`}>
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (

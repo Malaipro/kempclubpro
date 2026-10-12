@@ -99,19 +99,19 @@ const AppLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-5 py-10">
-      <div className="w-full max-w-sm">
+    <div className="web-app-theme min-h-screen bg-background text-foreground flex flex-col items-center justify-center px-5 py-10">
+      <div className="app-login-panel w-full max-w-sm">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-kamp-primary flex items-center justify-center mb-4">
-            <span className="text-white text-3xl font-black">K</span>
+          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-4">
+            <span className="text-foreground text-3xl font-black">K</span>
           </div>
-          <h1 className="text-white text-2xl font-black tracking-wider">КЭМП</h1>
-          <p className="text-white/50 text-sm mt-1">Личный кабинет участника</p>
+          <h1 className="text-foreground text-2xl font-black tracking-wider">КЭМП</h1>
+          <p className="text-muted-foreground text-sm mt-1">Личный кабинет участника</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-white/70 text-xs uppercase tracking-wider">
+            <Label htmlFor="phone" className="text-muted-foreground text-xs uppercase tracking-wider">
               Телефон или email
             </Label>
             <Input
@@ -124,12 +124,12 @@ const AppLogin: React.FC = () => {
                 // Форматируем как телефон, только если нет букв и @
                 setPhone(/[a-zA-Z@]/.test(v) ? v : formatPhone(v));
               }}
-              className="h-12 bg-white/5 border-white/15 text-white placeholder:text-white/30 focus-visible:ring-kamp-primary"
+              className="h-12 bg-secondary border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white/70 text-xs uppercase tracking-wider">
+            <Label htmlFor="password" className="text-muted-foreground text-xs uppercase tracking-wider">
               Пароль
             </Label>
             <Input
@@ -139,7 +139,7 @@ const AppLogin: React.FC = () => {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 bg-white/5 border-white/15 text-white placeholder:text-white/30 focus-visible:ring-kamp-primary"
+              className="h-12 bg-secondary border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
             />
           </div>
 
@@ -148,25 +148,25 @@ const AppLogin: React.FC = () => {
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 accent-kamp-primary"
+              className="w-4 h-4 accent-primary"
             />
-            <span className="text-white/60 text-sm">Запомнить меня</span>
+            <span className="text-muted-foreground text-sm">Запомнить меня</span>
           </label>
 
           {error && (
-            <p className="text-sm text-kamp-primary font-medium text-center">{error}</p>
+            <p className="text-sm text-destructive font-medium text-center">{error}</p>
           )}
 
           <Button
             type="submit"
             disabled={loading || !phone || !password}
-            className="w-full h-12 bg-kamp-primary hover:bg-red-700 text-white font-bold uppercase tracking-wider"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Войти'}
           </Button>
         </form>
 
-        <p className="text-white/30 text-xs text-center mt-8 leading-relaxed">
+        <p className="text-muted-foreground text-xs text-center mt-8 leading-relaxed">
           Доступ выдаёт администратор клуба.
           <br />
           Нет доступа — напишите куратору.

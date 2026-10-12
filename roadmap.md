@@ -1,6 +1,6 @@
 # Tasks
 
-- [ ] Apply unified visual styling to all /app screens — awaiting CONFIRM app-all-screens-style; preserve approved Home and all functionality/access.
+- [ ] Apply unified visual styling to all /app screens — confirmed; implementing isolated palette, screens and dialogs; preserve approved Home and all functionality/access.
 
 - [x] Apply approved photo and glass styling to /app Home and bottom navigation without changing other pages.
 - [x] Generate thematic tile, athlete and reward imagery.
