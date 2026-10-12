@@ -189,9 +189,10 @@
     .web-home-theme .photo-stat-value { font-size: 21px; }
     .web-home-theme .photo-home-name { font-size: 16px; }
     .web-home-theme .photo-tile-label { font-size: 10px; left: 8px; right: 16px; }
+    .web-home-theme .photo-tile-label-long { font-size: 9px; overflow-wrap: normal; }
     .web-home-theme .photo-share { padding-inline: 7px; gap: 4px; }
   }
-  @media (prefers-reduced-motion: reduce) { .photo-home-tile, .photo-tile-image { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .web-home-theme .photo-home-tile, .web-home-theme .photo-tile-image { transition: none; } }
 
 
   .web-chat-theme {

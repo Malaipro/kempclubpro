@@ -34,7 +34,7 @@ export const WebHomeTile: React.FC<{
   <Button variant="ghost" onClick={onClick} className="photo-home-tile" aria-label={label}>
     <img src={TILE_IMAGES[section]} alt="" width={512} height={480} loading="lazy" className="photo-tile-image" />
     <span className="photo-tile-icon" aria-hidden="true">{icon}</span>
-    <span className="photo-tile-label">{label}</span>
+    <span className={`photo-tile-label${section.startsWith('mastermind') ? ' photo-tile-label-long' : ''}`}>{label}</span>
     <ChevronRight className="photo-tile-arrow" aria-hidden="true" />
   </Button>
 );
