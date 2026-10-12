@@ -39,6 +39,26 @@ const AppLogin: React.FC = () => {
     });
   }, [navigate]);
 
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: 'https://kemp-app.ru/app/reset-password',
+      });
+      if (resetError) {
+        setError('Не удалось отправить письмо. Проверьте email.');
+        return;
+      }
+      setResetSent(true);
+    } catch {
+      setError('Ошибка. Попробуйте ещё раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
