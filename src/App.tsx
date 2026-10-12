@@ -21,6 +21,7 @@ const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 // Веб-версия Mini App (kemp-app.ru)
 const WebApp = lazy(() => import("./pages/WebApp"));
 const AppLogin = lazy(() => import("./pages/AppLogin"));
+const AppResetPassword = lazy(() => import("./pages/AppResetPassword"));
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/telegram" element={<TelegramApp />} />
             <Route path="/app" element={<WebApp />} />
             <Route path="/app/login" element={<AppLogin />} />
+            <Route path="/app/reset-password" element={<AppResetPassword />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

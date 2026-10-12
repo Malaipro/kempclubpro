@@ -29,12 +29,35 @@ const AppLogin: React.FC = () => {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate('/app', { replace: true });
     });
   }, [navigate]);
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: 'https://kemp-app.ru/app/reset-password',
+      });
+      if (resetError) {
+        setError('Не удалось отправить письмо. Проверьте email.');
+        return;
+      }
+      setResetSent(true);
+    } catch {
+      setError('Ошибка. Попробуйте ещё раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +132,57 @@ const AppLogin: React.FC = () => {
           <p className="text-muted-foreground text-sm mt-1">Личный кабинет участника</p>
         </div>
 
+        {resetMode ? (
+          resetSent ? (
+            <div className="space-y-5 text-center">
+              <p className="text-foreground text-sm font-medium">Письмо отправлено на вашу почту</p>
+              <button
+                type="button"
+                onClick={() => { setResetMode(false); setResetSent(false); setResetEmail(''); setError(null); }}
+                className="text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
+              >
+                Вернуться ко входу
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleResetSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email" className="text-muted-foreground text-xs uppercase tracking-wider">
+                  Введите email
+                </Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="your@email.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="h-12 bg-secondary border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-destructive font-medium text-center">{error}</p>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading || !resetEmail}
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Отправить ссылку для сброса'}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => { setResetMode(false); setError(null); }}
+                className="w-full text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
+              >
+                Вернуться ко входу
+              </button>
+            </form>
+          )
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-muted-foreground text-xs uppercase tracking-wider">
@@ -164,7 +238,16 @@ const AppLogin: React.FC = () => {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Войти'}
           </Button>
+
+          <button
+            type="button"
+            onClick={() => { setResetMode(true); setError(null); }}
+            className="w-full text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
+          >
+            Забыли пароль?
+          </button>
         </form>
+        )}
 
         <p className="text-muted-foreground text-xs text-center mt-8 leading-relaxed">
           Доступ выдаёт администратор клуба.
