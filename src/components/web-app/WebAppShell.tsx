@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   LogOut, Loader2, MessageCircle, Salad, Activity, Flame, ClipboardList,
   Trophy, ShoppingBag, Target, ScrollText, NotebookPen, Pyramid,
-  History, Briefcase, Users, Flag,
+  History, Briefcase, Users, Flag, Calendar,
 } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
 import { WebHomeView, WebHomeTile } from './WebHomeView';
@@ -22,8 +22,9 @@ import { WebCheckpointView, WebMastermindView } from './WebGrowthViews';
 import type { Section as TgSection } from '@/components/telegram-app/TelegramAppShell';
 import { WebChatView } from './WebChatView';
 import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
+import { WebCodexView, CodexAcceptModal } from './WebCodexView';
 
-export type Section = TgSection | 'chat' | 'history';
+export type Section = TgSection | 'chat' | 'history' | 'codex';
 
 type Tile = { section: Section; label: string; icon: React.ReactNode };
 
@@ -143,6 +144,8 @@ const WebAppInner: React.FC = () => {
             />
           ) : activeSection === 'chat' ? (
             <WebChatView status={status} />
+          ) : activeSection === 'codex' ? (
+            <WebCodexView />
           ) : activeSection === 'history' ? (
             <WebHistoryView />
           ) : activeSection === 'nutrition' ? (
@@ -197,6 +200,7 @@ const WebAppInner: React.FC = () => {
         </div>
       </div>
 
+      {isResident && <CodexAcceptModal />}
       <WebBottomNav
         active={activeSection}
         onNavigate={(s) => setActiveSection(s)}
