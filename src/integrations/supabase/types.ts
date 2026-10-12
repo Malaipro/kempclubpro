@@ -4166,6 +4166,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_codex_web: { Args: never; Returns: string }
       admin_adjust_coins: {
         Args: { p_amount: number; p_reason: string; p_user_id: string }
         Returns: number
