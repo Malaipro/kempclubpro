@@ -1,5 +1,7 @@
 # Tasks
 
+- [ ] Apply unified visual styling to all /app screens — awaiting CONFIRM app-all-screens-style; preserve approved Home and all functionality/access.
+
 - [x] Apply approved photo and glass styling to /app Home and bottom navigation without changing other pages.
 - [x] Generate thematic tile, athlete and reward imagery.
 - [x] Verify both status layouts, images and Home navigation callbacks with isolated data at 1280, 390 and 320 widths.
