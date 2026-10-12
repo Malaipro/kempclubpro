@@ -15,20 +15,20 @@ export const AboutUs: React.FC = () => {
   };
   const features = [{
     icon: <Users className="w-5 h-5 md:w-6 md:h-6 text-kamp-primary" />,
-    title: "Бизнес-сообщество",
-    description: "Построй сеть контактов с успешными предпринимателями и единомышленниками"
+    title: "Окружение",
+    description: "Мужчины, которые разделяют твои ценности и стремление к развитию. Здесь поддерживают, делятся опытом и помогают двигаться вперёд."
   }, {
     icon: <Book className="w-5 h-5 md:w-6 md:h-6 text-kamp-primary" />,
     title: "Развитие",
-    description: "Мастер-классы и лекции от опытных бизнесменов и лидеров индустрии"
+    description: "Системная работа над телом, мышлением и привычками. Каждый новый этап помогает закреплять достигнутое и ставить более высокие цели."
   }, {
     icon: <Dumbbell className="w-5 h-5 md:w-6 md:h-6 text-kamp-primary" />,
-    title: "Сила и выносливость",
-    description: "Интенсивные тренировки для физического развития"
+    title: "Испытания",
+    description: "Выход за привычные границы через физические и интеллектуальные вызовы. Возможность проверить свои решения, выдержку и готовность действовать."
   }, {
     icon: <Award className="w-5 h-5 md:w-6 md:h-6 text-kamp-primary" />,
     title: "Лидерство",
-    description: "Развитие лидерских качеств через испытания и командную работу"
+    description: "Умение брать ответственность за себя и команду. Возможность проявлять инициативу, поддерживать товарищей и становиться опорой для других."
   }];
 
   // Пирамида Дилтса с новым порядком вопросов (сверху вниз)
@@ -66,12 +66,11 @@ export const AboutUs: React.FC = () => {
   return <section id="about" className="kamp-section bg-kamp-light border-t-4 border-kamp-primary">
       <div className="kamp-container">
         <div className="section-heading reveal-on-scroll max-w-3xl mx-auto">
-          <span className="inline-block text-kamp-accent font-semibold mb-2 uppercase tracking-wider">О нас</span>
-          <h2 className="text-white mb-4">Сообщество для развития тела и духа</h2>
+          <span className="inline-block text-kamp-accent font-semibold mb-2 uppercase tracking-wider">О клубе</span>
+          <h2 className="text-white mb-4">Больше, чем тренировки</h2>
           <p className="text-balance text-gray-300 max-w-2xl mx-auto">
-            КЭМП — это не просто тренировки, это сообщество амбициозных людей, 
-            объединенных стремлением к росту. Здесь вы найдете круг 
-            единомышленников, готовых развиваться ментально и физически.
+            КЭМП — закрытое мужское сообщество. Здесь формируются дисциплина, 
+            сильное окружение и привычка развиваться постоянно.
           </p>
         </div>
 
@@ -87,7 +86,11 @@ export const AboutUs: React.FC = () => {
             </div>)}
         </div>
 
-        <div className="mt-8 md:mt-24 reveal-on-scroll">
+        <p className="mt-10 md:mt-16 max-w-3xl mx-auto text-center text-gray-300 text-sm md:text-lg leading-relaxed">
+          Сила начинается не только с физической подготовки. В КЭМП мы работаем с тем, что определяет поступки мужчины: его убеждениями, ценностями, целями и пониманием собственного пути. Для этого создана <span className="text-white font-semibold">Пирамида КЭМП</span> — инструмент осознанного развития.
+        </p>
+
+        <div className="mt-8 md:mt-16 reveal-on-scroll">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
             <div className="text-left mb-8 md:mb-0 order-2 md:order-1 bg-[#222226] border border-gray-700 p-4 md:p-10 rounded-md">
               <h3 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white border-l-4 border-kamp-primary pl-4">

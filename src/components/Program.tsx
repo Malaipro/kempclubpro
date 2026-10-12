@@ -97,11 +97,10 @@ export const Program: React.FC = () => {
     <section id="program" className="kamp-section bg-gray-50 py-10 md:py-16">
       <div className="kamp-container">
         <div className="section-heading reveal-on-scroll mb-6 md:mb-8">
-          <span className="inline-block text-kamp-primary font-semibold mb-1 md:mb-2 text-sm md:text-base">Программа клуба</span>
-          <h2 className="text-black text-2xl md:text-3xl lg:text-4xl mb-2">Интенсивные тренировки для тела и духа</h2>
+          <span className="inline-block text-kamp-primary font-semibold mb-1 md:mb-2 text-sm md:text-base uppercase tracking-[0.2em]">Уровень 01 · 60 дней</span>
+          <h2 className="text-black text-2xl md:text-3xl lg:text-4xl mb-2">Программа КЭМП</h2>
           <p className="text-sm md:text-base">
-            Наша программа разработана для всестороннего развития. 
-            Каждая тренировка — это шаг к совершенству, каждое испытание — возможность стать сильнее.
+            Тело, мышление, дисциплина и характер — через системную работу и реальные испытания.
           </p>
         </div>
 

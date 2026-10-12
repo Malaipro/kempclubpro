@@ -28,9 +28,8 @@ export const FounderInterview: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 kamp-container mx-auto px-4 md:px-8 py-16 md:py-24 lg:py-32">
+      <div className="relative z-10 kamp-container mx-auto px-4 md:px-8 py-16 md:py-24 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center text-left">
         <div className="max-w-2xl space-y-6">
-          {/* Badge */}
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold uppercase tracking-wider text-kamp-accent bg-kamp-accent/10 border border-kamp-accent/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
               <Tv className="w-3.5 h-3.5" />
@@ -38,23 +37,14 @@ export const FounderInterview: React.FC = () => {
             </span>
           </div>
 
-          {/* Title */}
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-display font-bold text-white leading-tight">
-            Интервью основателя
-            <span className="block text-kamp-accent">о философии КЭМП</span>
+            Почему я создал КЭМП
           </h2>
 
-          {/* Description */}
-          <p className="text-base md:text-lg text-gray-300 leading-relaxed max-w-xl">
-            «Мужской клуб: в здоровом теле — здоровый дух!» Смотрите полное интервью о том, зачем создан КЭМП и как клуб меняет жизни участников.
-          </p>
-
-          {/* Date */}
           <p className="text-sm text-gray-400">
-            27 марта 2026 г.
+            Интервью основателя · 27 марта 2026 г.
           </p>
 
-          {/* CTA */}
           <a
             href={VIDEO_URL}
             target="_blank"
@@ -70,6 +60,12 @@ export const FounderInterview: React.FC = () => {
             <ExternalLink className="w-4 h-4 opacity-60" />
           </a>
         </div>
+
+        <blockquote className="rounded-lg border-l-4 border-kamp-primary bg-black/60 backdrop-blur-sm p-6 md:p-8 space-y-4 text-gray-200 text-base md:text-lg leading-relaxed">
+          <p>Я создавал КЭМП не ради очередного спортивного клуба или двухмесячного курса. Мне хотелось создать среду, в которой мужчины работают над собой, держат слово, преодолевают трудности и помогают друг другу становиться сильнее.</p>
+          <p className="text-white font-semibold">Для меня КЭМП — это не история на 60 дней. Это путь, который продолжается всю жизнь.</p>
+          <footer className="text-sm text-gray-400">— Дмитрий Андреев, основатель КЭМП</footer>
+        </blockquote>
       </div>
     </section>
   );

@@ -36,12 +36,16 @@ export const Hero: React.FC = () => {
               src="/lovable-uploads/dc02efeb-43ee-450d-a695-096ffa5ee61c.png" 
               alt="КЭМП Logo" 
               className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain inline-block mr-3 md:mr-4"
-            />КЭМП — закрытый мужской клуб и интенсив для тех, кто готов пройти испытания и стать 
-            <span className="text-gradient bg-gradient-to-r from-kamp-accent to-kamp-primary"> сильнее.</span>
+            />КЭМП — мужской клуб
+            <span className="text-gradient bg-gradient-to-r from-kamp-accent to-kamp-primary"> непрерывного развития</span>
           </h1>
+
+          <p className="text-xl md:text-3xl text-white font-display font-extrabold uppercase tracking-wider">
+            Сильнее каждый день.
+          </p>
           
           <p className="text-base md:text-xl text-gray-300 max-w-3xl mx-auto font-light">
-            Вступай в клуб выносливости, дисциплины и лидерства. Тренировки по Бразильскому Джиу-Джитсу, Кикбоксингу, ОФП, выездные испытания, закаливания, тактической подготовке и самобороне.
+            Закрытое мужское сообщество, где развивают тело, мышление и характер. Твой путь начинается с 60-дневного интенсива и продолжается в клубе.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 pt-4">
@@ -49,13 +53,13 @@ export const Hero: React.FC = () => {
               onClick={() => scrollToSection('contact')}
               className="kamp-button-primary bg-kamp-primary hover:bg-opacity-90 text-center py-2.5 md:py-3"
             >
-              Записаться в клуб
+              Начать свой путь
             </button>
             <button 
               onClick={() => scrollToSection('program')}
               className="kamp-button-secondary text-white bg-black/60 border-white/20 hover:bg-black/80 py-2.5 md:py-3"
             >
-              Программа клуба
+              Узнать о программе
             </button>
           </div>
 

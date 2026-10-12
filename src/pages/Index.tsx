@@ -6,6 +6,8 @@ import { Hero } from '@/components/Hero';
 import { AboutUs } from '@/components/AboutUs';
 import { Program } from '@/components/Program';
 import { PersonalCoachingCTA } from '@/components/PersonalCoachingCTA';
+import { DevelopmentJourney } from '@/components/DevelopmentJourney';
+const AppPromo = lazy(() => import('@/components/AppPromo').then(m => ({ default: m.AppPromo })));
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 
@@ -46,17 +48,19 @@ const Index = () => {
     <Layout>
       <Hero />
       <AboutUs />
+      <DevelopmentJourney />
       <Program />
-      <PersonalCoachingCTA />
       <Suspense fallback={<SectionFallback />}>
         <TrialTrainingCTA />
         <Trainers />
         <FounderInterview />
+        <PersonalCoachingCTA />
         <PhotoGallery />
+        <div id="results"><AllParticipantsProgress /></div>
+        <AppPromo />
         <Testimonials />
-        <AllParticipantsProgress />
-        <Leaderboard />
         <StreamCaptains />
+        <Leaderboard />
         <RegisteredParticipants />
         <Achievements />
         <ContactForm />

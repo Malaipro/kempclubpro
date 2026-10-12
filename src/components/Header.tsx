@@ -65,11 +65,12 @@ export const Header: React.FC = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { id: 'about', label: 'О нас' },
+    { id: 'about', label: 'О клубе' },
+    { id: 'journey', label: 'Твой путь' },
     { id: 'program', label: 'Программа' },
-    { id: 'trainers', label: 'Тренеры' },
-    { id: 'leaderboard', label: 'Рейтинг' },
-    { id: 'contact', label: 'Контакты' }
+    { id: 'results', label: 'Результаты' },
+    { id: 'contact', label: 'Контакты' },
+    { id: 'dashboard', label: 'Личный кабинет', href: '/dashboard' }
   ];
 
   // Mobile header styling
