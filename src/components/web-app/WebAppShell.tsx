@@ -8,7 +8,7 @@ import {
   History, Briefcase, Users, Flag,
 } from 'lucide-react';
 import { AppApiProvider, useAppApi } from '@/components/app-shared/apiAdapter';
-import { TelegramParticipantView } from '@/components/telegram-app/TelegramParticipantView';
+import { WebHomeView, WebHomeTile } from './WebHomeView';
 import { WebBottomNav } from './WebBottomNav';
 import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { WebScheduleView } from './WebScheduleView';
@@ -66,17 +66,6 @@ type State =
 const SOON_SECTIONS: Section[] = [
   'captain',
 ];
-
-const TileButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
-  <Button
-    variant="ghost"
-    onClick={onClick}
-    className="tactical-tile flex h-[104px] min-w-0 flex-col items-center justify-center gap-3 rounded-none px-1.5 py-3 text-center"
-  >
-    <span className="tactical-tile-icon">{icon}</span>
-    <span className="tactical-tile-label text-xs font-semibold leading-tight">{label}</span>
-  </Button>
-);
 
 const WebAppInner: React.FC = () => {
   const navigate = useNavigate();
@@ -137,25 +126,21 @@ const WebAppInner: React.FC = () => {
       <div className="mx-auto max-w-lg pb-20">
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
-            <TelegramParticipantView
+            <WebHomeView
               data={state.data}
-              activeSection={activeSection as TgSection}
-              onNavigate={setActiveSection}
-              hideSectionsGrid
-              appearance="tactical"
-              tilesSlot={
-                <div className="px-4 pt-4">
-                  <div className="tactical-tiles grid grid-cols-3 gap-2.5">
-                    {(isResident ? RESIDENT_TILES : INTENSIVE_TILES).map((t) => (
-                      <TileButton
+              onProfile={() => setActiveSection('profile')}
+              onCoins={() => setActiveSection('shop')}
+              onPoints={() => setActiveSection('rating')}
+              tiles={
+                    (isResident ? RESIDENT_TILES : INTENSIVE_TILES).map((t) => (
+                      <WebHomeTile
                         key={t.section}
+                        section={t.section}
                         icon={t.icon}
                         label={t.label}
                         onClick={() => setActiveSection(t.section)}
                       />
-                    ))}
-                  </div>
-                </div>
+                    ))
               }
             />
           ) : activeSection === 'chat' ? (

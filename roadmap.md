@@ -1,5 +1,9 @@
 # Tasks
 
+- [x] Apply approved photo and glass styling to /app Home and bottom navigation without changing other pages.
+- [x] Generate thematic tile, athlete and reward imagery.
+- [x] Verify both status layouts, images and Home navigation callbacks with isolated data at 1280, 390 and 320 widths.
+
 - [x] Apply approved tactical styling only to /app Home for both statuses.
 - [x] Verify layout, equal tiles and navigation at desktop and mobile sizes with isolated data.
 
