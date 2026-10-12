@@ -36,10 +36,10 @@ export const StreamCaptains: React.FC = () => {
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-3 flex items-center justify-center gap-3 text-kamp-primary">
             <img src={compassIcon} alt="Тотем компас" className="w-8 h-8 object-contain" />
-            Капитаны 7 потока
+            Сила в команде
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Те, кто помогает участникам держать дисциплину, мотивирует и отвечает за результат потока.
+            В КЭМП каждый участник проходит свой путь, но не остаётся один. Капитаны помогают командам сохранять дисциплину, поддерживать друг друга и двигаться к общим целям.
           </p>
         </div>
 
