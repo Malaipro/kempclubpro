@@ -1,6 +1,7 @@
 # Tasks
 
-- [ ] Apply unified visual styling to all /app screens — confirmed; implementing isolated palette, screens and dialogs; preserve approved Home and all functionality/access.
+- [x] Apply isolated dark glass styling to all /app screens and login; preserve approved Home and all functionality/access.
+- [x] Verify all sections, chat bubbles, forms, schedule expansion and shop dialog with isolated data for both statuses at 1280, 390 and 320 widths; no page errors or horizontal overflow.
 
 - [x] Apply approved photo and glass styling to /app Home and bottom navigation without changing other pages.
 - [x] Generate thematic tile, athlete and reward imagery.
