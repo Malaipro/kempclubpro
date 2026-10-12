@@ -107,6 +107,99 @@
 }
 
 @layer components {
+  /* Non-Home /app screens only; portal content opts in explicitly. */
+  .web-app-theme {
+    --background: 0 0% 6.667%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 11.765%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 11.765%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 13.333%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 13.333%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 100% 27.255%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 23%;
+    --input: 0 0% 27%;
+    --ring: 0 100% 40%;
+    --radius: .5rem;
+    --app-nav-active: 0 100% 45.098%;
+    --app-glass-shadow: 0 8px 24px hsl(var(--background) / .28), inset 0 1px 0 hsl(var(--foreground) / .04);
+    color-scheme: dark;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+  .web-app-theme :is(h1, h2, h3, h4, h5, h6) {
+    color: hsl(var(--foreground));
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
+  .web-app-theme h1 { font-size: 24px; line-height: 1.25; text-transform: uppercase; }
+  .web-app-theme h2 { font-size: 16px; line-height: 1.4; }
+  .web-app-theme h3 { font-size: 15px; line-height: 1.4; }
+  .web-app-theme p { color: inherit; }
+  .web-app-theme .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+  .web-app-theme .text-destructive { color: hsl(var(--destructive)); }
+  .web-app-theme :is(.text-kamp-primary, .text-primary) { color: hsl(var(--primary)); }
+  .web-app-theme :is(.border-kamp-primary, .border-l-kamp-primary) { border-color: hsl(var(--primary) / .7); }
+  .web-app-theme .bg-card,
+  .web-app-theme.app-glass-dialog,
+  .web-app-theme .app-login-panel {
+    background: hsl(var(--card) / .8);
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    box-shadow: var(--app-glass-shadow);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .web-app-theme .border-l-4 { border-left-width: 4px; border-left-color: hsl(var(--primary) / .7); }
+  .web-app-theme .app-section-header {
+    position: relative;
+    background: transparent;
+    color: hsl(var(--foreground));
+    padding: 32px 16px 24px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .web-app-theme .app-section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 16px;
+    width: 40px;
+    height: 2px;
+    background: hsl(var(--primary));
+  }
+  .web-app-theme .app-section-header > svg { color: hsl(var(--primary)); }
+  .web-app-theme .app-section-header p { color: hsl(var(--muted-foreground)); }
+  .web-app-theme :is(input:not([type=checkbox]):not([type=file]), textarea) {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--input));
+    min-width: 0;
+    max-width: 100%;
+  }
+  .web-app-theme :is(input, textarea)::placeholder { color: hsl(var(--muted-foreground)); opacity: 1; }
+  .web-app-theme :is(button, a).border { border-color: hsl(var(--primary) / .65); }
+  .web-app-theme :is(button, a) { letter-spacing: 0; }
+  .web-app-theme [role=tab][data-state=active] { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+  .web-app-theme table { color: hsl(var(--foreground)); background: hsl(var(--card) / .8); }
+  .web-app-theme th { color: hsl(var(--muted-foreground)); }
+  .web-app-theme tr { border-color: hsl(var(--border)); }
+  .web-app-theme tr:hover { background: hsl(var(--secondary)); }
+  .web-app-theme.app-glass-dialog { width: calc(100% - 32px); max-height: calc(100dvh - 48px); overflow-y: auto; }
+  .web-app-theme.app-glass-dialog h2 { padding-right: 20px; font-size: 20px; text-transform: uppercase; }
+  .web-app-theme .app-login-panel { padding: 28px 24px; }
+  .web-app-theme .web-chat-theme h1 { font-size: 22px; }
+  .web-app-theme .web-chat-theme input { background: hsl(var(--chat-input)); color: hsl(var(--chat-foreground)); }
+  @supports not (backdrop-filter: blur(1px)) {
+    .web-app-theme .bg-card, .web-app-theme.app-glass-dialog, .web-app-theme .app-login-panel { background: hsl(var(--card)); }
+  }
   /* Web-only sports photo Home. */
   .web-home-theme {
     --home-background: 0 0% 6%;
