@@ -28,17 +28,15 @@ export type Section = TgSection | 'chat' | 'history';
 type Tile = { section: Section; label: string; icon: React.ReactNode };
 
 const RESIDENT_TILES: Tile[] = [
+  { section: 'schedule', label: 'Расписание', icon: <Calendar className="h-5 w-5" /> },
   { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
   { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
   { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
   { section: 'history', label: 'История', icon: <History className="h-5 w-5" /> },
   { section: 'mastermind_business', label: 'Мастермайнд: бизнес', icon: <Briefcase className="h-5 w-5" /> },
   { section: 'mastermind_personal', label: 'Мастермайнд: личное', icon: <Users className="h-5 w-5" /> },
-  { section: 'nutrition', label: 'Нутрициолог', icon: <Salad className="h-5 w-5" /> },
   { section: 'chat', label: 'Чат', icon: <MessageCircle className="h-5 w-5" /> },
-  { section: 'rules', label: 'Правила', icon: <ScrollText className="h-5 w-5" /> },
-  { section: 'journal', label: 'Ежедневник', icon: <NotebookPen className="h-5 w-5" /> },
-  { section: 'pyramid', label: 'Пирамида КЭМП', icon: <Pyramid className="h-5 w-5" /> },
+  { section: 'codex', label: 'Кодекс КЭМП', icon: <ScrollText className="h-5 w-5" /> },
 ];
 
 const INTENSIVE_TILES: Tile[] = [
