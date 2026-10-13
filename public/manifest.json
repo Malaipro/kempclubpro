@@ -1,16 +1,17 @@
 {
-  "name": "КЭМП — Личный кабинет",
+  "name": "КЭМП — мужской клуб",
   "short_name": "КЭМП",
+  "description": "Мужской клуб непрерывного развития",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#111111",
+  "theme_color": "#8B0000",
+  "orientation": "portrait",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
   ]
 }
