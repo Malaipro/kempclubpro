@@ -23,6 +23,7 @@ import type { Section as TgSection } from '@/components/telegram-app/TelegramApp
 import { WebChatView } from './WebChatView';
 import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
 import { WebCodexView, CodexAcceptModal } from './WebCodexView';
+import { WebPushPrompt } from './WebPushControls';
 
 export type Section = TgSection | 'chat' | 'history' | 'codex';
 
@@ -201,6 +202,7 @@ const WebAppInner: React.FC = () => {
       </div>
 
       {isResident && <CodexAcceptModal />}
+      <div className="web-app-theme"><WebPushPrompt /></div>
       <WebBottomNav
         active={activeSection}
         onNavigate={(s) => setActiveSection(s)}
