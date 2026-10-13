@@ -21,7 +21,6 @@ import { proxyStorageUrl } from '@/lib/storageUrl';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
-const SERVER_URL = import.meta.env.VITE_TELEGRAM_SERVER_URL ?? 'https://tg.kempclub.pro';
 
 // Темы (topics) группового чата КЭМП
 const GROUP_TOPICS: { value: string; label: string; threadId: number | null }[] = [
@@ -237,18 +236,11 @@ export const BroadcastManagement: React.FC = () => {
 
     // Отправка в групповой чат — через telegram-server, минуя обычную рассылку в личку
     if (sendToGroup) {
-      const ADMIN_KEY = '51000e2e6c84ebd3b47e39f0a36922899290d7ccd2a18f812cdd00f67548044e';
       const threadId = GROUP_TOPICS.find((t) => t.value === topic)?.threadId ?? null;
       setSending(true);
       try {
-        const res = await fetch(`${SERVER_URL}/api/state`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': ADMIN_KEY,
-          },
-          body: JSON.stringify({
-            action: 'send_to_group',
+        const { data, error } = await supabase.functions.invoke('send-to-group', {
+          body: {
             group_text: text.trim(),
             topic_id: threadId,
             group_buttons: validButtons.map((b) => ({
@@ -258,11 +250,11 @@ export const BroadcastManagement: React.FC = () => {
               schedule_id: b.type === 'book_event' ? b.target_id : undefined,
               target_id: b.target_id,
             })),
-          }),
+          },
         });
-        const data = await res.json().catch(() => null);
-        if (!res.ok || (data && data.ok === false)) {
-          throw new Error(data?.error || `Ошибка отправки (${res.status})`);
+        if (error) throw error;
+        if (data && (data as any).ok === false) {
+          throw new Error((data as any)?.error || 'Ошибка отправки');
         }
         toast({ title: 'Отправлено в группу', description: 'Сообщение опубликовано в чате КЭМП' });
         resetForm();
