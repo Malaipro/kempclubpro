@@ -219,6 +219,8 @@ export const BroadcastManagement: React.FC = () => {
     return true;
   };
 
+  const [sendPush, setSendPush] = useState(false);
+
   const handleSend = async () => {
     if (!text.trim()) {
       toast({ title: 'Введите текст', description: 'Сообщение не может быть пустым', variant: 'destructive' });
@@ -315,6 +317,18 @@ export const BroadcastManagement: React.FC = () => {
 
       const sent = (sendData as any)?.data?.sent ?? (sendData as any)?.sent ?? 0;
       toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
+      if (sendPush) {
+        try {
+          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+            body: { title: 'КЭМП', body: text.trim().slice(0, 100) },
+          });
+          if (pushError) throw pushError;
+          const pushed = (pushData as any)?.sent ?? (pushData as any)?.data?.sent ?? 0;
+          toast({ title: 'Пуш-уведомления', description: `Пуш: отправлено ${pushed}` });
+        } catch (pe: any) {
+          toast({ title: 'Пуш не отправлен', description: pe?.message || 'Ошибка отправки пуша', variant: 'destructive' });
+        }
+      }
       resetForm();
       loadHistory();
     } catch (e: any) {
@@ -500,6 +514,12 @@ export const BroadcastManagement: React.FC = () => {
             {file && <p className="text-sm text-muted-foreground">Выбран: {file.name}</p>}
           </div>
 
+          {!sendToGroup && (
+            <div className="flex items-center gap-2">
+              <Switch id="broadcast-push" checked={sendPush} onCheckedChange={setSendPush} />
+              <Label htmlFor="broadcast-push">Отправить пуш-уведомление</Label>
+            </div>
+          )}
           <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
             {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
             {sendToGroup ? 'Отправить в группу' : 'Отправить рассылку'}
