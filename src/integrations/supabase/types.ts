@@ -2509,6 +2509,7 @@ export type Database = {
           last_name: string | null
           leaderboard_visible: boolean | null
           middle_name: string | null
+          must_change_password: boolean | null
           participant_status:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
@@ -2558,6 +2559,7 @@ export type Database = {
           last_name?: string | null
           leaderboard_visible?: boolean | null
           middle_name?: string | null
+          must_change_password?: boolean | null
           participant_status?:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
@@ -2607,6 +2609,7 @@ export type Database = {
           last_name?: string | null
           leaderboard_visible?: boolean | null
           middle_name?: string | null
+          must_change_password?: boolean | null
           participant_status?:
             | Database["public"]["Enums"]["participant_status_type"]
             | null
