@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { config } from '../config';
 
 // service_role client — используется ТОЛЬКО на сервере.
@@ -10,6 +11,9 @@ export const supabase: SupabaseClient = createClient(
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+    },
+    realtime: {
+      transport: ws,
     },
   }
 );
