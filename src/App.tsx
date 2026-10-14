@@ -11,6 +11,8 @@ import { Auth } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
 import ClubResidents from "./pages/ClubResidents";
 import Join from "./pages/Join";
+import { PasswordChangeGuard } from "./components/PasswordChangeGuard";
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 
 // Lazy load admin pages
 const AdminViewParticipant = lazy(() => import("./pages/AdminViewParticipant"));
@@ -44,12 +46,13 @@ const App = () => (
           <Routes>
             <Route path="/" element={<RootRoute />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<PasswordChangeGuard><Dashboard /></PasswordChangeGuard>} />
             <Route path="/club-residents" element={<ClubResidents />} />
             <Route path="/join" element={<Join />} />
-            <Route path="/admin/view-participant/:userId" element={<AdminViewParticipant />} />
+            <Route path="/admin/*" element={<PasswordChangeGuard><Routes><Route path="view-participant/:userId" element={<AdminViewParticipant />} /><Route path="*" element={<NotFound />} /></Routes></PasswordChangeGuard>} />
             <Route path="/telegram" element={<TelegramApp />} />
-            <Route path="/app" element={<WebApp />} />
+            <Route path="/app" element={<PasswordChangeGuard><WebApp /></PasswordChangeGuard>} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/app/login" element={<AppLogin />} />
             <Route path="/app/reset-password" element={<AppResetPassword />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
