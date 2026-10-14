@@ -194,21 +194,8 @@ export async function onGroupCallbackQuery(cbq: any): Promise<void> {
         }
         return;
       }
-      // Показать заметное уведомление
-      await answerCallbackQuery(cbq.id, 'Вы записаны на мероприятие');
-
-      // Изменить текст кнопки на "Записан"
-      try {
-        await fetch('https://api.telegram.org/bot' + config.telegram.botToken + '/editMessageReplyMarkup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: cbq.message.chat.id,
-            message_id: cbq.message.message_id,
-            reply_markup: JSON.stringify({ inline_keyboard: [[{ text: 'Записан', callback_data: 'gc:done:noop' }]] }),
-          }),
-        });
-      } catch (e) {}
+      // Показать заметное уведомление (личный popup, кнопки остаются для всех)
+      await answerCallbackQuery(cbq.id, '✅ Вы записаны на мероприятие');
     } else if (actionType === 'checkin') {
       await answerCallbackQuery(cbq.id, 'Отмечено');
     } else {
