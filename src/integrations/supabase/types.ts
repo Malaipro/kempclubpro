@@ -1598,6 +1598,24 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_settings: {
+        Row: {
+          created_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       journal_answers: {
         Row: {
           answer_text: string | null
