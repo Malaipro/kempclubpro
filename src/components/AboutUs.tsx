@@ -31,36 +31,42 @@ export const AboutUs: React.FC = () => {
     description: "Умение брать ответственность за себя и команду. Возможность проявлять инициативу, поддерживать товарищей и становиться опорой для других."
   }];
 
-  // Пирамида Дилтса с новым порядком вопросов (сверху вниз)
+  // Пирамида КЭМПа — серьёзная тёмная гамма: красная вершина, ниже — графит
   const diltsLevels = [{
     level: "Миссия",
     description: "Зачем живу",
     color: "bg-kamp-primary",
+    border: "border-kamp-primary/60",
     info: "Высшая цель и смысл существования"
   }, {
     level: "Идентичность",
     description: "Кто я такой",
-    color: "bg-kamp-accent",
+    color: "bg-[#3a1a1a]",
+    border: "border-kamp-primary/40",
     info: "Самоопределение и понимание своей роли"
   }, {
     level: "Убеждения",
     description: "Во что я верю",
-    color: "bg-orange-500",
+    color: "bg-[#2e2e32]",
+    border: "border-gray-600/50",
     info: "Ценности и принципы, которые направляют жизнь"
   }, {
     level: "Способности",
     description: "Как я выбираю",
-    color: "bg-yellow-500",
+    color: "bg-[#29292d]",
+    border: "border-gray-600/40",
     info: "Навыки принятия решений и стратегического мышления"
   }, {
     level: "Поведение",
     description: "Что я делаю",
-    color: "bg-green-500",
+    color: "bg-[#242428]",
+    border: "border-gray-700/40",
     info: "Конкретные действия и привычки для достижения целей"
   }, {
     level: "Окружение",
     description: "Что я имею",
-    color: "bg-blue-500",
+    color: "bg-[#1f1f23]",
+    border: "border-gray-700/30",
     info: "Физические ресурсы, связи, возможности"
   }];
   return <section id="about" className="kamp-section bg-kamp-light border-t-4 border-kamp-primary">
@@ -122,13 +128,13 @@ export const AboutUs: React.FC = () => {
               <div className="relative w-full max-w-[400px]">
                 <h4 className="text-center text-white font-bold mb-6 text-lg md:text-xl">Пирамида КЭМПа</h4>
                 <div className="space-y-2">
-                  {diltsLevels.map((level, index) => <div key={index} className={`${level.color} text-white p-3 md:p-4 rounded-lg shadow-lg transform transition-all duration-300 hover:scale-105 cursor-pointer ${activeLevel === index ? 'ring-2 ring-white scale-105' : ''}`} style={{
+                  {diltsLevels.map((level, index) => <div key={index} className={`${level.color} border ${level.border} text-white p-3 md:p-4 rounded-sm shadow-lg transform transition-all duration-300 hover:border-kamp-primary/70 cursor-pointer ${activeLevel === index ? 'ring-1 ring-kamp-primary' : ''}`} style={{
                   marginLeft: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`,
                   marginRight: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`
                 }} onClick={() => setActiveLevel(activeLevel === index ? null : index)} onMouseEnter={() => !isMobile && setActiveLevel(index)} onMouseLeave={() => !isMobile && setActiveLevel(null)}>
                       <div className="text-center">
-                        <div className="font-bold text-sm md:text-base">{level.level}</div>
-                        <div className="text-xs md:text-sm opacity-90">{level.description}</div>
+                        <div className="font-bold text-sm md:text-base uppercase tracking-wider">{level.level}</div>
+                        <div className="text-xs md:text-sm text-gray-400">{level.description}</div>
                         {activeLevel === index && <div className="text-xs md:text-sm mt-2 bg-black/20 rounded p-2 animate-fade-in">
                             {level.info}
                           </div>}
