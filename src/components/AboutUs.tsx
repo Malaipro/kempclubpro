@@ -128,7 +128,7 @@ export const AboutUs: React.FC = () => {
               <div className="relative w-full max-w-[400px]">
                 <h4 className="text-center text-white font-bold mb-6 text-lg md:text-xl">Пирамида КЭМПа</h4>
                 <div className="space-y-2">
-                  {diltsLevels.map((level, index) => <div key={index} className={`${level.color} text-white p-3 md:p-4 rounded-lg shadow-lg transform transition-all duration-300 hover:scale-105 cursor-pointer ${activeLevel === index ? 'ring-2 ring-white scale-105' : ''}`} style={{
+                  {diltsLevels.map((level, index) => <div key={index} className={`${level.color} border ${level.border} text-white p-3 md:p-4 rounded-sm shadow-lg transform transition-all duration-300 hover:border-kamp-primary/70 cursor-pointer ${activeLevel === index ? 'ring-1 ring-kamp-primary' : ''}`} style={{
                   marginLeft: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`,
                   marginRight: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`
                 }} onClick={() => setActiveLevel(activeLevel === index ? null : index)} onMouseEnter={() => !isMobile && setActiveLevel(index)} onMouseLeave={() => !isMobile && setActiveLevel(null)}>
