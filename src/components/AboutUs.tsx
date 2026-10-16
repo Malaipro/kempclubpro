@@ -133,8 +133,8 @@ export const AboutUs: React.FC = () => {
                   marginRight: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`
                 }} onClick={() => setActiveLevel(activeLevel === index ? null : index)} onMouseEnter={() => !isMobile && setActiveLevel(index)} onMouseLeave={() => !isMobile && setActiveLevel(null)}>
                       <div className="text-center">
-                        <div className="font-bold text-sm md:text-base">{level.level}</div>
-                        <div className="text-xs md:text-sm opacity-90">{level.description}</div>
+                        <div className="font-bold text-sm md:text-base uppercase tracking-wider">{level.level}</div>
+                        <div className="text-xs md:text-sm text-gray-400">{level.description}</div>
                         {activeLevel === index && <div className="text-xs md:text-sm mt-2 bg-black/20 rounded p-2 animate-fade-in">
                             {level.info}
                           </div>}
