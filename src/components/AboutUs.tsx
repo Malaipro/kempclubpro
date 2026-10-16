@@ -31,36 +31,42 @@ export const AboutUs: React.FC = () => {
     description: "Умение брать ответственность за себя и команду. Возможность проявлять инициативу, поддерживать товарищей и становиться опорой для других."
   }];
 
-  // Пирамида Дилтса с новым порядком вопросов (сверху вниз)
+  // Пирамида КЭМПа — серьёзная тёмная гамма: красная вершина, ниже — графит
   const diltsLevels = [{
     level: "Миссия",
     description: "Зачем живу",
     color: "bg-kamp-primary",
+    border: "border-kamp-primary/60",
     info: "Высшая цель и смысл существования"
   }, {
     level: "Идентичность",
     description: "Кто я такой",
-    color: "bg-kamp-accent",
+    color: "bg-[#3a1a1a]",
+    border: "border-kamp-primary/40",
     info: "Самоопределение и понимание своей роли"
   }, {
     level: "Убеждения",
     description: "Во что я верю",
-    color: "bg-orange-500",
+    color: "bg-[#2e2e32]",
+    border: "border-gray-600/50",
     info: "Ценности и принципы, которые направляют жизнь"
   }, {
     level: "Способности",
     description: "Как я выбираю",
-    color: "bg-yellow-500",
+    color: "bg-[#29292d]",
+    border: "border-gray-600/40",
     info: "Навыки принятия решений и стратегического мышления"
   }, {
     level: "Поведение",
     description: "Что я делаю",
-    color: "bg-green-500",
+    color: "bg-[#242428]",
+    border: "border-gray-700/40",
     info: "Конкретные действия и привычки для достижения целей"
   }, {
     level: "Окружение",
     description: "Что я имею",
-    color: "bg-blue-500",
+    color: "bg-[#1f1f23]",
+    border: "border-gray-700/30",
     info: "Физические ресурсы, связи, возможности"
   }];
   return <section id="about" className="kamp-section bg-kamp-light border-t-4 border-kamp-primary">
