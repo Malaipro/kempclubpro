@@ -2049,7 +2049,9 @@ export type Database = {
       }
       mastermind_task_reminders: {
         Row: {
+          claimed_at: string
           created_at: string
+          deadline: string | null
           id: string
           reminder_kind: string
           sent_at: string | null
@@ -2057,7 +2059,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          claimed_at?: string
           created_at?: string
+          deadline?: string | null
           id?: string
           reminder_kind: string
           sent_at?: string | null
@@ -2065,7 +2069,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          claimed_at?: string
           created_at?: string
+          deadline?: string | null
           id?: string
           reminder_kind?: string
           sent_at?: string | null
