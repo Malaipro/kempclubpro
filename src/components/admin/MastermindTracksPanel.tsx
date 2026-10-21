@@ -72,19 +72,19 @@ export const MastermindTracksPanel = ({ groups, groupId, trackId, onChange, task
   const toggle = async (meetingId: string, memberId: string, val: boolean) => {
     const { data: u } = await sb.auth.getUser();
     const { error } = await sb.from('mastermind_attendance').upsert({ meeting_id: meetingId, member_id: memberId, attended: val, marked_by: u.user?.id, marked_at: new Date().toISOString() }, { onConflict: 'meeting_id,member_id' });
-    if (!err(error)) setAtt({ ...att, [`${meetingId}:${memberId}`]: val });
+    if (!err(error)) { setAtt({ ...att, [`${meetingId}:${memberId}`]: val }); void load(); }
   };
 
   return (
-    <div className="space-y-4">
-      <Card><CardContent className="grid gap-2 p-4 sm:grid-cols-4">
+    <div className="space-y-4 text-foreground">
+      <div className="grid gap-2 border-b pb-4 sm:grid-cols-4">
         <Input placeholder="Название трека" value={nt.title} onChange={e => setNt({ ...nt, title: e.target.value })} />
         <Input type="date" value={nt.start} onChange={e => setNt({ ...nt, start: e.target.value })} />
         <Input type="date" value={nt.end} onChange={e => setNt({ ...nt, end: e.target.value })} />
         <Button disabled={!nt.title || !nt.start || !nt.end} onClick={() => void addTrack()}>Создать трек</Button>
-      </CardContent></Card>
+      </div>
       {tracks.filter(t => t.id === trackId).map(t => (
-        <Card key={t.id}><CardContent className="space-y-3 p-4">
+        <section key={t.id} className="space-y-4">
           <div className="flex items-center justify-between">
             <div><p className="font-semibold">{t.title}</p><p className="text-xs text-muted-foreground">{t.start_date} — {t.end_date} · {t.status === 'closed' ? 'закрыт' : 'активен'}</p></div>
             {t.status !== 'closed' && <Button size="sm" variant="outline" onClick={() => void closeTrack(t.id)}>Закрыть трек</Button>}
@@ -113,7 +113,7 @@ export const MastermindTracksPanel = ({ groups, groupId, trackId, onChange, task
               </div>
             </div>
           ))}
-        </CardContent></Card>
+        </section>
       ))}
     </div>
   );

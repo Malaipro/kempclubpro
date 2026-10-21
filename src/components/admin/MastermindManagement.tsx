@@ -652,8 +652,8 @@ export const MastermindManagement: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                  <p className="whitespace-pre-line"><span className="text-muted-foreground">Запрос:</span> {m.request || '—'}</p>
-                  <p className="whitespace-pre-line"><span className="text-muted-foreground">План на 2 месяца:</span> {m.plan || '—'}</p>
+                  {selectedTrack === 'legacy' && <p className="whitespace-pre-line"><span className="text-muted-foreground">Прежний запрос:</span> {m.request || '—'}</p>}
+                  {selectedTrack === 'legacy' && <p className="whitespace-pre-line"><span className="text-muted-foreground">Прежний план:</span> {m.plan || '—'}</p>}
                   <p className="text-muted-foreground">
                     {fmtDate(m.start_date)} — {fmtDate(m.end_date)}
                   </p>
