@@ -1,9 +1,10 @@
 # Tasks
 
-- [ ] Implement two-month mastermind tracks, goals and outcome history — awaiting approval of PRE-FLIGHT.
-- [ ] Add shared meeting dates, manual attendance and participant/card/group summaries — awaiting approval, including group progress visibility.
-- [ ] Add mandatory task results and deadline push reminders — awaiting approval of PRE-FLIGHT.
-- [ ] Verify mastermind rules with tests and participant/admin flows — dependent on implementation; real authenticated checks unavailable for external unmanaged Supabase.
+- [x] Implement two-month mastermind tracks, goals and outcome history — previous approved phase.
+- [x] Add shared meeting dates, manual attendance and participant/card/group summaries — previous approved phase.
+- [x] Add mastermind-push function, service-only reminder claims, deadline deduplication, expired-subscription cleanup and six passing rule tests.
+- [ ] Activate daily mastermind-push schedule and verify delivery — blocked: configured public app key returns 401; remote VAPID secret presence cannot be verified. No schedule created.
+- [ ] Verify participant/admin mastermind flows — blocked: authenticated end-to-end checks unavailable for external unmanaged Supabase.
 
 - [x] Apply isolated dark glass styling to all /app screens and login; preserve approved Home and all functionality/access.
 - [x] Verify all sections, chat bubbles, forms, schedule expansion and shop dialog with isolated data for both statuses at 1280, 390 and 320 widths; no page errors or horizontal overflow.
