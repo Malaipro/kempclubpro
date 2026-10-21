@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.save_mastermind_goal_web(uuid,text,text), public.get_mastermind_summary(uuid), public.get_mastermind_group_progress_web(uuid), public.is_mastermind_group_member(uuid,uuid) FROM PUBLIC, anon;
