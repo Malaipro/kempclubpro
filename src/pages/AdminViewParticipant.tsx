@@ -1,3 +1,4 @@
+import { MastermindSummary } from '@/components/mastermind/MastermindSummary';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -250,6 +251,7 @@ export default function AdminViewParticipant() {
           <div className="mt-3">
             <ParticipantTagsSection userId={participant.user_id} />
           </div>
+          <MastermindSummary userId={participant.user_id} className="mt-3 bg-background" />
         </div>
       </div>
 

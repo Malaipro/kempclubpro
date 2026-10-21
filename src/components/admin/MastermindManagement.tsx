@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MastermindTracksPanel } from './MastermindTracksPanel';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
@@ -521,6 +522,7 @@ export const MastermindManagement: React.FC = () => {
           <TabsTrigger value="members">Участники</TabsTrigger>
           <TabsTrigger value="tasks">Задачи</TabsTrigger>
           <TabsTrigger value="entries">Отчёты</TabsTrigger>
+          <TabsTrigger value="tracks">Треки и встречи</TabsTrigger>
         </TabsList>
 
         {/* УЧАСТНИКИ */}
@@ -866,6 +868,8 @@ export const MastermindManagement: React.FC = () => {
             })}
           </div>
         </TabsContent>
+
+        <TabsContent value="tracks" className="mt-4"><MastermindTracksPanel groups={groups} /></TabsContent>
 
         {/* ОТЧЁТЫ */}
         <TabsContent value="entries" className="space-y-3 mt-4">
