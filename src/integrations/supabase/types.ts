@@ -1848,6 +1848,48 @@ export type Database = {
         }
         Relationships: []
       }
+      mastermind_attendance: {
+        Row: {
+          attended: boolean
+          id: string
+          marked_at: string
+          marked_by: string | null
+          meeting_id: string
+          member_id: string
+        }
+        Insert: {
+          attended?: boolean
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          meeting_id: string
+          member_id: string
+        }
+        Update: {
+          attended?: boolean
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          meeting_id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_attendance_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastermind_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mastermind_entries: {
         Row: {
           admin_comment: string | null
@@ -1918,6 +1960,38 @@ export type Database = {
           start_date?: string | null
         }
         Relationships: []
+      }
+      mastermind_meetings: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_date: string
+          topic: string | null
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_date: string
+          topic?: string | null
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_date?: string
+          topic?: string | null
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_meetings_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mastermind_members: {
         Row: {
@@ -1991,6 +2065,7 @@ export type Database = {
           participant_comment: string | null
           sort_order: number | null
           title: string
+          track_id: string | null
         }
         Insert: {
           admin_comment?: string | null
@@ -2009,6 +2084,7 @@ export type Database = {
           participant_comment?: string | null
           sort_order?: number | null
           title: string
+          track_id?: string | null
         }
         Update: {
           admin_comment?: string | null
@@ -2027,6 +2103,7 @@ export type Database = {
           participant_comment?: string | null
           sort_order?: number | null
           title?: string
+          track_id?: string | null
         }
         Relationships: [
           {
@@ -2041,6 +2118,99 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastermind_tasks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mastermind_track_goals: {
+        Row: {
+          created_at: string
+          goal: string | null
+          id: string
+          member_id: string
+          outcome: string | null
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          goal?: string | null
+          id?: string
+          member_id: string
+          outcome?: string | null
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          goal?: string | null
+          id?: string
+          member_id?: string
+          outcome?: string | null
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_track_goals_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastermind_track_goals_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mastermind_tracks: {
+        Row: {
+          created_at: string
+          end_date: string
+          group_id: string
+          id: string
+          start_date: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          group_id: string
+          id?: string
+          start_date: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          group_id?: string
+          id?: string
+          start_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_tracks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -4354,6 +4524,11 @@ export type Database = {
         Returns: Json
       }
       get_journal_web: { Args: { p_date?: string }; Returns: Json }
+      get_mastermind_group_progress_web: {
+        Args: { p_track_id: string }
+        Returns: Json
+      }
+      get_mastermind_summary: { Args: { p_user_id: string }; Returns: Json }
       get_mastermind_web: { Args: { p_group_id?: string }; Returns: Json }
       get_participant_full_state: { Args: { p_user_id: string }; Returns: Json }
       get_participant_full_state_by_telegram: {
@@ -4425,6 +4600,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_captain: { Args: { p_user_id: string }; Returns: boolean }
       is_club_resident: { Args: { _user_id: string }; Returns: boolean }
+      is_mastermind_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_public_participant: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       link_or_create_telegram_profile: {
@@ -4513,6 +4692,10 @@ export type Database = {
           p_emotions: Json
           p_entry_date: string
         }
+        Returns: Json
+      }
+      save_mastermind_goal_web: {
+        Args: { p_goal: string; p_outcome?: string; p_track_id: string }
         Returns: Json
       }
       server_challenge_checkin: {
