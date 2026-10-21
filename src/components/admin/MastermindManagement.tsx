@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MastermindTracksPanel } from './MastermindTracksPanel';
+import { Track, initialTrack, tasksForTrack } from '@/components/mastermind/trackModel';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from '@/components/ui/dialog';
@@ -38,6 +39,7 @@ interface Member {
 }
 
 interface Task {
+  track_id: string | null;
   id: string;
   member_id: string;
   title: string;
@@ -57,6 +59,7 @@ interface Task {
 }
 
 interface Entry {
+  track_id: string | null;
   id: string;
   member_id: string;
   entry_date: string;
@@ -88,6 +91,14 @@ export const MastermindManagement: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const [showInactive, setShowInactive] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [selectedTrack, setSelectedTrack] = useState('');
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
+  const groupTracks = allTracks.filter(t => t.group_id === selectedGroup);
+  const currentTrack = groupTracks.find(t => t.id === selectedTrack);
+  const groupMembers = members.filter(m => m.group_id === selectedGroup);
+  const scopedTasks = tasksForTrack(tasks.filter(t => groupMembers.some(m => m.id === t.member_id)), selectedTrack);
+  const scopedEntries = tasksForTrack(entries.filter(e => groupMembers.some(m => m.id === e.member_id)), selectedTrack);
 
   // add member dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -213,19 +224,19 @@ export const MastermindManagement: React.FC = () => {
 
   const sortedTasks = React.useMemo(
     () =>
-      [...tasks].sort((a, b) => {
+      [...scopedTasks].sort((a, b) => {
         const ap = a.approval_status === 'pending' ? 0 : 1;
         const bp = b.approval_status === 'pending' ? 0 : 1;
         return ap - bp;
       }),
-    [tasks]
+    [tasks, selectedGroup, selectedTrack, members]
   );
 
 
   // Только реальные записи mastermind_members; по умолчанию — активные.
   // Дубли по одному и тому же человеку схлопываем, приоритет — профиль с telegram_id.
   const visibleMembers = React.useMemo(() => {
-    const rows = members.filter((m) => (showInactive ? true : !!m.is_active));
+    const rows = members.filter((m) => m.group_id === selectedGroup && (showInactive ? true : !!m.is_active));
     const byKey = new Map<string, Member>();
     rows.forEach((m) => {
       const key = `${m.group_id ?? 'no-group'}|${(m.profile?.display_name || m.user_id).trim().toLowerCase()}`;
@@ -236,7 +247,7 @@ export const MastermindManagement: React.FC = () => {
       if (!prevHasTg && curHasTg) byKey.set(key, m);
     });
     return Array.from(byKey.values());
-  }, [members, showInactive]);
+  }, [members, showInactive, selectedGroup]);
 
   const memberName = (id: string) => {
     const m = members.find((x) => x.id === id);
@@ -276,6 +287,14 @@ export const MastermindManagement: React.FC = () => {
         .select('id, name')
         .order('name');
       setGroups((grps || []) as { id: string; name: string }[]);
+      const trRes = await supabase.from('mastermind_tracks').select('*').order('start_date', { ascending: false });
+      if (trRes.error) throw trRes.error;
+      const tr = (trRes.data || []) as Track[];
+      setAllTracks(tr);
+      const gid = selectedGroup || grps?.[0]?.id || '';
+      setSelectedGroup(gid);
+      const available = tr.filter(t => t.group_id === gid);
+      setSelectedTrack(selectedTrack === 'legacy' || available.some(t => t.id === selectedTrack) ? selectedTrack : initialTrack(available) || 'legacy');
 
       // candidates: club residents not yet members
       const { data: residents } = await supabase
@@ -367,7 +386,7 @@ export const MastermindManagement: React.FC = () => {
   };
 
   const addTask = async () => {
-    if (!taskMemberId || !taskTitle.trim()) {
+    if (!taskMemberId || !taskTitle.trim() || !currentTrack || !groupMembers.some(m => m.id === taskMemberId)) {
       toast({ title: 'Заполните участника и название', variant: 'destructive' });
       return;
     }
@@ -375,6 +394,7 @@ export const MastermindManagement: React.FC = () => {
     const title = taskTitle.trim();
     const { error } = await supabase.from('mastermind_tasks').insert({
       member_id: taskMemberId,
+      track_id: currentTrack.id,
       title,
       description: taskDesc || null,
       deadline: taskDeadline || null,
@@ -431,9 +451,11 @@ export const MastermindManagement: React.FC = () => {
 
   const toggleTask = async (t: Task) => {
     const next = !t.is_completed;
+    const result = next ? window.prompt('Результат выполнения задачи', t.participant_comment || '') : null;
+    if (next && !result?.trim()) return;
     const { error } = await supabase
       .from('mastermind_tasks')
-      .update({ is_completed: next, completed_at: next ? new Date().toISOString() : null })
+      .update({ is_completed: next, completed_at: next ? new Date().toISOString() : null, ...(next ? { participant_comment: result?.trim() } : {}) })
       .eq('id', t.id);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });
     loadAll();
@@ -517,12 +539,17 @@ export const MastermindManagement: React.FC = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="members">
-        <TabsList>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Select value={selectedGroup} onValueChange={gid => { setSelectedGroup(gid); setSelectedTrack(initialTrack(allTracks.filter(t => t.group_id === gid)) || 'legacy'); setTaskMemberId(''); }}><SelectTrigger aria-label="Группа мастермайнда"><SelectValue placeholder="Группа"/></SelectTrigger><SelectContent>{groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent></Select>
+        <Select value={selectedTrack} onValueChange={id => { setSelectedTrack(id); setTaskMemberId(''); }}><SelectTrigger aria-label="Трек мастермайнда"><SelectValue placeholder="Трек"/></SelectTrigger><SelectContent>{groupTracks.map(t => <SelectItem key={t.id} value={t.id}>{t.title} · {fmtDate(t.start_date)} — {fmtDate(t.end_date)}</SelectItem>)}<SelectItem value="legacy">Без трека / старые данные</SelectItem></SelectContent></Select>
+      </div>
+      <h3 className="break-words text-xl font-semibold">{currentTrack?.title || 'Без трека / старые данные'}</h3>
+      <Tabs defaultValue="tracks">
+        <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="members">Участники</TabsTrigger>
           <TabsTrigger value="tasks">Задачи</TabsTrigger>
           <TabsTrigger value="entries">Отчёты</TabsTrigger>
-          <TabsTrigger value="tracks">Треки и встречи</TabsTrigger>
+          <TabsTrigger value="tracks">Трек, планы и дашборд</TabsTrigger>
         </TabsList>
 
         {/* УЧАСТНИКИ */}
@@ -711,7 +738,7 @@ export const MastermindManagement: React.FC = () => {
         <TabsContent value="tasks" className="space-y-4 mt-4">
           <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" disabled={members.length === 0}>
+              <Button size="sm" disabled={groupMembers.length === 0 || !currentTrack}>
                 <Plus className="w-4 h-4 mr-2" /> Добавить задачу
               </Button>
             </DialogTrigger>
@@ -723,7 +750,7 @@ export const MastermindManagement: React.FC = () => {
                   <Select value={taskMemberId} onValueChange={setTaskMemberId}>
                     <SelectTrigger><SelectValue placeholder="Выберите участника" /></SelectTrigger>
                     <SelectContent>
-                      {members.map((m) => (
+                      {groupMembers.map((m) => (
                         <SelectItem key={m.id} value={m.id}>
                           {m.profile?.display_name || 'Без имени'}
                         </SelectItem>
@@ -752,7 +779,7 @@ export const MastermindManagement: React.FC = () => {
             </DialogContent>
           </Dialog>
 
-          {tasks.length === 0 && <p className="text-muted-foreground text-sm">Задач пока нет</p>}
+          {scopedTasks.length === 0 && <p className="text-muted-foreground text-sm">Задач пока нет</p>}
 
           <div className="grid gap-3">
             {sortedTasks.map((t) => {
@@ -796,6 +823,7 @@ export const MastermindManagement: React.FC = () => {
                       )}
                     </div>
                   </div>
+                  {selectedTrack === 'legacy' && <Select onValueChange={async id => { const { error } = await supabase.from('mastermind_tasks').update({ track_id: id }).eq('id', t.id); if (error) toast({ title: 'Ошибка', description: error.message, variant: 'destructive' }); else void loadAll(); }}><SelectTrigger aria-label={`Перенести задачу: ${t.title}`}><SelectValue placeholder="Назначить трек"/></SelectTrigger><SelectContent>{groupTracks.map(tr => <SelectItem key={tr.id} value={tr.id}>{tr.title}</SelectItem>)}</SelectContent></Select>}
                   {t.deadline && (
                     <p className={`text-xs ${overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                       Дедлайн: {fmtDate(t.deadline)}{overdue ? ' — просрочено' : ''}
@@ -869,12 +897,12 @@ export const MastermindManagement: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="tracks" className="mt-4"><MastermindTracksPanel groups={groups} /></TabsContent>
+        <TabsContent value="tracks" className="mt-4"><MastermindTracksPanel groups={groups} groupId={selectedGroup} trackId={selectedTrack} onChange={loadAll} tasks={scopedTasks} /></TabsContent>
 
         {/* ОТЧЁТЫ */}
         <TabsContent value="entries" className="space-y-3 mt-4">
-          {entries.length === 0 && <p className="text-muted-foreground text-sm">Отчётов пока нет</p>}
-          {entries.map((e) => (
+          {scopedEntries.length === 0 && <p className="text-muted-foreground text-sm">Отчётов пока нет</p>}
+          {scopedEntries.map((e) => (
             <Card key={e.id} className="bg-card">
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-3">
