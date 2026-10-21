@@ -2,7 +2,7 @@
 
 - [ ] Implement two-month mastermind tracks, goals and outcome history — awaiting approval of PRE-FLIGHT.
 - [ ] Add shared meeting dates, manual attendance and participant/card/group summaries — awaiting approval, including group progress visibility.
-- [ ] Add mandatory task results and deadline push reminders — awaiting approval of PRE-FLIGHT.
+- [ ] Implement approved mastermind-push: targeted deadline reminders, duplicate protection, expired-subscription cleanup and tests.
 - [ ] Verify mastermind rules with tests and participant/admin flows — dependent on implementation; real authenticated checks unavailable for external unmanaged Supabase.
 
 - [x] Apply isolated dark glass styling to all /app screens and login; preserve approved Home and all functionality/access.
