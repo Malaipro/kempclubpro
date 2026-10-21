@@ -5,15 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { TrackDashboard, GroupProgress } from '@/components/mastermind/TrackDashboard';
+import { TrackTask, TrackGoal, ProgressRow } from '@/components/mastermind/trackModel';
 
-const sb = supabase as unknown as { from: (t: string) => any; auth: typeof supabase.auth };
-type Track = { id: string; group_id: string; title: string; start_date: string; end_date: string; status: string };
+const sb = supabase as unknown as { from: (t: string) => any; rpc: (f: string, a: object) => any; auth: typeof supabase.auth };
+type Track = { id: string; group_id: string; title: string; start_date: string; end_date: string; status: string; description?: string | null };
 type Meeting = { id: string; track_id: string; meeting_date: string; topic: string | null };
 type Member = { id: string; group_id: string | null; user_id: string; name: string };
 
-export const MastermindTracksPanel = ({ groups }: { groups: { id: string; name: string }[] }) => {
+export const MastermindTracksPanel = ({ groups, groupId, trackId, onChange, tasks }: { groups: { id: string; name: string }[]; groupId: string; trackId: string; onChange: () => void; tasks: TrackTask[] }) => {
   const { toast } = useToast();
-  const [groupId, setGroupId] = useState(groups[0]?.id || '');
+  const [goals, setGoals] = useState<Record<string, TrackGoal>>({});
+  const [rows, setRows] = useState<ProgressRow[]>([]);
+  const [description, setDescription] = useState('');
   const [tracks, setTracks] = useState<Track[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -21,7 +27,7 @@ export const MastermindTracksPanel = ({ groups }: { groups: { id: string; name: 
   const [nt, setNt] = useState({ title: '', start: '', end: '' });
   const [nm, setNm] = useState<Record<string, { date: string; topic: string }>>({});
 
-  useEffect(() => { if (!groupId && groups[0]) setGroupId(groups[0].id); }, [groups, groupId]);
+
 
   const load = useCallback(async () => {
     if (!groupId) return;
@@ -42,15 +48,22 @@ export const MastermindTracksPanel = ({ groups }: { groups: { id: string; name: 
     const map: Record<string, boolean> = {};
     (a || []).forEach((r: any) => { map[`${r.meeting_id}:${r.member_id}`] = r.attended; });
     setAtt(map);
-  }, [groupId]);
-  useEffect(() => { void load(); }, [load]);
+    const active = (t || []).find((x: Track) => x.id === trackId);
+    setDescription(active?.description || '');
+    if (active) {
+      const [{data: gs, error: ge}, {data: rs, error: re}] = await Promise.all([sb.from('mastermind_track_goals').select('*').eq('track_id', trackId), sb.rpc('get_mastermind_group_progress_web', {p_track_id: trackId})]);
+      if (ge || re) throw ge || re;
+      setGoals(Object.fromEntries((gs || []).map((g: TrackGoal) => [g.member_id, g]))); setRows(rs || []);
+    } else { setGoals({}); setRows([]); }
+  }, [groupId, trackId]);
+  useEffect(() => { void load().catch((e: any) => toast({title:'Ошибка загрузки',description:e.message,variant:'destructive'})); }, [load, toast]);
 
   const err = (e: any) => { if (e) toast({ title: 'Ошибка', description: e.message, variant: 'destructive' }); return !!e; };
   const addTrack = async () => {
     const { error } = await sb.from('mastermind_tracks').insert({ group_id: groupId, title: nt.title, start_date: nt.start, end_date: nt.end });
-    if (!err(error)) { setNt({ title: '', start: '', end: '' }); void load(); }
+    if (!err(error)) { setNt({ title: '', start: '', end: '' }); onChange(); }
   };
-  const closeTrack = async (id: string) => { if (!err((await sb.from('mastermind_tracks').update({ status: 'closed' }).eq('id', id)).error)) void load(); };
+  const closeTrack = async (id: string) => { if (!err((await sb.from('mastermind_tracks').update({ status: 'closed' }).eq('id', id)).error)) onChange(); };
   const addMeeting = async (trackId: string) => {
     const v = nm[trackId]; if (!v?.date) return;
     const { error } = await sb.from('mastermind_meetings').insert({ track_id: trackId, meeting_date: new Date(v.date).toISOString(), topic: v.topic || null });
@@ -59,26 +72,30 @@ export const MastermindTracksPanel = ({ groups }: { groups: { id: string; name: 
   const toggle = async (meetingId: string, memberId: string, val: boolean) => {
     const { data: u } = await sb.auth.getUser();
     const { error } = await sb.from('mastermind_attendance').upsert({ meeting_id: meetingId, member_id: memberId, attended: val, marked_by: u.user?.id, marked_at: new Date().toISOString() }, { onConflict: 'meeting_id,member_id' });
-    if (!err(error)) setAtt({ ...att, [`${meetingId}:${memberId}`]: val });
+    if (!err(error)) { setAtt({ ...att, [`${meetingId}:${memberId}`]: val }); void load(); }
   };
 
   return (
-    <div className="space-y-4">
-      <select className="h-10 rounded-md border bg-background px-3 text-sm" value={groupId} onChange={e => setGroupId(e.target.value)}>
-        {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-      </select>
-      <Card><CardContent className="grid gap-2 p-4 sm:grid-cols-4">
+    <div className="space-y-4 text-foreground">
+      <div className="grid gap-2 border-b pb-4 sm:grid-cols-4">
         <Input placeholder="Название трека" value={nt.title} onChange={e => setNt({ ...nt, title: e.target.value })} />
         <Input type="date" value={nt.start} onChange={e => setNt({ ...nt, start: e.target.value })} />
         <Input type="date" value={nt.end} onChange={e => setNt({ ...nt, end: e.target.value })} />
         <Button disabled={!nt.title || !nt.start || !nt.end} onClick={() => void addTrack()}>Создать трек</Button>
-      </CardContent></Card>
-      {tracks.map(t => (
-        <Card key={t.id}><CardContent className="space-y-3 p-4">
+      </div>
+      {tracks.filter(t => t.id === trackId).map(t => (
+        <section key={t.id} className="space-y-4">
           <div className="flex items-center justify-between">
             <div><p className="font-semibold">{t.title}</p><p className="text-xs text-muted-foreground">{t.start_date} — {t.end_date} · {t.status === 'closed' ? 'закрыт' : 'активен'}</p></div>
             {t.status !== 'closed' && <Button size="sm" variant="outline" onClick={() => void closeTrack(t.id)}>Закрыть трек</Button>}
           </div>
+          <div className="space-y-2"><Label>Описание трека</Label><Textarea value={description} onChange={e => setDescription(e.target.value)}/><Button size="sm" variant="outline" onClick={async () => { if (!err((await sb.from('mastermind_tracks').update({description:description || null}).eq('id',t.id)).error)) toast({title:'Описание сохранено'}); }}>Сохранить описание</Button></div>
+          <h4 className="font-semibold">Дашборд трека</h4>
+          <TrackDashboard tasks={tasks} track={t} attended={rows.reduce((sum,r) => sum + r.attended,0)} meetings={meetings.filter(m => m.track_id === t.id && new Date(m.meeting_date) <= new Date()).length * members.length}/>
+          <GroupProgress rows={rows} meetings={meetings.filter(m => m.track_id === t.id && new Date(m.meeting_date) <= new Date()).length}/>
+          <h4 className="font-semibold">Участники и планы трека</h4>
+          {members.map(member => { const goal = goals[member.id] || {member_id:member.id,goal:'',request:'',plan:'',outcome:''}; return <div key={member.id} className="space-y-3 border-b py-4"><p className="font-semibold">{member.name}</p>{(['goal','request','plan','outcome'] as const).map(key => <div key={key} className="space-y-1"><Label>{({goal:'Цель',request:'Запрос',plan:'План',outcome:'Итог'})[key]}</Label><Textarea aria-label={`${member.name}: ${key}`} value={goal[key] || ''} onChange={e => setGoals(g => ({...g,[member.id]:{...goal,[key]:e.target.value}}))}/></div>)}<Button size="sm" disabled={!goal.goal?.trim()} onClick={async () => {if (!err((await sb.from('mastermind_track_goals').upsert({...goal,track_id:t.id},{onConflict:'track_id,member_id'})).error)) toast({title:'План сохранён'});}}>Сохранить план участника</Button></div>; })}
+          <h4 className="font-semibold">Темы и встречи</h4>
           <div className="flex flex-wrap gap-2">
             <Input className="w-auto" type="datetime-local" value={nm[t.id]?.date || ''} onChange={e => setNm({ ...nm, [t.id]: { ...(nm[t.id] || { topic: '' }), date: e.target.value } })} />
             <Input className="w-auto flex-1" placeholder="Тема встречи" value={nm[t.id]?.topic || ''} onChange={e => setNm({ ...nm, [t.id]: { ...(nm[t.id] || { date: '' }), topic: e.target.value } })} />
@@ -96,7 +113,7 @@ export const MastermindTracksPanel = ({ groups }: { groups: { id: string; name: 
               </div>
             </div>
           ))}
-        </CardContent></Card>
+        </section>
       ))}
     </div>
   );

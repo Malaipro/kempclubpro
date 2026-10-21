@@ -1900,6 +1900,7 @@ export type Database = {
           my_tasks: string | null
           status: string | null
           summary: string
+          track_id: string | null
         }
         Insert: {
           admin_comment?: string | null
@@ -1910,6 +1911,7 @@ export type Database = {
           my_tasks?: string | null
           status?: string | null
           summary: string
+          track_id?: string | null
         }
         Update: {
           admin_comment?: string | null
@@ -1920,6 +1922,7 @@ export type Database = {
           my_tasks?: string | null
           status?: string | null
           summary?: string
+          track_id?: string | null
         }
         Relationships: [
           {
@@ -1927,6 +1930,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastermind_entries_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -2177,6 +2187,8 @@ export type Database = {
           id: string
           member_id: string
           outcome: string | null
+          plan: string | null
+          request: string | null
           track_id: string
           updated_at: string
         }
@@ -2186,6 +2198,8 @@ export type Database = {
           id?: string
           member_id: string
           outcome?: string | null
+          plan?: string | null
+          request?: string | null
           track_id: string
           updated_at?: string
         }
@@ -2195,6 +2209,8 @@ export type Database = {
           id?: string
           member_id?: string
           outcome?: string | null
+          plan?: string | null
+          request?: string | null
           track_id?: string
           updated_at?: string
         }
@@ -2218,6 +2234,7 @@ export type Database = {
       mastermind_tracks: {
         Row: {
           created_at: string
+          description: string | null
           end_date: string
           group_id: string
           id: string
@@ -2228,6 +2245,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
           end_date: string
           group_id: string
           id?: string
@@ -2238,6 +2256,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
           end_date?: string
           group_id?: string
           id?: string
@@ -4525,6 +4544,15 @@ export type Database = {
         Args: { p_deadline?: string; p_description?: string; p_title: string }
         Returns: Json
       }
+      create_mastermind_track_task_web: {
+        Args: {
+          p_deadline?: string
+          p_description?: string
+          p_title: string
+          p_track_id: string
+        }
+        Returns: Json
+      }
       create_reward_request: {
         Args: { p_reward_id: string; p_user_comment?: string }
         Returns: string
@@ -4749,6 +4777,16 @@ export type Database = {
         Args: { p_goal: string; p_outcome?: string; p_track_id: string }
         Returns: Json
       }
+      save_mastermind_track_plan_web: {
+        Args: {
+          p_goal: string
+          p_outcome?: string
+          p_plan?: string
+          p_request?: string
+          p_track_id: string
+        }
+        Returns: Json
+      }
       server_challenge_checkin: {
         Args: { p_challenge_id: string; p_user_id: string }
         Returns: Json
@@ -4819,6 +4857,10 @@ export type Database = {
       }
       submit_mastermind_entry_web: {
         Args: { p_my_tasks?: string; p_summary: string }
+        Returns: Json
+      }
+      submit_mastermind_track_entry_web: {
+        Args: { p_my_tasks?: string; p_summary: string; p_track_id: string }
         Returns: Json
       }
       take_ascetic: {

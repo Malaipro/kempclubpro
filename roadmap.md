@@ -1,6 +1,7 @@
 # Tasks
 
-- [ ] Group mastermind topics, plans and tasks by track; show track information, participants and dashboards in superadmin cabinet and participant /app — awaiting PRE-FLIGHT confirmation.
+- [x] Group mastermind topics, plans and tasks by track; show track information, participants and dashboards in superadmin cabinet and participant /app; keep legacy records separate.
+- [x] Verify selected-track plan/task/outcome/report readback, admin filtering, legacy isolation and mobile layout with isolated UI data; five track-rule tests pass.
 - [x] Implement two-month mastermind tracks, goals and outcome history — previous approved phase.
 - [x] Add shared meeting dates, manual attendance and participant/card/group summaries — previous approved phase.
 - [x] Add mastermind-push function, service-only reminder claims, deadline deduplication, expired-subscription cleanup and six passing rule tests.

@@ -1,0 +1,11 @@
+CREATE SCHEMA IF NOT EXISTS mastermind_private;
+REVOKE ALL ON SCHEMA mastermind_private FROM PUBLIC,anon;
+GRANT USAGE ON SCHEMA mastermind_private TO authenticated,service_role;
+ALTER FUNCTION public.save_mastermind_track_plan_web(uuid,text,text,text,text) SET SCHEMA mastermind_private;
+ALTER FUNCTION public.create_mastermind_track_task_web(uuid,text,text,date) SET SCHEMA mastermind_private;
+ALTER FUNCTION public.submit_mastermind_track_entry_web(uuid,text,text) SET SCHEMA mastermind_private;
+CREATE FUNCTION public.save_mastermind_track_plan_web(p_track_id uuid,p_goal text,p_request text DEFAULT NULL,p_plan text DEFAULT NULL,p_outcome text DEFAULT NULL) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT mastermind_private.save_mastermind_track_plan_web(p_track_id,p_goal,p_request,p_plan,p_outcome) $$;
+CREATE FUNCTION public.create_mastermind_track_task_web(p_track_id uuid,p_title text,p_description text DEFAULT NULL,p_deadline date DEFAULT NULL) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT mastermind_private.create_mastermind_track_task_web(p_track_id,p_title,p_description,p_deadline) $$;
+CREATE FUNCTION public.submit_mastermind_track_entry_web(p_track_id uuid,p_summary text,p_my_tasks text DEFAULT NULL) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT mastermind_private.submit_mastermind_track_entry_web(p_track_id,p_summary,p_my_tasks) $$;
+REVOKE ALL ON FUNCTION public.save_mastermind_track_plan_web(uuid,text,text,text,text),public.create_mastermind_track_task_web(uuid,text,text,date),public.submit_mastermind_track_entry_web(uuid,text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.save_mastermind_track_plan_web(uuid,text,text,text,text),public.create_mastermind_track_task_web(uuid,text,text,date),public.submit_mastermind_track_entry_web(uuid,text,text) TO authenticated,service_role;
