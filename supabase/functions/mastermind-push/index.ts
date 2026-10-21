@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
   const anon = Deno.env.get('SUPABASE_ANON_KEY');
   // Fixed-purpose, idempotent scheduler: no arbitrary recipient/message/date is accepted.
-  if (!anon || req.headers.get('apikey') !== anon) return respond({ error: 'Unauthorized' }, 401);
+  if (!anon || (req.headers.get('apikey') !== anon && req.headers.get('Authorization') !== `Bearer ${anon}`)) return respond({ error: 'Unauthorized' }, 401);
   let body: unknown;
   try { body = await req.json(); } catch { return respond({ error: 'Invalid JSON' }, 400); }
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(k => k !== 'dry_run') || ('dry_run' in body && typeof body.dry_run !== 'boolean')) return respond({ error: 'Only dry_run boolean is allowed' }, 400);
@@ -27,7 +27,9 @@ Deno.serve(async (req) => {
     const { data: reminders, error } = await db.rpc('claim_mastermind_push_reminders');
     if (error) throw new Error('Cannot claim reminders');
     for (const reminder of reminders ?? []) {
-      const { data: current, error: taskError } = await db.from('mastermind_tasks').select('is_completed,is_failed,deadline').eq('id', (await db.from('mastermind_task_reminders').select('task_id').eq('id', reminder.reminder_id).single()).data?.task_id).maybeSingle();
+      const { data: claim, error: claimError } = await db.from('mastermind_task_reminders').select('task_id').eq('id', reminder.reminder_id).single();
+      if (claimError || !claim) { failed++; continue; }
+      const { data: current, error: taskError } = await db.from('mastermind_tasks').select('is_completed,is_failed,deadline').eq('id', claim.task_id).maybeSingle();
       if (taskError) { failed++; continue; }
       if (!current || current.is_completed || current.is_failed || current.deadline !== reminder.deadline) continue;
       const { data: subscriptions, error: subscriptionError } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth').eq('user_id', reminder.user_id);
