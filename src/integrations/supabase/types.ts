@@ -2047,6 +2047,41 @@ export type Database = {
           },
         ]
       }
+      mastermind_task_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          reminder_kind: string
+          sent_at: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reminder_kind: string
+          sent_at?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reminder_kind?: string
+          sent_at?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_task_reminders_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mastermind_tasks: {
         Row: {
           admin_comment: string | null
@@ -4463,6 +4498,16 @@ export type Database = {
         Returns: Json
       }
       checkin_ascetic_web: { Args: { p_ascetic_id: string }; Returns: Json }
+      claim_mastermind_push_reminders: {
+        Args: { p_today?: string }
+        Returns: {
+          deadline: string
+          reminder_id: string
+          reminder_kind: string
+          task_title: string
+          user_id: string
+        }[]
+      }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       complete_mastermind_task_web: {
