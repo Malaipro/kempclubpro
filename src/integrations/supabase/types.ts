@@ -1971,6 +1971,51 @@ export type Database = {
         }
         Relationships: []
       }
+      mastermind_meeting_reminders: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          id: string
+          meeting_id: string
+          member_id: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          meeting_id: string
+          member_id: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          member_id?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastermind_meeting_reminders_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastermind_meeting_reminders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "mastermind_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mastermind_meetings: {
         Row: {
           created_at: string
@@ -4723,6 +4768,7 @@ export type Database = {
       mask_participant_name: { Args: { full_name: string }; Returns: string }
       mask_phone_number: { Args: { phone_number: string }; Returns: string }
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
+      mastermind_checkin_web: { Args: { p_meeting_id: string }; Returns: Json }
       normalize_phone: { Args: { p_phone: string }; Returns: string }
       purchase_reward_web: {
         Args: { p_reward_id: string; p_user_comment?: string }
