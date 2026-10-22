@@ -5,6 +5,10 @@ export type TrackGoal = { member_id: string; goal: string | null; request: strin
 export type ProgressRow = { member_id: string; is_me: boolean; name: string; total: number; done: number; on_time: number; attended: number };
 export const dateLabel = (date: string) => new Date(date.length === 10 ? `${date}T12:00:00` : date).toLocaleDateString('ru-RU');
 export const moscowToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+export const moscowDateOf = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+export const moscowMinutesOf = (date: Date) => { const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit', hour12: false }).format(date).split(':').map(Number); return h * 60 + m; };
+// Self check-in is open only on the meeting's Moscow calendar day until 23:55 MSK.
+export const canCheckin = (meetingIso: string, now = new Date()) => moscowDateOf(new Date(meetingIso)) === moscowDateOf(now) && moscowMinutesOf(now) <= 23 * 60 + 55;
 export const initialTrack = (tracks: Track[], today = moscowToday()) => tracks.find(t => t.status === 'active' && t.start_date <= today && t.end_date >= today)?.id || tracks[0]?.id || '';
 export const tasksForTrack = <T extends { track_id: string | null }>(tasks: T[], trackId: string) => tasks.filter(t => trackId === 'legacy' ? !t.track_id : t.track_id === trackId);
 export function taskStats(tasks: TrackTask[], track?: Track | null, today = moscowToday()) {
