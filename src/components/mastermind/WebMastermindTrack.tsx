@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChevronDown, Plus, Send, RefreshCw } from 'lucide-react';
-import { dateLabel, initialTrack, tasksForTrack, Track, TrackTask, TrackEntry, TrackGoal, ProgressRow } from './trackModel';
+import { canCheckin, dateLabel, initialTrack, tasksForTrack, Track, TrackTask, TrackEntry, TrackGoal, ProgressRow } from './trackModel';
 import { TrackDashboard, GroupProgress } from './TrackDashboard';
 
 type MemberData = { is_member: boolean; member?: { id: string; request: string | null; plan: string | null }; tasks?: TrackTask[]; entries?: TrackEntry[] };
@@ -28,6 +28,7 @@ export const WebMastermindTrack = ({ groupId }: { groupId: string }) => {
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState('overview');
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
   const [rows, setRows] = useState<ProgressRow[]>([]);
   const [plan, setPlan] = useState({ goal: '', request: '', plan: '', outcome: '' });
   const [error, setError] = useState('');
