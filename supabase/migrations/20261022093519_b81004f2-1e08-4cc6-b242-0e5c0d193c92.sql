@@ -1,0 +1,1 @@
+CREATE POLICY "service_only" ON public.mastermind_meeting_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
