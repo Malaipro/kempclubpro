@@ -66,9 +66,15 @@ export const WebMastermindTrack = ({ groupId }: { groupId: string }) => {
         rpc<ProgressRow[]>('get_mastermind_group_progress_web', { p_track_id: id }),
       ]);
       if (m.error) throw m.error; if (g.error) throw g.error;
+      const meetingIds = (m.data || []).map((x: Meeting) => x.id);
+      const a = meetingIds.length
+        ? await supabase.from('mastermind_attendance').select('meeting_id,attended').eq('member_id', member.member.id).in('meeting_id', meetingIds)
+        : { data: [], error: null };
+      if (a.error) throw a.error;
       if (version !== generation.current) return;
       const goal = g.data as TrackGoal | null;
       setMeetings(m.data || []); setRows(p || []);
+      setAttendance(Object.fromEntries((a.data || []).map((x: { meeting_id: string; attended: boolean }) => [x.meeting_id, x.attended])));
       setPlan({ goal: goal?.goal || '', request: goal?.request || '', plan: goal?.plan || '', outcome: goal?.outcome || '' });
     } catch (e) { if (version === generation.current) setError(e instanceof Error ? e.message : 'Ошибка загрузки'); }
     finally { if (version === generation.current) setLoading(false); }
