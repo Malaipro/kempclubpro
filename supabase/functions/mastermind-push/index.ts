@@ -34,9 +34,13 @@ async function deliver(db: ReturnType<typeof createClient>, userId: string, push
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
-  const anon = Deno.env.get('SUPABASE_ANON_KEY');
-  // Fixed-purpose, idempotent scheduler: no arbitrary recipient/message/date is accepted.
-  if (!anon || (req.headers.get('apikey') !== anon && req.headers.get('Authorization') !== `Bearer ${anon}`)) return respond({ error: 'Unauthorized' }, 401);
+  const url = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !serviceKey) return respond({ error: 'Not configured' }, 503);
+  const db = createClient(url, serviceKey);
+  // Fixed-purpose scheduler: callers authenticate with the shared cron key stored in internal_settings.
+  const { data: setting } = await db.from('internal_settings').select('value').eq('key', 'mastermind_push_key').maybeSingle();
+  if (!setting?.value || req.headers.get('x-cron-key') !== setting.value) return respond({ error: 'Unauthorized' }, 401);
   let body: unknown;
   try { body = await req.json(); } catch { return respond({ error: 'Invalid JSON' }, 400); }
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(k => k !== 'dry_run' && k !== 'kind') || ('dry_run' in body && typeof body.dry_run !== 'boolean')) return respond({ error: 'Only dry_run boolean and kind are allowed' }, 400);
@@ -44,11 +48,8 @@ Deno.serve(async (req) => {
   if (!kind) return respond({ error: 'Unknown kind' }, 400);
   const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
   const privateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-  const url = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!publicKey || !privateKey || !url || !serviceKey) return respond({ error: 'Push credentials are not configured' }, 503);
+  if (!publicKey || !privateKey) return respond({ error: 'Push credentials are not configured' }, 503);
   if ('dry_run' in body && (body as { dry_run?: boolean }).dry_run) return respond({ ok: true, configured: true, date: moscowDate(), kind });
-  const db = createClient(url, serviceKey);
   try {
     webpush.setVapidDetails('https://kemp-app.ru', publicKey, privateKey);
 
