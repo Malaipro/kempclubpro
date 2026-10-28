@@ -62,7 +62,7 @@ export const TrialTrainingCTA: React.FC = () => {
   const inputCls = 'w-full px-4 py-3 rounded-md bg-background/10 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-kamp-accent';
 
   return (
-    <section className="py-12 md:py-20 bg-gradient-to-br from-kamp-primary via-kamp-primary to-black relative overflow-hidden">
+    <section id="trial" className="py-12 md:py-20 bg-gradient-to-br from-kamp-primary via-kamp-primary to-black relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
       </div>
@@ -79,11 +79,11 @@ export const TrialTrainingCTA: React.FC = () => {
           </div>
 
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-display font-bold mb-4 leading-tight">
-            Попробуй КЭМП в действии
+            Первая тренировка в КЭМП — бесплатно
           </h2>
 
           <p className="text-base md:text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Не обязательно принимать решение только по описанию сайта. Приходи на пробную тренировку, познакомься с тренерами, участниками и атмосферой клуба. Почувствуй, подходит ли тебе такой формат развития.
+            Попробуй джиу-джитсу или кикбоксинг вместе с действующими участниками мужского клуба КЭМП. Познакомься с тренерами, почувствуй атмосферу мужского окружения и узнай, как устроена наша 60-дневная программа развития. Без обязательств. Без специальной подготовки.
           </p>
 
           {success ? (
@@ -97,7 +97,7 @@ export const TrialTrainingCTA: React.FC = () => {
               onClick={() => setOpen(true)}
               className="bg-background text-foreground hover:bg-background/90 font-bold text-base md:text-lg px-8 py-6 shadow-xl transition-all duration-300"
             >
-              Записаться на пробную тренировку
+              Записаться бесплатно
             </Button>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="max-w-md mx-auto space-y-3 text-left">
@@ -107,7 +107,7 @@ export const TrialTrainingCTA: React.FC = () => {
                 <input tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} />
               </div>
               <Button type="submit" size="lg" disabled={submitting} className="w-full bg-background text-foreground hover:bg-background/90 font-bold py-6">
-                {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Отправка…</> : 'Записаться на пробную тренировку'}
+                {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Отправка…</> : 'Записаться бесплатно'}
               </Button>
               <p className="text-xs text-white/60 text-center">Отправляя форму, вы соглашаетесь с обработкой персональных данных.</p>
             </form>
