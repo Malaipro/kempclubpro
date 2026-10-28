@@ -42,6 +42,21 @@ const Index = () => {
     viewportMeta.name = 'viewport';
     viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
     document.head.appendChild(viewportMeta);
+
+    // Anchor #trial points at a lazily-loaded section: poll for it and scroll once mounted
+    if (window.location.hash === '#trial') {
+      let attempts = 0;
+      const timer = window.setInterval(() => {
+        const el = document.getElementById('trial');
+        if (el) {
+          window.clearInterval(timer);
+          el.scrollIntoView({ block: 'start' });
+        } else if (++attempts > 50) {
+          window.clearInterval(timer);
+        }
+      }, 100);
+      return () => window.clearInterval(timer);
+    }
   }, []);
 
   return (
