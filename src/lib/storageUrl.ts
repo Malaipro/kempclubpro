@@ -6,6 +6,6 @@ export function proxyStorageUrl(url: string): string {
   if (!url) return url;
   return url.replace(
     'https://wfjvjvbjjxcgkaolkgdq.supabase.co/storage/',
-    'https://kempclub.pro/storage/'
+    'https://api.kemp-app.ru/supabase/storage/'
   );
 }

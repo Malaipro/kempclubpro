@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
 import compassIcon from '@/assets/totems/compass.png';
-import evgeniyCaptainAsset from '@/assets/evgeniy-menshov-captain.jpg.asset.json';
 
 interface Captain {
   name: string;
@@ -14,7 +13,7 @@ interface Captain {
 const CAPTAINS: Captain[] = [
   {
     name: 'Евгений Меньшов',
-    photo: evgeniyCaptainAsset.url,
+    photo: '/images/evgeniy-menshov-captain.jpg',
     description:
       'Мастер спорта по фехтованию на шпагах. Победитель и призёр чемпионатов РТ и РФ.\nУчастник международных соревнований.\nЧлен сборной команды РТ. Регулярный участник спортивных мероприятий: Гонка героев, Полумарафон.\n Резидент КЭМП.',
   },

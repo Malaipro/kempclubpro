@@ -186,7 +186,7 @@ export const Testimonials: React.FC = () => {
                         <div className="w-full h-full flex items-center justify-center">
                           <video
                             ref={(el) => { videoRefs.current[testimonial.id] = el; }}
-                            src={getVideoEmbedUrl(testimonial.video_url) || ''}
+                            src={proxyStorageUrl(getVideoEmbedUrl(testimonial.video_url) || '')}
                             className="w-full h-full object-cover"
                             muted={mutedStatus[testimonial.id]}
                             preload="none"
@@ -326,7 +326,7 @@ export const Testimonials: React.FC = () => {
                   return (
                     <video
                       ref={(el) => { modalVideoRefs.current[openVideo] = el; }}
-                      src={embedUrl || ''}
+                      src={proxyStorageUrl(embedUrl || '')}
                       controls
                       autoPlay
                       className="max-w-full max-h-[95vh] object-contain"
