@@ -1,0 +1,1 @@
+CREATE POLICY participant_reset_backup_no_client_access ON public.participant_reset_backups FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);

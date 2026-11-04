@@ -1,5 +1,7 @@
 # Tasks
 
+- [x] Reset the three approved stream-8 participants: protected snapshot of 451 removed progress records, zero ratings, unchanged coins and unrelated data; atomic dry-run and 16 live SQL checks passed. Review-only restore saved; authenticated UI checks unavailable for external unmanaged Supabase.
+
 - [x] Activate stream 8 (2026-11-08 through 2026-12-26) with 39 approved events; verify database readback, zero participants/bookings/assignments and seven passing schedule tests. Assignments deferred by user; real authenticated UI check unavailable for external unmanaged Supabase.
 
 - [x] Group mastermind topics, plans and tasks by track; show track information, participants and dashboards in superadmin cabinet and participant /app; keep legacy records separate.

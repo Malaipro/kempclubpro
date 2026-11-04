@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Keep one-off stream setup manifests and regression tests under `sql/stream-<number>`; apply data changes atomically with deterministic IDs and never clone participant activity.
+- Keep approved participant reset recovery snapshots in the service-only `participant_reset_backups` table with denied client grants and policies; atomic assertions prevent loss of coins and unrelated data.
 
 - Scope the /app messenger theme through `.web-chat-theme` and semantic chat tokens; this keeps topic Chat and Nutrition consistent without recoloring unrelated pages.
 - Render photo Home through the dedicated web-only `WebHomeView` and scope styles through `.web-home-theme`; this keeps Telegram and other web sections unchanged.
