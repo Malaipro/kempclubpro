@@ -1,6 +1,6 @@
 # Tasks
 
-- [ ] Prepare and activate stream 8 (2026-11-08 through 2026-12-26), with adapted stream-7 schedule; no participant/result transfers. Waiting for approval of proposed full event dates; assignments deferred by user.
+- [x] Activate stream 8 (2026-11-08 through 2026-12-26) with 39 approved events; verify database readback, zero participants/bookings/assignments and seven passing schedule tests. Assignments deferred by user; real authenticated UI check unavailable for external unmanaged Supabase.
 
 - [x] Group mastermind topics, plans and tasks by track; show track information, participants and dashboards in superadmin cabinet and participant /app; keep legacy records separate.
 - [x] Verify selected-track plan/task/outcome/report readback, admin filtering, legacy isolation and mobile layout with isolated UI data; five track-rule tests pass.
