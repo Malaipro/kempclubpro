@@ -1,6 +1,7 @@
 # Tasks
 
 - [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.
+- [x] Plan v3 (founder corrections) approved; A0 read-only ACL/status audit done (sql/resident-path/audit-a0.md).
 - [ ] E0 confirm DB contour (config.toml points to MIRA ref) — blocked: user written confirmation + Amvera env.
 - [ ] E1–E8 resident path implementation — blocked: E0, founder Telegram ID(s), admin_adjust_coins narrowing approval, rank list; each stage needs separate APPROVE BREAKING.
 
