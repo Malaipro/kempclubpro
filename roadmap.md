@@ -1,5 +1,7 @@
 # Tasks
 
+- [ ] Prepare and activate stream 8 (2026-11-08 through 2026-12-26), with stream-7 schedule and assignments adapted to the new dates; no participant/result transfers. Waiting for final pre-flight approval.
+
 - [x] Group mastermind topics, plans and tasks by track; show track information, participants and dashboards in superadmin cabinet and participant /app; keep legacy records separate.
 - [x] Verify selected-track plan/task/outcome/report readback, admin filtering, legacy isolation and mobile layout with isolated UI data; five track-rule tests pass.
 - [x] Implement two-month mastermind tracks, goals and outcome history — previous approved phase.
