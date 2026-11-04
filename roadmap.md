@@ -1,5 +1,9 @@
 # Tasks
 
+- [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.
+- [ ] E0 confirm DB contour (config.toml points to MIRA ref) — blocked: user written confirmation + Amvera env.
+- [ ] E1–E8 resident path implementation — blocked: E0, founder Telegram ID(s), admin_adjust_coins narrowing approval, rank list; each stage needs separate APPROVE BREAKING.
+
 - [x] Reset the three approved stream-8 participants: protected snapshot of 451 removed progress records, zero ratings, unchanged coins and unrelated data; atomic dry-run and 16 live SQL checks passed. Review-only restore saved; authenticated UI checks unavailable for external unmanaged Supabase.
 
 - [x] Activate stream 8 (2026-11-08 through 2026-12-26) with 39 approved events; verify database readback, zero participants/bookings/assignments and seven passing schedule tests. Assignments deferred by user; real authenticated UI check unavailable for external unmanaged Supabase.
