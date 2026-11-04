@@ -2613,6 +2613,27 @@ export type Database = {
         }
         Relationships: []
       }
+      participant_reset_backups: {
+        Row: {
+          created_at: string
+          operation_key: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          operation_key: string
+          payload: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          operation_key?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       participant_status_history: {
         Row: {
           changed_at: string
