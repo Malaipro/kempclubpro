@@ -1,6 +1,6 @@
 # Tasks
 
-- [ ] Connect Taynik AI gateway (taynik.store/v1, OpenAI-compatible) via custom connector — in progress: approval card collects the user's key.
+- [x] Connect Taynik AI gateway (taynik.store/v1) via custom connector udc_taynik; key saved as UDC_TAYNIK_API_KEY; verified GET /v1/models returns 200 with 45 models.
 - [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.
 - [x] Plan v3 (founder corrections) approved; A0 read-only ACL/status audit done (sql/resident-path/audit-a0.md).
 - [ ] E0 confirm DB contour (config.toml points to MIRA ref) — blocked: user written confirmation + Amvera env.
