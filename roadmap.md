@@ -1,7 +1,7 @@
 # Tasks
 
-- [ ] Ensure /app event booking uses the club calendar, never the intensive calendar; preserve existing resident-only access and intensive viewing.
-- [ ] Intensive notifications: participant app push, founder-only Telegram team summaries and Taynik generation — KEMP/Amvera contour wfjvjvbjjxcgkaolkgdq confirmed in writing; remote push/Telegram credentials and deployment targeting must still be verified before server changes.
+- [x] /app club-calendar booking: explicit club read path, club ID filter and pre-book type validation; intensive booking controls removed, resident-only access preserved. Five rule tests and isolated desktop/mobile booking/cancel/readback passed; authenticated external Supabase flow unavailable. Server RPC hardening not applied.
+- [ ] Intensive notifications: participant app push, founder-only Telegram team summaries and Taynik generation — KEMP/Amvera contour wfjvjvbjjxcgkaolkgdq confirmed and read-only backend metadata matches. Taynik connection linked; external VAPID/Telegram secret availability cannot be verified from project secret listing. Server changes require separate High-risk approval and confirmed remote credentials/deployment; existing cron handlers lack caller checks and team delivery currently targets captains. No server edits/deployment/scheduler changes applied.
 - [x] Daily check-in UI cache: account-scoped browser persistence and Moscow date expiry; three rule tests and isolated browser remount check pass. No authenticated production flow verified.
 - [ ] Daily check-in server hydration across devices and Moscow server date — requires separately approved authorized server read path; activity_checkins has no exposed table grants.
 
@@ -9,7 +9,7 @@
 - [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.
 - [x] Plan v3 (founder corrections) approved; A0 read-only ACL/status audit done (sql/resident-path/audit-a0.md).
 - [x] E0 written contour confirmation: user confirmed KEMP/Amvera uses wfjvjvbjjxcgkaolkgdq; config.toml remains MIRA and must not drive KEMP deployment.
-- [ ] E1–E8 resident path implementation — blocked: E0, founder Telegram ID(s), admin_adjust_coins narrowing approval, rank list; each stage needs separate APPROVE BREAKING.
+- [ ] E1–E8 resident path implementation — blocked: founder Telegram ID(s), admin_adjust_coins narrowing approval, rank list; each stage needs separate APPROVE BREAKING and verified deployment targeting.
 
 - [x] Reset the three approved stream-8 participants: protected snapshot of 451 removed progress records, zero ratings, unchanged coins and unrelated data; atomic dry-run and 16 live SQL checks passed. Review-only restore saved; authenticated UI checks unavailable for external unmanaged Supabase.
 
