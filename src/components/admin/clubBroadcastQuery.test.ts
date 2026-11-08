@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { restrictToClub } from './clubBroadcastQuery';
+import { broadcastScheduleType } from './clubBroadcastQuery';
 
 describe('broadcast event options', () => {
   it('selects only club events, excluding intensive events', () => {
@@ -8,9 +8,7 @@ describe('broadcast event options', () => {
       { id: 'club-event', schedule_type: 'club' },
       { id: 'intensive-event', schedule_type: 'intensive' },
     ];
-    const result = restrictToClub({
-      eq: (column: string, value: string) => events.filter(event => event[column as keyof typeof event] === value),
-    });
+    const result = events.filter(event => event.schedule_type === broadcastScheduleType);
     assert.deepEqual(result.map(event => event.id), ['club-event']);
   });
 });

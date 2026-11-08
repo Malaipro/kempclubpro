@@ -18,7 +18,7 @@ import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip, ChevronDown, Chevron
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { proxyStorageUrl } from '@/lib/storageUrl';
-import { restrictToClub } from './clubBroadcastQuery';
+import { broadcastScheduleType } from './clubBroadcastQuery';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
@@ -176,9 +176,10 @@ export const BroadcastManagement: React.FC = () => {
   const loadOptions = useCallback(async () => {
     try {
       const [{ data: sch }, { data: rw }] = await Promise.all([
-        restrictToClub(supabase
+        (supabase as any)
           .from('schedules')
-          .select('id, title, start_time'))
+          .select('id, title, start_time')
+          .eq('schedule_type', broadcastScheduleType)
           .eq('is_active', true)
           .gte('start_time', new Date().toISOString())
           .order('start_time', { ascending: true })
