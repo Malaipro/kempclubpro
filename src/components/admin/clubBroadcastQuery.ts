@@ -1,0 +1,1 @@
+export const broadcastScheduleType = 'club' as const;
