@@ -1,5 +1,6 @@
 # Tasks
 
+- [ ] Ensure /app event booking uses the club calendar, never the intensive calendar; preserve existing resident-only access and intensive viewing.
 - [ ] Intensive notifications: participant app push, founder-only Telegram team summaries and Taynik generation — plan approved; blocked by written KEMP/Amvera contour confirmation and verification of remote push/Telegram credentials before server edits, deployment or scheduler changes.
 - [x] Daily check-in UI cache: account-scoped browser persistence and Moscow date expiry; three rule tests and isolated browser remount check pass. No authenticated production flow verified.
 - [ ] Daily check-in server hydration across devices and Moscow server date — blocked by contour confirmation; activity_checkins has no exposed table grants, so an authorized server read path is required.
