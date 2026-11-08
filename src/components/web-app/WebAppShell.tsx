@@ -154,7 +154,7 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'rating' && isResident ? (
             <WebResidentRatingView />
           ) : activeSection === 'schedule' ? (
-            <WebScheduleView />
+            <WebScheduleView status={status} />
           ) : activeSection === 'activities' ? (
             <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (
