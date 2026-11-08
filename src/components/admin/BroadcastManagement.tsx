@@ -61,7 +61,7 @@ const buttonTypeLabels: Record<ButtonType, string> = {
   request_reward: 'Заказ награды',
 };
 
-interface ScheduleOption { id: string; title: string; start_time: string }
+interface ScheduleOption { id: string; title: string; description: string | null; start_time: string }
 interface RewardOption { id: string; title: string; cost_coins: number }
 
 interface BroadcastResponse {
@@ -178,7 +178,7 @@ export const BroadcastManagement: React.FC = () => {
       const [{ data: sch }, { data: rw }] = await Promise.all([
         (supabase as any)
           .from('schedules')
-          .select('id, title, start_time')
+          .select('id, title, description, start_time')
           .eq('schedule_type', broadcastScheduleType)
           .eq('is_active', true)
           .gte('start_time', new Date().toISOString())
@@ -460,7 +460,7 @@ export const BroadcastManagement: React.FC = () => {
                         )}
                         {schedules.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            {s.title} — {fmtMoscow(s.start_time)}
+                            {s.description?.split('|||')[0]?.trim() || 'Без темы'} — {fmtMoscow(s.start_time)}
                           </SelectItem>
                         ))}
                       </SelectContent>
