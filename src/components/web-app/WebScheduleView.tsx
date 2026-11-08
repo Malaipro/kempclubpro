@@ -3,6 +3,7 @@ import { CalendarDays, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usesClubCalendar } from './clubBooking';
 
 interface ScheduleItem {
   id: string;
@@ -32,8 +33,9 @@ const formatDate = (iso: string) => moscowDate(iso).toLocaleDateString('ru-RU', 
   weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
 });
 
-export const WebScheduleView: React.FC = () => {
+export const WebScheduleView: React.FC<{ status: string | null }> = ({ status }) => {
   const { callApi } = useAppApi();
+  const clubCalendar = usesClubCalendar(status);
   const [data, setData] = useState<ScheduleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -42,17 +44,18 @@ export const WebScheduleView: React.FC = () => {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const response = await callApi<ScheduleResponse>('get_schedule', { days: 90 });
+      const response = await callApi<ScheduleResponse>(clubCalendar ? 'get_club_schedule' : 'get_schedule', { days: 90 });
       if (!response || !response.found) throw new Error(response?.error ?? 'Расписание недоступно');
       setData({ ...response, schedule: Array.isArray(response.schedule) ? response.schedule : [] });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить расписание');
     }
-  }, [callApi]);
+  }, [callApi, clubCalendar]);
 
   useEffect(() => { void load(); }, [load]);
 
   const updateBooking = async (action: 'book_session' | 'cancel_booking', id: string) => {
+    if (!clubCalendar || !data?.schedule.some(item => item.id === id)) return;
     setBusyId(id);
     setError(null);
     try {
@@ -79,8 +82,7 @@ export const WebScheduleView: React.FC = () => {
     <div className="min-h-screen bg-background pb-24">
       <header className="app-section-header px-4 pb-6 pt-8 text-center text-primary-foreground">
         <CalendarDays className="mx-auto mb-2 h-6 w-6" />
-        <h1 className="text-xl font-bold text-primary-foreground">Расписание</h1>
-        <p className="text-sm text-primary-foreground/75">Занятия и запись</p>
+        <h1 className="text-xl font-bold text-primary-foreground">{clubCalendar ? 'Календарь клуба' : 'Расписание интенсива'}</h1>
       </header>
 
       <div className="space-y-5 px-4 pt-4">
@@ -118,7 +120,7 @@ export const WebScheduleView: React.FC = () => {
                       <CardContent className="space-y-3 px-4 pb-4 pt-0">
                         {item.location && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}
                         {item.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.description.replace('|||', '\n')}</p>}
-                        {item.booked ? (
+                        {clubCalendar && (item.booked ? (
                           <div className="space-y-2">
                             <p className="rounded-md bg-primary/10 px-3 py-2 text-center text-xs font-semibold text-primary">Вы записаны</p>
                             <Button variant="outline" className="w-full" disabled={busyId === item.id} onClick={() => void updateBooking('cancel_booking', item.id)}>
@@ -129,7 +131,7 @@ export const WebScheduleView: React.FC = () => {
                           <Button className="w-full" disabled={full || busyId === item.id} onClick={() => void updateBooking('book_session', item.id)}>
                             {full ? 'Мест нет' : busyId === item.id ? 'Записываем...' : 'Записаться'}
                           </Button>
-                        )}
+                        ))}
                       </CardContent>
                     )}
                   </Card>
