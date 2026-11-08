@@ -1,6 +1,8 @@
 # Tasks
 
-- [ ] Intensive notifications: participant app push, founder-only Telegram team summaries, Taynik generation, persistent daily check-in lock — awaiting approval; backend contour and remote push credentials require verification before deployment or scheduler changes.
+- [ ] Intensive notifications: participant app push, founder-only Telegram team summaries and Taynik generation — plan approved; blocked by written KEMP/Amvera contour confirmation and verification of remote push/Telegram credentials before server edits, deployment or scheduler changes.
+- [x] Daily check-in UI cache: account-scoped browser persistence and Moscow date expiry; three rule tests and isolated browser remount check pass. No authenticated production flow verified.
+- [ ] Daily check-in server hydration across devices and Moscow server date — blocked by contour confirmation; activity_checkins has no exposed table grants, so an authorized server read path is required.
 
 - [x] Connect Taynik AI gateway (taynik.store/v1) via custom connector udc_taynik; key saved as UDC_TAYNIK_API_KEY; verified GET /v1/models returns 200 with 45 models.
 - [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.

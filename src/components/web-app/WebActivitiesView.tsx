@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Activity, Dumbbell, Flame, Pyramid, Salad, Swords, Target } from 'lucide-react';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { checkedActivities, markActivity, moscowDay } from './dailyCheckin';
 
 type ActivityType = 'bjj' | 'kickboxing' | 'ofp' | 'pyramid' | 'nutrition' | 'tactics';
 type CheckState = 'idle' | 'loading' | 'checked' | 'error';
@@ -18,17 +20,62 @@ const ACTIVITIES: Array<{ type: ActivityType; title: string; icon: React.ReactNo
 
 export const WebActivitiesView: React.FC = () => {
   const { callApi } = useAppApi();
+  const [ready, setReady] = useState(false);
+  const cacheKey = useRef<string | null>(null);
+  const day = useRef(moscowDay());
+  const busy = useRef(new Set<ActivityType>());
   const [states, setStates] = useState<Record<ActivityType, CheckState>>({
     bjj: 'idle', kickboxing: 'idle', ofp: 'idle', pyramid: 'idle', nutrition: 'idle', tactics: 'idle',
   });
 
+  useEffect(() => {
+    let active = true;
+    const restore = () => {
+      if (!cacheKey.current) return;
+      day.current = moscowDay();
+      let saved: unknown = null;
+      try { saved = JSON.parse(localStorage.getItem(cacheKey.current) ?? 'null'); } catch { /* optional UI cache */ }
+      const checked = checkedActivities(saved, day.current);
+      setStates(current => Object.fromEntries(ACTIVITIES.map(item => [item.type, busy.current.has(item.type) ? current[item.type] : checked.includes(item.type) ? 'checked' : 'idle'])) as Record<ActivityType, CheckState>);
+    };
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!active || !data.user) return;
+      cacheKey.current = `kemp:daily-checkins:${data.user.id}`;
+      restore();
+      setReady(true);
+    }).catch(() => { /* keep controls unavailable without an identified account */ });
+    const refresh = () => { if (document.visibilityState === 'visible') restore(); };
+    const timer = window.setInterval(() => { if (day.current !== moscowDay()) restore(); }, 1000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('storage', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('storage', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
+
   const checkIn = async (type: ActivityType) => {
+    if (!ready || states[type] === 'checked' || busy.current.has(type)) return;
+    busy.current.add(type);
     setStates((current) => ({ ...current, [type]: 'loading' }));
     try {
       const result = await callApi<{ checked_in: boolean; already_checked: boolean }>('check_in', { activity_type: type });
-      setStates((current) => ({ ...current, [type]: result.checked_in || result.already_checked ? 'checked' : 'error' }));
+      const success = result.checked_in || result.already_checked;
+      if (success && cacheKey.current) {
+        try {
+          const saved: unknown = JSON.parse(localStorage.getItem(cacheKey.current) ?? 'null');
+          localStorage.setItem(cacheKey.current, JSON.stringify(markActivity(saved, moscowDay(), type)));
+        } catch { /* blocked storage must not turn a successful server write into an error */ }
+      }
+      setStates((current) => ({ ...current, [type]: success ? 'checked' : 'error' }));
     } catch {
       setStates((current) => ({ ...current, [type]: 'error' }));
+    } finally {
+      busy.current.delete(type);
     }
   };
 
@@ -50,7 +97,7 @@ export const WebActivitiesView: React.FC = () => {
                 <Button
                   size="sm"
                   variant={state === 'checked' ? 'secondary' : 'default'}
-                  disabled={state === 'loading' || state === 'checked'}
+                  disabled={!ready || state === 'loading' || state === 'checked'}
                   onClick={() => void checkIn(item.type)}
                 >
                   {state === 'checked' ? 'Отмечено' : state === 'loading' ? '...' : state === 'error' ? 'Повторить' : 'Отметить'}
