@@ -1,5 +1,7 @@
 # Tasks
 
+- [ ] Intensive notifications: participant app push, founder-only Telegram team summaries, Taynik generation, persistent daily check-in lock — awaiting approval; backend contour and remote push credentials require verification before deployment or scheduler changes.
+
 - [x] Connect Taynik AI gateway (taynik.store/v1) via custom connector udc_taynik; key saved as UDC_TAYNIK_API_KEY; verified GET /v1/models returns 200 with 45 models.
 - [x] Resident path: audit and full staged plan (E0–E8) approved; no code/DB changes.
 - [x] Plan v3 (founder corrections) approved; A0 read-only ACL/status audit done (sql/resident-path/audit-a0.md).
