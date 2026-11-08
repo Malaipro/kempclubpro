@@ -176,7 +176,7 @@ export const BroadcastManagement: React.FC = () => {
   const loadOptions = useCallback(async () => {
     try {
       const [{ data: sch }, { data: rw }] = await Promise.all([
-        restrictToClub((supabase as any)
+        restrictToClub(supabase
           .from('schedules')
           .select('id, title, start_time'))
           .eq('is_active', true)
