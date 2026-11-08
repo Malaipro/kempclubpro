@@ -1,5 +1,6 @@
 # Architecture rules
 
+- Treat local daily check-in storage as an account-scoped UI cache only, with Moscow calendar expiry; server check-ins remain authoritative and cross-device hydration requires an authorized read path.
 - Keep one-off stream setup manifests and regression tests under `sql/stream-<number>`; apply data changes atomically with deterministic IDs and never clone participant activity.
 - Keep approved participant reset recovery snapshots in the service-only `participant_reset_backups` table with denied client grants and policies; atomic assertions prevent loss of coins and unrelated data.
 
