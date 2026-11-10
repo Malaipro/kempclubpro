@@ -1,6 +1,16 @@
 -- КЭМП / resident-checkins-1 (UP). НЕ ПРИМЕНЕНО. Применять только после отдельного APPROVE.
--- Цель: резидент отправляет «Я был», основатель (super_admin) подтверждает. Без начислений.
+-- Цель: резидент отправляет «Я был», проверенный аккаунт основателя подтверждает. Без начислений.
 BEGIN;
+
+-- Verified existing KEMP account (read-only user_roles lookup, 2026-11-10); UUID is not a secret.
+CREATE OR REPLACE FUNCTION public.is_kemp_founder(p_uid uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT p_uid = 'bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e'::uuid
+    AND public.is_super_admin(p_uid)
+    AND EXISTS (SELECT 1 FROM public.profiles WHERE user_id = p_uid AND approved = true)
+$$;
+REVOKE ALL ON FUNCTION public.is_kemp_founder(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_kemp_founder(uuid) TO authenticated, service_role;
 
 -- 1. Минимальное расширение существующих таблиц (все поля nullable / с дефолтом, старые строки = «Не отмечался»)
 ALTER TABLE public.schedule_participants
@@ -70,7 +80,7 @@ DECLARE
   v_from timestamptz := now() - make_interval(weeks => LEAST(GREATEST(COALESCE(p_weeks,12),1),52));
 BEGIN
   IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','not_authenticated'); END IF;
-  IF NOT public.is_club_resident(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','not_resident'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE user_id=v_uid AND participant_status='club_resident' AND approved=true) THEN RETURN jsonb_build_object('ok',false,'error','not_resident'); END IF;
   RETURN jsonb_build_object(
     'ok', true,
     'now', now(),
@@ -106,7 +116,7 @@ DECLARE
   v_row public.schedule_participants%ROWTYPE;
 BEGIN
   IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','not_authenticated'); END IF;
-  IF NOT public.is_club_resident(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','not_resident'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE user_id=v_uid AND participant_status='club_resident' AND approved=true) THEN RETURN jsonb_build_object('ok',false,'error','not_resident'); END IF;
   SELECT * INTO v_event FROM public.schedules WHERE id = p_schedule_id AND is_active;
   IF NOT FOUND OR v_event.schedule_type <> 'club' THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
   IF v_event.start_time > now() THEN RETURN jsonb_build_object('ok',false,'error','event_not_started'); END IF;
@@ -125,7 +135,7 @@ CREATE OR REPLACE FUNCTION public.founder_get_event_attendance(p_schedule_id uui
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_event public.schedules%ROWTYPE;
 BEGIN
-  IF NOT public.is_super_admin(auth.uid()) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  IF NOT public.is_kemp_founder(auth.uid()) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
   SELECT * INTO v_event FROM public.schedules WHERE id = p_schedule_id;
   IF NOT FOUND OR v_event.schedule_type <> 'club' THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
   RETURN jsonb_build_object('ok',true,
@@ -154,16 +164,17 @@ CREATE OR REPLACE FUNCTION public.founder_confirm_attendance(p_schedule_id uuid,
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid uuid := auth.uid();
-  v_type text;
+  v_event public.schedules%ROWTYPE;
   v_mark jsonb;
   v_updated int := 0;
   v_skipped int := 0;
   v_n int;
 BEGIN
-  IF NOT public.is_super_admin(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
-  SELECT schedule_type::text INTO v_type FROM public.schedules WHERE id = p_schedule_id;
-  IF v_type IS DISTINCT FROM 'club' THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
-  IF jsonb_typeof(p_marks) <> 'array' THEN RETURN jsonb_build_object('ok',false,'error','invalid_marks'); END IF;
+  IF NOT public.is_kemp_founder(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  SELECT * INTO v_event FROM public.schedules WHERE id = p_schedule_id FOR UPDATE;
+  IF NOT FOUND OR v_event.schedule_type <> 'club' THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
+  IF v_event.start_time > now() THEN RETURN jsonb_build_object('ok',false,'error','event_not_started'); END IF;
+  IF p_marks IS NULL OR jsonb_typeof(p_marks) <> 'array' THEN RETURN jsonb_build_object('ok',false,'error','invalid_marks'); END IF;
   FOR v_mark IN SELECT * FROM jsonb_array_elements(p_marks) LOOP
     IF jsonb_typeof(v_mark->'attended') <> 'boolean' OR NOT (v_mark ? 'user_id') THEN
       v_skipped := v_skipped + 1; CONTINUE;
@@ -188,8 +199,8 @@ END $$;
 CREATE OR REPLACE FUNCTION public.founder_set_event_kind(p_schedule_id uuid, p_club_kind text, p_week_anchor date DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF NOT public.is_super_admin(auth.uid()) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
-  UPDATE public.schedules SET club_kind = NULLIF(p_club_kind,''), week_anchor = p_week_anchor
+  IF NOT public.is_kemp_founder(auth.uid()) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  UPDATE public.schedules SET club_kind = NULLIF(p_club_kind,''), week_anchor = COALESCE(p_week_anchor, week_anchor, public.club_week_start(start_time, NULL))
    WHERE id = p_schedule_id AND schedule_type = 'club';
   IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
   RETURN jsonb_build_object('ok',true);
@@ -206,4 +217,22 @@ GRANT EXECUTE ON FUNCTION public.founder_get_event_attendance(uuid) TO authentic
 GRANT EXECUTE ON FUNCTION public.founder_confirm_attendance(uuid, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.founder_set_event_kind(uuid, text, date) TO authenticated;
 
+-- Existing web booking wrapper only: Telegram/shared core and intensive check-ins unchanged.
+CREATE OR REPLACE FUNCTION public.register_for_event_web(p_schedule_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE v_uid uuid := auth.uid(); v_event public.schedules%ROWTYPE;
+BEGIN
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('ok',false,'error','not_authenticated'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE user_id=v_uid AND participant_status='club_resident' AND approved=true) THEN
+    RETURN jsonb_build_object('ok',false,'error','not_resident');
+  END IF;
+  SELECT * INTO v_event FROM public.schedules WHERE id=p_schedule_id FOR UPDATE;
+  IF NOT FOUND OR NOT v_event.is_active OR v_event.schedule_type <> 'club' THEN
+    RETURN jsonb_build_object('ok',false,'error','not_club_event');
+  END IF;
+  IF v_event.start_time <= now() THEN RETURN jsonb_build_object('ok',false,'error','event_started'); END IF;
+  RETURN public.server_register_for_event(v_uid,p_schedule_id);
+END $$;
+REVOKE ALL ON FUNCTION public.register_for_event_web(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.register_for_event_web(uuid) TO authenticated;
 COMMIT;

@@ -1,0 +1,17 @@
+import { it } from 'node:test';
+import assert from 'node:assert/strict';
+import { acceptsProfile, requireFounder, FOUNDER_ID, recipientIds, requireRecipients, safePushUrl, trustedPushEndpoint, deliverSubscriptions } from './policy';
+const resident = { approved: true, participant_status: 'club_resident' };
+const intensive = { approved: true, participant_status: 'intensive_active' };
+it('residents never receive intensive broadcasts', () => { assert.equal(acceptsProfile('intensive', resident), false); assert.equal(acceptsProfile('intensive', intensive), true); });
+it('intensive never receives resident broadcasts', () => { assert.equal(acceptsProfile('resident', intensive), false); assert.equal(acceptsProfile('resident', resident), true); });
+it('all recipients must be approved', () => { assert.equal(acceptsProfile('all', { ...resident, approved: false }), false); assert.equal(acceptsProfile('all', { ...resident, approved: null }), false); assert.equal(acceptsProfile('all', intensive), true); });
+it('only verified founder with active role may send', () => { requireFounder(FOUNDER_ID, true, true); assert.throws(() => requireFounder('another-admin', true, true)); assert.throws(() => requireFounder(FOUNDER_ID, false, true)); assert.throws(() => requireFounder(FOUNDER_ID, true, false)); });
+it('empty/malformed targets fail closed; server selection deduplicates', () => { assert.throws(() => requireRecipients([])); assert.throws(() => requireRecipients(['invalid'])); assert.deepEqual(recipientIds('resident', [{ user_id: FOUNDER_ID, ...resident }, { user_id: FOUNDER_ID, ...resident }]), [FOUNDER_ID]); });
+it('allows existing app links, rejects fake event cards and external destinations', () => { assert.equal(safePushUrl('/app?section=schedule'), '/app?section=schedule'); assert.throws(() => safePushUrl('/app?event=123')); assert.throws(() => safePushUrl('https://evil.example/app')); });
+it('push endpoint cannot target internal or arbitrary servers', () => { assert.equal(trustedPushEndpoint('https://fcm.googleapis.com/fcm/send/123'), true); assert.equal(trustedPushEndpoint('http://127.0.0.1'), false); assert.equal(trustedPushEndpoint('https://evil.example'), false); });
+it('transport acceptance, expired devices and errors counted separately', async () => {
+  const removed: string[] = [];
+  const r = await deliverSubscriptions([{id:'1',user_id:'a'},{id:'2',user_id:'a'},{id:'3',user_id:'b'}], async s => { if(s.id==='2') throw {statusCode:410}; if(s.id==='3') throw {statusCode:500}; }, async id => { removed.push(id); });
+  assert.deepEqual(r, {subscribers:2,subscriptions:3,accepted:1,invalid:1,errors:1}); assert.deepEqual(removed,['2']);
+});

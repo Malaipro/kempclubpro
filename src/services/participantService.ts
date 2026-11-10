@@ -318,7 +318,7 @@ export const participantService = {
     if (error) throw error;
   },
 
-  async updateActivity(id: string, patch: Partial<UserActivity>): Promise<void> {
+  async updateActivity(id: string, patch: Partial<Omit<UserActivity, 'activities'>>): Promise<void> {
     const { error } = await supabase.from('user_activities').update(patch).eq('id', id);
     if (error) throw error;
   },

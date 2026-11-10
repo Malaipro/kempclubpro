@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { safeAppLink } from '@/components/web-app/appLinks';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { Switch } from '@/components/ui/switch';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -101,6 +104,14 @@ export const BroadcastManagement: React.FC = () => {
   const { toast } = useToast();
   const [text, setText] = useState('');
   const [audience, setAudience] = useState<Audience>('all');
+  const [sendPersonal, setSendPersonal] = useState(true);
+  const [pushTitle, setPushTitle] = useState('КЭМП');
+  const [pushBody, setPushBody] = useState('');
+  const [pushUrl, setPushUrl] = useState('/app?section=schedule');
+  const [counts, setCounts] = useState<{selected:number;subscribers:number} | null>(null);
+  const [ready, setReady] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [report, setReport] = useState<Record<string, any> | null>(null);
   const [sendToGroup, setSendToGroup] = useState(false);
   const [topic, setTopic] = useState<string>('general');
 
@@ -222,114 +233,43 @@ export const BroadcastManagement: React.FC = () => {
 
   const [sendPush, setSendPush] = useState(false);
 
+  useEffect(() => {
+    let live = true;
+    setReady(false); setCounts(null);
+    if (audience === 'alumni') return;
+    supabase.functions.invoke('dispatch-club-notification', { body: { operation: 'preview', audience } })
+      .then(({data,error}) => { if (!live) return; if (!error && data?.ok) { setReady(true); setCounts(data); } });
+    return () => { live = false; };
+  }, [audience]);
+
+  useEffect(() => { setRequestId(null); setReport(null); }, [text, audience, sendPersonal, sendToGroup, sendPush, pushTitle, pushBody, pushUrl, topic, buttons, file]);
+
   const handleSend = async () => {
-    if (!text.trim()) {
-      toast({ title: 'Введите текст', description: 'Сообщение не может быть пустым', variant: 'destructive' });
-      return;
-    }
-    const validButtons = buttons.filter(isButtonValid).map((b) => ({
-      id: b.id || crypto.randomUUID(),
-      label: b.label.trim(),
-      type: b.type,
-      url: b.type === 'url' ? b.url?.trim() : undefined,
-      target_id: b.type === 'book_event' || b.type === 'request_reward' ? b.target_id : undefined,
-    }));
-
-
-    // Отправка в групповой чат — через telegram-server, минуя обычную рассылку в личку
-    if (sendToGroup) {
-      const threadId = GROUP_TOPICS.find((t) => t.value === topic)?.threadId ?? null;
-      setSending(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('send-to-group', {
-          body: {
-            group_text: text.trim(),
-            topic_id: threadId,
-            group_buttons: validButtons.map((b) => ({
-              label: b.label,
-              type: b.type,
-              url: b.url,
-              schedule_id: b.type === 'book_event' ? b.target_id : undefined,
-              target_id: b.target_id,
-            })),
-          },
-        });
-        if (error) throw error;
-        if (data && (data as any).ok === false) {
-          throw new Error((data as any)?.error || 'Ошибка отправки');
-        }
-        toast({ title: 'Отправлено в группу', description: 'Сообщение опубликовано в чате КЭМП' });
-        resetForm();
-      } catch (e: any) {
-        toast({ title: 'Ошибка', description: e?.message || 'Не удалось отправить в группу', variant: 'destructive' });
-      } finally {
-        setSending(false);
-      }
-      return;
-    }
-
+    const channels = [sendPersonal ? 'telegram_personal' : null, sendToGroup ? 'telegram_group' : null, sendPush ? 'push' : null].filter(Boolean);
+    if (!channels.length) { toast({title:'Выберите канал',variant:'destructive'}); return; }
+    if ((sendPersonal || sendToGroup) && !text.trim()) { toast({title:'Введите текст',variant:'destructive'}); return; }
+    if (sendPush && (!pushTitle.trim() || !(pushBody.trim() || text.trim()))) { toast({title:'Заполните заголовок и текст Push',variant:'destructive'}); return; }
     setSending(true);
+    const id = requestId ?? crypto.randomUUID(); setRequestId(id);
     try {
+      const url = safeAppLink(pushUrl);
       let fileUrl: string | null = null;
-      if (file) {
-        const path = `${Date.now()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('broadcasts')
-          .upload(path, file);
-        if (uploadError) throw uploadError;
-        fileUrl = path;
+      if (file && sendPersonal) {
+        const path = `${id}-${file.name}`;
+        const {error} = await supabase.storage.from('broadcasts').upload(path, file, {upsert:true});
+        if(error) throw error; fileUrl=path;
       }
-
-      const { data: userData } = await supabase.auth.getUser();
-
-      const { data: inserted, error } = await (supabase as any)
-        .from('broadcast_messages')
-        .insert({
-          text: text.trim(),
-          audience,
-          buttons: validButtons,
-          file_url: fileUrl,
-          status: 'draft',
-          recipients_count: 0,
-          created_by: userData?.user?.id ?? null,
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-
-      const broadcastId = inserted?.id;
-      if (!broadcastId) throw new Error('Не удалось получить id рассылки');
-
-      const { data: sendData, error: sendError } = await supabase.functions.invoke(
-        'send-broadcast',
-        { body: { broadcastId } }
-      );
-      if (sendError) throw sendError;
-      if (sendData && (sendData as any).ok === false) {
-        throw new Error((sendData as any).error || 'Ошибка отправки');
-      }
-
-      const sent = (sendData as any)?.data?.sent ?? (sendData as any)?.sent ?? 0;
-      toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
-      if (sendPush) {
-        try {
-          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
-            body: { title: 'КЭМП', body: text.trim().slice(0, 100) },
-          });
-          if (pushError) throw pushError;
-          const pushed = (pushData as any)?.sent ?? (pushData as any)?.data?.sent ?? 0;
-          toast({ title: 'Пуш-уведомления', description: `Пуш: отправлено ${pushed}` });
-        } catch (pe: any) {
-          toast({ title: 'Пуш не отправлен', description: pe?.message || 'Ошибка отправки пуша', variant: 'destructive' });
-        }
-      }
-      resetForm();
-      loadHistory();
-    } catch (e: any) {
-      toast({ title: 'Ошибка', description: e?.message || 'Не удалось отправить рассылку', variant: 'destructive' });
-    } finally {
-      setSending(false);
-    }
+      const validButtons = buttons.filter(isButtonValid).map(b=>({...b,id:b.id??crypto.randomUUID(),label:b.label.trim()}));
+      const {data,error} = await supabase.functions.invoke('dispatch-club-notification', {body:{
+        operation:'send',request_id:id,channels,audience,text:text.trim(),title:pushTitle.trim(),body:pushBody.trim() || text.trim(),url,
+        topic_id:GROUP_TOPICS.find(t=>t.value===topic)?.threadId??null,buttons:validButtons,file_url:fileUrl,
+      }});
+      if(error) throw new Error(error instanceof FunctionsHttpError ? await error.context.text() : error.message);
+      if(!data?.ok) throw new Error(data?.error??'Не удалось отправить');
+      setReport(data.results); loadHistory();
+      toast({title:'Результаты доставки получены',description:'Повторный запрос не отправляет уже обработанные каналы заново.'});
+    } catch(e) { toast({title:'Отправка не подтверждена',description:e instanceof Error?e.message:'Ошибка',variant:'destructive'}); }
+    finally {setSending(false);}
   };
 
   return (
@@ -355,15 +295,12 @@ export const BroadcastManagement: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="send-to-group">Отправить в группу</Label>
-              <p className="text-xs text-muted-foreground">
-                Сообщение уйдёт в групповой чат КЭМП, а не в личные сообщения
-              </p>
-            </div>
-            <Switch id="send-to-group" checked={sendToGroup} onCheckedChange={setSendToGroup} />
-          </div>
+          <fieldset className="space-y-3" disabled={sending}>
+            <legend className="mb-2 text-sm font-medium">Каналы доставки</legend>
+            <label className="flex items-center gap-2"><Checkbox checked={sendPersonal} onCheckedChange={v=>setSendPersonal(v===true)} />Telegram — личные сообщения</label>
+            <label className="flex items-center gap-2"><Checkbox checked={sendToGroup} onCheckedChange={v=>setSendToGroup(v===true)} />Telegram — групповой чат</label>
+            <label className="flex items-center gap-2"><Checkbox checked={sendPush} onCheckedChange={v=>setSendPush(v===true)} />Push — приложение КЭМП</label>
+          </fieldset>
 
           {sendToGroup && (
             <div className="space-y-2">
@@ -381,7 +318,7 @@ export const BroadcastManagement: React.FC = () => {
             </div>
           )}
 
-          <div className={sendToGroup ? 'hidden' : 'space-y-2'}>
+          <div className="space-y-2">
             <Label>Аудитория</Label>
             <Select value={audience} onValueChange={(v) => setAudience(v as Audience)}>
               <SelectTrigger className="w-full sm:w-72">
@@ -390,8 +327,8 @@ export const BroadcastManagement: React.FC = () => {
               <SelectContent>
                 <SelectItem value="intensive">Все интенсив</SelectItem>
                 <SelectItem value="resident">Все резиденты</SelectItem>
-                <SelectItem value="alumni">Все выпускники</SelectItem>
-                <SelectItem value="all">Все сразу</SelectItem>
+                
+                <SelectItem value="all">Все допущенные пользователи</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -508,15 +445,17 @@ export const BroadcastManagement: React.FC = () => {
             {file && <p className="text-sm text-muted-foreground">Выбран: {file.name}</p>}
           </div>
 
-          {!sendToGroup && (
-            <div className="flex items-center gap-2">
-              <Switch id="broadcast-push" checked={sendPush} onCheckedChange={setSendPush} />
-              <Label htmlFor="broadcast-push">Отправить пуш-уведомление</Label>
-            </div>
-          )}
-          <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
+          {sendPush && <div className="space-y-3">
+            <div className="space-y-2"><Label htmlFor="push-title">Заголовок Push</Label><Input id="push-title" value={pushTitle} maxLength={100} onChange={e=>setPushTitle(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="push-body">Текст Push</Label><Textarea id="push-body" value={pushBody} placeholder="Текст сообщения, если не заполнено" maxLength={1000} onChange={e=>setPushBody(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="push-url">Переход в приложение</Label><Select value={pushUrl} onValueChange={setPushUrl}><SelectTrigger id="push-url"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="/app">Главная</SelectItem><SelectItem value="/app?section=schedule">Расписание</SelectItem><SelectItem value="/app?section=activities">Отметки</SelectItem><SelectItem value="/app?section=chat">Чат</SelectItem><SelectItem value="/app?section=profile">Профиль</SelectItem></SelectContent></Select></div>
+            <p className="text-sm text-muted-foreground">{counts ? `Допущено: ${counts.selected}. С Push-подпиской: ${counts.subscribers}.` : 'Количество подписчиков пока недоступно.'}</p>
+          </div>}
+          {!ready && <p role="status" className="text-sm text-muted-foreground">Адресная отправка подготовлена, но ещё не включена на сервере. Отправка заблокирована.</p>}
+          {report && <section className="space-y-2" aria-label="Результаты доставки">{Object.entries(report).map(([channel,r])=><div key={channel} className="border-b border-border py-2 text-sm"><b>{{push:'Push',telegram_personal:'Telegram — личные',telegram_group:'Telegram — группа'}[channel]}</b>: {r.ok?'Передано службе доставки':'Не подтверждено'}{channel==='push' && ` · Получателей: ${r.selected}; с подпиской: ${r.subscribers??0}; устройств: ${r.subscriptions??0}; принято: ${r.accepted??0}; ошибок: ${r.errors??0}; недействительных: ${r.invalid??0}`}{r.reused?' · повтор без отправки':''}{r.error && ` · ${r.error}`}{channel!=='push' && r.telegram && <pre className="whitespace-pre-wrap break-words">{JSON.stringify(r.telegram)}</pre>}</div>)}</section>}
+          <Button onClick={handleSend} disabled={sending || !ready || (!sendPersonal && !sendToGroup && !sendPush)} className="w-full sm:w-auto">
             {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-            {sendToGroup ? 'Отправить в группу' : 'Отправить рассылку'}
+            Отправить по выбранным каналам
           </Button>
         </CardContent>
       </Card>
@@ -674,7 +613,7 @@ export const BroadcastManagement: React.FC = () => {
                                 {m.file_url && (
                                   <div>
                                     <div className="font-semibold mb-1">Файл:</div>
-                                    <Button variant="outline" size="sm" onClick={() => openFile(m.file_url!)}>
+                                    <Button variant="outline" size="sm" onClick={() => openFile(m.file_url ?? '')}>
                                       <Paperclip className="w-4 h-4 mr-2" /> Открыть вложение
                                     </Button>
                                   </div>

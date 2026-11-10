@@ -20,7 +20,7 @@ const KINDS: [string, string][] = [
 ];
 
 const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
-const explain = (m: string) => /Could not find the function|schema cache/i.test(m) ? 'Подтверждение посещений ещё не включено на сервере' : m === 'forbidden' ? 'Только основатель может отмечать присутствие' : m;
+const explain = (m: string) => /Could not find the function|schema cache/i.test(m) ? 'Подтверждение посещений ещё не включено на сервере' : m === 'event_not_started' ? 'Нельзя подтвердить присутствие до начала мероприятия' : m === 'forbidden' ? 'Только основатель может отмечать присутствие' : m;
 
 export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ scheduleId }) => {
   const [data, setData] = useState<Data | null>(null);
@@ -46,8 +46,8 @@ export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ sched
   const marks = Object.entries(choice).filter(([, c]) => c !== 'keep').map(([user_id, c]) => ({ user_id, attended: c === 'present' }));
 
   const saveKind = async () => {
-    const { data: d, error: e } = await rpc('founder_set_event_kind', { p_schedule_id: scheduleId, p_club_kind: kind, p_week_anchor: anchor || null });
-    if (e || !(d as Data)?.ok) toast.error(explain(e?.message ?? (d as Data)?.error ?? 'Ошибка')); else toast.success('Вид события сохранён');
+    const { data: d, error: e } = await rpc('founder_set_event_kind', { p_schedule_id: scheduleId, p_club_kind: kind, p_week_anchor: anchor || data.week_anchor || null });
+    if (e || !(d as Data)?.ok) toast.error(explain(e?.message ?? (d as Data)?.error ?? 'Ошибка')); else { toast.success('Вид события сохранён'); void load(); }
   };
   const save = async () => {
     setSaving(true);

@@ -1,7 +1,7 @@
 -- Изолированная проверка resident-checkins-1 на локальной пустой БД (НЕ production).
 -- Заглушки повторяют только нужные части схемы КЭМП.
 \set ON_ERROR_STOP on
-CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS;
+DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF; END $$;
 CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('test.uid', true),'')::uuid $$;
 GRANT USAGE ON SCHEMA auth, public TO anon, authenticated, service_role;
@@ -14,16 +14,17 @@ CREATE TABLE schedule_participants(id uuid PRIMARY KEY DEFAULT gen_random_uuid()
 CREATE FUNCTION is_club_resident(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE user_id=_u AND participant_status='club_resident' AND approved) $$;
 CREATE FUNCTION is_super_admin(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id=_u AND role='super_admin') $$;
 GRANT SELECT, INSERT, UPDATE, DELETE ON schedule_participants TO authenticated;
+GRANT SELECT ON schedules TO authenticated;
 GRANT ALL ON schedule_participants, schedules TO service_role;
 
 -- Данные: F=основатель, R=резидент, R2=резидент, N=не одобрен, I=интенсив
 INSERT INTO profiles VALUES
- ('00000000-0000-0000-0000-00000000000f','club_resident',true,'Основатель',null,null),
+ ('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e','club_resident',true,'Основатель',null,null),
  ('00000000-0000-0000-0000-000000000001','club_resident',true,'Резидент',null,null),
  ('00000000-0000-0000-0000-000000000002','club_resident',true,'Резидент 2',null,null),
  ('00000000-0000-0000-0000-000000000003','club_resident',false,'Не одобрен',null,null),
  ('00000000-0000-0000-0000-000000000004','intensive_active',true,'Интенсив',null,null);
-INSERT INTO user_roles VALUES ('00000000-0000-0000-0000-00000000000f','super_admin'), ('00000000-0000-0000-0000-000000000005','admin');
+INSERT INTO user_roles VALUES ('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e','super_admin'), ('00000000-0000-0000-0000-000000000005','admin'),('00000000-0000-0000-0000-000000000006','super_admin');
 INSERT INTO schedules VALUES
  ('10000000-0000-0000-0000-000000000001','BJJ','',now()-interval '1 day',true,'club'),
  ('10000000-0000-0000-0000-000000000002','ОФП','',now()-interval '1 day',true,'club'),
@@ -35,6 +36,13 @@ INSERT INTO schedule_participants(schedule_id,user_id) SELECT s, u FROM
  unnest(ARRAY['00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002']::uuid[]) u;
 INSERT INTO schedule_participants(schedule_id,user_id) VALUES ('10000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000001');
 
+CREATE FUNCTION server_register_for_event(p_uid uuid,p_sid uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+ INSERT INTO schedule_participants(schedule_id,user_id) VALUES(p_sid,p_uid);
+ RETURN jsonb_build_object('ok',true);
+END $$;
+CREATE FUNCTION register_for_event_web(p_schedule_id uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN RETURN public.server_register_for_event(auth.uid(),p_schedule_id); END $$;
 \i sql/resident-checkins/up.sql
 
 CREATE FUNCTION pg_temp.expect(cond boolean, label text) RETURNS void LANGUAGE plpgsql AS $$
@@ -69,8 +77,17 @@ SELECT pg_temp.expect((SELECT NOT attended AND attended_marked_at IS NULL FROM s
 SELECT pg_temp.expect(founder_confirm_attendance('10000000-0000-0000-0000-000000000001','[{"user_id":"00000000-0000-0000-0000-000000000001","attended":true}]')->>'error'='forbidden','резидент не подтверждает');
 SET test.uid='00000000-0000-0000-0000-000000000005';
 SELECT pg_temp.expect(founder_confirm_attendance('10000000-0000-0000-0000-000000000001','[{"user_id":"00000000-0000-0000-0000-000000000001","attended":true}]')->>'error'='forbidden','admin не подтверждает');
+SET test.uid='00000000-0000-0000-0000-000000000006';
+SELECT pg_temp.expect(founder_confirm_attendance('10000000-0000-0000-0000-000000000001','[{"user_id":"00000000-0000-0000-0000-000000000001","attended":true}]')->>'error'='forbidden','другой super_admin не основатель');
+SET test.uid='00000000-0000-0000-0000-000000000003';
+SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-00000000000a')->>'error'='not_resident','запись недопущенного запрещена');
+SET test.uid='00000000-0000-0000-0000-000000000001';
+SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-000000000009')->>'error'='not_club_event','запись в интенсив запрещена');
+SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-000000000001')->>'error'='event_started','запись после начала запрещена');
+SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-00000000000a')->>'ok'='true','запись на тренировку клуба');
 -- основатель
-SET test.uid='00000000-0000-0000-0000-00000000000f';
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+SELECT pg_temp.expect(founder_confirm_attendance('10000000-0000-0000-0000-00000000000a','[{"user_id":"00000000-0000-0000-0000-000000000001","attended":true}]')->>'error'='event_not_started','основатель не подтверждает будущее событие');
 SELECT pg_temp.expect(founder_set_event_kind('10000000-0000-0000-0000-000000000001','training_bjj')->>'ok'='true','вид БЖЖ');
 SELECT founder_set_event_kind('10000000-0000-0000-0000-000000000002','training_ofp');
 SELECT founder_set_event_kind('10000000-0000-0000-0000-000000000003','training_kick');
@@ -80,7 +97,10 @@ SELECT founder_confirm_attendance(s,'[{"user_id":"00000000-0000-0000-0000-000000
 SELECT pg_temp.expect((SELECT attended_marked_at IS NULL FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000002' AND schedule_id='10000000-0000-0000-0000-000000000002'),'непомеченный остаётся без решения');
 -- исправление с историей
 SELECT founder_confirm_attendance('10000000-0000-0000-0000-000000000001','[{"user_id":"00000000-0000-0000-0000-000000000002","attended":true}]');
-SELECT pg_temp.expect((SELECT attended AND jsonb_array_length(attendance_history)=2 AND attended_marked_by='00000000-0000-0000-0000-00000000000f' FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000002' AND schedule_id='10000000-0000-0000-0000-000000000001'),'исправление сохраняет историю');
+SELECT pg_temp.expect((SELECT attended AND jsonb_array_length(attendance_history)=2 AND attended_marked_by='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e' FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000002' AND schedule_id='10000000-0000-0000-0000-000000000001'),'исправление сохраняет историю');
+SELECT founder_set_event_kind('10000000-0000-0000-0000-000000000003','training_kick','2026-10-26');
+SELECT founder_set_event_kind('10000000-0000-0000-0000-000000000003','training_kick');
+SELECT pg_temp.expect((SELECT week_anchor='2026-10-26' FROM schedules WHERE id='10000000-0000-0000-0000-000000000003'),'редактирование вида сохраняет неделю переноса');
 -- резидент видит 3 подтверждённые тренировки
 SET test.uid='00000000-0000-0000-0000-000000000001';
 SELECT pg_temp.expect((SELECT count(*) FROM jsonb_array_elements(get_resident_checkins_web()->'events') e WHERE e->>'attended_marked_at' IS NOT NULL AND (e->>'attended')::boolean AND e->>'club_kind' LIKE 'training_%')=3,'резидент видит 3 подтверждённые тренировки');

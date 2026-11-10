@@ -9,7 +9,7 @@ import {
   fullWeekStreak, trainingTotals, weekProgress, type ResidentEvent,
 } from './residentCheckins';
 
-type Payload = { ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
+type Payload = { error?: string; ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
 
 const ERRORS: Record<string, string> = {
   not_resident: 'Резидентские отметки доступны только подтверждённым резидентам клуба.',
@@ -17,6 +17,8 @@ const ERRORS: Record<string, string> = {
   event_not_started: 'Отметиться можно после начала мероприятия.',
   mark_window_closed: 'Срок отметки (7 дней) истёк.',
   already_reviewed: 'Основатель уже принял решение по этой отметке.',
+  event_started: 'Запись закрыта: мероприятие уже началось.',
+  not_authenticated: 'Войдите в приложение заново.',
   not_club_event: 'Это не мероприятие клуба.',
 };
 const explain = (m: string) => /Could not find the function|schema cache/i.test(m)
@@ -36,13 +38,13 @@ export const WebResidentCheckinsView: React.FC = () => {
 
   const load = useCallback(() => {
     setError(null);
-    callApi<Payload>('get_resident_checkins').then(setData).catch((e: Error) => setError(explain(e.message)));
+    callApi<Payload>('get_resident_checkins').then(res => { if (!res?.ok) throw new Error(res?.error ?? 'Не удалось загрузить отметки'); setData(res); }).catch((e: Error) => setError(explain(e.message)));
   }, [callApi]);
   useEffect(load, [load]);
 
-  const mark = async (id: string) => {
+  const mark = async (id: string, book = false) => {
     setBusy(id);
-    try { await callApi('request_attendance', { schedule_id: id }); load(); }
+    try { const res = await callApi<{ ok: boolean; error?: string }>(book ? 'book_session' : 'request_attendance', { schedule_id: id }); if (!res?.ok) throw new Error(res?.error ?? 'Операция не выполнена'); load(); }
     catch (e) { setError(explain((e as Error).message)); }
     finally { setBusy(null); }
   };
@@ -52,7 +54,8 @@ export const WebResidentCheckinsView: React.FC = () => {
   const totals = trainingTotals(events);
   const streak = data ? fullWeekStreak(events, data.current_week) : 0;
   const now = data ? new Date(data.now) : new Date();
-  const own = events.filter(e => e.registered);
+  const own = events;
+  const weeks = [...new Set(events.map(e => e.week_start))].filter(w => w <= (data?.current_week ?? '')).sort().reverse();
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -71,6 +74,7 @@ export const WebResidentCheckinsView: React.FC = () => {
                 <h2 className="font-semibold">Моя тренировочная неделя</h2>
                 <span className="text-lg font-bold text-primary">{week.done}/3</span>
               </div>
+              {week.missing.length > 0 && <p className="text-xs text-muted-foreground">Неделя не настроена полностью: {week.missing.map(k => TRAINING_LABELS[k]).join(', ')}. Требуется решение основателя.</p>}
               {week.slots.map(slot => {
                 const e = slot.planned[0];
                 const st = slot.confirmed ? 'confirmed' : e ? attendanceStatus(e) : null;
@@ -90,6 +94,7 @@ export const WebResidentCheckinsView: React.FC = () => {
             </CardContent>
           </Card>
         )}
+        {weeks.length > 0 && <section className="space-y-2"><h2 className="font-semibold">История недель</h2>{weeks.map(w => <div key={w} className="flex justify-between border-b border-border py-2 text-sm"><span>{new Date(`${w}T12:00:00Z`).toLocaleDateString('ru-RU')}</span><span>{weekProgress(events, w).done}/3</span></div>)}</section>}
         {data && (
           <div className="space-y-2">
             <h2 className="font-semibold">Мои мероприятия клуба</h2>
@@ -103,7 +108,9 @@ export const WebResidentCheckinsView: React.FC = () => {
                       <p className="break-words text-sm font-semibold">{e.theme || e.title}</p>
                       <p className="text-xs text-muted-foreground">{e.title} · {fmt(e.start_time)}</p>
                     </div>
-                    {canSelfMark(e, now)
+                    {!e.registered && new Date(e.start_time) > now
+                      ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id, true)}>Записаться</Button>
+                      : canSelfMark(e, now)
                       ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id)}>{busy === e.schedule_id ? '...' : 'Я был'}</Button>
                       : <Badge variant={statusVariant(st)}>{STATUS_LABELS[st]}</Badge>}
                   </CardContent>
