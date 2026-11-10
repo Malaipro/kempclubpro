@@ -36,4 +36,6 @@
 - [x] Move Chat navigation to prominent Home tiles for both participant statuses.
 - [x] Apply the agreed isolated dark palette to both /app chats.
 - [x] Verify both chats visually with isolated messages and check that Chat is absent from navigation.
-- [ ] Verify the real signed-in Home-to-Chat flow — blocked: authenticated end-to-end checks are unavailable for external unmanaged Supabase.
+- [ ] Verify the real signed-in Home-to-Chat flow — blocked: authenticated end-to-end checks are unavailable for external unmanaged Supabase.- [x] Resident «Отметки»: «Я был», founder confirmation panel, weekly 3/3 — code ready, SQL prepared in sql/resident-checkins (not applied).
+- [ ] Apply resident-checkins migration to production — waiting for APPROVE BREAKING resident-checkins-1.
+- [ ] Coin/point awards for confirmed attendance — next stage.

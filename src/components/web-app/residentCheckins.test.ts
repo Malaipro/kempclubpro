@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "bun:test";
 import { attendanceStatus, canSelfMark, fullWeekStreak, trainingTotals, weekProgress, type ResidentEvent } from './residentCheckins';
 
 const ev = (p: Partial<ResidentEvent>): ResidentEvent => ({
