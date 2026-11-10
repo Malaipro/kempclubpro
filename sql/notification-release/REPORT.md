@@ -51,3 +51,5 @@
 
 ## Откат
 Остановить unified sender, вернуть старые UI/worker версии и сохранённые endpoint исходники согласованным release. Сначала экспортировать dispatch claims; `down.sql` удаляет только две новые таблицы. Не удалять push_subscriptions и не менять работающего Telegram-бота. Не возвращать опасную default-all отправку как автоматический fallback; старый sender включать только после проверки его безопасности.
+## Финальная проверка
+Финальный прогон расширен: **39 тестов, 0 ошибок**, включая mastermind/club-broadcast регрессии. Последний автоматический сигнал 2026-11-10 12:50:02 UTC — build OK. Для устранения выявленных общей проверкой ошибок типов минимально изменены `tsconfig.app.json`, `src/components/admin/MastermindManagement.tsx`, `src/components/admin/participant/QuickStatusActions.tsx`, `src/services/participantService.ts`; это уточнение типов, без изменения бизнес-логики.

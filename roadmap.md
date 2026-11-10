@@ -41,5 +41,5 @@
 - [ ] Apply resident-checkins migration to production — waiting for APPROVE BREAKING resident-checkins-1.
 - [ ] Coin/point awards for confirmed attendance — next stage.
 
-- [x] Isolated resident check-in corrections + notification channels/source preparation: 31 automated tests, 29 resident SQL checks, 4 notification SQL checks, Deno checks and isolated desktop/mobile UI flow passed; automatic build OK. Reports in sql/resident-checkins/REPORT.md and sql/notification-release/REPORT.md. No production SQL/deployment/messages.
+- [x] Isolated resident check-in corrections + notification channels/source preparation: 39 automated tests, 29 resident SQL checks, 4 notification SQL checks, Deno checks and isolated desktop/mobile UI flow passed; automatic build OK. Reports in sql/resident-checkins/REPORT.md and sql/notification-release/REPORT.md. No production SQL/deployment/messages.
 - [ ] Production activation for check-ins/notifications — blocked by separate approval, founder identity confirmation, actual-schema dry-run, remote VAPID/caller inventory, missing send-to-group source and founder-only direct sender hardening; real single-user push and authenticated end-to-end checks remain unverified.
