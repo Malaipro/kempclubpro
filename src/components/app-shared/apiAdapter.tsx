@@ -188,6 +188,11 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       if (error) throw new Error(error.message);
       return data as T;
     }
+    case 'get_resident_checkins': return await rpc('get_resident_checkins_web', { p_weeks: 12 }) as T;
+    case 'request_attendance': {
+      if (typeof payload.schedule_id !== 'string') throw new Error('schedule_id_required');
+      return await rpc('request_attendance_web', { p_schedule_id: payload.schedule_id }) as T;
+    }
     case 'get_rating': return await rpc('get_rating_web') as T;
     case 'get_resident_rating': return await rpc('get_resident_rating_web') as T;
     case 'get_intensive_history': return await rpc('get_intensive_history_web') as T;
