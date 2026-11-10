@@ -39,3 +39,5 @@
 - [ ] Verify the real signed-in Home-to-Chat flow — blocked: authenticated end-to-end checks are unavailable for external unmanaged Supabase.- [x] Resident «Отметки»: «Я был», founder confirmation panel, weekly 3/3 — code ready, SQL prepared in sql/resident-checkins (not applied).
 - [ ] Apply resident-checkins migration to production — waiting for APPROVE BREAKING resident-checkins-1.
 - [ ] Coin/point awards for confirmed attendance — next stage.
+
+- [ ] Complete resident check-ins and independent notification channels in isolation; stage SQL and Edge source outside auto-deploy paths, run rule/SQL/UI checks, prepare separate activation/rollback reports. Production activation requires separate approval.

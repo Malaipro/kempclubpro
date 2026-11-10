@@ -12,4 +12,7 @@
 - Process mastermind deadline pushes in a fixed-purpose scheduled Edge Function with service-only reminder claims keyed by task, deadline and reminder kind; this isolates recipient targeting and prevents repeat scheduled deliveries. Deadlines are calendar dates in Europe/Moscow.
 - Scope web mastermind plans, tasks, reports and dashboards by explicitly selected group and track, with a separate unassigned legacy bucket; this prevents mixing two-month outcomes and preserves Telegram contracts.
 - Expose scoped mastermind writes through public SECURITY INVOKER wrappers over protected functions in the unexposed mastermind_private schema; owner and active group membership checks preserve existing table access without exposed elevated functions.
-- Resident attendance uses schedule_participants self/decision fields; status derives from attended_marked_at, never from attended alone, and protected fields change only via super_admin-checked SECURITY DEFINER RPCs (attended defaults to false, so it cannot mean absence).
+- Resident attendance uses schedule_participants self/decision fields; status derives from attended_marked_at, never from attended alone, and protected fields change only via verified-founder-account-and-role-checked SECURITY DEFINER RPCs (attended defaults to false, so it cannot mean absence).
+
+- Stage notification Edge releases under sql/notification-release, never supabase/functions until explicit production approval; this prevents automatic deployment during isolated development.
+- Route unified broadcasts through a founder-authorized server orchestrator with server-derived audiences and persistent per-channel claims; this prevents client recipient tampering and duplicate retries.
