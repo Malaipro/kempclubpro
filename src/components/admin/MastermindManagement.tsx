@@ -440,7 +440,7 @@ export const MastermindManagement: React.FC = () => {
   };
 
   const setApproval = async (t: Task, status: 'approved' | 'rejected') => {
-    const payload: Record<string, unknown> = { approval_status: status };
+    const payload: { approval_status: string; admin_comment?: string | null } = { approval_status: status };
     if (status === 'rejected') payload.admin_comment = taskComments[t.id] ?? t.admin_comment ?? null;
     const { error } = await supabase.from('mastermind_tasks').update(payload).eq('id', t.id);
     if (error) return toast({ title: 'Ошибка', description: error.message, variant: 'destructive' });

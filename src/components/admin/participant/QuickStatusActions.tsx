@@ -56,7 +56,7 @@ export const QuickStatusActions: React.FC<Props> = ({
       const { data: auth } = await supabase.auth.getUser();
       const actor = auth.user?.id ?? null;
 
-      const profilePatch: Record<string, unknown> = { participant_status: transition.to };
+      const profilePatch: { participant_status: ParticipantStatus; current_stream_id?: string } = { participant_status: transition.to };
       if (transition.requiresStream && streamId) profilePatch.current_stream_id = streamId;
 
       const { error: upErr } = await supabase
