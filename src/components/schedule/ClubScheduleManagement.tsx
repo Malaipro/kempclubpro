@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
+import { FounderAttendancePanel } from './FounderAttendancePanel';
+
 const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
 interface ScheduleItem {
@@ -864,6 +866,10 @@ export const ClubScheduleManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
+
+                          {participants.length > 0 && (
+                            <div className="mt-6"><FounderAttendancePanel scheduleId={item.id} /></div>
+                          )}
 
                           <div className="mt-6 space-y-4">
                             {participants.length === 0 ? (
