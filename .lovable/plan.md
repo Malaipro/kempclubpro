@@ -1,66 +1,62 @@
-# КЭМП — аудит текущего устройства для «Пути резидента» (read-only)
+# КЭМП — «Отметки» для резидентов + подтверждение основателем (план, не выполнен)
 
-Ничего не менялось: код, БД, бот, Amvera, production не трогались. Данные — из кода `src/` и read-only запросов к wfjvjvbjjxcgkaolkgdq.
+Ничего не менялось. Бот, оплаты (E1, Draft PR #2), начисления, `config.toml` — вне объёма.
 
-## 1. Карта: есть сейчас / не реализовано
+## Что увидит пользователь
+- Резидент (club_resident + approved): плитка «Отметки» на главной. Внутри — клубные события, на которые он записан: дата, тип, запись, статус отметки «не отмечался / ожидает подтверждения / подтверждено / не присутствовал». Кнопка «Я был» после начала события. Сверху цель недели 0/3…3/3 (Пн БЖЖ, Ср ОФП, Пт ударка), направления, история, серия полных недель.
+- Основатель: в карточке события клубного календаря — «Отметить присутствие»: список записавшихся, у кого есть «Я был» — подсвечены, галочки «Был / Не был», «Подтвердить всех отмеченных».
+- Интенсив: без изменений (старый UI, `check_in_activity_web`).
 
-| Блок | Есть сейчас (файлы, RPC, данные) | Не реализовано |
-|---|---|---|
-| Клубный календарь (создание) | `src/components/schedule/ClubScheduleManagement.tsx` — прямые insert/update в `schedules`, список записавшихся из `schedule_participants`. Активные клубные события: BJJ 3, Кикбоксинг 2, Мастермайнд 3, Лекции 6, Баня 1, Выездное 7, Встреча клуба 7 и др. Тип хранится в `activity_type` свободным текстом | Нет нормализованного «вида» события для начислений (тренировка/баня/спорт/экскурсия/лекция/ММ/краш-тест); ОФП в клубе не заведена |
-| Расписание резидента /app | `WebScheduleView.tsx` + `apiAdapter.tsx` (`get_club_schedule` → `get_schedule_web`, фильтр `schedule_type='club'`), запись `register_for_event_web` / `unregister_from_event_web` | — |
-| Подтверждение посещения | В `schedule_participants` есть колонка `attended`, но 0 из 50 записей отмечены; в коде её никто не записывает (только читают `get_schedule_web`/`get_schedule_for_user`). ММ — отдельно `mastermind_attendance` (самоотметка + админ, `MastermindTracksPanel.tsx`) | Экран «Отметить присутствие» у основателя, массовое подтверждение, кто/когда подтвердил |
-| «Отметки» | `WebActivitiesView.tsx` → `check_in_activity_web(p_activity_type)` пишет `activity_checkins` (bjj, kickboxing, ofp, nutrition, pyramid, tactics) — это самоотметка интенсива, не привязана к событию | Не годится как основание для начислений резидентам |
-| Рейтинг | Интенсив: `get_rating_web`. Резиденты: `get_resident_rating_web` — сортировка по `leaderboard.total_points` всех `club_resident`, имена маскируются, коины не показываются | Периоды месяц/квартал, баллы из подтверждённых посещений |
-| Coins / магазин | `coin_transactions` (журнал), `coin_rules` (training_attendance=1, event_participation=2 и др. — суммы не совпадают с новыми правилами), `get_user_coin_balance`, `award_coins_by_rule`, `admin_adjust_coins` (причина обязательна), `get_shop_web`/`purchase_reward_web`, `ParticipantCoinsManager.tsx`, `RewardsShop.tsx` | Правила резидента (+70 за 3/3, +20 за 4 недели, +15 баня/спорт/экскурсия), недельная идемпотентность |
-| Жетоны / тотемы / бейджи | `totems`, `user_totems`, `ParticipantTotemsTab.tsx`, `UserTotems.tsx`, `achievements/*`, `SpecialBadges.tsx` | Медведь/Маяк как только-ручные, звания, мерч-пороги (3 мес / 6 мес + 24 недели) |
-| Права основателя | `is_admin`, `is_super_admin`, `has_role`; роли admin/super_admin/trainer/captain существуют | Ограничение подтверждений и ручных коинов именно основателем (сейчас `admin_adjust_coins` пускает любого `is_admin`) |
-| Telegram рассылки / deep link | `BroadcastManagement.tsx` → `send-to-group`, кнопка «Запись на событие» (только клубные, тема+дата); бот на Amvera, записи через `book_schedule_session` (service_role) | Deep link в `/app?event=<id>` не найден в коде (только в плане E1) |
-| «Мой путь» | Нет экрана | Весь блок |
-| Платные события | Draft PR #2, не применён | Не трогать |
+## Проверенные факты (read-only)
+- `schedule_participants`: id, schedule_id, user_id, registered_at, attended; 0/50 attended.
+- Политики: нет UPDATE ни для кого; INSERT резидентом своей строки разрешён **без ограничения колонок** — сейчас резидент технически может вставить `attended=true` напрямую. Закрывается триггером (ниже).
+- admin/trainer могут INSERT/DELETE любые строки — не меняем.
 
-Статусы: `club_resident` approved 32 / не approved 10; `intensive_active` 12.
+## Хранение pending self-mark — варианты
+- **A (рекомендую):** колонка `schedule_participants.self_marked_at timestamptz null`. Одна строка = запись + запрос + решение. Минимально, без новой таблицы и RLS.
+- B: отдельная таблица запросов — лишняя сущность, отклоняю по правилу «без второй системы отметок».
 
-## Найденные риски безопасности (не исправлять без отдельного разрешения)
-- `check_in_activity(p_telegram_id, p_activity_type)` — SECURITY DEFINER, EXECUTE у `anon`: можно отметить чужого по telegram_id. Нужно проверить, вызывает ли его бот (тогда — service_role only).
-- `admin_adjust_coins` — EXECUTE у `anon` (внутри есть проверка `is_admin`, поэтому без входа не сработает), но право шире, чем «только основатель».
+Статус выводится: attended=true → подтверждено; false → не присутствовал; null + self_marked_at → ожидает; иначе не отмечался.
 
-## 2. Рекомендуемый порядок
+## Изменения БД (одна миграция UP/DOWN, только по APPROVE)
+1. `schedule_participants`: + `self_marked_at`, `attended_marked_by uuid`, `attended_marked_at timestamptz` (nullable).
+2. `schedules`: + `week_anchor date null` — перенос сохраняет исходную неделю (null = неделя start_time по МСК). + `club_kind text null` — явный вид: `training_bjj | training_ofp | training_kick | banya | sport | excursion | lecture | mastermind | crash_test | other`. Без маппинга по тексту в рантайме; заполняется основателем в форме события. Начальное заполнение — только по согласованному вами списку текущих `activity_type`.
+3. Триггер BEFORE INSERT/UPDATE на `schedule_participants`: поля `attended`, `attended_marked_*` меняются только внутри функции подтверждения (флаг сессии) или service_role; `self_marked_at` клиентом напрямую не пишется.
+4. RPC (SECURITY DEFINER, `search_path=public`, EXECUTE только authenticated, revoke anon/public):
+   - `get_resident_checkins_web(p_weeks int default 12)` — только `auth.uid()`, проверка club_resident AND approved на сервере; события `schedule_type='club'`, где пользователь записан; статусы, недельная цель, серия.
+   - `request_attendance_web(p_schedule_id uuid)` — резидент approved, записан, событие club, `start_time <= now()`, не позже 7 дней; идемпотентно ставит `self_marked_at`; attended не трогает.
+   - `founder_confirm_attendance(p_schedule_id uuid, p_marks jsonb)` — только `is_super_admin(auth.uid())`; только club; только записавшиеся; пишет attended/marked_by/marked_at; повтор — перезапись с аудитом в `audit_log`.
+5. Сигналы для этапа начислений (не начисляем): уникальный ключ источника = `schedule_participants.id`; недельный ключ = (user_id, ISO-неделя МСК по `coalesce(week_anchor, start_time)`). Позже `coin_transactions` с source_type/source_id + unique предотвратит двойное начисление.
 
-Предлагаю начать с **(б) + узкого (а)**, а не с чистого (а):
-- Чистый «Мой путь» без (б) покажет пустоту: подтверждённых посещений сейчас 0, самоотметки интенсива не являются фактом.
-- Этап 1 (б): основатель отмечает присутствие по существующим клубным событиям (одно событие → список записавшихся → «Пришёл / Не пришёл», массово). Без начислений. Пишется в существующую `attended` + кто/когда.
-- Этап 2 (а): read-only «Мой путь» по реальным данным — посещения по направлениям, полные недели 3/3, стрик, дни в клубе. Без званий/мерча/начислений; там, где правило не начислено, писать «скоро».
-- Этап 3 (в): начисления баллов/коинов идемпотентно по подтверждённому посещению + рейтинг за периоды.
-- Этап 4: звания, мерч, Медведь/Маяк.
-- Этап 5 (г): оплаты (E1/E2) после серверных guard и бота.
+## Изменения кода
+- `src/components/web-app/WebAppShell.tsx` — плитка «Отметки» в `RESIDENT_TILES`; `WebActivitiesView` получает `status`.
+- `src/components/web-app/WebActivitiesView.tsx` — ветка: `status==='club_resident'` → резидентский режим (запрос к серверу; если сервер вернул `not_resident`/`not_approved` — сообщение, без старых кнопок). Иначе — существующий код без правок.
+- `src/components/web-app/residentCheckins.ts` (+ `.test.ts`) — чистые функции: статус строки, цель недели, серия.
+- `src/components/app-shared/apiAdapter.tsx` — actions `get_resident_checkins`, `request_attendance`.
+- `src/components/schedule/ClubScheduleManagement.tsx` — поле «Вид» и «Неделя зачёта» в форме; диалог «Отметить присутствие» в карточке события (только super_admin).
+- `WebScheduleView.tsx` — не меняется (запись остаётся как есть).
 
-Платная ветка Supabase не нужна для этапов 1–2: изменения аддитивные и откатываемые; при этом каждое применение в production — только по вашему APPROVE.
+## Риски
+- Интенсив: ветка по статусу; старый путь не трогается — регрессия ловится тестом (ниже). Низкий.
+- Триггер на `schedule_participants`: может задеть бота/админку, если они пишут attended. Проверено: в коде attended никто не пишет; бот пишет через `book_schedule_session` (service_role — пропускается). Средний, откат — DROP TRIGGER.
+- RLS/права: новые права только у super_admin; капитаны/тренеры не получают ничего нового. High по регламенту → `APPROVE BREAKING`.
+- Неверный вид события → неверная цель недели; поэтому вид задаётся явно, «other» в цель не входит.
 
-## 3. Минимальные изменения (этап 1 + 2)
+## Тесты и критерии приёмки
+SQL (на ветке/вручную после APPROVE):
+- anon: EXECUTE всех трёх RPC запрещён.
+- резидент approved=false / интенсив → `not_approved` / `not_resident`.
+- `request_attendance_web` на незаписанное, интенсивное, будущее событие → отказ; повтор — без ошибки.
+- резидент INSERT с `attended=true` → отказ триггера.
+- `founder_confirm_attendance` от admin/trainer/captain → отказ; от super_admin → attended выставлен, marked_by = он.
+- перенос: событие с week_anchor прошлой недели считается в прошлую.
+Vitest (`residentCheckins.test.ts`): 4 статуса; 0/3…3/3 только по training_bjj/ofp/kick, по одному на вид; дубли вида не дают 3/3; серия сбрасывается на неполной неделе; неделя по МСК (воскресенье 23:30 МСК).
+Существующие: `dailyCheckin.test.ts`, `clubBooking.test.ts` проходят без изменений.
+Playwright: интенсив — старые 6 кнопок; резидент — «Я был» → «ожидает»; основатель подтверждает → у резидента «подтверждено», 1/3.
 
-БД (одна миграция, UP/DOWN):
-- `schedule_participants`: добавить `attended_marked_by uuid`, `attended_marked_at timestamptz` (nullable, без изменения старых строк).
-- RPC `founder_mark_attendance(p_schedule_id uuid, p_marks jsonb)` — SECURITY DEFINER, проверка «основатель» (`is_super_admin`), только `schedule_type='club'`, только уже записавшиеся, EXECUTE только `authenticated`.
-- RPC `get_my_path_web()` — только `auth.uid()`, только `club_resident`, считает из `attended=true` по клубным событиям с маппингом `activity_type` → направление.
-- Маппинг видов: функция/таблица `club_activity_kind` (текст `activity_type` → training_bjj/ofp/kick, banya, sport, excursion, lecture, mastermind, crash_test).
+## Нужно решить до старта
+1. Соответствие текущих клубных `activity_type` видам (BJJ→training_bjj, Кикбоксинг→training_kick; Баня→banya; «Выездное мероприятие», «Встреча клуба», «Выезд на природу», «Совместный ужин», «Мастер-класс» → ?). ОФП в клубном календаре сейчас нет.
+2. Окно «Я был»: 7 дней после события — подходит?
+3. Основатель = все super_admin или один аккаунт (email)?
 
-Frontend:
-- `ClubScheduleManagement.tsx` — кнопка «Отметить присутствие» в карточке события (диалог, массовые галочки).
-- Новый `WebMyPathView.tsx` + плитка в `RESIDENT_TILES` (`WebAppShell.tsx`), action `get_my_path` в `apiAdapter.tsx`.
-
-Не трогать: `coin_*`, магазин, `leaderboard`, интенсив, бот, `book_schedule_session`, E1.
-
-Тесты:
-- SQL: не-основатель получает отказ; нельзя отметить незаписавшегося; нельзя отметить интенсив-событие; повторная отметка идемпотентна; `anon` без EXECUTE.
-- Vitest: маппинг вида события; подсчёт полной недели 3/3 по Пн/Ср/Пт по МСК; стрик сбрасывается при неполной неделе.
-- Playwright: основатель отмечает двоих → у резидента в «Моём пути» +1 посещение.
-
-## 4. Вопросы, блокирующие реализацию
-1. Кто «основатель» технически — один конкретный аккаунт (нужен его user_id/email) или все `super_admin`? Сейчас роль admin тоже даёт права на коины.
-2. «Спорт» и «экскурсия» — какие текущие названия в календаре им соответствуют («Выездное мероприятие», «Встреча клуба», «Выезд на природу», «Совместный ужин»)? Без этого маппинг нельзя сделать честно.
-3. 10 резидентов с approved=false — показывать им «Мой путь» или нет?
-4. Полная неделя: строго Пн БЖЖ + Ср ОФП + Пт ударка, или любые 3 тренировки за неделю (перенос/замена)?
-5. Посещения до запуска (исторические, неотмеченные) — учитывать, если вы отметите их задним числом, или стартуем с даты запуска?
-6. `check_in_activity` (anon) — закрыть до service_role в этом же этапе (нужна сверка с ботом)?
-
-Оценка этапов 1+2: ~8–15 кредитов. Для старта: ответы на 1–2 и `APPROVE BREAKING resident-path-1`.
+Оценка: ~8–14 кредитов. Старт: ответы + `APPROVE BREAKING resident-checkins-1`.
