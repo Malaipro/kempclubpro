@@ -14,6 +14,7 @@ CREATE TABLE schedule_participants(id uuid PRIMARY KEY DEFAULT gen_random_uuid()
 CREATE FUNCTION is_club_resident(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE user_id=_u AND participant_status='club_resident' AND approved) $$;
 CREATE FUNCTION is_super_admin(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id=_u AND role='super_admin') $$;
 GRANT SELECT, INSERT, UPDATE, DELETE ON schedule_participants TO authenticated;
+GRANT SELECT ON schedules TO authenticated;
 GRANT ALL ON schedule_participants, schedules TO service_role;
 
 -- Данные: F=основатель, R=резидент, R2=резидент, N=не одобрен, I=интенсив
