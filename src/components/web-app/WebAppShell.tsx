@@ -13,6 +13,7 @@ import { WebBottomNav } from './WebBottomNav';
 import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { WebScheduleView } from './WebScheduleView';
 import { WebActivitiesView } from './WebActivitiesView';
+import { WebResidentCheckinsView } from './WebResidentCheckinsView';
 import { WebAsceticsView } from './WebAsceticsView';
 import { WebHomeworkView } from './WebHomeworkView';
 import { WebNutritionView } from './WebNutritionView';
@@ -31,6 +32,7 @@ type Tile = { section: Section; label: string; icon: React.ReactNode };
 
 const RESIDENT_TILES: Tile[] = [
   { section: 'schedule', label: 'Расписание', icon: <Calendar className="h-5 w-5" /> },
+  { section: 'activities', label: 'Отметки', icon: <Activity className="h-5 w-5" /> },
   { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
   { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
   { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
@@ -156,7 +158,7 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'schedule' ? (
             <WebScheduleView status={status} />
           ) : activeSection === 'activities' ? (
-            <WebActivitiesView />
+            isResident ? <WebResidentCheckinsView /> : <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (
             <WebAsceticsView />
           ) : activeSection === 'homework' ? (
