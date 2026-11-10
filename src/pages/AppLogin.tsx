@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { safeAppLink } from '@/components/web-app/appLinks';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,9 @@ const formatPhone = (raw: string): string => {
 
 const AppLogin: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  let returnTo = '/app';
+  try { returnTo = safeAppLink(`/app${location.search}`); } catch { /* untrusted return link */ }
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
@@ -35,9 +39,9 @@ const AppLogin: React.FC = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate('/app', { replace: true });
+      if (data.session) navigate(returnTo, { replace: true });
     });
-  }, [navigate]);
+  }, [navigate, returnTo]);
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +90,7 @@ const AppLogin: React.FC = () => {
           setError('Неверный email или пароль');
           return;
         }
-        navigate('/app', { replace: true });
+        navigate(returnTo, { replace: true });
         return;
       }
 
@@ -113,7 +117,7 @@ const AppLogin: React.FC = () => {
         return;
       }
 
-      navigate('/app', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch {
       setError('Ошибка входа. Попробуйте ещё раз.');
     } finally {

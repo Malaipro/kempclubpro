@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { WebAppShell } from '@/components/web-app/WebAppShell';
 
 const WebApp: React.FC = () => {
+  const location = useLocation();
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ const WebApp: React.FC = () => {
     );
   }
 
-  if (!authed) return <Navigate to="/app/login" replace />;
+  if (!authed) return <Navigate to={`/app/login${location.search}`} replace />;
 
   return <WebAppShell />;
 };

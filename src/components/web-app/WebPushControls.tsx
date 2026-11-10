@@ -28,6 +28,7 @@ export const WebPushSettingsCard: React.FC = () => {
             {error && <p className="text-xs text-destructive">{error}</p>}
           </>
         )}
+        <p className="text-xs text-muted-foreground">iPhone: добавьте КЭМП на экран «Домой», откройте его и разрешите уведомления. Android: разрешите уведомления в поддерживаемом браузере; установка приложения необязательна.</p>
       </CardContent>
     </Card>
   );

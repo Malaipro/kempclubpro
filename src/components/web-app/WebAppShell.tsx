@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { safeAppLink } from './appLinks';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,9 +72,13 @@ const SOON_SECTIONS: Section[] = [
 
 const WebAppInner: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { callApi } = useAppApi();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [activeSection, setActiveSection] = useState<Section>('home');
+  useEffect(() => {
+    try { const link = safeAppLink(`/app${location.search}`); setActiveSection((new URL(link, window.location.origin).searchParams.get('section') ?? 'home') as Section); } catch { setActiveSection('home'); }
+  }, [location.search]);
 
   const load = useCallback(() => {
     setState({ status: 'loading' });
@@ -158,7 +163,7 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'schedule' ? (
             <WebScheduleView status={status} />
           ) : activeSection === 'activities' ? (
-            isResident ? <WebResidentCheckinsView /> : <WebActivitiesView />
+            isResident ? (state.data.profile?.approved === true ? <WebResidentCheckinsView /> : <p className="p-6 text-muted-foreground">Доступ к отметкам ожидает подтверждения основателя.</p>) : <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (
             <WebAsceticsView />
           ) : activeSection === 'homework' ? (
