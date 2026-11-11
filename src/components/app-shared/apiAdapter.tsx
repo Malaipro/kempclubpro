@@ -129,6 +129,24 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       if (error) throw new Error(error.message);
       return data as T;
     }
+    case 'get_paid_events': {
+      await currentUserId();
+      // RPC появится только после применения sql/paid-bookings/up.sql
+      const { data, error } = await (supabase.rpc as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>)('paid_events_web');
+      if (error) throw new Error(error.message);
+      return data as T;
+    }
+    case 'paid_hold':
+    case 'paid_report':
+    case 'paid_cancel': {
+      await currentUserId();
+      const rpc = supabase.rpc as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { data, error } = action === 'paid_hold'
+        ? await rpc('paid_booking_create_hold', { p_schedule_id: payload.schedule_id, p_idempotency_key: payload.idempotency_key })
+        : await rpc(action === 'paid_report' ? 'paid_booking_report_paid' : 'paid_booking_cancel_own', { p_booking_id: payload.booking_id });
+      if (error) throw new Error(error.message);
+      return data as T;
+    }
     case 'cancel_booking': {
       await currentUserId();
       const scheduleId = payload.schedule_id;

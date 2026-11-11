@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { safeAppLink } from './appLinks';
+import { eventIdFromAppLink, safeAppReturnLink } from './appLinks';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -76,8 +76,13 @@ const WebAppInner: React.FC = () => {
   const { callApi } = useAppApi();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [activeSection, setActiveSection] = useState<Section>('home');
+  const [focusEventId, setFocusEventId] = useState<string | null>(null);
   useEffect(() => {
-    try { const link = safeAppLink(`/app${location.search}`); setActiveSection((new URL(link, window.location.origin).searchParams.get('section') ?? 'home') as Section); } catch { setActiveSection('home'); }
+    try {
+      const link = safeAppReturnLink(`/app${location.search}`);
+      setActiveSection((new URL(link, window.location.origin).searchParams.get('section') ?? 'home') as Section);
+      setFocusEventId(eventIdFromAppLink(link));
+    } catch { setActiveSection('home'); setFocusEventId(null); }
   }, [location.search]);
 
   const load = useCallback(() => {
@@ -161,7 +166,7 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'rating' && isResident ? (
             <WebResidentRatingView />
           ) : activeSection === 'schedule' ? (
-            <WebScheduleView status={status} />
+            <WebScheduleView status={status} focusEventId={focusEventId} />
           ) : activeSection === 'activities' ? (
             isResident ? (state.data.profile?.approved === true ? <WebResidentCheckinsView /> : <p className="p-6 text-muted-foreground">Доступ к отметкам ожидает подтверждения основателя.</p>) : <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (

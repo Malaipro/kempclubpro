@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { safeAppLink } from '@/components/web-app/appLinks';
+import { safeAppReturnLink } from '@/components/web-app/appLinks';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const AppLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   let returnTo = '/app';
-  try { returnTo = safeAppLink(`/app${location.search}`); } catch { /* untrusted return link */ }
+  try { returnTo = safeAppReturnLink(`/app${location.search}`); } catch { /* untrusted return link */ }
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);

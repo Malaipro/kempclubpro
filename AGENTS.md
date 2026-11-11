@@ -16,3 +16,4 @@
 
 - Stage notification Edge releases under sql/notification-release, never supabase/functions until explicit production approval; this prevents automatic deployment during isolated development.
 - Route unified broadcasts through a founder-authorized server orchestrator with server-derived audiences and persistent per-channel claims; this prevents client recipient tampering and duplicate retries.
+- Paid club events keep holds/payments in `paid_bookings` + append-only `paid_booking_ledger`; a role-independent trigger lets `schedule_participants` rows exist on paid events only via a founder-verified booking, so legacy bot/service_role inserts cannot bypass payment. Staged under `sql/paid-bookings`, gated by `VITE_PAID_BOOKINGS_ENABLED`.
