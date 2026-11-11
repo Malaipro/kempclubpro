@@ -7,8 +7,9 @@ CREATE OR REPLACE FUNCTION public.is_kemp_founder(p_uid uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT p_uid = 'bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e'::uuid
     AND public.is_super_admin(p_uid)
-    AND EXISTS (SELECT 1 FROM public.profiles WHERE user_id = p_uid AND approved = true)
 $$;
+-- Admin authorization deliberately ignores profiles.approved (founder profile has approved=false; do not modify it).
+-- approved=true remains mandatory for residents/recipients below.
 REVOKE ALL ON FUNCTION public.is_kemp_founder(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_kemp_founder(uuid) TO authenticated, service_role;
 

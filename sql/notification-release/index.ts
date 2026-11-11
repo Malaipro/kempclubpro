@@ -3,13 +3,13 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@4';
 import webpush from 'npm:web-push@3.6.7';
-import { FOUNDER_ID, requireFounder, recipientIds, requireRecipients, safePushUrl, trustedPushEndpoint, deliverSubscriptions } from './policy.ts';
+import { FOUNDER_ID, requireFounder, validateAudience, recipientIds, requireRecipients, safePushUrl, trustedPushEndpoint, deliverSubscriptions } from './policy.ts';
 import { dispatchChannels, type ChannelResult } from './dispatch.ts';
 
 const respond = (body: unknown, status=200) => new Response(JSON.stringify(body), {status,headers:{...corsHeaders,'Content-Type':'application/json'}});
 const ButtonSchema = z.object({id:z.string().uuid(),label:z.string().min(1).max(100),type:z.enum(['url','checkin','book_event','request_reward']),url:z.string().url().optional(),target_id:z.string().uuid().optional()}).strict();
 const RequestSchema = z.object({
-  operation:z.enum(['preview','send']), audience:z.enum(['resident','intensive','all']),
+  operation:z.enum(['preview','send']), audience:z.enum(['resident','intensive','all']).optional(),
   request_id:z.string().uuid().optional(), channels:z.array(z.enum(['telegram_personal','telegram_group','push'])).min(1).max(3).optional(),
   text:z.string().max(4000).optional(), title:z.string().max(100).optional(), body:z.string().max(1000).optional(),
   url:z.string().max(300).optional(), topic_id:z.union([z.literal(304),z.literal(13),z.literal(4),z.literal(12)]).nullable().optional(),
@@ -27,24 +27,26 @@ Deno.serve(async req => {
   const db=createClient(url,service);
   const {data:auth,error:authError}=await caller.auth.getUser();
   if(authError || !auth.user) return respond({ok:false,error:'unauthorized'},401);
-  const {data:profile,error:profileError}=await db.from('profiles').select('approved').eq('user_id',auth.user.id).maybeSingle();
   const {data:role,error:roleError}=await db.rpc('is_super_admin',{_user_id:auth.user.id});
-  try {requireFounder(auth.user.id, !roleError && role===true, !profileError && profile?.approved===true);} catch {return respond({ok:false,error:'forbidden'},403);}
+  try {requireFounder(auth.user.id, !roleError && role===true);} catch {return respond({ok:false,error:'forbidden'},403);}
   let input: unknown; try {input=await req.json();} catch{return respond({ok:false,error:'invalid_json'},400);}
   const parsed=RequestSchema.safeParse(input);
   if(!parsed.success) return respond({ok:false,error:'invalid_request'},400);
   const p=parsed.data;
+  if(p.operation==='send'){ try{validateAudience(p.channels??[],p.audience);}catch(e){return respond({ok:false,error:(e as Error).message},400);} }
+  if(p.operation==='preview' && !p.audience) return respond({ok:false,error:'audience_required'},400);
+  const audience=p.audience??'all'; // group-only sends read no recipients-specific data beyond this.
   try {
     // Paginate; never rely on PostgREST's default 1000-row window.
     const profiles: {user_id:string;approved:boolean;participant_status:string;telegram_id:string|null}[]=[];
     for(let offset=0;;offset+=500) {
       let query=db.from('profiles').select('user_id,approved,participant_status,telegram_id').eq('approved',true).order('user_id').range(offset,offset+499);
-      if(p.audience==='resident')query=query.eq('participant_status','club_resident');
-      if(p.audience==='intensive')query=query.eq('participant_status','intensive_active');
+      if(audience==='resident')query=query.eq('participant_status','club_resident');
+      if(audience==='intensive')query=query.eq('participant_status','intensive_active');
       const {data,error}=await query; if(error)throw new Error('audience_read_failed');
       profiles.push(...(data??[])); if(!data || data.length<500)break;
     }
-    const ids=recipientIds(p.audience,profiles);
+    const ids=recipientIds(audience,profiles);
     const subscriptions: {id:string;user_id:string;endpoint:string;p256dh:string;auth:string}[]=[];
     for(let offset=0;offset<ids.length;offset+=100) {
       for(let row=0;;row+=500) {
@@ -93,7 +95,7 @@ Deno.serve(async req => {
         }
         const tgIds=profiles.filter(p=>p.telegram_id).map(p=>p.user_id);
         if(!tgIds.length)return {ok:true,selected:ids.length,telegram:{sent:0}}; // Never empty targets => all fallback in legacy bot.
-        const {data:broadcast,error}=await db.from('broadcast_messages').insert({text:p.text,audience:p.audience,buttons:p.buttons??[],file_url:p.file_url??null,status:'draft',recipients_count:0,created_by:auth.user.id,target_user_ids:tgIds}).select('id').single();
+        const {data:broadcast,error}=await db.from('broadcast_messages').insert({text:p.text,audience,buttons:p.buttons??[],file_url:p.file_url??null,status:'draft',recipients_count:0,created_by:auth.user.id,target_user_ids:tgIds}).select('id').single();
         if(error || !broadcast)throw new Error('broadcast_create_failed');
         const telegram=await invoke('send-broadcast',{broadcastId:broadcast.id});return {ok:true,selected:ids.length,telegram};
       },
