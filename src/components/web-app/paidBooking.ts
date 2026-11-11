@@ -3,7 +3,7 @@
 export const PAID_BOOKINGS_ENABLED = import.meta.env?.VITE_PAID_BOOKINGS_ENABLED === 'true';
 
 export type BookingStatus = 'hold' | 'pending_review' | 'confirmed' | 'cancelled' | 'expired' | 'rejected';
-export type PaymentStatus = 'unpaid' | 'reported' | 'verified' | 'not_received' | 'refund_pending' | 'refunded';
+export type PaymentStatus = 'unpaid' | 'reported' | 'verified' | 'not_received' | 'refund_pending' | 'partially_refunded' | 'refunded';
 
 export interface PaidEventInfo {
   schedule_id: string;
@@ -47,6 +47,8 @@ export const PAID_ERROR_TEXT: Record<string, string> = {
   hold_expired: 'Время на оплату истекло. Забронируйте снова, если места остались',
   event_started: 'Мероприятие уже началось',
   already_registered: 'Вы уже записаны',
+  under_review: 'Оплата на проверке. Отменить заявку можно только через организатора',
+  idempotency_conflict: 'Повторите бронирование заново',
   contact_founder: 'Подтверждённую бронь отменяет организатор — напишите ему',
   paid_event_requires_verified_booking: 'Это платное мероприятие: запись появится после подтверждения предоплаты',
 };
@@ -90,4 +92,44 @@ export function validatePaidSettings(input: PaidSettingsInput): PaidSettingsResu
     mode: 'paid', price_total_rub: total, prepay_rub: prepay, cash_rub: total - prepay, max_participants: seats, payment_window_minutes: win,
     cancellation_terms: input.cancellation_terms.trim() || null, payment_qr_url: input.payment_qr_url.trim() || null, payment_link: input.payment_link.trim() || null,
   } };
+}
+
+// P0-1: fail-closed. При включённой оплате запись возможна, только если сервер явно
+// сообщил режим события. Нет данных / ошибка / событие не в списке → действия заблокированы.
+export type PaidMeta =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ok'; modes: Record<string, 'free' | 'paid'>; events: Map<string, PaidEventInfo> };
+export type BookingGate = { kind: 'free' } | { kind: 'paid'; info: PaidEventInfo } | { kind: 'blocked'; reason: string };
+
+export function bookingGate(scheduleId: string, meta: PaidMeta, enabled: boolean = PAID_BOOKINGS_ENABLED): BookingGate {
+  if (!enabled) return { kind: 'free' };
+  if (meta.status === 'loading') return { kind: 'blocked', reason: 'Загружаем условия записи...' };
+  if (meta.status === 'error') return { kind: 'blocked', reason: 'Не удалось загрузить условия записи. Обновите страницу позже' };
+  const mode = meta.modes[scheduleId];
+  if (mode === 'free') return { kind: 'free' };
+  const info = meta.events.get(scheduleId);
+  if (mode === 'paid' && info) return { kind: 'paid', info };
+  return { kind: 'blocked', reason: 'Условия записи на это мероприятие недоступны' };
+}
+
+export function parsePaidMeta(raw: unknown): PaidMeta {
+  const r = raw as { ok?: boolean; modes?: unknown; events?: unknown } | null;
+  if (!r || r.ok !== true || !r.modes || typeof r.modes !== 'object' || !Array.isArray(r.events)) return { status: 'error' };
+  return { status: 'ok', modes: r.modes as Record<string, 'free' | 'paid'>, events: new Map((r.events as PaidEventInfo[]).map(e => [e.schedule_id, e])) };
+}
+
+// P0-3: один ключ идемпотентности на один цикл бронирования. Повторы того же нажатия (сетевые ретраи)
+// используют тот же ключ; когда бронь создана/истекла/отменена — цикл другой, ключ новый.
+export function holdKeyScope(info: PaidEventInfo): string {
+  return `${info.schedule_id}:${info.booking?.id ?? 'none'}:${info.booking?.booking_status ?? ''}`;
+}
+
+// P0-2: платное событие (или бывшее платным) сохраняется ТОЛЬКО атомарной серверной операцией
+// paid_event_save; бесплатные события — прежним путём. Пока текущие настройки не загружены — сохранять нельзя.
+export type PaidLoadState = 'ready' | 'loading' | 'error';
+export function eventSaveRoute(enabled: boolean, mode: 'free' | 'paid', wasPaid: boolean, load: PaidLoadState): 'legacy' | 'atomic' | 'blocked' {
+  if (!enabled) return 'legacy';
+  if (load !== 'ready') return 'blocked';
+  return mode === 'paid' || wasPaid ? 'atomic' : 'legacy';
 }

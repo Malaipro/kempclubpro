@@ -35,3 +35,34 @@ describe('paid settings validation', () => {
   it('requires seat limit', () => assert.equal(validatePaidSettings({ ...ok, max_participants: '' }).ok, false));
   it('rejects fractional rubles', () => assert.equal(validatePaidSettings({ ...ok, price_total_rub: '50.5' }).ok, false));
 });
+
+import { bookingGate, holdKeyScope, parsePaidMeta } from './paidBooking';
+describe('fail-closed booking gate (P0-1)', () => {
+  const meta = parsePaidMeta({ ok: true, modes: { f: 'free', s: 'paid', x: 'paid' }, events: [base] });
+  it('flag off keeps old free behaviour', () => assert.equal(bookingGate('s', { status: 'error' }, false).kind, 'free'));
+  it('failed paid metadata blocks every booking', () => {
+    assert.equal(bookingGate('f', parsePaidMeta(null), true).kind, 'blocked');
+    assert.equal(bookingGate('s', parsePaidMeta({ ok: false, error: 'boom' }), true).kind, 'blocked');
+  });
+  it('still loading blocks booking', () => assert.equal(bookingGate('f', { status: 'loading' }, true).kind, 'blocked'));
+  it('known free event books as before', () => assert.equal(bookingGate('f', meta, true).kind, 'free'));
+  it('paid event uses paid card', () => assert.equal(bookingGate('s', meta, true).kind, 'paid'));
+  it('stale list: paid without details is blocked, not free', () => assert.equal(bookingGate('x', meta, true).kind, 'blocked'));
+  it('unknown event (not in modes) is blocked', () => assert.equal(bookingGate('new', meta, true).kind, 'blocked'));
+  it('response without modes is an error', () => assert.equal(parsePaidMeta({ ok: true, events: [] }).status, 'error'));
+});
+describe('idempotency key scope (P0-3)', () => {
+  it('same lifecycle keeps key scope (network retry)', () => assert.equal(holdKeyScope(base), holdKeyScope({ ...base, seats_left: 0 })));
+  it('after hold created scope changes', () => assert.notEqual(holdKeyScope(base), holdKeyScope(booking('hold'))));
+  it('after expiry a new booking cycle gets a new key', () => assert.notEqual(holdKeyScope(booking('hold')), holdKeyScope(booking('expired'))));
+});
+
+import { eventSaveRoute } from './paidBooking';
+describe('event save route (P0-2)', () => {
+  it('flag off: old save path', () => assert.equal(eventSaveRoute(false, 'paid', true, 'loading'), 'legacy'));
+  it('free event keeps old path', () => assert.equal(eventSaveRoute(true, 'free', false, 'ready'), 'legacy'));
+  it('paid event uses one atomic server call', () => assert.equal(eventSaveRoute(true, 'paid', false, 'ready'), 'atomic'));
+  it('paid → free also atomic', () => assert.equal(eventSaveRoute(true, 'free', true, 'ready'), 'atomic'));
+  it('save blocked while settings load', () => assert.equal(eventSaveRoute(true, 'free', false, 'loading'), 'blocked'));
+  it('save blocked when settings failed to load', () => assert.equal(eventSaveRoute(true, 'free', false, 'error'), 'blocked'));
+});

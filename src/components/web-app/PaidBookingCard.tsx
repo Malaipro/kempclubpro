@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
-import { PAID_STATE_LABEL, newIdempotencyKey, paidCardState, paidErrorText, rub, type PaidEventInfo } from './paidBooking';
+import { PAID_STATE_LABEL, holdKeyScope, newIdempotencyKey, paidCardState, paidErrorText, rub, type PaidEventInfo } from './paidBooking';
 
 const fmt = (iso: string) => new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' });
 
@@ -9,15 +9,18 @@ export const PaidBookingCard: React.FC<{ info: PaidEventInfo; onChanged: () => P
   const { callApi } = useAppApi();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [holdKey] = useState(newIdempotencyKey);
+  const scope = holdKeyScope(info);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const holdKey = useMemo(() => newIdempotencyKey(), [scope]);
   const state = paidCardState(info);
 
   const run = async (action: 'paid_hold' | 'paid_report' | 'paid_cancel') => {
     setBusy(true); setError(null);
     try {
-      const r = await callApi<{ ok: boolean; error?: string }>(action, action === 'paid_hold'
+      const r = await callApi<{ ok: boolean; error?: string; booking_status?: string }>(action, action === 'paid_hold'
         ? { schedule_id: info.schedule_id, idempotency_key: holdKey } : { booking_id: info.booking?.id });
       if (!r.ok) setError(paidErrorText(r.error));
+      else if (action === 'paid_hold' && r.booking_status === 'expired') setError(paidErrorText('hold_expired'));
       await onChanged();
     } catch (e) {
       setError(paidErrorText(e instanceof Error ? e.message : undefined));
@@ -46,7 +49,7 @@ export const PaidBookingCard: React.FC<{ info: PaidEventInfo; onChanged: () => P
       {state === 'pending_review' && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Организатор проверит поступление в банке и подтвердит запись. Остаток {rub(info.cash_rub)} — наличными на месте.</p>
-          <Button variant="ghost" className="w-full" disabled={busy} onClick={() => void run('paid_cancel')}>Отменить заявку</Button>
+          <p className="text-xs text-muted-foreground">Пока оплата на проверке, отменить заявку можно только через организатора.</p>
         </div>
       )}
       {state === 'confirmed' && info.cash_rub > 0 && (

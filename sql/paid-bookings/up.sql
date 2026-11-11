@@ -41,7 +41,7 @@ CREATE TABLE public.paid_bookings (
   booking_status text NOT NULL DEFAULT 'hold'
     CHECK (booking_status IN ('hold','pending_review','confirmed','cancelled','expired','rejected')),
   payment_status text NOT NULL DEFAULT 'unpaid'
-    CHECK (payment_status IN ('unpaid','reported','verified','not_received','refund_pending','refunded')),
+    CHECK (payment_status IN ('unpaid','reported','verified','not_received','refund_pending','partially_refunded','refunded')),
   price_total_rub integer NOT NULL CHECK (price_total_rub > 0),
   prepay_rub integer NOT NULL CHECK (prepay_rub > 0),
   cash_rub integer NOT NULL CHECK (cash_rub >= 0),
@@ -57,7 +57,7 @@ CREATE TABLE public.paid_bookings (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CHECK (prepay_rub + cash_rub = price_total_rub),
-  CHECK (booking_status <> 'confirmed' OR (payment_status IN ('verified','refund_pending','refunded') AND decided_by IS NOT NULL))
+  CHECK (booking_status <> 'confirmed' OR (payment_status IN ('verified','refund_pending','partially_refunded','refunded') AND decided_by IS NOT NULL))
 );
 CREATE UNIQUE INDEX paid_bookings_one_active ON public.paid_bookings(schedule_id, user_id)
   WHERE booking_status IN ('hold','pending_review','confirmed');
@@ -68,12 +68,15 @@ CREATE TABLE public.paid_booking_ledger (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   booking_id uuid NOT NULL REFERENCES public.paid_bookings(id) ON DELETE RESTRICT,
   kind text NOT NULL CHECK (kind IN ('hold_created','prepay_reported','prepay_verified','prepay_not_received',
-    'cancelled_by_user','cancelled_by_founder','expired','cash_received','refund_marked_pending','refund_issued')),
+    'cancelled_by_user','cancelled_by_founder','expired','cash_received','refund_marked_pending','refund_issued','late_prepay_received')),
   amount_rub integer,
   actor uuid,
   note text,
+  request_key text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Одноразовые кнопки основателя: один request_key = одна финансовая операция
+CREATE UNIQUE INDEX paid_booking_ledger_request_uniq ON public.paid_booking_ledger(booking_id, request_key) WHERE request_key IS NOT NULL;
 
 -- Клиентам: только чтение собственных броней. Записей нет ни у кого, кроме функций-владельцев.
 -- service_role получает только SELECT: бот не может подделать подтверждённую бронь.
@@ -166,6 +169,14 @@ CREATE FUNCTION public.paid_seats_used(p_schedule_id uuid) RETURNS integer LANGU
        + (SELECT count(*) FROM paid_bookings WHERE schedule_id = p_schedule_id
             AND ((booking_status = 'hold' AND hold_expires_at > now()) OR booking_status = 'pending_review'))::int
 $$;
+-- Деньги считаются ТОЛЬКО по подтверждённым основателем поступлениям в журнале (не по сообщению участника)
+CREATE FUNCTION public.paid_booking_money(p_booking_id uuid, OUT received_rub integer, OUT refunded_rub integer)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE(sum(amount_rub) FILTER (WHERE kind IN ('prepay_verified','late_prepay_received','cash_received')),0)::int,
+         COALESCE(sum(amount_rub) FILTER (WHERE kind = 'refund_issued'),0)::int
+  FROM paid_booking_ledger WHERE booking_id = p_booking_id
+$$;
+REVOKE ALL ON FUNCTION public.paid_booking_money(uuid) FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.paid_expire_stale_holds(uuid), public.paid_seats_used(uuid),
   public.enforce_paid_participation(), public.guard_paid_schedule_settings() FROM PUBLIC, anon, authenticated, service_role;
 
@@ -174,7 +185,10 @@ CREATE FUNCTION public.paid_events_web() RETURNS jsonb LANGUAGE plpgsql SECURITY
 DECLARE v_uid uuid := auth.uid();
 BEGIN
   IF v_uid IS NULL OR NOT public.is_club_resident(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
-  RETURN jsonb_build_object('ok', true, 'events', COALESCE((
+  RETURN jsonb_build_object('ok', true,
+    -- режим КАЖДОГО активного события клуба: клиент блокирует запись для событий без известного режима
+    'modes', COALESCE((SELECT jsonb_object_agg(id, booking_mode) FROM schedules WHERE schedule_type = 'club' AND is_active), '{}'::jsonb),
+    'events', COALESCE((
     SELECT jsonb_agg(jsonb_build_object(
       'schedule_id', s.id, 'price_total_rub', s.price_total_rub, 'prepay_rub', s.prepay_rub, 'cash_rub', s.cash_rub,
       'payment_window_minutes', s.payment_window_minutes, 'cancellation_terms', s.cancellation_terms,
@@ -194,7 +208,12 @@ BEGIN
   IF v_uid IS NULL OR NOT public.is_club_resident(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
   IF p_idempotency_key IS NULL OR length(p_idempotency_key) NOT BETWEEN 8 AND 100 THEN RETURN jsonb_build_object('ok',false,'error','idempotency_key_required'); END IF;
   SELECT * INTO b FROM paid_bookings WHERE user_id = v_uid AND idempotency_key = p_idempotency_key;
-  IF FOUND THEN RETURN jsonb_build_object('ok',true,'booking_id',b.id,'booking_status',b.booking_status,'hold_expires_at',b.hold_expires_at,'replayed',true); END IF;
+  IF FOUND THEN
+    -- тот же ключ + то же событие = тот же результат; ключ от другого события — конфликт
+    IF b.schedule_id <> p_schedule_id THEN RETURN jsonb_build_object('ok',false,'error','idempotency_conflict'); END IF;
+    RETURN jsonb_build_object('ok', true, 'booking_id', b.id, 'replayed', true, 'hold_expires_at', b.hold_expires_at,
+      'booking_status', CASE WHEN b.booking_status = 'hold' AND b.hold_expires_at <= now() THEN 'expired' ELSE b.booking_status END);
+  END IF;
   SELECT * INTO s FROM schedules WHERE id = p_schedule_id FOR UPDATE;  -- сериализует конкурентные брони события
   IF NOT FOUND OR s.schedule_type <> 'club' OR NOT s.is_active THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
   IF s.booking_mode <> 'paid' THEN RETURN jsonb_build_object('ok',false,'error','not_paid_event'); END IF;
@@ -238,9 +257,10 @@ BEGIN
   IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_found'); END IF;
   IF b.booking_status IN ('cancelled','expired','rejected') THEN RETURN jsonb_build_object('ok',true,'booking_status',b.booking_status,'replayed',true); END IF;
   IF b.booking_status = 'confirmed' THEN RETURN jsonb_build_object('ok',false,'error','contact_founder'); END IF;
+  -- после «Я оплатил» деньги могли уйти: отмена только через решение основателя
+  IF b.booking_status = 'pending_review' THEN RETURN jsonb_build_object('ok',false,'error','under_review'); END IF;
   UPDATE paid_bookings SET booking_status = 'cancelled' WHERE id = b.id;
-  INSERT INTO paid_booking_ledger(booking_id, kind, actor, note) VALUES (b.id, 'cancelled_by_user', v_uid,
-    CASE WHEN b.payment_status = 'reported' THEN 'payment was reported; founder must check bank and decide refund' END);
+  INSERT INTO paid_booking_ledger(booking_id, kind, actor) VALUES (b.id, 'cancelled_by_user', v_uid);
   RETURN jsonb_build_object('ok',true,'booking_status','cancelled','payment_status',b.payment_status);
 END $$;
 
@@ -254,6 +274,7 @@ BEGIN
     'booking_status', b.booking_status, 'payment_status', b.payment_status, 'price_total_rub', b.price_total_rub,
     'prepay_rub', b.prepay_rub, 'cash_rub', b.cash_rub, 'cash_received_rub', b.cash_received_rub,
     'hold_expires_at', b.hold_expires_at, 'reported_at', b.reported_at, 'created_at', b.created_at,
+    'received_rub', (public.paid_booking_money(b.id)).received_rub, 'refunded_rub', (public.paid_booking_money(b.id)).refunded_rub,
     'ledger', (SELECT jsonb_agg(jsonb_build_object('kind', l.kind, 'amount_rub', l.amount_rub, 'note', l.note, 'at', l.created_at) ORDER BY l.id)
                FROM paid_booking_ledger l WHERE l.booking_id = b.id)) ORDER BY b.created_at)
     FROM paid_bookings b LEFT JOIN profiles p ON p.user_id = b.user_id WHERE b.schedule_id = p_schedule_id), '[]'::jsonb));
@@ -281,52 +302,129 @@ BEGIN
   RETURN jsonb_build_object('ok',true,'booking_status','rejected');
 END $$;
 
-CREATE FUNCTION public.paid_booking_mark_cash(p_booking_id uuid, p_amount_rub integer) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE;
+-- Наличные: частичные суммы, остаток = cash_rub − получено; каждая кнопка с request_key исполняется один раз
+CREATE FUNCTION public.paid_booking_mark_cash(p_booking_id uuid, p_amount_rub integer, p_request_key text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE; v_got integer;
 BEGIN
   IF NOT public.is_kemp_founder(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  IF p_request_key IS NULL OR length(p_request_key) < 8 THEN RETURN jsonb_build_object('ok',false,'error','request_key_required'); END IF;
   SELECT * INTO b FROM paid_bookings WHERE id = p_booking_id FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_found'); END IF;
+  IF EXISTS (SELECT 1 FROM paid_booking_ledger WHERE booking_id = b.id AND request_key = p_request_key) THEN
+    RETURN jsonb_build_object('ok',true,'already_processed',true,'cash_received_rub',COALESCE(b.cash_received_rub,0),'cash_remaining_rub',b.cash_rub-COALESCE(b.cash_received_rub,0));
+  END IF;
   IF b.booking_status <> 'confirmed' THEN RETURN jsonb_build_object('ok',false,'error','not_confirmed'); END IF;
-  IF b.cash_received_at IS NOT NULL THEN RETURN jsonb_build_object('ok',true,'already_processed',true,'cash_received_rub',b.cash_received_rub); END IF;
-  IF p_amount_rub IS NULL OR p_amount_rub <= 0 OR p_amount_rub > b.cash_rub THEN RETURN jsonb_build_object('ok',false,'error','invalid_amount'); END IF;
-  UPDATE paid_bookings SET cash_received_rub = p_amount_rub, cash_received_at = now(), cash_received_by = v_uid WHERE id = b.id;
-  INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor) VALUES (b.id, 'cash_received', p_amount_rub, v_uid);
-  RETURN jsonb_build_object('ok',true,'cash_received_rub',p_amount_rub);
+  v_got := COALESCE(b.cash_received_rub,0);
+  IF p_amount_rub IS NULL OR p_amount_rub <= 0 OR p_amount_rub > b.cash_rub - v_got THEN RETURN jsonb_build_object('ok',false,'error','invalid_amount','cash_remaining_rub',b.cash_rub-v_got); END IF;
+  UPDATE paid_bookings SET cash_received_rub = v_got + p_amount_rub, cash_received_at = now(), cash_received_by = v_uid WHERE id = b.id;
+  INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor, request_key) VALUES (b.id, 'cash_received', p_amount_rub, v_uid, p_request_key);
+  RETURN jsonb_build_object('ok',true,'cash_received_rub',v_got + p_amount_rub,'cash_remaining_rub',b.cash_rub - v_got - p_amount_rub);
 END $$;
 
 -- Отмена основателем (в т.ч. подтверждённой): запись в календаре удаляется, финансовая история остаётся
+-- Отмена основателем: запись в календаре снимается, история остаётся.
+-- refund_pending ставится ТОЛЬКО если есть подтверждённые поступления; «со слов участника» возврат не создаёт.
 CREATE FUNCTION public.paid_booking_founder_cancel(p_booking_id uuid, p_refund_due boolean, p_note text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE;
+DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE; m record; v_refundable integer;
 BEGIN
   IF NOT public.is_kemp_founder(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
   IF p_note IS NULL OR length(trim(p_note)) < 3 THEN RETURN jsonb_build_object('ok',false,'error','note_required'); END IF;
   SELECT * INTO b FROM paid_bookings WHERE id = p_booking_id FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_found'); END IF;
   IF b.booking_status NOT IN ('hold','pending_review','confirmed') THEN RETURN jsonb_build_object('ok',true,'already_processed',true,'booking_status',b.booking_status); END IF;
+  SELECT * INTO m FROM public.paid_booking_money(b.id);
+  v_refundable := m.received_rub - m.refunded_rub;
   UPDATE paid_bookings SET booking_status = 'cancelled', decided_at = now(), decided_by = v_uid,
-    payment_status = CASE WHEN p_refund_due AND payment_status IN ('verified','reported') THEN 'refund_pending' ELSE payment_status END
+    payment_status = CASE WHEN p_refund_due AND v_refundable > 0 THEN 'refund_pending' ELSE payment_status END
     WHERE id = b.id;
   DELETE FROM schedule_participants WHERE paid_booking_id = b.id;
-  INSERT INTO paid_booking_ledger(booking_id, kind, actor, note) VALUES (b.id, 'cancelled_by_founder', v_uid, p_note);
-  IF p_refund_due AND b.payment_status IN ('verified','reported') THEN
-    INSERT INTO paid_booking_ledger(booking_id, kind, actor, note) VALUES (b.id, 'refund_marked_pending', v_uid, p_note);
+  INSERT INTO paid_booking_ledger(booking_id, kind, actor, note) VALUES (b.id, 'cancelled_by_founder', v_uid,
+    p_note || CASE WHEN b.payment_status = 'reported' THEN ' [участник сообщал об оплате, поступление не подтверждено]' ELSE '' END);
+  IF p_refund_due AND v_refundable > 0 THEN
+    INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor, note) VALUES (b.id, 'refund_marked_pending', v_refundable, v_uid, p_note);
   END IF;
-  RETURN jsonb_build_object('ok',true,'booking_status','cancelled');
+  RETURN jsonb_build_object('ok',true,'booking_status','cancelled','refundable_rub',GREATEST(v_refundable,0));
 END $$;
 
-CREATE FUNCTION public.paid_booking_mark_refunded(p_booking_id uuid, p_amount_rub integer, p_note text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE;
+-- Возврат: не больше (подтверждённые поступления − уже возвращено); частичные возвраты; причина обязательна
+CREATE FUNCTION public.paid_booking_mark_refunded(p_booking_id uuid, p_amount_rub integer, p_note text, p_request_key text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE; m record; v_left integer;
 BEGIN
   IF NOT public.is_kemp_founder(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  IF p_request_key IS NULL OR length(p_request_key) < 8 THEN RETURN jsonb_build_object('ok',false,'error','request_key_required'); END IF;
   SELECT * INTO b FROM paid_bookings WHERE id = p_booking_id FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_found'); END IF;
-  IF b.payment_status = 'refunded' THEN RETURN jsonb_build_object('ok',true,'already_processed',true); END IF;
-  IF b.payment_status <> 'refund_pending' THEN RETURN jsonb_build_object('ok',false,'error','refund_not_pending'); END IF;
-  IF p_amount_rub IS NULL OR p_amount_rub <= 0 OR p_amount_rub > b.price_total_rub THEN RETURN jsonb_build_object('ok',false,'error','invalid_amount'); END IF;
-  UPDATE paid_bookings SET payment_status = 'refunded' WHERE id = b.id;
-  INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor, note) VALUES (b.id, 'refund_issued', p_amount_rub, v_uid, p_note);
-  RETURN jsonb_build_object('ok',true,'payment_status','refunded');
+  IF EXISTS (SELECT 1 FROM paid_booking_ledger WHERE booking_id = b.id AND request_key = p_request_key) THEN
+    RETURN jsonb_build_object('ok',true,'already_processed',true,'payment_status',b.payment_status);
+  END IF;
+  IF p_note IS NULL OR length(trim(p_note)) < 3 THEN RETURN jsonb_build_object('ok',false,'error','note_required'); END IF;
+  IF b.payment_status NOT IN ('refund_pending','partially_refunded') THEN RETURN jsonb_build_object('ok',false,'error','refund_not_pending'); END IF;
+  SELECT * INTO m FROM public.paid_booking_money(b.id);
+  v_left := m.received_rub - m.refunded_rub;
+  IF p_amount_rub IS NULL OR p_amount_rub <= 0 OR p_amount_rub > v_left THEN RETURN jsonb_build_object('ok',false,'error','refund_exceeds_received','refundable_rub',v_left); END IF;
+  UPDATE paid_bookings SET payment_status = CASE WHEN p_amount_rub = v_left THEN 'refunded' ELSE 'partially_refunded' END WHERE id = b.id;
+  INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor, note, request_key) VALUES (b.id, 'refund_issued', p_amount_rub, v_uid, p_note, p_request_key);
+  RETURN jsonb_build_object('ok',true,'payment_status',CASE WHEN p_amount_rub = v_left THEN 'refunded' ELSE 'partially_refunded' END,'refundable_rub',v_left - p_amount_rub);
+END $$;
+
+-- Позднее поступление на закрытую бронь (отменена/истекла/«не поступил»): фиксируем деньги и
+-- ставим «нужен возврат». Бронь и место НЕ восстанавливаются, автоматического возврата нет.
+CREATE FUNCTION public.paid_booking_record_late_payment(p_booking_id uuid, p_amount_rub integer, p_note text, p_request_key text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_uid uuid := auth.uid(); b paid_bookings%ROWTYPE; m record;
+BEGIN
+  IF NOT public.is_kemp_founder(v_uid) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  IF p_request_key IS NULL OR length(p_request_key) < 8 THEN RETURN jsonb_build_object('ok',false,'error','request_key_required'); END IF;
+  SELECT * INTO b FROM paid_bookings WHERE id = p_booking_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','not_found'); END IF;
+  IF EXISTS (SELECT 1 FROM paid_booking_ledger WHERE booking_id = b.id AND request_key = p_request_key) THEN
+    RETURN jsonb_build_object('ok',true,'already_processed',true);
+  END IF;
+  IF b.booking_status NOT IN ('cancelled','rejected','expired') THEN RETURN jsonb_build_object('ok',false,'error','booking_not_closed'); END IF;
+  IF p_note IS NULL OR length(trim(p_note)) < 3 THEN RETURN jsonb_build_object('ok',false,'error','note_required'); END IF;
+  SELECT * INTO m FROM public.paid_booking_money(b.id);
+  IF p_amount_rub IS NULL OR p_amount_rub <= 0 OR m.received_rub + p_amount_rub > b.price_total_rub THEN RETURN jsonb_build_object('ok',false,'error','invalid_amount'); END IF;
+  UPDATE paid_bookings SET payment_status = 'refund_pending' WHERE id = b.id;
+  INSERT INTO paid_booking_ledger(booking_id, kind, amount_rub, actor, note, request_key) VALUES (b.id, 'late_prepay_received', p_amount_rub, v_uid, p_note, p_request_key);
+  RETURN jsonb_build_object('ok',true,'payment_status','refund_pending','booking_status',b.booking_status);
+END $$;
+
+-- P0-2: атомарное создание/правка события клуба вместе с платными настройками (одна транзакция,
+-- одна команда INSERT/UPDATE): при ошибке цены событие не появляется и не публикуется бесплатным.
+CREATE FUNCTION public.paid_event_save(p_schedule_id uuid, p_title text, p_description text, p_start timestamptz, p_end timestamptz,
+  p_location text, p_color text, p_mastermind_group_id uuid, p_mode text, p_price_total_rub integer, p_prepay_rub integer,
+  p_cash_rub integer, p_max_participants integer, p_payment_window_minutes integer, p_cancellation_terms text,
+  p_payment_qr_url text, p_payment_link text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_id uuid; v_paid boolean := p_mode = 'paid';
+BEGIN
+  IF NOT public.is_kemp_founder(auth.uid()) THEN RETURN jsonb_build_object('ok',false,'error','forbidden'); END IF;
+  IF p_mode IS NULL OR p_mode NOT IN ('free','paid') THEN RETURN jsonb_build_object('ok',false,'error','invalid_mode'); END IF;
+  IF nullif(trim(p_title),'') IS NULL OR p_start IS NULL OR p_end IS NULL OR p_end <= p_start THEN RETURN jsonb_build_object('ok',false,'error','invalid_event'); END IF;
+  IF p_schedule_id IS NULL THEN
+    INSERT INTO schedules(title, activity_type, description, start_time, end_time, location, color, mastermind_group_id,
+      schedule_type, is_active, instructor_id, stream_id, booking_mode, price_total_rub, prepay_rub, cash_rub, max_participants,
+      payment_window_minutes, cancellation_terms, payment_qr_url, payment_link)
+    VALUES (p_title, p_title, p_description, p_start, p_end, nullif(trim(p_location),''), p_color, p_mastermind_group_id,
+      'club', true, NULL, NULL, p_mode,
+      CASE WHEN v_paid THEN p_price_total_rub END, CASE WHEN v_paid THEN p_prepay_rub END, CASE WHEN v_paid THEN p_cash_rub END,
+      CASE WHEN v_paid THEN p_max_participants END, COALESCE(p_payment_window_minutes,120),
+      CASE WHEN v_paid THEN nullif(trim(p_cancellation_terms),'') END, CASE WHEN v_paid THEN nullif(trim(p_payment_qr_url),'') END,
+      CASE WHEN v_paid THEN nullif(trim(p_payment_link),'') END)
+    RETURNING id INTO v_id;
+  ELSE
+    UPDATE schedules SET title = p_title, activity_type = p_title, description = p_description, start_time = p_start, end_time = p_end,
+      location = nullif(trim(p_location),''), color = p_color, mastermind_group_id = p_mastermind_group_id, booking_mode = p_mode,
+      price_total_rub = CASE WHEN v_paid THEN p_price_total_rub ELSE price_total_rub END,
+      prepay_rub = CASE WHEN v_paid THEN p_prepay_rub ELSE prepay_rub END,
+      cash_rub = CASE WHEN v_paid THEN p_cash_rub ELSE cash_rub END,
+      max_participants = CASE WHEN v_paid THEN p_max_participants ELSE max_participants END,
+      payment_window_minutes = CASE WHEN v_paid THEN COALESCE(p_payment_window_minutes,120) ELSE payment_window_minutes END,
+      cancellation_terms = CASE WHEN v_paid THEN nullif(trim(p_cancellation_terms),'') ELSE cancellation_terms END,
+      payment_qr_url = CASE WHEN v_paid THEN nullif(trim(p_payment_qr_url),'') ELSE payment_qr_url END,
+      payment_link = CASE WHEN v_paid THEN nullif(trim(p_payment_link),'') ELSE payment_link END
+    WHERE id = p_schedule_id AND schedule_type = 'club' RETURNING id INTO v_id;
+    IF v_id IS NULL THEN RETURN jsonb_build_object('ok',false,'error','not_club_event'); END IF;
+  END IF;
+  RETURN jsonb_build_object('ok',true,'schedule_id',v_id);
 END $$;
 
 -- Сохранение настроек платного события из существующей формы админки
@@ -350,13 +448,15 @@ END $$;
 
 REVOKE ALL ON FUNCTION public.paid_events_web(), public.paid_booking_create_hold(uuid,text), public.paid_booking_report_paid(uuid),
   public.paid_booking_cancel_own(uuid), public.paid_bookings_admin_list(uuid), public.paid_booking_decide(uuid,boolean,text),
-  public.paid_booking_mark_cash(uuid,integer), public.paid_booking_founder_cancel(uuid,boolean,text),
-  public.paid_booking_mark_refunded(uuid,integer,text),
+  public.paid_booking_mark_cash(uuid,integer,text), public.paid_booking_founder_cancel(uuid,boolean,text),
+  public.paid_booking_mark_refunded(uuid,integer,text,text), public.paid_booking_record_late_payment(uuid,integer,text,text),
+  public.paid_event_save(uuid,text,text,timestamptz,timestamptz,text,text,uuid,text,integer,integer,integer,integer,integer,text,text,text),
   public.paid_event_settings_save(uuid,text,integer,integer,integer,integer,integer,text,text,text) FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.paid_events_web(), public.paid_booking_create_hold(uuid,text), public.paid_booking_report_paid(uuid),
   public.paid_booking_cancel_own(uuid), public.paid_bookings_admin_list(uuid), public.paid_booking_decide(uuid,boolean,text),
-  public.paid_booking_mark_cash(uuid,integer), public.paid_booking_founder_cancel(uuid,boolean,text),
-  public.paid_booking_mark_refunded(uuid,integer,text),
+  public.paid_booking_mark_cash(uuid,integer,text), public.paid_booking_founder_cancel(uuid,boolean,text),
+  public.paid_booking_mark_refunded(uuid,integer,text,text), public.paid_booking_record_late_payment(uuid,integer,text,text),
+  public.paid_event_save(uuid,text,text,timestamptz,timestamptz,text,text,uuid,text,integer,integer,integer,integer,integer,text,text,text),
   public.paid_event_settings_save(uuid,text,integer,integer,integer,integer,integer,text,text,text) TO authenticated;
 
 COMMIT;

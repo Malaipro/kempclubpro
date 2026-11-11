@@ -7,7 +7,7 @@ GRANT USAGE ON SCHEMA auth, public TO anon, authenticated, service_role;
 CREATE TYPE schedule_type AS ENUM ('intensive','club');
 CREATE TABLE profiles(user_id uuid PRIMARY KEY, participant_status text, approved boolean, display_name text, first_name text, last_name text);
 CREATE TABLE user_roles(user_id uuid, role text);
-CREATE TABLE schedules(id uuid PRIMARY KEY, title text, activity_type text, description text, start_time timestamptz, is_active boolean DEFAULT true,
+CREATE TABLE schedules(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), title text, activity_type text, description text, end_time timestamptz, location text, color text, mastermind_group_id uuid, instructor_id uuid, stream_id uuid, start_time timestamptz, is_active boolean DEFAULT true,
   schedule_type schedule_type, max_participants integer, updated_at timestamptz DEFAULT now());
 CREATE TABLE schedule_participants(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), schedule_id uuid REFERENCES schedules(id) ON DELETE CASCADE, user_id uuid,
   registered_at timestamptz DEFAULT now(), attended boolean DEFAULT false, UNIQUE(schedule_id,user_id));
@@ -119,10 +119,13 @@ SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE user_id=
 SELECT pg_temp.expect(pg_temp.lq($q$SELECT count(*) FROM paid_booking_ledger WHERE kind='prepay_verified' AND amount_rub=2000$q$)='1','в журнале одна проверенная предоплата 2000');
 SELECT pg_temp.expect((SELECT attended=false AND attended_marked_at IS NULL FROM schedule_participants WHERE paid_booking_id IS NOT NULL),'оплата не отмечает посещение (совместимо с «Отметками»)');
 -- наличные
-SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),4000)->>'error'='invalid_amount','наличные не больше остатка');
-SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),3000)->>'cash_received_rub'='3000','наличные остатка 3000 отмечены');
-SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),3000)->>'already_processed'='true','повтор отметки наличных без дубля');
-SELECT pg_temp.expect(pg_temp.lq($q$SELECT count(*) FROM paid_booking_ledger WHERE kind='cash_received'$q$)='1','наличные учтены отдельно один раз');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),4000,'cash-req-0001')->>'error'='invalid_amount','наличные не больше остатка');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),1000,'cash-req-0002')->>'cash_remaining_rub'='2000','частичная оплата наличными: 1000, остаток 2000');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),1000,'cash-req-0002')->>'already_processed'='true','повтор той же кнопки наличных без дубля');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),2500,'cash-req-0003')->>'error'='invalid_amount','доплата не больше остатка');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),2000,'cash-req-0004')->>'cash_remaining_rub'='0','доплата 2000 закрыла остаток');
+SELECT pg_temp.expect(paid_booking_mark_cash((SELECT (r->>'booking_id')::uuid FROM h),1,'cash-req-0005')->>'error'='invalid_amount','сверх полной суммы наличных нельзя');
+SELECT pg_temp.expect(pg_temp.lq($q$SELECT count(*)||'/'||sum(amount_rub) FROM paid_booking_ledger WHERE kind='cash_received'$q$)='2/3000','наличные: две записи на 3000');
 
 -- Удаление подтверждённой записи в обход: резидент, бот
 SET test.uid='00000000-0000-0000-0000-000000000001';
@@ -149,18 +152,32 @@ SET test.uid='00000000-0000-0000-0000-000000000007';
 SELECT pg_temp.expect(paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r3-00001')->>'error'='no_seats','pending_review и legacy занимают места');
 -- пользователь отменяет после сообщения об оплате → основатель решает возврат
 SET test.uid='00000000-0000-0000-0000-000000000002';
-SELECT pg_temp.expect(paid_booking_cancel_own((SELECT (r->>'booking_id')::uuid FROM h3))->>'payment_status'='reported','отмена после «Я оплатил» сохраняет признак оплаты');
-SELECT pg_temp.expect(pg_temp.lq($q$SELECT (note IS NOT NULL)::text FROM paid_booking_ledger WHERE kind='cancelled_by_user'$q$)='true','отмена с пометкой для проверки возврата');
+SELECT pg_temp.expect(paid_booking_cancel_own((SELECT (r->>'booking_id')::uuid FROM h3))->>'error'='under_review','после «Я оплатил» участник не отменяет сам');
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h3),true,'Участник передумал')->>'refundable_rub'='0','отмена при «со слов участника»: возвращать нечего');
+SELECT pg_temp.expect((SELECT payment_status FROM paid_bookings WHERE id=(SELECT (r->>'booking_id')::uuid FROM h3))='reported','«reported» не становится «нужен возврат»');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h3),2000,'попытка','refund-h3-01')->>'error'='refund_not_pending','нельзя вернуть по одному заявлению участника');
+SELECT pg_temp.expect(paid_booking_record_late_payment((SELECT (r->>'booking_id')::uuid FROM h3),2000,'Пришло в Сбер после отмены','late-h3-001')->>'payment_status'='refund_pending','позднее поступление на отменённую бронь → нужен возврат');
+SELECT pg_temp.expect(paid_booking_record_late_payment((SELECT (r->>'booking_id')::uuid FROM h3),2000,'дубль','late-h3-001')->>'already_processed'='true','повтор позднего поступления без дубля');
+SELECT pg_temp.expect((SELECT booking_status FROM paid_bookings WHERE id=(SELECT (r->>'booking_id')::uuid FROM h3))='cancelled','позднее поступление не восстанавливает бронь');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h3),2000,'Возврат позднего платежа','refund-h3-02')->>'payment_status'='refunded','позднее поступление возвращено');
+SET test.uid='00000000-0000-0000-0000-000000000002';
+SELECT pg_temp.expect(paid_booking_create_hold('20000000-0000-0000-0000-0000000000cc','key-r2-00001')->>'error'='idempotency_conflict','тот же ключ для другого события → конфликт');
+SELECT pg_temp.expect(paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r2-00001')->>'booking_status'='expired','повтор ключа истёкшей брони возвращает тот же (истёкший) результат');
 
 -- Отмена основателем подтверждённой брони и возврат: аудит, история сохраняется
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h),true,'')->>'error'='note_required','отмена основателем требует причину');
 SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h),true,'Перенос по болезни')->>'booking_status'='cancelled','основатель отменил подтверждённую бронь');
 SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE paid_booking_id=(SELECT (r->>'booking_id')::uuid FROM h))=0,'запись в календаре снята');
-SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'Возврат СБП')->>'payment_status'='refunded','возврат отмечен');
-SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'дубль')->>'already_processed'='true','повтор возврата без дубля');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),6000,'Возврат СБП','refund-h-001')->>'error'='refund_exceeds_received','возврат больше полученного (5000) отклонён');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'','refund-h-001')->>'error'='note_required','возврат без причины отклонён');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'Возврат СБП','refund-h-001')->>'payment_status'='partially_refunded','частичный возврат 2000');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'дубль','refund-h-001')->>'already_processed'='true','двойное нажатие возврата без дубля');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),3001,'Остаток','refund-h-002')->>'error'='refund_exceeds_received','остаток возврата не больше 3000');
+SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),3000,'Остаток наличными','refund-h-003')->>'payment_status'='refunded','остаток возврата 3000 → полностью возвращено');
 SELECT pg_temp.expect(pg_temp.lq($q$SELECT string_agg(kind, ',' ORDER BY id) FROM paid_booking_ledger WHERE booking_id=(SELECT (r->>'booking_id')::uuid FROM h)$q$)
-  ='hold_created,prepay_reported,prepay_verified,cash_received,cancelled_by_founder,refund_marked_pending,refund_issued','полный аудит брони в журнале');
+  ='hold_created,prepay_reported,prepay_verified,cash_received,cash_received,cancelled_by_founder,refund_marked_pending,refund_issued,refund_issued','полный аудит брони в журнале');
 RESET ROLE;
 SELECT pg_temp.raises($$UPDATE paid_booking_ledger SET amount_rub=0$$,'append-only','журнал нельзя изменить');
 SELECT pg_temp.raises($$DELETE FROM paid_bookings$$,'cannot be deleted','историю броней нельзя удалить');
@@ -178,6 +195,25 @@ SET test.uid='00000000-0000-0000-0000-000000000001';
 SELECT paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r1-00009');
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','free',null,null,null,null,null,null,null,null)$$,'paid_event_has_active_bookings','нельзя выключить оплату при активных бронях');
+
+-- P0-1: режим каждого события клуба известен клиенту
+SET test.uid='00000000-0000-0000-0000-000000000001';
+SELECT pg_temp.expect(paid_events_web()->'modes'->>'20000000-0000-0000-0000-0000000000f1'='free' AND paid_events_web()->'modes'->>'20000000-0000-0000-0000-0000000000a1'='paid','modes: режим для каждого события клуба');
+SELECT pg_temp.expect(NOT (paid_events_web()->'modes') ? '20000000-0000-0000-0000-0000000000b9','modes: события интенсива не попадают');
+-- P0-2: атомарное создание/правка
+SELECT pg_temp.expect(paid_event_save(null,'Выезд 2',null,now()+interval '9 days',now()+interval '9 days 2 hours',null,'#10b981',null,'paid',5000,2000,3000,5,120,null,'https://qr',null)->>'error'='forbidden','резидент не создаёт событие');
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+CREATE TEMP TABLE cnt AS SELECT count(*) AS n FROM schedules;
+SELECT pg_temp.raises($$SELECT paid_event_save(null,'Выезд 2',null,now()+interval '9 days',now()+interval '9 days 2 hours',null,'#10b981',null,'paid',5000,2000,2000,5,120,null,'https://qr',null)$$,'schedules_paid_prices_chk','ошибка цены при создании отклоняет весь вызов');
+SELECT pg_temp.expect((SELECT count(*) FROM schedules)=(SELECT n FROM cnt),'при ошибке настроек событие не создано (нет бесплатной публикации)');
+CREATE TEMP TABLE ns AS SELECT paid_event_save(null,'Выезд 2','Тема|||Текст',now()+interval '9 days',now()+interval '9 days 2 hours','Казань','#10b981',null,'paid',5000,2000,3000,5,120,'Условия','https://qr',null) AS r;
+SELECT pg_temp.expect((SELECT is_active AND booking_mode='paid' AND schedule_type='club' AND max_participants=5 FROM schedules WHERE id=(SELECT (r->>'schedule_id')::uuid FROM ns)),'платное событие создано сразу платным');
+SELECT pg_temp.raises($$SELECT paid_event_save((SELECT (r->>'schedule_id')::uuid FROM ns),'Выезд 2 новое',null,now()+interval '10 days',now()+interval '10 days 2 hours',null,'#10b981',null,'paid',5000,0,5000,5,120,null,'https://qr',null)$$,'schedules_paid_prices_chk','ошибка цены при правке отклоняет весь вызов');
+SELECT pg_temp.expect((SELECT title='Выезд 2' AND start_time < now()+interval '9 days 1 hour' FROM schedules WHERE id=(SELECT (r->>'schedule_id')::uuid FROM ns)),'при ошибке правки дата/название не изменились');
+SELECT pg_temp.expect(paid_event_save('20000000-0000-0000-0000-0000000000b9','x',null,now()+interval '1 day',now()+interval '1 day 1 hour',null,null,null,'paid',5000,2000,3000,5,120,null,'https://qr',null)->>'error'='not_club_event','paid_event_save не трогает интенсив');
+SET test.uid='00000000-0000-0000-0000-000000000005';
+UPDATE schedules SET title='Бесплатное (правка)' WHERE id='20000000-0000-0000-0000-0000000000f1';
+SELECT pg_temp.expect((SELECT title FROM schedules WHERE id='20000000-0000-0000-0000-0000000000f1')='Бесплатное (правка)','обычная правка бесплатного события как раньше');
 -- anon
 SET ROLE anon;
 SELECT pg_temp.raises($$SELECT paid_events_web()$$,'permission denied','anon не вызывает RPC');
