@@ -20,6 +20,11 @@ import { toast as sonnerToast } from 'sonner';
 import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
 import { FounderAttendancePanel } from './FounderAttendancePanel';
+import { PaidBookingsPanel } from './PaidBookingsPanel';
+import { PaidEventSettingsFields } from './PaidEventSettingsFields';
+import { PAID_BOOKINGS_ENABLED, emptyPaidSettings, validatePaidSettings, type PaidSettingsInput } from '@/components/web-app/paidBooking';
+
+const paidRpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 
 const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
@@ -95,6 +100,7 @@ export const ClubScheduleManagement: React.FC = () => {
   const [searchingProfiles, setSearchingProfiles] = useState(false);
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [paidSettings, setPaidSettings] = useState<PaidSettingsInput>(emptyPaidSettings);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -215,6 +221,20 @@ export const ClubScheduleManagement: React.FC = () => {
     }
 
     const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
+    const paidCheck = PAID_BOOKINGS_ENABLED ? validatePaidSettings(paidSettings) : null;
+    if (paidCheck && !paidCheck.ok) {
+      toast({ title: 'Ошибка', description: paidCheck.error, variant: 'destructive' });
+      return;
+    }
+    const savePaid = async (scheduleId: string) => {
+      if (!paidCheck?.ok) return;
+      const v = paidCheck.value;
+      const { data, error } = await paidRpc('paid_event_settings_save', v.mode === 'free'
+        ? { p_schedule_id: scheduleId, p_mode: 'free', p_price_total_rub: null, p_prepay_rub: null, p_cash_rub: null, p_max_participants: null, p_payment_window_minutes: null, p_cancellation_terms: null, p_payment_qr_url: null, p_payment_link: null }
+        : { p_schedule_id: scheduleId, p_mode: 'paid', p_price_total_rub: v.price_total_rub, p_prepay_rub: v.prepay_rub, p_cash_rub: v.cash_rub, p_max_participants: v.max_participants, p_payment_window_minutes: v.payment_window_minutes, p_cancellation_terms: v.cancellation_terms, p_payment_qr_url: v.payment_qr_url, p_payment_link: v.payment_link });
+      const r = data as { ok?: boolean; error?: string } | null;
+      if (error || !r?.ok) throw new Error(`Оплата не сохранена: ${error?.message ?? r?.error}`);
+    };
 
     try {
       // Combine theme and description with separator
@@ -246,9 +266,10 @@ export const ClubScheduleManagement: React.FC = () => {
           .eq('id', editingId);
 
         if (error) throw error;
+        await savePaid(editingId);
         toast({ title: 'Успех', description: 'Мероприятие обновлено' });
       } else {
-        const { error } = await supabase.from('schedules').insert({
+        const { data: created, error } = await supabase.from('schedules').insert({
           title: formData.activity,
           description: combinedDescription,
           start_time: toISO(formData.date, formData.start_time),
@@ -261,9 +282,10 @@ export const ClubScheduleManagement: React.FC = () => {
           color: formData.color,
           schedule_type: 'club',
           mastermind_group_id: mastermindGroupId,
-        });
+        }).select('id').single();
 
         if (error) throw error;
+        await savePaid(created.id);
         toast({ title: 'Успех', description: 'Мероприятие добавлено' });
       }
 
@@ -271,11 +293,12 @@ export const ClubScheduleManagement: React.FC = () => {
       setDialogOpen(false);
       setEditingId(null);
       setFormData(emptyForm);
+      setPaidSettings(emptyPaidSettings);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось сохранить мероприятие',
+        description: err instanceof Error && err.message.startsWith('Оплата') ? err.message : 'Не удалось сохранить мероприятие',
         variant: 'destructive',
       });
     }
@@ -300,6 +323,17 @@ export const ClubScheduleManagement: React.FC = () => {
       color: item.color || '#10b981',
       mastermind_group_id: item.mastermind_group_id || '',
     });
+    setPaidSettings(emptyPaidSettings);
+    if (PAID_BOOKINGS_ENABLED) {
+      void (supabase.from('schedules') as unknown as { select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: Record<string, unknown> | null }> } } })
+        .select('booking_mode,price_total_rub,prepay_rub,max_participants,payment_window_minutes,cancellation_terms,payment_qr_url,payment_link')
+        .eq('id', item.id).maybeSingle().then(({ data }) => {
+          if (data?.booking_mode !== 'paid') return;
+          const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+          setPaidSettings({ mode: 'paid', price_total_rub: str(data.price_total_rub), prepay_rub: str(data.prepay_rub), max_participants: str(data.max_participants),
+            payment_window_minutes: str(data.payment_window_minutes) || '120', cancellation_terms: str(data.cancellation_terms), payment_qr_url: str(data.payment_qr_url), payment_link: str(data.payment_link) });
+        });
+    }
     setDialogOpen(true);
   };
 
@@ -730,6 +764,8 @@ export const ClubScheduleManagement: React.FC = () => {
                   </Select>
                 </div>
 
+                {PAID_BOOKINGS_ENABLED && <PaidEventSettingsFields value={paidSettings} onChange={setPaidSettings} />}
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -866,6 +902,8 @@ export const ClubScheduleManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
+
+                          {PAID_BOOKINGS_ENABLED && <div className="mt-6"><PaidBookingsPanel scheduleId={item.id} /></div>}
 
                           {participants.length > 0 && (
                             <div className="mt-6"><FounderAttendancePanel scheduleId={item.id} /></div>

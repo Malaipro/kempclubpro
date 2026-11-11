@@ -76,7 +76,8 @@ export const WebScheduleView: React.FC<{ status: string | null; focusEventId?: s
       if (result.ok === false) throw new Error(result.error ?? 'Операция не выполнена');
       await load();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Операция не выполнена');
+      const msg = err instanceof Error ? err.message : '';
+      setError(msg.includes('paid_event_requires_verified_booking') ? 'Это платное мероприятие: запись появится после подтверждения предоплаты' : msg || 'Операция не выполнена');
     } finally {
       setBusyId(null);
     }
