@@ -95,7 +95,7 @@ Deno.serve(async req => {
         }
         const tgIds=profiles.filter(p=>p.telegram_id).map(p=>p.user_id);
         if(!tgIds.length)return {ok:true,selected:ids.length,telegram:{sent:0}}; // Never empty targets => all fallback in legacy bot.
-        const {data:broadcast,error}=await db.from('broadcast_messages').insert({text:p.text,audience:p.audience,buttons:p.buttons??[],file_url:p.file_url??null,status:'draft',recipients_count:0,created_by:auth.user.id,target_user_ids:tgIds}).select('id').single();
+        const {data:broadcast,error}=await db.from('broadcast_messages').insert({text:p.text,audience,buttons:p.buttons??[],file_url:p.file_url??null,status:'draft',recipients_count:0,created_by:auth.user.id,target_user_ids:tgIds}).select('id').single();
         if(error || !broadcast)throw new Error('broadcast_create_failed');
         const telegram=await invoke('send-broadcast',{broadcastId:broadcast.id});return {ok:true,selected:ids.length,telegram};
       },
