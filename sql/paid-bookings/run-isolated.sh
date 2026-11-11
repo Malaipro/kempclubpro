@@ -2,10 +2,9 @@
 # Локальная пустая PostgreSQL (НЕ production). Запуск: bash sql/paid-bookings/run-isolated.sh
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-D=/tmp/pg-paid; rm -rf $D; mkdir -p $D; chown -R postgres $D 2>/dev/null || true
-RUN="su postgres -s /bin/bash -c"
-id postgres >/dev/null 2>&1 || useradd -r postgres
-chown -R postgres $D
+D=/tmp/pg-paid; rm -rf $D; mkdir -p $D; chown -R lovable $D
+RUN="runuser -u lovable -- bash -c"
+
 $RUN "initdb -D $D/data -A trust >/dev/null && pg_ctl -D $D/data -o '-p 55433 -k $D' -l $D/log start -w >/dev/null"
 trap "$RUN 'pg_ctl -D $D/data stop -m fast >/dev/null'" EXIT
 P="psql -h $D -p 55433 -U postgres -v ON_ERROR_STOP=1 -q"
