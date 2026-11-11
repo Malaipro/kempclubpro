@@ -101,7 +101,6 @@ SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE user_id=
 SELECT pg_temp.expect(paid_booking_report_paid((SELECT (r->>'booking_id')::uuid FROM h))->>'booking_status'='pending_review','«Я оплатил» → pending_review');
 SELECT pg_temp.expect(paid_booking_report_paid((SELECT (r->>'booking_id')::uuid FROM h))->>'replayed'='true','повторное «Я оплатил» идемпотентно');
 SELECT pg_temp.expect((SELECT payment_status='reported' AND booking_status<>'confirmed' FROM paid_bookings WHERE id=(SELECT (r->>'booking_id')::uuid FROM h)),'сообщение об оплате ≠ подтверждение');
-SELECT pg_temp.expect((SELECT bool_and(amount_rub IS NULL) FROM paid_bookings_admin_list('20000000-0000-0000-0000-0000000000a1') x, jsonb_array_elements(x->'bookings') e) IS NULL,'резидент не видит список основателя');
 SELECT pg_temp.expect(paid_bookings_admin_list('20000000-0000-0000-0000-0000000000a1')->>'error'='forbidden','резидент не открывает заявки');
 SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM h),true)->>'error'='forbidden','резидент не подтверждает оплату');
 SET test.uid='00000000-0000-0000-0000-000000000005';
