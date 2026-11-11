@@ -124,3 +124,12 @@ export function parsePaidMeta(raw: unknown): PaidMeta {
 export function holdKeyScope(info: PaidEventInfo): string {
   return `${info.schedule_id}:${info.booking?.id ?? 'none'}:${info.booking?.booking_status ?? ''}`;
 }
+
+// P0-2: платное событие (или бывшее платным) сохраняется ТОЛЬКО атомарной серверной операцией
+// paid_event_save; бесплатные события — прежним путём. Пока текущие настройки не загружены — сохранять нельзя.
+export type PaidLoadState = 'ready' | 'loading' | 'error';
+export function eventSaveRoute(enabled: boolean, mode: 'free' | 'paid', wasPaid: boolean, load: PaidLoadState): 'legacy' | 'atomic' | 'blocked' {
+  if (!enabled) return 'legacy';
+  if (load !== 'ready') return 'blocked';
+  return mode === 'paid' || wasPaid ? 'atomic' : 'legacy';
+}
