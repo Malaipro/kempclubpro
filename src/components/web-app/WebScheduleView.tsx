@@ -4,6 +4,8 @@ import { useAppApi } from '@/components/app-shared/apiAdapter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usesClubCalendar } from './clubBooking';
+import { PAID_BOOKINGS_ENABLED, type PaidEventInfo } from './paidBooking';
+import { PaidBookingCard } from './PaidBookingCard';
 
 interface ScheduleItem {
   id: string;
@@ -33,13 +35,14 @@ const formatDate = (iso: string) => moscowDate(iso).toLocaleDateString('ru-RU', 
   weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
 });
 
-export const WebScheduleView: React.FC<{ status: string | null }> = ({ status }) => {
+export const WebScheduleView: React.FC<{ status: string | null; focusEventId?: string | null }> = ({ status, focusEventId = null }) => {
   const { callApi } = useAppApi();
   const clubCalendar = usesClubCalendar(status);
   const [data, setData] = useState<ScheduleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(focusEventId);
+  const [paid, setPaid] = useState<Map<string, PaidEventInfo>>(new Map());
 
   const load = useCallback(async () => {
     setError(null);
@@ -47,12 +50,22 @@ export const WebScheduleView: React.FC<{ status: string | null }> = ({ status })
       const response = await callApi<ScheduleResponse>(clubCalendar ? 'get_club_schedule' : 'get_schedule', { days: 90 });
       if (!response || !response.found) throw new Error(response?.error ?? 'Расписание недоступно');
       setData({ ...response, schedule: Array.isArray(response.schedule) ? response.schedule : [] });
+      if (PAID_BOOKINGS_ENABLED && clubCalendar) {
+        const info = await callApi<{ ok: boolean; events?: PaidEventInfo[] }>('get_paid_events').catch(() => null);
+        setPaid(new Map((info?.ok ? info.events ?? [] : []).map(e => [e.schedule_id, e])));
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить расписание');
     }
   }, [callApi, clubCalendar]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!focusEventId || !data) return;
+    if (!data.schedule.some(item => item.id === focusEventId)) { setError('Мероприятие недоступно или уже прошло'); return; }
+    setExpandedId(focusEventId);
+    requestAnimationFrame(() => document.getElementById(`event-${focusEventId}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  }, [focusEventId, data]);
 
   const updateBooking = async (action: 'book_session' | 'cancel_booking', id: string) => {
     if (!clubCalendar || !data?.schedule.some(item => item.id === id)) return;
@@ -103,7 +116,7 @@ export const WebScheduleView: React.FC<{ status: string | null }> = ({ status })
                 const expanded = expandedId === item.id;
                 const full = item.max_participants !== null && item.booked_count >= item.max_participants;
                 return (
-                  <Card key={item.id} className="overflow-hidden border-l-4 border-l-primary">
+                  <Card key={item.id} id={`event-${item.id}`} className="overflow-hidden border-l-4 border-l-primary">
                     <Button
                       variant="ghost"
                       type="button"
@@ -120,7 +133,9 @@ export const WebScheduleView: React.FC<{ status: string | null }> = ({ status })
                       <CardContent className="space-y-3 px-4 pb-4 pt-0">
                         {item.location && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}
                         {item.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.description.replace('|||', '\n')}</p>}
-                        {clubCalendar && (item.booked ? (
+                        {clubCalendar && paid.has(item.id) ? (
+                          <PaidBookingCard info={paid.get(item.id)!} onChanged={load} />
+                        ) : clubCalendar && (item.booked ? (
                           <div className="space-y-2">
                             <p className="rounded-md bg-primary/10 px-3 py-2 text-center text-xs font-semibold text-primary">Вы записаны</p>
                             <Button variant="outline" className="w-full" disabled={busyId === item.id} onClick={() => void updateBooking('cancel_booking', item.id)}>
