@@ -56,3 +56,13 @@ describe('idempotency key scope (P0-3)', () => {
   it('after hold created scope changes', () => assert.notEqual(holdKeyScope(base), holdKeyScope(booking('hold'))));
   it('after expiry a new booking cycle gets a new key', () => assert.notEqual(holdKeyScope(booking('hold')), holdKeyScope(booking('expired'))));
 });
+
+import { eventSaveRoute } from './paidBooking';
+describe('event save route (P0-2)', () => {
+  it('flag off: old save path', () => assert.equal(eventSaveRoute(false, 'paid', true, 'loading'), 'legacy'));
+  it('free event keeps old path', () => assert.equal(eventSaveRoute(true, 'free', false, 'ready'), 'legacy'));
+  it('paid event uses one atomic server call', () => assert.equal(eventSaveRoute(true, 'paid', false, 'ready'), 'atomic'));
+  it('paid → free also atomic', () => assert.equal(eventSaveRoute(true, 'free', true, 'ready'), 'atomic'));
+  it('save blocked while settings load', () => assert.equal(eventSaveRoute(true, 'free', false, 'loading'), 'blocked'));
+  it('save blocked when settings failed to load', () => assert.equal(eventSaveRoute(true, 'free', false, 'error'), 'blocked'));
+});

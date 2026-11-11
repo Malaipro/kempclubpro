@@ -7,15 +7,17 @@ import { toast } from 'sonner';
 import { rub, type BookingStatus, type PaymentStatus } from '@/components/web-app/paidBooking';
 
 type Booking = { id: string; name: string; booking_status: BookingStatus; payment_status: PaymentStatus; prepay_rub: number; cash_rub: number;
-  price_total_rub: number; cash_received_rub: number | null; hold_expires_at: string; reported_at: string | null;
+  price_total_rub: number; cash_received_rub: number | null; received_rub: number; refunded_rub: number; hold_expires_at: string; reported_at: string | null;
   ledger: { kind: string; amount_rub: number | null; note: string | null; at: string }[] | null };
 
 const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 const BOOKING: Record<BookingStatus, string> = { hold: 'Ожидает оплату', pending_review: 'Сообщил об оплате — проверить банк', confirmed: 'Подтверждён',
   cancelled: 'Отменён', expired: 'Истёк срок', rejected: 'Оплата не поступила' };
 const PAYMENT: Record<PaymentStatus, string> = { unpaid: 'не оплачено', reported: 'со слов участника', verified: 'предоплата получена',
-  not_received: 'не поступила', refund_pending: 'нужен возврат', refunded: 'возврат сделан' };
-const explain = (m: string) => /Could not find the function|schema cache/i.test(m) ? 'Платные брони ещё не включены на сервере' : m === 'forbidden' ? 'Только основатель управляет оплатами' : m;
+  not_received: 'не поступила', refund_pending: 'нужен возврат', partially_refunded: 'частично возвращено', refunded: 'возврат сделан' };
+const ERR: Record<string, string> = { invalid_amount: 'Сумма больше остатка или некорректна', refund_exceeds_received: 'Возврат больше подтверждённых поступлений',
+  note_required: 'Укажите комментарий (причину)', refund_not_pending: 'Возврат не требуется: подтверждённых денег нет', booking_not_closed: 'Бронь ещё активна' };
+const explain = (m: string) => ERR[m] ?? /Could not find the function|schema cache/i.test(m) ? 'Платные брони ещё не включены на сервере' : m === 'forbidden' ? 'Только основатель управляет оплатами' : m;
 const at = (iso: string) => new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' });
 
 export const PaidBookingsPanel: React.FC<{ scheduleId: string }> = ({ scheduleId }) => {
@@ -23,6 +25,10 @@ export const PaidBookingsPanel: React.FC<{ scheduleId: string }> = ({ scheduleId
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  // Одноразовый ключ на кнопку: двойное нажатие/повтор запроса не создаёт вторую операцию
+  const [keys, setKeys] = useState<Record<string, string>>({});
+  const keyFor = (id: string) => keys[id] ?? (keys[id] = crypto.randomUUID());
 
   const load = useCallback(async () => {
     const { data, error } = await rpc('paid_bookings_admin_list', { p_schedule_id: scheduleId });
@@ -38,6 +44,8 @@ export const PaidBookingsPanel: React.FC<{ scheduleId: string }> = ({ scheduleId
     const r = data as { ok?: boolean; error?: string; already_processed?: boolean } | null;
     setBusy(null);
     if (error || !r?.ok) { toast.error(explain(error?.message ?? r?.error ?? 'Ошибка')); return; }
+    setKeys(k => { const n = { ...k }; delete n[id]; return n; });
+    setAmounts(a => ({ ...a, [id]: '' }));
     toast.success(r.already_processed ? 'Уже обработано ранее' : success);
     await load();
   };
@@ -51,6 +59,9 @@ export const PaidBookingsPanel: React.FC<{ scheduleId: string }> = ({ scheduleId
       {rows.length === 0 && <p className="text-sm text-muted-foreground">Заявок пока нет</p>}
       {rows.map(b => {
         const note = notes[b.id] ?? '';
+        const amount = /^\d+$/.test(amounts[b.id] ?? '') ? Number(amounts[b.id]) : 0;
+        const cashLeft = b.cash_rub - (b.cash_received_rub ?? 0);
+        const refundable = b.received_rub - b.refunded_rub;
         return (
           <div key={b.id} className="space-y-2 rounded-md border border-border p-3 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -58,23 +69,29 @@ export const PaidBookingsPanel: React.FC<{ scheduleId: string }> = ({ scheduleId
               <Badge variant="outline">{BOOKING[b.booking_status]} · {PAYMENT[b.payment_status]}</Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              Предоплата {rub(b.prepay_rub)} · наличными {rub(b.cash_rub)}{b.cash_received_rub ? ` (получено ${rub(b.cash_received_rub)})` : ''}
+              Предоплата {rub(b.prepay_rub)} · наличными {rub(b.cash_rub)}{b.cash_received_rub ? ` (получено ${rub(b.cash_received_rub)}, осталось ${rub(cashLeft)})` : ''}
+              {' '}· подтверждено денег {rub(b.received_rub)}{b.refunded_rub ? ` · возвращено ${rub(b.refunded_rub)}` : ''}
               {b.booking_status === 'hold' && ` · держим до ${at(b.hold_expires_at)}`}{b.reported_at && ` · сообщил ${at(b.reported_at)}`}
             </p>
-            <Input placeholder="Комментарий (номер операции, причина)" value={note} onChange={e => setNotes({ ...notes, [b.id]: e.target.value })} />
+            <div className="flex gap-2">
+              <Input placeholder="Комментарий (номер операции, причина)" value={note} onChange={e => setNotes({ ...notes, [b.id]: e.target.value })} />
+              <Input className="w-28" inputMode="numeric" placeholder="Сумма ₽" value={amounts[b.id] ?? ''} onChange={e => setAmounts({ ...amounts, [b.id]: e.target.value })} />
+            </div>
             <div className="flex flex-wrap gap-2">
               {b.booking_status === 'pending_review' && <>
                 <Button size="sm" disabled={busy === b.id} onClick={() => void act(b.id, 'paid_booking_decide', { p_received: true, p_note: note || null }, 'Запись подтверждена')}>Подтвердить поступление</Button>
                 <Button size="sm" variant="outline" disabled={busy === b.id} onClick={() => void act(b.id, 'paid_booking_decide', { p_received: false, p_note: note || null }, 'Отмечено: не поступила')}>Не поступил</Button>
               </>}
-              {b.booking_status === 'confirmed' && !b.cash_received_rub && b.cash_rub > 0 &&
-                <Button size="sm" variant="outline" disabled={busy === b.id} onClick={() => void act(b.id, 'paid_booking_mark_cash', { p_amount_rub: b.cash_rub }, 'Наличные отмечены')}>Получил наличные {rub(b.cash_rub)}</Button>}
+              {b.booking_status === 'confirmed' && cashLeft > 0 &&
+                <Button size="sm" variant="outline" disabled={busy === b.id || amount <= 0 || amount > cashLeft} onClick={() => void act(b.id, 'paid_booking_mark_cash', { p_amount_rub: amount, p_request_key: keyFor(b.id) }, 'Наличные отмечены')}>Получил наличные (до {rub(cashLeft)})</Button>}
               {['hold', 'pending_review', 'confirmed'].includes(b.booking_status) && <>
                 <Button size="sm" variant="ghost" disabled={busy === b.id || note.trim().length < 3} onClick={() => void act(b.id, 'paid_booking_founder_cancel', { p_refund_due: false, p_note: note }, 'Бронь отменена')}>Отменить без возврата</Button>
-                {b.payment_status !== 'unpaid' && <Button size="sm" variant="ghost" disabled={busy === b.id || note.trim().length < 3} onClick={() => void act(b.id, 'paid_booking_founder_cancel', { p_refund_due: true, p_note: note }, 'Отменено, возврат к выполнению')}>Отменить с возвратом</Button>}
+                {refundable > 0 && <Button size="sm" variant="ghost" disabled={busy === b.id || note.trim().length < 3} onClick={() => void act(b.id, 'paid_booking_founder_cancel', { p_refund_due: true, p_note: note }, 'Отменено, возврат к выполнению')}>Отменить с возвратом</Button>}
               </>}
-              {b.payment_status === 'refund_pending' &&
-                <Button size="sm" variant="outline" disabled={busy === b.id} onClick={() => void act(b.id, 'paid_booking_mark_refunded', { p_amount_rub: b.prepay_rub + (b.cash_received_rub ?? 0), p_note: note || null }, 'Возврат отмечен')}>Возврат сделан</Button>}
+              {['refund_pending', 'partially_refunded'].includes(b.payment_status) && refundable > 0 &&
+                <Button size="sm" variant="outline" disabled={busy === b.id || amount <= 0 || amount > refundable || note.trim().length < 3} onClick={() => void act(b.id, 'paid_booking_mark_refunded', { p_amount_rub: amount, p_note: note, p_request_key: keyFor(b.id) }, 'Возврат отмечен')}>Вернул деньги (до {rub(refundable)})</Button>}
+              {['cancelled', 'rejected', 'expired'].includes(b.booking_status) &&
+                <Button size="sm" variant="ghost" disabled={busy === b.id || amount <= 0 || note.trim().length < 3} onClick={() => void act(b.id, 'paid_booking_record_late_payment', { p_amount_rub: amount, p_note: note, p_request_key: keyFor(b.id) }, 'Позднее поступление записано — нужен возврат')}>Деньги пришли после закрытия</Button>}
             </div>
             {b.ledger && <details className="text-xs text-muted-foreground"><summary>История ({b.ledger.length})</summary>
               {b.ledger.map((l, i) => <p key={i}>{at(l.at)} · {l.kind}{l.amount_rub ? ` · ${rub(l.amount_rub)}` : ''}{l.note ? ` · ${l.note}` : ''}</p>)}</details>}

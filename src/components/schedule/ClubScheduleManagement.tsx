@@ -579,6 +579,9 @@ export const ClubScheduleManagement: React.FC = () => {
             if (!open) {
               setEditingId(null);
               setFormData(emptyForm);
+              setPaidSettings(emptyPaidSettings);
+              setWasPaid(false);
+              setPaidLoad('ready');
             }
           }}>
             <DialogTrigger asChild>
