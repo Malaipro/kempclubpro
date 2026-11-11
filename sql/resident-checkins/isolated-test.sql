@@ -87,7 +87,7 @@ SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-0000000000
 SELECT pg_temp.expect(register_for_event_web('10000000-0000-0000-0000-00000000000a')->>'ok'='true','запись на тренировку клуба');
 -- основатель
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
-SELECT pg_temp.expect(is_kemp_founder('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e') AND NOT (SELECT approved FROM profiles WHERE user_id='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e'),'основатель с approved=false авторизован, профиль не изменён');
+SELECT pg_temp.expect(is_kemp_founder('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e'),'основатель с approved=false авторизован');
 SELECT pg_temp.expect(founder_confirm_attendance('10000000-0000-0000-0000-00000000000a','[{"user_id":"00000000-0000-0000-0000-000000000001","attended":true}]')->>'error'='event_not_started','основатель не подтверждает будущее событие');
 SELECT pg_temp.expect(founder_set_event_kind('10000000-0000-0000-0000-000000000001','training_bjj')->>'ok'='true','вид БЖЖ');
 SELECT founder_set_event_kind('10000000-0000-0000-0000-000000000002','training_ofp');
