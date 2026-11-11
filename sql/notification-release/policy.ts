@@ -8,8 +8,16 @@ export function acceptsProfile(audience: Audience, profile: { approved: boolean 
   if (audience === 'intensive') return profile.participant_status === 'intensive_active';
   return audience === 'all';
 }
-export function requireFounder(id: string, superAdmin: boolean, approved: boolean): void {
-  if (id !== FOUNDER_ID || !superAdmin || !approved) throw new Error('forbidden');
+// Admin authorization: exact founder account + super_admin role. profiles.approved is NOT checked for the sender.
+export function requireFounder(id: string, superAdmin: boolean): void {
+  if (id !== FOUNDER_ID || superAdmin !== true) throw new Error('forbidden');
+}
+// The Telegram group is one shared chat: it cannot be targeted by participant status.
+// Audience is required for personal/push channels and forbidden for a group-only send.
+export function validateAudience(channels: Channel[], audience: Audience | undefined): void {
+  const targeted = channels.some(c => c !== 'telegram_group');
+  if (targeted && !audience) throw new Error('audience_required');
+  if (!targeted && audience !== undefined) throw new Error('group_has_no_audience');
 }
 export function recipientIds(audience: Audience, profiles: { user_id: string; approved: boolean | null; participant_status: string | null }[]): string[] {
   return [...new Set(profiles.filter(p => acceptsProfile(audience, p)).map(p => p.user_id))];
