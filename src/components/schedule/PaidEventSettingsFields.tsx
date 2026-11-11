@@ -32,7 +32,7 @@ export const PaidEventSettingsFields: React.FC<{ value: PaidSettingsInput; onCha
           <div><Label>QR из вашего банка (https-ссылка на изображение)</Label><Input value={value.payment_qr_url} onChange={set('payment_qr_url')} placeholder="https://..." /></div>
           <div><Label>Ссылка на оплату из банка</Label><Input value={value.payment_link} onChange={set('payment_link')} placeholder="https://..." /></div>
           <div><Label>Условия отмены и возврата</Label><Textarea value={value.cancellation_terms} onChange={set('cancellation_terms')} rows={3} placeholder="Сформулируйте условия; формулировку о невозвратности согласуйте с юристом" /></div>
-          {!check.ok && <p className="text-xs text-destructive">{check.error}</p>}
+          {'error' in check && <p className="text-xs text-destructive">{check.error}</p>}
         </>
       )}
     </div>

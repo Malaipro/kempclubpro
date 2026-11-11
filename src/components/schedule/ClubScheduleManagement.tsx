@@ -222,7 +222,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
     const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
     const paidCheck = PAID_BOOKINGS_ENABLED ? validatePaidSettings(paidSettings) : null;
-    if (paidCheck && !paidCheck.ok) {
+    if (paidCheck && 'error' in paidCheck) {
       toast({ title: 'Ошибка', description: paidCheck.error, variant: 'destructive' });
       return;
     }
