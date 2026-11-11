@@ -11,8 +11,9 @@ END $$;
 DROP TRIGGER IF EXISTS schedule_participants_paid_guard ON public.schedule_participants;
 DROP TRIGGER IF EXISTS schedules_paid_settings_guard ON public.schedules;
 DROP FUNCTION IF EXISTS public.paid_event_settings_save(uuid,text,integer,integer,integer,integer,integer,text,text,text),
-  public.paid_booking_mark_refunded(uuid,integer,text), public.paid_booking_founder_cancel(uuid,boolean,text),
-  public.paid_booking_mark_cash(uuid,integer), public.paid_booking_decide(uuid,boolean,text), public.paid_bookings_admin_list(uuid),
+  public.paid_booking_mark_refunded(uuid,integer,text,text), public.paid_booking_record_late_payment(uuid,integer,text,text),
+  public.paid_event_save(uuid,text,text,timestamptz,timestamptz,text,text,uuid,text,integer,integer,integer,integer,integer,text,text,text),
+  public.paid_booking_founder_cancel(uuid,boolean,text), public.paid_booking_mark_cash(uuid,integer,text), public.paid_booking_money(uuid), public.paid_booking_decide(uuid,boolean,text), public.paid_bookings_admin_list(uuid),
   public.paid_booking_cancel_own(uuid), public.paid_booking_report_paid(uuid), public.paid_booking_create_hold(uuid,text),
   public.paid_events_web(), public.paid_seats_used(uuid), public.paid_expire_stale_holds(uuid),
   public.guard_paid_schedule_settings(), public.enforce_paid_participation();
