@@ -1,9 +1,6 @@
 \set ON_ERROR_STOP on
 CREATE FUNCTION pg_temp.expect(cond boolean, label text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN IF NOT cond THEN RAISE EXCEPTION 'FAIL: %', label; END IF; RAISE NOTICE 'OK: %', label; END $$;
-DO $$ BEGIN
-  BEGIN EXECUTE pg_read_file('/dev/null'); END;
-END $$;
 \set ON_ERROR_STOP off
 \i sql/paid-bookings/down.sql
 \set ON_ERROR_STOP on

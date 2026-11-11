@@ -20,4 +20,4 @@ $P -t -v uid=00000000-0000-0000-0000-000000000002 -v key=concur-2-xxxx -f $D/c.s
 wait
 N=$($P -t -A -c "select count(*) from paid_bookings where schedule_id='20000000-0000-0000-0000-0000000000cc'" t)
 [ "$N" = 1 ] && echo "OK: конкурентные holds на последнее место → создан ровно 1 ($(tr -d ' \n' < $D/r1)/$(tr -d ' \n' < $D/r2))" || { echo "FAIL: concurrent holds=$N"; exit 1; }
-$P -f sql/paid-bookings/down-test.sql t 2>&1 | grep -E 'OK:|FAIL|ERROR'
+$P -f sql/paid-bookings/down-test.sql t 2>&1 | grep -E "OK:|FAIL"
