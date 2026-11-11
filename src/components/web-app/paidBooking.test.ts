@@ -35,3 +35,24 @@ describe('paid settings validation', () => {
   it('requires seat limit', () => assert.equal(validatePaidSettings({ ...ok, max_participants: '' }).ok, false));
   it('rejects fractional rubles', () => assert.equal(validatePaidSettings({ ...ok, price_total_rub: '50.5' }).ok, false));
 });
+
+import { bookingGate, holdKeyScope, parsePaidMeta } from './paidBooking';
+describe('fail-closed booking gate (P0-1)', () => {
+  const meta = parsePaidMeta({ ok: true, modes: { f: 'free', s: 'paid', x: 'paid' }, events: [base] });
+  it('flag off keeps old free behaviour', () => assert.equal(bookingGate('s', { status: 'error' }, false).kind, 'free'));
+  it('failed paid metadata blocks every booking', () => {
+    assert.equal(bookingGate('f', parsePaidMeta(null), true).kind, 'blocked');
+    assert.equal(bookingGate('s', parsePaidMeta({ ok: false, error: 'boom' }), true).kind, 'blocked');
+  });
+  it('still loading blocks booking', () => assert.equal(bookingGate('f', { status: 'loading' }, true).kind, 'blocked'));
+  it('known free event books as before', () => assert.equal(bookingGate('f', meta, true).kind, 'free'));
+  it('paid event uses paid card', () => assert.equal(bookingGate('s', meta, true).kind, 'paid'));
+  it('stale list: paid without details is blocked, not free', () => assert.equal(bookingGate('x', meta, true).kind, 'blocked'));
+  it('unknown event (not in modes) is blocked', () => assert.equal(bookingGate('new', meta, true).kind, 'blocked'));
+  it('response without modes is an error', () => assert.equal(parsePaidMeta({ ok: true, events: [] }).status, 'error'));
+});
+describe('idempotency key scope (P0-3)', () => {
+  it('same lifecycle keeps key scope (network retry)', () => assert.equal(holdKeyScope(base), holdKeyScope({ ...base, seats_left: 0 })));
+  it('after hold created scope changes', () => assert.notEqual(holdKeyScope(base), holdKeyScope(booking('hold'))));
+  it('after expiry a new booking cycle gets a new key', () => assert.notEqual(holdKeyScope(booking('hold')), holdKeyScope(booking('expired'))));
+});
