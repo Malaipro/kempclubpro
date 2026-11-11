@@ -5,7 +5,7 @@ cd "$(dirname "$0")/../.."
 D=/tmp/pg-paid; rm -rf $D; mkdir -p $D; chown -R lovable $D
 RUN="setpriv --reuid=1000 --regid=1000 --clear-groups bash -c"
 
-$RUN "initdb -D $D/data -A trust >/dev/null && pg_ctl -D $D/data -o '-p 55433 -k $D' -l $D/log start -w >/dev/null"
+$RUN "initdb -U postgres -D $D/data -A trust >/dev/null && pg_ctl -D $D/data -o '-p 55433 -k $D' -l $D/log start -w >/dev/null"
 trap "$RUN 'pg_ctl -D $D/data stop -m fast >/dev/null'" EXIT
 P="psql -h $D -p 55433 -U postgres -v ON_ERROR_STOP=1 -q"
 $P -c 'create database t' postgres
