@@ -133,19 +133,43 @@ END $$;
 CREATE TRIGGER schedule_participants_paid_guard BEFORE INSERT OR UPDATE OR DELETE ON public.schedule_participants
   FOR EACH ROW EXECUTE FUNCTION public.enforce_paid_participation();
 
--- Платные настройки события меняет только основатель; нельзя снять «платно» при активных бронях
+-- Платным событием полностью управляет только конкретный founder+super_admin.
+-- Free-события сохраняют прежние admin/trainer ACL. Free -> paid запрещён,
+-- если уже есть любые schedule_participants: старые бесплатные записи не становятся paid.
 CREATE FUNCTION public.guard_paid_schedule_settings() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_seats_used integer;
 BEGIN
   IF TG_OP = 'INSERT' THEN
     IF NEW.booking_mode = 'paid' AND NOT public.is_kemp_founder(auth.uid()) THEN RAISE EXCEPTION 'paid_settings_founder_only'; END IF;
     RETURN NEW;
   END IF;
-  IF (NEW.booking_mode, NEW.price_total_rub, NEW.prepay_rub, NEW.cash_rub, NEW.payment_window_minutes,
-      NEW.cancellation_terms, NEW.payment_qr_url, NEW.payment_link, NEW.max_participants, NEW.schedule_type)
-     IS DISTINCT FROM (OLD.booking_mode, OLD.price_total_rub, OLD.prepay_rub, OLD.cash_rub, OLD.payment_window_minutes,
-      OLD.cancellation_terms, OLD.payment_qr_url, OLD.payment_link, OLD.max_participants, OLD.schedule_type)
-     AND (OLD.booking_mode = 'paid' OR NEW.booking_mode = 'paid') AND NOT public.is_kemp_founder(auth.uid()) THEN
-    RAISE EXCEPTION 'paid_settings_founder_only';
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.booking_mode = 'paid' AND NOT public.is_kemp_founder(auth.uid()) THEN
+      RAISE EXCEPTION 'paid_event_founder_only';
+    END IF;
+    RETURN OLD;
+  END IF;
+  -- Все текущие и будущие поля paid-события (кроме технического updated_at)
+  -- защищены одной проверкой; новое столбцовое поле не окажется незащищённым по умолчанию.
+  IF (OLD.booking_mode = 'paid' OR NEW.booking_mode = 'paid')
+     AND (to_jsonb(NEW) - 'updated_at') IS DISTINCT FROM (to_jsonb(OLD) - 'updated_at')
+     AND NOT public.is_kemp_founder(auth.uid()) THEN
+    RAISE EXCEPTION 'paid_event_founder_only';
+  END IF;
+  IF OLD.booking_mode = 'free' AND NEW.booking_mode = 'paid'
+     AND EXISTS (SELECT 1 FROM public.schedule_participants WHERE schedule_id = OLD.id) THEN
+    RAISE EXCEPTION 'paid_event_has_legacy_registrations';
+  END IF;
+  IF NEW.booking_mode = 'paid' AND NEW.max_participants IS DISTINCT FROM OLD.max_participants THEN
+    SELECT
+      (SELECT count(*) FROM public.schedule_participants WHERE schedule_id = OLD.id)
+      + (SELECT count(*) FROM public.paid_bookings
+          WHERE schedule_id = OLD.id
+            AND ((booking_status = 'hold' AND hold_expires_at > now()) OR booking_status = 'pending_review'))
+      INTO v_seats_used;
+    IF NEW.max_participants < v_seats_used THEN
+      RAISE EXCEPTION 'paid_event_capacity_below_reserved';
+    END IF;
   END IF;
   IF OLD.booking_mode = 'paid' AND NEW.booking_mode = 'free'
      AND EXISTS (SELECT 1 FROM paid_bookings WHERE schedule_id = OLD.id AND booking_status IN ('hold','pending_review','confirmed')) THEN
@@ -153,7 +177,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
-CREATE TRIGGER schedules_paid_settings_guard BEFORE INSERT OR UPDATE ON public.schedules
+CREATE TRIGGER schedules_paid_settings_guard BEFORE INSERT OR UPDATE OR DELETE ON public.schedules
   FOR EACH ROW EXECUTE FUNCTION public.guard_paid_schedule_settings();
 
 -- 4. Внутренние помощники (не выдаются клиентам)

@@ -1,5 +1,7 @@
 # E1 — платные мероприятия с бронями: отчёт (2026-11-11)
 
+Schema-compatibility continuation and current P0 verification: `SCHEMA-COMPAT-2026-11-11.md`.
+
 Статус: код и SQL подготовлены, **ничего не применено к production**, Edge Functions/бот/публикация не трогались,
 реальных платежей и рассылок нет. Блок «Отметки + Push» (`sql/READINESS-2026-11-11.md`) не изменён.
 
