@@ -1,6 +1,8 @@
+// STAGED ONLY. Replacement for supabase/functions/send-broadcast/index.ts; deploy only after explicit approval.
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { isFounderSender } from "../_shared/founderGuard.ts"
 
 interface BroadcastPayload {
   broadcastId?: string
@@ -66,20 +68,21 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
-  const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc(
-    'is_admin',
+  // Founder-only: exact verified account + super_admin. profiles.approved is intentionally not checked.
+  const { data: isSuperAdmin, error: roleError } = await supabaseAdmin.rpc(
+    'is_super_admin',
     { _user_id: userData.user.id }
   )
 
   if (roleError) {
-    console.error('is_admin check failed:', roleError.message)
+    console.error('is_super_admin check failed:', roleError.message)
     return new Response(
       JSON.stringify({ ok: false, error: 'role_check_failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
-  if (isAdmin !== true) {
+  if (!isFounderSender(userData.user.id, isSuperAdmin === true)) {
     return new Response(
       JSON.stringify({ ok: false, error: 'forbidden' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
