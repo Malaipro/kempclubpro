@@ -7,7 +7,7 @@ GRANT USAGE ON SCHEMA auth, public TO anon, authenticated, service_role;
 CREATE TYPE schedule_type AS ENUM ('intensive','club');
 CREATE TABLE profiles(user_id uuid PRIMARY KEY, participant_status text, approved boolean, display_name text, first_name text, last_name text);
 CREATE TABLE user_roles(user_id uuid, role text);
-CREATE TABLE schedules(id uuid PRIMARY KEY, title text, activity_type text, description text, end_time timestamptz, location text, color text, mastermind_group_id uuid, instructor_id uuid, stream_id uuid, start_time timestamptz, is_active boolean DEFAULT true,
+CREATE TABLE schedules(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), title text, activity_type text, description text, end_time timestamptz, location text, color text, mastermind_group_id uuid, instructor_id uuid, stream_id uuid, start_time timestamptz, is_active boolean DEFAULT true,
   schedule_type schedule_type, max_participants integer, updated_at timestamptz DEFAULT now());
 CREATE TABLE schedule_participants(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), schedule_id uuid REFERENCES schedules(id) ON DELETE CASCADE, user_id uuid,
   registered_at timestamptz DEFAULT now(), attended boolean DEFAULT false, UNIQUE(schedule_id,user_id));
