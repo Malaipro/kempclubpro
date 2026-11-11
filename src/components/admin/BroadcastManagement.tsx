@@ -244,6 +244,8 @@ export const BroadcastManagement: React.FC = () => {
 
   useEffect(() => { setRequestId(null); setReport(null); }, [text, audience, sendPersonal, sendToGroup, sendPush, pushTitle, pushBody, pushUrl, topic, buttons, file]);
 
+  const groupOnly = sendToGroup && !sendPersonal && !sendPush;
+
   const handleSend = async () => {
     const channels = [sendPersonal ? 'telegram_personal' : null, sendToGroup ? 'telegram_group' : null, sendPush ? 'push' : null].filter(Boolean);
     if (!channels.length) { toast({title:'Выберите канал',variant:'destructive'}); return; }
@@ -261,7 +263,7 @@ export const BroadcastManagement: React.FC = () => {
       }
       const validButtons = buttons.filter(isButtonValid).map(b=>({...b,id:b.id??crypto.randomUUID(),label:b.label.trim()}));
       const {data,error} = await supabase.functions.invoke('dispatch-club-notification', {body:{
-        operation:'send',request_id:id,channels,audience,text:text.trim(),title:pushTitle.trim(),body:pushBody.trim() || text.trim(),url,
+        operation:'send',request_id:id,channels,audience:groupOnly?undefined:audience,text:text.trim(),title:pushTitle.trim(),body:pushBody.trim() || text.trim(),url,
         topic_id:GROUP_TOPICS.find(t=>t.value===topic)?.threadId??null,buttons:validButtons,file_url:fileUrl,
       }});
       if(error) throw new Error(error instanceof FunctionsHttpError ? await error.context.text() : error.message);
@@ -318,8 +320,9 @@ export const BroadcastManagement: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Аудитория</Label>
+          {sendToGroup && <p className="text-sm text-muted-foreground">Групповой чат получают все его участники — аудитория к группе не применяется.</p>}
+          {!groupOnly && <div className="space-y-2">
+            <Label>Аудитория{sendToGroup ? ' (только для личных сообщений и Push)' : ''}</Label>
             <Select value={audience} onValueChange={(v) => setAudience(v as Audience)}>
               <SelectTrigger className="w-full sm:w-72">
                 <SelectValue />
@@ -331,7 +334,7 @@ export const BroadcastManagement: React.FC = () => {
                 <SelectItem value="all">Все допущенные пользователи</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </div>}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
