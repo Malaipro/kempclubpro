@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { clubCalendarItems, usesClubCalendar } from '@/components/web-app/clubBooking';
 
 /**
  * Единый адаптер доступа к данным Mini App.
@@ -97,20 +98,52 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       }
       return payload as T;
     }
-    case 'get_schedule': {
+    case 'get_schedule':
+    case 'get_club_schedule': {
       await currentUserId();
       const { data, error } = await supabase.rpc('get_schedule_web', {
         p_days: typeof payload.days === 'number' ? payload.days : 90,
       });
       if (error) throw new Error(error.message);
       if (!data || typeof data !== 'object') throw new Error('Пустой ответ сервера');
+      if (action === 'get_club_schedule') {
+        const response = data as { found?: boolean; status?: string; schedule?: { id: string }[]; error?: string };
+        if (!response.found) throw new Error(response.error ?? 'Расписание недоступно');
+        if (!usesClubCalendar(response.status)) throw new Error('Расписание клуба доступно только резидентам');
+        const { data: clubEvents, error: clubError } = await supabase
+          .from('schedules').select('id').eq('schedule_type', 'club').eq('is_active', true);
+        if (clubError) throw new Error(clubError.message);
+        return { ...response, schedule: clubCalendarItems(response.schedule ?? [], (clubEvents ?? []).map(event => event.id)) } as T;
+      }
       return data as T;
     }
     case 'book_session': {
       await currentUserId();
       const scheduleId = payload.schedule_id;
       if (typeof scheduleId !== 'string') throw new Error('schedule_id_required');
+      const { data: event, error: eventError } = await supabase
+        .from('schedules').select('schedule_type').eq('id', scheduleId).eq('is_active', true).maybeSingle();
+      if (eventError) throw new Error(eventError.message);
+      if (event?.schedule_type !== 'club') throw new Error('Запись доступна только на события календаря клуба');
       const { data, error } = await supabase.rpc('register_for_event_web', { p_schedule_id: scheduleId });
+      if (error) throw new Error(error.message);
+      return data as T;
+    }
+    case 'get_paid_events': {
+      await currentUserId();
+      // RPC появится только после применения sql/paid-bookings/up.sql
+      const { data, error } = await (supabase.rpc as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>)('paid_events_web');
+      if (error) throw new Error(error.message);
+      return data as T;
+    }
+    case 'paid_hold':
+    case 'paid_report':
+    case 'paid_cancel': {
+      await currentUserId();
+      const rpc = supabase.rpc as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { data, error } = action === 'paid_hold'
+        ? await rpc('paid_booking_create_hold', { p_schedule_id: payload.schedule_id, p_idempotency_key: payload.idempotency_key })
+        : await rpc(action === 'paid_report' ? 'paid_booking_report_paid' : 'paid_booking_cancel_own', { p_booking_id: payload.booking_id });
       if (error) throw new Error(error.message);
       return data as T;
     }
@@ -172,6 +205,11 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       });
       if (error) throw new Error(error.message);
       return data as T;
+    }
+    case 'get_resident_checkins': return await rpc('get_resident_checkins_web', { p_weeks: 12 }) as T;
+    case 'request_attendance': {
+      if (typeof payload.schedule_id !== 'string') throw new Error('schedule_id_required');
+      return await rpc('request_attendance_web', { p_schedule_id: payload.schedule_id }) as T;
     }
     case 'get_rating': return await rpc('get_rating_web') as T;
     case 'get_resident_rating': return await rpc('get_resident_rating_web') as T;

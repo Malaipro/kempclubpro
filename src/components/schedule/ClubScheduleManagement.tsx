@@ -19,6 +19,13 @@ import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWeek } from '@/lib/mskTime';
 
+import { FounderAttendancePanel } from './FounderAttendancePanel';
+import { PaidBookingsPanel } from './PaidBookingsPanel';
+import { PaidEventSettingsFields } from './PaidEventSettingsFields';
+import { PAID_BOOKINGS_ENABLED, emptyPaidSettings, eventSaveRoute, validatePaidSettings, type PaidLoadState, type PaidSettingsInput } from '@/components/web-app/paidBooking';
+
+const paidRpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+
 const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
 interface ScheduleItem {
@@ -93,6 +100,10 @@ export const ClubScheduleManagement: React.FC = () => {
   const [searchingProfiles, setSearchingProfiles] = useState(false);
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [paidSettings, setPaidSettings] = useState<PaidSettingsInput>(emptyPaidSettings);
+  const [paidLoad, setPaidLoad] = useState<PaidLoadState>('ready');
+  const [wasPaid, setWasPaid] = useState(false);
+  const saveRoute = eventSaveRoute(PAID_BOOKINGS_ENABLED, paidSettings.mode, wasPaid, paidLoad);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -213,6 +224,15 @@ export const ClubScheduleManagement: React.FC = () => {
     }
 
     const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
+    const paidCheck = PAID_BOOKINGS_ENABLED ? validatePaidSettings(paidSettings) : null;
+    if (paidCheck && 'error' in paidCheck) {
+      toast({ title: 'Ошибка', description: paidCheck.error, variant: 'destructive' });
+      return;
+    }
+    if (saveRoute === 'blocked') {
+      toast({ title: 'Подождите', description: paidLoad === 'error' ? 'Не удалось загрузить настройки оплаты — сохранение заблокировано' : 'Загружаем настройки оплаты', variant: 'destructive' });
+      return;
+    }
 
     try {
       // Combine theme and description with separator
@@ -225,7 +245,22 @@ export const ClubScheduleManagement: React.FC = () => {
           ? formData.mastermind_group_id
           : null;
 
-      if (editingId) {
+      if (saveRoute === 'atomic' && paidCheck?.ok) {
+        // Одна серверная транзакция: событие и оплата сохраняются вместе или не сохраняются вовсе
+        const v = paidCheck.value;
+        const paid = v.mode === 'paid' ? v : null;
+        const { data, error } = await paidRpc('paid_event_save', {
+          p_schedule_id: editingId, p_title: formData.activity, p_description: combinedDescription,
+          p_start: toISO(formData.date, formData.start_time), p_end: toISO(formData.date, formData.end_time),
+          p_location: formData.location || null, p_color: formData.color, p_mastermind_group_id: mastermindGroupId, p_mode: v.mode,
+          p_price_total_rub: paid?.price_total_rub ?? null, p_prepay_rub: paid?.prepay_rub ?? null, p_cash_rub: paid?.cash_rub ?? null,
+          p_max_participants: paid?.max_participants ?? null, p_payment_window_minutes: paid?.payment_window_minutes ?? null,
+          p_cancellation_terms: paid?.cancellation_terms ?? null, p_payment_qr_url: paid?.payment_qr_url ?? null, p_payment_link: paid?.payment_link ?? null,
+        });
+        const r = data as { ok?: boolean; error?: string } | null;
+        if (error || !r?.ok) throw new Error(`Оплата не сохранена: ${error?.message ?? r?.error}`);
+        toast({ title: 'Успех', description: editingId ? 'Мероприятие обновлено' : 'Мероприятие добавлено' });
+      } else if (editingId) {
         const { error } = await supabase
           .from('schedules')
           .update({
@@ -269,11 +304,13 @@ export const ClubScheduleManagement: React.FC = () => {
       setDialogOpen(false);
       setEditingId(null);
       setFormData(emptyForm);
+      setPaidSettings(emptyPaidSettings);
+      setWasPaid(false);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
         title: 'Ошибка',
-        description: 'Не удалось сохранить мероприятие',
+        description: err instanceof Error && err.message.startsWith('Оплата') ? err.message : 'Не удалось сохранить мероприятие',
         variant: 'destructive',
       });
     }
@@ -298,6 +335,22 @@ export const ClubScheduleManagement: React.FC = () => {
       color: item.color || '#10b981',
       mastermind_group_id: item.mastermind_group_id || '',
     });
+    setPaidSettings(emptyPaidSettings);
+    setWasPaid(false);
+    if (PAID_BOOKINGS_ENABLED) {
+      setPaidLoad('loading');
+      void (supabase.from('schedules') as unknown as { select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error?: unknown }> } } })
+        .select('booking_mode,price_total_rub,prepay_rub,max_participants,payment_window_minutes,cancellation_terms,payment_qr_url,payment_link')
+        .eq('id', item.id).maybeSingle().then(({ data, error }: { data: Record<string, unknown> | null; error?: unknown }) => {
+          if (error || !data || (data.booking_mode !== 'paid' && data.booking_mode !== 'free')) { setPaidLoad('error'); return; }
+          setPaidLoad('ready');
+          if (data.booking_mode !== 'paid') return;
+          setWasPaid(true);
+          const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+          setPaidSettings({ mode: 'paid', price_total_rub: str(data.price_total_rub), prepay_rub: str(data.prepay_rub), max_participants: str(data.max_participants),
+            payment_window_minutes: str(data.payment_window_minutes) || '120', cancellation_terms: str(data.cancellation_terms), payment_qr_url: str(data.payment_qr_url), payment_link: str(data.payment_link) });
+        }, () => setPaidLoad('error'));
+    }
     setDialogOpen(true);
   };
 
@@ -526,6 +579,9 @@ export const ClubScheduleManagement: React.FC = () => {
             if (!open) {
               setEditingId(null);
               setFormData(emptyForm);
+              setPaidSettings(emptyPaidSettings);
+              setWasPaid(false);
+              setPaidLoad('ready');
             }
           }}>
             <DialogTrigger asChild>
@@ -728,6 +784,8 @@ export const ClubScheduleManagement: React.FC = () => {
                   </Select>
                 </div>
 
+                {PAID_BOOKINGS_ENABLED && <PaidEventSettingsFields value={paidSettings} onChange={setPaidSettings} />}
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -739,7 +797,7 @@ export const ClubScheduleManagement: React.FC = () => {
                   >
                     Отмена
                   </Button>
-                  <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                  <Button type="submit" disabled={saveRoute === 'blocked'} className="bg-green-600 hover:bg-green-700">
                     {editingId ? 'Сохранить' : 'Добавить'}
                   </Button>
                 </div>
@@ -864,6 +922,12 @@ export const ClubScheduleManagement: React.FC = () => {
                               </div>
                             )}
                           </div>
+
+                          {PAID_BOOKINGS_ENABLED && <div className="mt-6"><PaidBookingsPanel scheduleId={item.id} /></div>}
+
+                          {participants.length > 0 && (
+                            <div className="mt-6"><FounderAttendancePanel scheduleId={item.id} /></div>
+                          )}
 
                           <div className="mt-6 space-y-4">
                             {participants.length === 0 ? (

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { eventIdFromAppLink, safeAppReturnLink } from './appLinks';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import { WebBottomNav } from './WebBottomNav';
 import { SectionErrorBoundary } from './SectionErrorBoundary';
 import { WebScheduleView } from './WebScheduleView';
 import { WebActivitiesView } from './WebActivitiesView';
+import { WebResidentCheckinsView } from './WebResidentCheckinsView';
 import { WebAsceticsView } from './WebAsceticsView';
 import { WebHomeworkView } from './WebHomeworkView';
 import { WebNutritionView } from './WebNutritionView';
@@ -31,6 +33,7 @@ type Tile = { section: Section; label: string; icon: React.ReactNode };
 
 const RESIDENT_TILES: Tile[] = [
   { section: 'schedule', label: 'Расписание', icon: <Calendar className="h-5 w-5" /> },
+  { section: 'activities', label: 'Отметки', icon: <Activity className="h-5 w-5" /> },
   { section: 'rating', label: 'Рейтинг', icon: <Trophy className="h-5 w-5" /> },
   { section: 'challenges', label: 'Челленджи', icon: <Target className="h-5 w-5" /> },
   { section: 'shop', label: 'Магазин', icon: <ShoppingBag className="h-5 w-5" /> },
@@ -69,9 +72,18 @@ const SOON_SECTIONS: Section[] = [
 
 const WebAppInner: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { callApi } = useAppApi();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [activeSection, setActiveSection] = useState<Section>('home');
+  const [focusEventId, setFocusEventId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const link = safeAppReturnLink(`/app${location.search}`);
+      setActiveSection((new URL(link, window.location.origin).searchParams.get('section') ?? 'home') as Section);
+      setFocusEventId(eventIdFromAppLink(link));
+    } catch { setActiveSection('home'); setFocusEventId(null); }
+  }, [location.search]);
 
   const load = useCallback(() => {
     setState({ status: 'loading' });
@@ -154,9 +166,9 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'rating' && isResident ? (
             <WebResidentRatingView />
           ) : activeSection === 'schedule' ? (
-            <WebScheduleView />
+            <WebScheduleView status={status} focusEventId={focusEventId} />
           ) : activeSection === 'activities' ? (
-            <WebActivitiesView />
+            isResident ? (state.data.profile?.approved === true ? <WebResidentCheckinsView /> : <p className="p-6 text-muted-foreground">Доступ к отметкам ожидает подтверждения основателя.</p>) : <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (
             <WebAsceticsView />
           ) : activeSection === 'homework' ? (

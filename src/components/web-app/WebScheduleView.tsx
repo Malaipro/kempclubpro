@@ -3,6 +3,9 @@ import { CalendarDays, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usesClubCalendar } from './clubBooking';
+import { PAID_BOOKINGS_ENABLED, bookingGate, parsePaidMeta, type PaidMeta } from './paidBooking';
+import { PaidBookingCard } from './PaidBookingCard';
 
 interface ScheduleItem {
   id: string;
@@ -32,27 +35,40 @@ const formatDate = (iso: string) => moscowDate(iso).toLocaleDateString('ru-RU', 
   weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
 });
 
-export const WebScheduleView: React.FC = () => {
+export const WebScheduleView: React.FC<{ status: string | null; focusEventId?: string | null }> = ({ status, focusEventId = null }) => {
   const { callApi } = useAppApi();
+  const clubCalendar = usesClubCalendar(status);
   const [data, setData] = useState<ScheduleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(focusEventId);
+  const [paidMeta, setPaidMeta] = useState<PaidMeta>({ status: 'loading' });
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const response = await callApi<ScheduleResponse>('get_schedule', { days: 90 });
+      const response = await callApi<ScheduleResponse>(clubCalendar ? 'get_club_schedule' : 'get_schedule', { days: 90 });
       if (!response || !response.found) throw new Error(response?.error ?? 'Расписание недоступно');
       setData({ ...response, schedule: Array.isArray(response.schedule) ? response.schedule : [] });
+      if (PAID_BOOKINGS_ENABLED && clubCalendar) {
+        // fail-closed: при ошибке/неполных данных запись блокируется, без возврата к бесплатной
+        setPaidMeta(parsePaidMeta(await callApi<unknown>('get_paid_events').catch(() => null)));
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить расписание');
     }
-  }, [callApi]);
+  }, [callApi, clubCalendar]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!focusEventId || !data) return;
+    if (!data.schedule.some(item => item.id === focusEventId)) { setError('Мероприятие недоступно или уже прошло'); return; }
+    setExpandedId(focusEventId);
+    requestAnimationFrame(() => document.getElementById(`event-${focusEventId}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  }, [focusEventId, data]);
 
   const updateBooking = async (action: 'book_session' | 'cancel_booking', id: string) => {
+    if (!clubCalendar || !data?.schedule.some(item => item.id === id) || bookingGate(id, paidMeta).kind !== 'free') return;
     setBusyId(id);
     setError(null);
     try {
@@ -60,7 +76,8 @@ export const WebScheduleView: React.FC = () => {
       if (result.ok === false) throw new Error(result.error ?? 'Операция не выполнена');
       await load();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Операция не выполнена');
+      const msg = err instanceof Error ? err.message : '';
+      setError(msg.includes('paid_event_requires_verified_booking') ? 'Это платное мероприятие: запись появится после подтверждения предоплаты' : msg || 'Операция не выполнена');
     } finally {
       setBusyId(null);
     }
@@ -79,8 +96,7 @@ export const WebScheduleView: React.FC = () => {
     <div className="min-h-screen bg-background pb-24">
       <header className="app-section-header px-4 pb-6 pt-8 text-center text-primary-foreground">
         <CalendarDays className="mx-auto mb-2 h-6 w-6" />
-        <h1 className="text-xl font-bold text-primary-foreground">Расписание</h1>
-        <p className="text-sm text-primary-foreground/75">Занятия и запись</p>
+        <h1 className="text-xl font-bold text-primary-foreground">{clubCalendar ? 'Календарь клуба' : 'Расписание интенсива'}</h1>
       </header>
 
       <div className="space-y-5 px-4 pt-4">
@@ -99,9 +115,10 @@ export const WebScheduleView: React.FC = () => {
             <div className="space-y-3">
               {items.map((item) => {
                 const expanded = expandedId === item.id;
+                const gate = clubCalendar ? bookingGate(item.id, paidMeta) : null;
                 const full = item.max_participants !== null && item.booked_count >= item.max_participants;
                 return (
-                  <Card key={item.id} className="overflow-hidden border-l-4 border-l-primary">
+                  <Card key={item.id} id={`event-${item.id}`} className="overflow-hidden border-l-4 border-l-primary">
                     <Button
                       variant="ghost"
                       type="button"
@@ -118,7 +135,11 @@ export const WebScheduleView: React.FC = () => {
                       <CardContent className="space-y-3 px-4 pb-4 pt-0">
                         {item.location && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}
                         {item.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.description.replace('|||', '\n')}</p>}
-                        {item.booked ? (
+                        {gate?.kind === 'paid' ? (
+                          <PaidBookingCard info={gate.info} onChanged={load} />
+                        ) : gate?.kind === 'blocked' ? (
+                          <p className="rounded-md bg-muted px-3 py-2 text-center text-xs text-muted-foreground">{gate.reason}</p>
+                        ) : clubCalendar && (item.booked ? (
                           <div className="space-y-2">
                             <p className="rounded-md bg-primary/10 px-3 py-2 text-center text-xs font-semibold text-primary">Вы записаны</p>
                             <Button variant="outline" className="w-full" disabled={busyId === item.id} onClick={() => void updateBooking('cancel_booking', item.id)}>
@@ -129,7 +150,7 @@ export const WebScheduleView: React.FC = () => {
                           <Button className="w-full" disabled={full || busyId === item.id} onClick={() => void updateBooking('book_session', item.id)}>
                             {full ? 'Мест нет' : busyId === item.id ? 'Записываем...' : 'Записаться'}
                           </Button>
-                        )}
+                        ))}
                       </CardContent>
                     )}
                   </Card>
