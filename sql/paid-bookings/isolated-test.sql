@@ -1,46 +1,19 @@
--- Изолированная проверка E1 paid-bookings на локальной пустой БД (НЕ production).
+-- E1 compatibility regression after schema-fixture.sql + resident-checkins/up.sql + paid-bookings/up.sql.
+-- Local PostgreSQL only. All identities and events are synthetic.
 \set ON_ERROR_STOP on
-DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF; END $$;
-CREATE SCHEMA auth;
-CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('test.uid', true),'')::uuid $$;
-GRANT USAGE ON SCHEMA auth, public TO anon, authenticated, service_role;
-CREATE TYPE schedule_type AS ENUM ('intensive','club');
-CREATE TABLE profiles(user_id uuid PRIMARY KEY, participant_status text, approved boolean, display_name text, first_name text, last_name text);
-CREATE TABLE user_roles(user_id uuid, role text);
-CREATE TABLE schedules(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), title text, activity_type text, description text, end_time timestamptz, location text, color text, mastermind_group_id uuid, instructor_id uuid, stream_id uuid, start_time timestamptz, is_active boolean DEFAULT true,
-  schedule_type schedule_type, max_participants integer, updated_at timestamptz DEFAULT now());
-CREATE TABLE schedule_participants(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), schedule_id uuid REFERENCES schedules(id) ON DELETE CASCADE, user_id uuid,
-  registered_at timestamptz DEFAULT now(), attended boolean DEFAULT false, UNIQUE(schedule_id,user_id));
-CREATE FUNCTION update_updated_at_column() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at=now(); RETURN NEW; END $$;
-CREATE FUNCTION is_club_resident(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE user_id=_u AND participant_status='club_resident' AND approved) $$;
-CREATE FUNCTION is_super_admin(_u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id=_u AND role='super_admin') $$;
--- как на live: клиентам разрешён прямой INSERT, service_role обходит RLS
-GRANT SELECT, INSERT, UPDATE, DELETE ON schedule_participants TO authenticated;
-GRANT SELECT, UPDATE ON schedules TO authenticated;
-GRANT ALL ON schedule_participants, schedules TO service_role;
-CREATE FUNCTION server_register_for_event(p_uid uuid,p_sid uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-BEGIN INSERT INTO schedule_participants(schedule_id,user_id) VALUES(p_sid,p_uid); RETURN jsonb_build_object('ok',true); END $$;
-CREATE FUNCTION register_for_event_web(p_schedule_id uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-BEGIN RETURN public.server_register_for_event(auth.uid(),p_schedule_id); END $$;
 
-INSERT INTO profiles VALUES
- ('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e','club_resident',false,'Основатель',null,null),
- ('00000000-0000-0000-0000-000000000001','club_resident',true,'Резидент',null,null),
- ('00000000-0000-0000-0000-000000000002','club_resident',true,'Резидент 2',null,null),
- ('00000000-0000-0000-0000-000000000003','club_resident',false,'Не одобрен',null,null),
- ('00000000-0000-0000-0000-000000000004','intensive_active',true,'Интенсив',null,null);
-INSERT INTO user_roles VALUES ('bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e','super_admin'),('00000000-0000-0000-0000-000000000005','admin'),('00000000-0000-0000-0000-000000000006','super_admin');
-INSERT INTO schedules(id,title,activity_type,start_time,schedule_type,max_participants) VALUES
- ('20000000-0000-0000-0000-0000000000f1','Бесплатное','БЖЖ',now()+interval '2 days','club',null),
- ('20000000-0000-0000-0000-0000000000a1','Выезд','Выезд',now()+interval '5 days','club',2),
- ('20000000-0000-0000-0000-0000000000cc','Последнее место','Баня',now()+interval '5 days','club',1),
- ('20000000-0000-0000-0000-0000000000b9','Интенсив','BJJ',now()+interval '2 days','intensive',10);
--- legacy запись на событие, которое позже станет платным, должна сохраниться
-INSERT INTO schedule_participants(schedule_id,user_id) VALUES ('20000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-000000000004');
-
--- E1 зависит от resident-checkins: применяем обе миграции по порядку
-\i sql/resident-checkins/up.sql
-\i sql/paid-bookings/up.sql
+INSERT INTO public.schedules(id, title, activity_type, start_time, end_time, schedule_type, max_participants) VALUES
+ ('20000000-0000-0000-0000-0000000000f1', 'Бесплатное', 'БЖЖ', now()+interval '2 days', now()+interval '2 days 2 hours', 'club', null),
+ ('20000000-0000-0000-0000-0000000000a1', 'Выезд', 'Выезд', now()+interval '5 days', now()+interval '5 days 2 hours', 'club', 3),
+ ('20000000-0000-0000-0000-0000000000cc', 'Последнее место', 'Баня', now()+interval '5 days', now()+interval '5 days 2 hours', 'club', 1),
+ ('20000000-0000-0000-0000-0000000000b9', 'Интенсив', 'BJJ', now()+interval '2 days', now()+interval '2 days 2 hours', 'intensive', 10),
+ ('20000000-0000-0000-0000-0000000000d1', 'Legacy 1', 'Legacy 1', now()+interval '6 days', now()+interval '6 days 2 hours', 'club', null),
+ ('20000000-0000-0000-0000-0000000000d2', 'Legacy many', 'Legacy many', now()+interval '7 days', now()+interval '7 days 2 hours', 'club', null),
+ ('20000000-0000-0000-0000-0000000000fd', 'Free delete', 'Free delete', now()+interval '8 days', now()+interval '8 days 2 hours', 'club', null);
+INSERT INTO public.schedule_participants(schedule_id, user_id) VALUES
+ ('20000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000004'),
+ ('20000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-000000000001'),
+ ('20000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-000000000002');
 
 CREATE FUNCTION pg_temp.expect(cond boolean, label text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN IF NOT cond THEN RAISE EXCEPTION 'FAIL: %', label; END IF; RAISE NOTICE 'OK: %', label; END $$;
@@ -52,17 +25,27 @@ GRANT EXECUTE ON FUNCTION pg_temp.lq(text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION pg_temp.expect(boolean,text), pg_temp.raises(text,text,text) TO PUBLIC;
 
 SELECT pg_temp.expect((SELECT bool_and(booking_mode='free') FROM schedules),'существующие события остались free');
-SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants)=1,'legacy-записи сохранены');
+SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants)=3,'legacy-записи сохранены');
+SELECT pg_temp.expect((SELECT relrowsecurity FROM pg_class WHERE oid='public.schedules'::regclass)
+  AND (SELECT relrowsecurity FROM pg_class WHERE oid='public.schedule_participants'::regclass),'fixture: RLS включён');
+SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.schedule_participants'::regclass AND contype='f' AND confrelid='auth.users'::regclass),'fixture: FK schedule_participants.user_id -> auth.users');
+SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.schedule_participants'::regclass AND contype='u'),'fixture: UNIQUE schedule_id+user_id');
+SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.schedule_participants'::regclass AND tgname='trg_notify_booking_change' AND NOT tgisinternal),'fixture: notification trigger без сети');
+SELECT pg_temp.expect((SELECT array_to_string(proconfig, ',') LIKE '%search_path=""%' FROM pg_proc WHERE oid='public.paid_booking_ledger_append_only()'::regprocedure),'paid_booking_ledger_append_only: search_path зафиксирован пустым');
+SELECT pg_temp.expect((SELECT array_to_string(proconfig, ',') LIKE '%search_path=""%' FROM pg_proc WHERE oid='public.paid_bookings_no_delete()'::regprocedure),'paid_bookings_no_delete: search_path зафиксирован пустым');
 
 -- Бесплатное событие: прежнее поведение
 SET ROLE authenticated; SET test.uid='00000000-0000-0000-0000-000000000001';
 SELECT pg_temp.expect(register_for_event_web('20000000-0000-0000-0000-0000000000f1')->>'ok'='true','free: register_for_event_web как раньше');
+SET test.uid='00000000-0000-0000-0000-000000000002';
 INSERT INTO schedule_participants(schedule_id,user_id) VALUES ('20000000-0000-0000-0000-0000000000f1','00000000-0000-0000-0000-000000000002');
 SELECT pg_temp.expect(true,'free: прямой INSERT как раньше');
 
--- Настройки: только основатель
+-- Настройки: только основатель. Legacy free -> paid всегда fail-closed.
+SET test.uid='00000000-0000-0000-0000-000000000001';
 SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,2,120,'Условия','https://qr.nspk.ru/x',null)->>'error'='forbidden','резидент не включает оплату');
-SELECT pg_temp.raises($$UPDATE schedules SET booking_mode='paid', price_total_rub=1, prepay_rub=1, cash_rub=0, max_participants=1, payment_link='https://x' WHERE id='20000000-0000-0000-0000-0000000000f1'$$,'paid_settings_founder_only','прямой UPDATE платных полей запрещён');
+SET test.uid='00000000-0000-0000-0000-000000000005';
+SELECT pg_temp.raises($$UPDATE schedules SET booking_mode='paid', price_total_rub=1, prepay_rub=1, cash_rub=0, max_participants=1, payment_link='https://x' WHERE id='20000000-0000-0000-0000-0000000000f1'$$,'paid_event_founder_only','admin: прямой UPDATE платных полей запрещён');
 SET test.uid='00000000-0000-0000-0000-000000000006';
 SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,2,120,'Условия','https://qr.nspk.ru/x',null)->>'error'='forbidden','другой super_admin не включает оплату');
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
@@ -71,8 +54,38 @@ SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000
 SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,2,120,null,null,null)$$,'schedules_paid_prices_chk','нужен QR или ссылка основателя');
 SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,2,120,null,'javascript:alert(1)',null)$$,'schedules_paid_prices_chk','только https-ссылки');
 SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000b9','paid',5000,2000,3000,2,120,null,'https://qr',null)->>'error'='not_club_event','интенсив нельзя сделать платным');
-SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,3,120,'Условия','https://qr.nspk.ru/x',null)->>'ok'='true','основатель (approved=false) включает оплату');
+SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000-0000000000d1','paid',5000,2000,3000,2,120,null,'https://qr',null)$$,'paid_event_has_legacy_registrations','free -> paid: одна legacy-запись блокирует конверсию');
+SELECT pg_temp.raises($$SELECT paid_event_save('20000000-0000-0000-0000-0000000000d2','Legacy many paid',null,now()+interval '7 days',now()+interval '7 days 2 hours',null,null,null,'paid',5000,2000,3000,3,120,null,'https://qr',null)$$,'paid_event_has_legacy_registrations','free -> paid: много legacy-записей блокируют атомарную конверсию');
+SELECT pg_temp.expect((SELECT booking_mode='free' AND count(*)=1 FROM schedules s JOIN schedule_participants sp ON sp.schedule_id=s.id WHERE s.id='20000000-0000-0000-0000-0000000000d1' GROUP BY booking_mode),'legacy 1 не изменено');
+SELECT pg_temp.expect((SELECT booking_mode='free' AND count(*)=2 FROM schedules s JOIN schedule_participants sp ON sp.schedule_id=s.id WHERE s.id='20000000-0000-0000-0000-0000000000d2' GROUP BY booking_mode),'legacy many не изменено');
+SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,3,120,'Условия','https://qr.nspk.ru/x',null)->>'ok'='true','free -> paid без записей: основатель approved=false может');
 SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000cc','paid',1000,1000,0,1,30,null,null,'https://bank.example/pay')->>'ok'='true','основатель настраивает событие на 1 место');
+
+-- Существенные поля, отключение и удаление paid-события: только founder+super_admin.
+SET test.uid='00000000-0000-0000-0000-000000000005';
+SELECT pg_temp.raises($$UPDATE schedules SET title='admin title' WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','admin не меняет title paid-события');
+SELECT pg_temp.raises($$UPDATE schedules SET start_time=start_time+interval '1 hour' WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','admin не меняет start_time paid-события');
+SELECT pg_temp.raises($$UPDATE schedules SET end_time=end_time+interval '1 hour' WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','admin не меняет end_time paid-события');
+SELECT pg_temp.raises($$UPDATE schedules SET is_active=false WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','admin не отключает paid-событие');
+SELECT pg_temp.raises($$DELETE FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','admin не удаляет paid-событие');
+SET test.uid='00000000-0000-0000-0000-000000000008';
+SELECT pg_temp.raises($$UPDATE schedules SET location='тренер' WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','trainer не меняет paid-событие');
+SET test.uid='00000000-0000-0000-0000-000000000006';
+SELECT pg_temp.raises($$UPDATE schedules SET color='#000000' WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_founder_only','другой super_admin не меняет paid-событие');
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+UPDATE schedules SET title='Выезд founder', start_time=start_time+interval '10 minutes', end_time=end_time+interval '10 minutes', is_active=false
+WHERE id='20000000-0000-0000-0000-0000000000a1';
+SELECT pg_temp.expect((SELECT title='Выезд founder' AND NOT is_active FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1'),'основатель меняет существенные поля и отключает paid-событие');
+UPDATE schedules SET is_active=true WHERE id='20000000-0000-0000-0000-0000000000a1';
+CREATE TEMP TABLE paid_delete_event AS
+  SELECT paid_event_save(null,'Paid delete',null,now()+interval '9 days',now()+interval '9 days 1 hour',null,null,null,'paid',1000,1000,0,1,30,null,null,'https://bank.example/delete') AS r;
+SET test.uid='00000000-0000-0000-0000-000000000005';
+SELECT pg_temp.raises($$DELETE FROM schedules WHERE id=(SELECT (r->>'schedule_id')::uuid FROM paid_delete_event)$$,'paid_event_founder_only','admin не удаляет пустое paid-событие');
+DELETE FROM schedules WHERE id='20000000-0000-0000-0000-0000000000fd';
+SELECT pg_temp.expect(NOT EXISTS (SELECT 1 FROM schedules WHERE id='20000000-0000-0000-0000-0000000000fd'),'admin по-прежнему удаляет free-событие');
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+DELETE FROM schedules WHERE id=(SELECT (r->>'schedule_id')::uuid FROM paid_delete_event);
+SELECT pg_temp.expect(NOT EXISTS (SELECT 1 FROM schedules WHERE id=(SELECT (r->>'schedule_id')::uuid FROM paid_delete_event)),'основатель удаляет paid-событие без броней');
 
 -- Обход: бот (service_role), admin, server_register_for_event, прямой INSERT
 SET ROLE service_role; SET test.uid='';
@@ -113,6 +126,7 @@ SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM 
 -- Основатель подтверждает поступление; двойной callback идемпотентен
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM h),true,'Сбер 12:40')->>'booking_status'='confirmed','основатель → confirmed');
+SELECT pg_temp.expect(pg_temp.lq($q$SELECT count(*) FROM notification_stub_calls WHERE schedule_id='20000000-0000-0000-0000-0000000000a1' AND operation='INSERT'$q$)='1','confirm создаёт ровно 1 локальное INSERT-уведомление, без сети');
 SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM h),true)->>'already_processed'='true','двойное подтверждение не меняет состояние');
 SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM h),false)->>'booking_status'='confirmed','поздний «Не поступил» не откатывает подтверждение');
 SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000001' AND schedule_id='20000000-0000-0000-0000-0000000000a1' AND paid_booking_id IS NOT NULL)=1,'подтверждение создало ровно одну запись');
@@ -139,7 +153,12 @@ SET ROLE authenticated;
 -- Hold timeout и освобождение места
 SET test.uid='00000000-0000-0000-0000-000000000002';
 CREATE TEMP TABLE h2 AS SELECT paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r2-00001') AS r;
-SELECT pg_temp.expect((SELECT r->>'booking_status' FROM h2)='hold','второй резидент — hold (занято 3/3: legacy + confirmed + hold)');
+SELECT pg_temp.expect((SELECT r->>'booking_status' FROM h2)='hold','второй резидент — active hold');
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+SELECT pg_temp.raises($$UPDATE schedules SET max_participants=1 WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_capacity_below_reserved','capacity нельзя снизить ниже confirmed + active hold');
+UPDATE schedules SET max_participants=2 WHERE id='20000000-0000-0000-0000-0000000000a1';
+SELECT pg_temp.expect((SELECT max_participants=2 FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1'),'capacity можно снизить ровно до занятых мест');
+SET test.uid='00000000-0000-0000-0000-000000000002';
 RESET ROLE; UPDATE paid_bookings SET hold_expires_at=now()-interval '1 minute' WHERE id=(SELECT (r->>'booking_id')::uuid FROM h2); SET ROLE authenticated;
 SELECT pg_temp.expect(paid_booking_report_paid((SELECT (r->>'booking_id')::uuid FROM h2))->>'error'='hold_expired','просроченный hold не принимает «Я оплатил»');
 SELECT pg_temp.expect((SELECT booking_status FROM paid_bookings WHERE id=(SELECT (r->>'booking_id')::uuid FROM h2))='expired','hold истёк');
@@ -147,14 +166,19 @@ CREATE TEMP TABLE h3 AS SELECT paid_booking_create_hold('20000000-0000-0000-0000
 SELECT pg_temp.expect((SELECT r->>'booking_status' FROM h3)='hold','после истечения можно забронировать снова');
 SELECT pg_temp.expect(paid_booking_report_paid((SELECT (r->>'booking_id')::uuid FROM h3))->>'booking_status'='pending_review','второй → pending_review');
 -- лимит мест: pending_review занимает место
-RESET ROLE; INSERT INTO profiles VALUES ('00000000-0000-0000-0000-000000000007','club_resident',true,'Резидент 3',null,null); SET ROLE authenticated;
+SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
+SELECT pg_temp.raises($$UPDATE schedules SET max_participants=1 WHERE id='20000000-0000-0000-0000-0000000000a1'$$,'paid_event_capacity_below_reserved','capacity нельзя снизить ниже confirmed + pending_review');
 SET test.uid='00000000-0000-0000-0000-000000000007';
-SELECT pg_temp.expect(paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r3-00001')->>'error'='no_seats','pending_review и legacy занимают места');
+SELECT pg_temp.expect(paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r3-00001')->>'error'='no_seats','confirmed и pending_review занимают все места');
 -- пользователь отменяет после сообщения об оплате → основатель решает возврат
 SET test.uid='00000000-0000-0000-0000-000000000002';
 SELECT pg_temp.expect(paid_booking_cancel_own((SELECT (r->>'booking_id')::uuid FROM h3))->>'error'='under_review','после «Я оплатил» участник не отменяет сам');
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h3),true,'Участник передумал')->>'refundable_rub'='0','отмена при «со слов участника»: возвращать нечего');
+UPDATE schedules SET max_participants=1 WHERE id='20000000-0000-0000-0000-0000000000a1';
+SELECT pg_temp.expect((SELECT max_participants=1 FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1'),'capacity можно безопасно снизить после отмены pending_review');
+UPDATE schedules SET max_participants=3 WHERE id='20000000-0000-0000-0000-0000000000a1';
+SELECT pg_temp.expect((SELECT max_participants=3 FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1'),'capacity можно увеличить');
 SELECT pg_temp.expect((SELECT payment_status FROM paid_bookings WHERE id=(SELECT (r->>'booking_id')::uuid FROM h3))='reported','«reported» не становится «нужен возврат»');
 SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h3),2000,'попытка','refund-h3-01')->>'error'='refund_not_pending','нельзя вернуть по одному заявлению участника');
 SELECT pg_temp.expect(paid_booking_record_late_payment((SELECT (r->>'booking_id')::uuid FROM h3),2000,'Пришло в Сбер после отмены','late-h3-001')->>'payment_status'='refund_pending','позднее поступление на отменённую бронь → нужен возврат');
@@ -170,6 +194,7 @@ SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h),true,'')->>'error'='note_required','отмена основателем требует причину');
 SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM h),true,'Перенос по болезни')->>'booking_status'='cancelled','основатель отменил подтверждённую бронь');
 SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE paid_booking_id=(SELECT (r->>'booking_id')::uuid FROM h))=0,'запись в календаре снята');
+SELECT pg_temp.expect(pg_temp.lq($q$SELECT count(*) FROM notification_stub_calls WHERE schedule_id='20000000-0000-0000-0000-0000000000a1' AND operation='DELETE'$q$)='1','cancel создаёт ровно 1 локальное DELETE-уведомление, без сети');
 SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),6000,'Возврат СБП','refund-h-001')->>'error'='refund_exceeds_received','возврат больше полученного (5000) отклонён');
 SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'','refund-h-001')->>'error'='note_required','возврат без причины отклонён');
 SELECT pg_temp.expect(paid_booking_mark_refunded((SELECT (r->>'booking_id')::uuid FROM h),2000,'Возврат СБП','refund-h-001')->>'payment_status'='partially_refunded','частичный возврат 2000');
@@ -181,7 +206,7 @@ SELECT pg_temp.expect(pg_temp.lq($q$SELECT string_agg(kind, ',' ORDER BY id) FRO
 RESET ROLE;
 SELECT pg_temp.raises($$UPDATE paid_booking_ledger SET amount_rub=0$$,'append-only','журнал нельзя изменить');
 SELECT pg_temp.raises($$DELETE FROM paid_bookings$$,'cannot be deleted','историю броней нельзя удалить');
-SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000004')=1,'legacy-запись на платном событии сохранена');
+SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE schedule_id IN ('20000000-0000-0000-0000-0000000000d1','20000000-0000-0000-0000-0000000000d2'))=3,'legacy-записи остались на free-событиях');
 
 -- «Не поступил»
 SET ROLE authenticated; SET test.uid='00000000-0000-0000-0000-000000000007';
@@ -192,9 +217,13 @@ SELECT pg_temp.expect(paid_booking_decide((SELECT (r->>'booking_id')::uuid FROM 
 SELECT pg_temp.expect((SELECT count(*) FROM schedule_participants WHERE user_id='00000000-0000-0000-0000-000000000007')=0,'rejected не создаёт запись');
 -- снять «платно» с активными бронями нельзя
 SET test.uid='00000000-0000-0000-0000-000000000001';
-SELECT paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r1-00009');
+CREATE TEMP TABLE active_hold AS SELECT paid_booking_create_hold('20000000-0000-0000-0000-0000000000a1','key-r1-00009') AS r;
 SET test.uid='bfe3d1f1-3b4a-4c9c-b38a-e961f3fc7f2e';
 SELECT pg_temp.raises($$SELECT paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','free',null,null,null,null,null,null,null,null)$$,'paid_event_has_active_bookings','нельзя выключить оплату при активных бронях');
+SELECT pg_temp.expect(paid_booking_founder_cancel((SELECT (r->>'booking_id')::uuid FROM active_hold),false,'Закрытие теста')->>'booking_status'='cancelled','активная hold закрыта');
+SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','free',null,null,null,null,null,null,null,null)->>'ok'='true','paid -> free разрешено после закрытия всех активных броней');
+SELECT pg_temp.expect((SELECT booking_mode='free' FROM schedules WHERE id='20000000-0000-0000-0000-0000000000a1') AND (SELECT count(*)>0 FROM paid_bookings WHERE schedule_id='20000000-0000-0000-0000-0000000000a1'),'free-событие сохраняет прошлую paid-историю');
+SELECT pg_temp.expect(paid_event_settings_save('20000000-0000-0000-0000-0000000000a1','paid',5000,2000,3000,3,120,'Условия','https://qr.nspk.ru/x',null)->>'ok'='true','повторное free -> paid с прошлой paid-историей, но без schedule_participants, разрешено');
 
 -- P0-1: режим каждого события клуба известен клиенту
 SET test.uid='00000000-0000-0000-0000-000000000001';
