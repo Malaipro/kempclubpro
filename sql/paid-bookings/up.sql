@@ -89,13 +89,13 @@ CREATE POLICY paid_bookings_own_or_founder ON public.paid_bookings FOR SELECT TO
   USING (user_id = auth.uid() OR public.is_kemp_founder(auth.uid()));
 CREATE POLICY paid_booking_ledger_service_read ON public.paid_booking_ledger FOR SELECT TO service_role USING (true);
 
-CREATE FUNCTION public.paid_booking_ledger_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION public.paid_booking_ledger_append_only() RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN RAISE EXCEPTION 'paid_booking_ledger is append-only'; END $$;
 CREATE TRIGGER paid_booking_ledger_no_change BEFORE UPDATE OR DELETE ON public.paid_booking_ledger
   FOR EACH ROW EXECUTE FUNCTION public.paid_booking_ledger_append_only();
 CREATE TRIGGER paid_bookings_updated_at BEFORE UPDATE ON public.paid_bookings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-CREATE FUNCTION public.paid_bookings_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION public.paid_bookings_no_delete() RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN RAISE EXCEPTION 'paid_bookings history cannot be deleted'; END $$;
 CREATE TRIGGER paid_bookings_keep_history BEFORE DELETE ON public.paid_bookings
   FOR EACH ROW EXECUTE FUNCTION public.paid_bookings_no_delete();

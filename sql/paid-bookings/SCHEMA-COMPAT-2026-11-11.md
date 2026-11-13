@@ -4,6 +4,8 @@
 
 Implementation and verification were performed only in the Git branch
 `feature/paid-bookings-e1-schema-compat`, against disposable local PostgreSQL databases.
+The complete local matrix was re-run successfully on 2026-11-13 after the final search-path
+hardening was integrated into the fresh migration path.
 Production Supabase, Telegram bot, Amvera, Edge Functions, domains and the published site were not
 changed or called. The existing "Отметки + Push" block was not edited. No real personal data,
 payment credentials, secrets or network notification calls were used.
@@ -115,16 +117,17 @@ Command:
 bash sql/paid-bookings/run-isolated.sh
 ```
 
-Result on PostgreSQL 17.11: **142 SQL assertions passed, 0 failed**, plus both orchestration summary
+Result on PostgreSQL 17.11: **144 SQL assertions passed, 0 failed**, plus both orchestration summary
 checks passed.
 
 The script creates one disposable local cluster with two databases and never connects to Supabase:
 
 1. Compatibility database:
    `schema-fixture.sql` -> `resident-checkins/up.sql` -> `paid-bookings/up.sql` -> functional and ACL
-   tests -> two-session concurrency test -> financial-history DOWN refusal -> `disable.sql`.
+   tests -> idempotent `search-path-hardening.sql` overlay -> two-session concurrency test ->
+   financial-history DOWN refusal -> `disable.sql`.
 2. Empty rollback database:
-   `schema-fixture.sql` -> both UP files -> `paid-bookings/down.sql` ->
+   `schema-fixture.sql` -> both UP files -> search-path overlay -> `paid-bookings/down.sql` ->
    `resident-checkins/down.sql` -> rollback assertions.
 
 Verified scenarios include:
@@ -165,6 +168,8 @@ suite above excludes that incompatible runner target and passes completely.
 ## Files
 
 - `up.sql`: P0 trigger/invariant fixes.
+- `search-path-hardening.sql`: idempotent overlay for databases where an earlier E1 draft already
+  created the two append-only/delete guard functions; fresh `up.sql` now pins them directly.
 - `down.sql`, `disable.sql`: corrected rollback semantics documentation.
 - `schema-fixture.sql`: production-like base schema and no-network notification stub.
 - `isolated-test.sql`: free/paid/ACL/capacity/notification/history tests.

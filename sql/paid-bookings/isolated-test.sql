@@ -31,6 +31,8 @@ SELECT pg_temp.expect((SELECT relrowsecurity FROM pg_class WHERE oid='public.sch
 SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.schedule_participants'::regclass AND contype='f' AND confrelid='auth.users'::regclass),'fixture: FK schedule_participants.user_id -> auth.users');
 SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.schedule_participants'::regclass AND contype='u'),'fixture: UNIQUE schedule_id+user_id');
 SELECT pg_temp.expect(EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='public.schedule_participants'::regclass AND tgname='trg_notify_booking_change' AND NOT tgisinternal),'fixture: notification trigger без сети');
+SELECT pg_temp.expect((SELECT array_to_string(proconfig, ',') LIKE '%search_path=""%' FROM pg_proc WHERE oid='public.paid_booking_ledger_append_only()'::regprocedure),'paid_booking_ledger_append_only: search_path зафиксирован пустым');
+SELECT pg_temp.expect((SELECT array_to_string(proconfig, ',') LIKE '%search_path=""%' FROM pg_proc WHERE oid='public.paid_bookings_no_delete()'::regprocedure),'paid_bookings_no_delete: search_path зафиксирован пустым');
 
 -- Бесплатное событие: прежнее поведение
 SET ROLE authenticated; SET test.uid='00000000-0000-0000-0000-000000000001';

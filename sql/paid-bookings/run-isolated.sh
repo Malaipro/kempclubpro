@@ -26,6 +26,7 @@ PSQL=("$PSQL_BIN" -X -h "$PG_ROOT" -p "$PG_PORT" -U postgres -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -d paid_compat -f sql/resident-checkins/up.sql >/dev/null
 "${PSQL[@]}" -d paid_compat -f sql/paid-bookings/up.sql >/dev/null
 "${PSQL[@]}" -d paid_compat -f sql/paid-bookings/isolated-test.sql
+"${PSQL[@]}" -d paid_compat -f sql/paid-bookings/search-path-hardening.sql >/dev/null
 
 # Two independent sessions compete for the single seat on the same schedule row.
 "${PSQL[@]}" -d paid_compat -v uid=00000000-0000-0000-0000-000000000001 -v key=concur-1-xxxx \
@@ -50,6 +51,7 @@ echo "OK: concurrent holds for one seat created exactly 1 row"
 "${PSQL[@]}" -d paid_empty_rollback -f sql/paid-bookings/schema-fixture.sql >/dev/null
 "${PSQL[@]}" -d paid_empty_rollback -f sql/resident-checkins/up.sql >/dev/null
 "${PSQL[@]}" -d paid_empty_rollback -f sql/paid-bookings/up.sql >/dev/null
+"${PSQL[@]}" -d paid_empty_rollback -f sql/paid-bookings/search-path-hardening.sql >/dev/null
 "${PSQL[@]}" -d paid_empty_rollback -f sql/paid-bookings/down.sql >/dev/null
 "${PSQL[@]}" -d paid_empty_rollback -f sql/resident-checkins/down.sql >/dev/null
 "${PSQL[@]}" -d paid_empty_rollback -f sql/paid-bookings/empty-rollback-test.sql
