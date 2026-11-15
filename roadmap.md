@@ -1,5 +1,7 @@
 # Tasks
 
+- [ ] Unify intensive stream selection across homework, participants, calendar, teams and progress; expose inactive streams in an archive without moving/deleting historical data. Preserve club, Telegram, check-ins/push and paid bookings.
+
 - [x] /app club-calendar booking: explicit club read path, club ID filter and pre-book type validation; intensive booking controls removed, resident-only access preserved. Five rule tests and isolated desktop/mobile booking/cancel/readback passed; authenticated external Supabase flow unavailable. Server RPC hardening not applied.
 - [ ] Intensive notifications: participant app push, founder-only Telegram team summaries and Taynik generation — KEMP/Amvera contour wfjvjvbjjxcgkaolkgdq confirmed and read-only backend metadata matches. Taynik connection linked; external VAPID/Telegram secret availability cannot be verified from project secret listing. Server changes require separate High-risk approval and confirmed remote credentials/deployment; existing cron handlers lack caller checks and team delivery currently targets captains. No server edits/deployment/scheduler changes applied.
 - [x] Daily check-in UI cache: account-scoped browser persistence and Moscow date expiry; three rule tests and isolated browser remount check pass. No authenticated production flow verified.
