@@ -2454,6 +2454,121 @@ export type Database = {
           },
         ]
       }
+      paid_booking_ledger: {
+        Row: {
+          actor: string | null
+          amount_rub: number | null
+          booking_id: string
+          created_at: string
+          id: number
+          kind: string
+          note: string | null
+          request_key: string | null
+        }
+        Insert: {
+          actor?: string | null
+          amount_rub?: number | null
+          booking_id: string
+          created_at?: string
+          id?: never
+          kind: string
+          note?: string | null
+          request_key?: string | null
+        }
+        Update: {
+          actor?: string | null
+          amount_rub?: number | null
+          booking_id?: string
+          created_at?: string
+          id?: never
+          kind?: string
+          note?: string | null
+          request_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_booking_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "paid_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_bookings: {
+        Row: {
+          booking_status: string
+          cash_received_at: string | null
+          cash_received_by: string | null
+          cash_received_rub: number | null
+          cash_rub: number
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          hold_expires_at: string
+          id: string
+          idempotency_key: string | null
+          payment_status: string
+          prepay_rub: number
+          price_total_rub: number
+          reported_at: string | null
+          schedule_id: string
+          schedule_participant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_status?: string
+          cash_received_at?: string | null
+          cash_received_by?: string | null
+          cash_received_rub?: number | null
+          cash_rub: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          hold_expires_at: string
+          id?: string
+          idempotency_key?: string | null
+          payment_status?: string
+          prepay_rub: number
+          price_total_rub: number
+          reported_at?: string | null
+          schedule_id: string
+          schedule_participant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_status?: string
+          cash_received_at?: string | null
+          cash_received_by?: string | null
+          cash_received_rub?: number | null
+          cash_rub?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          hold_expires_at?: string
+          id?: string
+          idempotency_key?: string | null
+          payment_status?: string
+          prepay_rub?: number
+          price_total_rub?: number
+          reported_at?: string | null
+          schedule_id?: string
+          schedule_participant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_bookings_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_checkpoints: {
         Row: {
           belly_cm: number | null
@@ -3352,27 +3467,49 @@ export type Database = {
       }
       schedule_participants: {
         Row: {
+          attendance_history: Json
           attended: boolean | null
+          attended_marked_at: string | null
+          attended_marked_by: string | null
           id: string
+          paid_booking_id: string | null
           registered_at: string
           schedule_id: string
+          self_marked_at: string | null
           user_id: string
         }
         Insert: {
+          attendance_history?: Json
           attended?: boolean | null
+          attended_marked_at?: string | null
+          attended_marked_by?: string | null
           id?: string
+          paid_booking_id?: string | null
           registered_at?: string
           schedule_id: string
+          self_marked_at?: string | null
           user_id: string
         }
         Update: {
+          attendance_history?: Json
           attended?: boolean | null
+          attended_marked_at?: string | null
+          attended_marked_by?: string | null
           id?: string
+          paid_booking_id?: string | null
           registered_at?: string
           schedule_id?: string
+          self_marked_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "schedule_participants_paid_booking_id_fkey"
+            columns: ["paid_booking_id"]
+            isOneToOne: false
+            referencedRelation: "paid_bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "schedule_participants_schedule_id_fkey"
             columns: ["schedule_id"]
@@ -3385,6 +3522,10 @@ export type Database = {
       schedules: {
         Row: {
           activity_type: string
+          booking_mode: string
+          cancellation_terms: string | null
+          cash_rub: number | null
+          club_kind: string | null
           color: string | null
           created_at: string
           description: string | null
@@ -3395,14 +3536,24 @@ export type Database = {
           location: string | null
           mastermind_group_id: string | null
           max_participants: number | null
+          payment_link: string | null
+          payment_qr_url: string | null
+          payment_window_minutes: number
+          prepay_rub: number | null
+          price_total_rub: number | null
           schedule_type: Database["public"]["Enums"]["schedule_type"]
           start_time: string
           stream_id: string | null
           title: string
           updated_at: string
+          week_anchor: string | null
         }
         Insert: {
           activity_type: string
+          booking_mode?: string
+          cancellation_terms?: string | null
+          cash_rub?: number | null
+          club_kind?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
@@ -3413,14 +3564,24 @@ export type Database = {
           location?: string | null
           mastermind_group_id?: string | null
           max_participants?: number | null
+          payment_link?: string | null
+          payment_qr_url?: string | null
+          payment_window_minutes?: number
+          prepay_rub?: number | null
+          price_total_rub?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time: string
           stream_id?: string | null
           title: string
           updated_at?: string
+          week_anchor?: string | null
         }
         Update: {
           activity_type?: string
+          booking_mode?: string
+          cancellation_terms?: string | null
+          cash_rub?: number | null
+          club_kind?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
@@ -3431,11 +3592,17 @@ export type Database = {
           location?: string | null
           mastermind_group_id?: string | null
           max_participants?: number | null
+          payment_link?: string | null
+          payment_qr_url?: string | null
+          payment_window_minutes?: number
+          prepay_rub?: number | null
+          price_total_rub?: number | null
           schedule_type?: Database["public"]["Enums"]["schedule_type"]
           start_time?: string
           stream_id?: string | null
           title?: string
           updated_at?: string
+          week_anchor?: string | null
         }
         Relationships: [
           {
@@ -4601,6 +4768,10 @@ export type Database = {
       }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      club_week_start: {
+        Args: { p_anchor: string; p_start: string }
+        Returns: string
+      }
       complete_mastermind_task_web: {
         Args: { p_comment?: string; p_file_url?: string; p_task_id: string }
         Returns: Json
@@ -4643,6 +4814,22 @@ export type Database = {
         Returns: Json
       }
       ensure_referral_code: { Args: { _user_id: string }; Returns: string }
+      founder_confirm_attendance: {
+        Args: { p_marks: Json; p_schedule_id: string }
+        Returns: Json
+      }
+      founder_get_event_attendance: {
+        Args: { p_schedule_id: string }
+        Returns: Json
+      }
+      founder_set_event_kind: {
+        Args: {
+          p_club_kind: string
+          p_schedule_id: string
+          p_week_anchor?: string
+        }
+        Returns: Json
+      }
       generate_telegram_link_code: {
         Args: { p_user_id: string }
         Returns: Json
@@ -4703,6 +4890,7 @@ export type Database = {
       get_pyramid_web: { Args: never; Returns: Json }
       get_rating_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_rating_web: { Args: never; Returns: Json }
+      get_resident_checkins_web: { Args: { p_weeks?: number }; Returns: Json }
       get_resident_rating_web: { Args: never; Returns: Json }
       get_rules_for_user: {
         Args: { p_user_id: string }
@@ -4745,6 +4933,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_captain: { Args: { p_user_id: string }; Returns: boolean }
       is_club_resident: { Args: { _user_id: string }; Returns: boolean }
+      is_kemp_founder: { Args: { p_uid: string }; Returns: boolean }
       is_mastermind_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
@@ -4791,6 +4980,100 @@ export type Database = {
       mask_phone_secure: { Args: { phone_number: string }; Returns: string }
       mastermind_checkin_web: { Args: { p_meeting_id: string }; Returns: Json }
       normalize_phone: { Args: { p_phone: string }; Returns: string }
+      paid_booking_cancel_own: { Args: { p_booking_id: string }; Returns: Json }
+      paid_booking_create_hold: {
+        Args: { p_idempotency_key: string; p_schedule_id: string }
+        Returns: Json
+      }
+      paid_booking_decide: {
+        Args: { p_booking_id: string; p_note?: string; p_received: boolean }
+        Returns: Json
+      }
+      paid_booking_founder_cancel: {
+        Args: { p_booking_id: string; p_note: string; p_refund_due: boolean }
+        Returns: Json
+      }
+      paid_booking_mark_cash: {
+        Args: {
+          p_amount_rub: number
+          p_booking_id: string
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      paid_booking_mark_refunded: {
+        Args: {
+          p_amount_rub: number
+          p_booking_id: string
+          p_note: string
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      paid_booking_money: {
+        Args: { p_booking_id: string }
+        Returns: Record<string, unknown>
+      }
+      paid_booking_record_late_payment: {
+        Args: {
+          p_amount_rub: number
+          p_booking_id: string
+          p_note: string
+          p_request_key: string
+        }
+        Returns: Json
+      }
+      paid_booking_report_paid: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
+      paid_bookings_admin_list: {
+        Args: { p_schedule_id: string }
+        Returns: Json
+      }
+      paid_event_save: {
+        Args: {
+          p_cancellation_terms: string
+          p_cash_rub: number
+          p_color: string
+          p_description: string
+          p_end: string
+          p_location: string
+          p_mastermind_group_id: string
+          p_max_participants: number
+          p_mode: string
+          p_payment_link: string
+          p_payment_qr_url: string
+          p_payment_window_minutes: number
+          p_prepay_rub: number
+          p_price_total_rub: number
+          p_schedule_id: string
+          p_start: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      paid_event_settings_save: {
+        Args: {
+          p_cancellation_terms: string
+          p_cash_rub: number
+          p_max_participants: number
+          p_mode: string
+          p_payment_link: string
+          p_payment_qr_url: string
+          p_payment_window_minutes: number
+          p_prepay_rub: number
+          p_price_total_rub: number
+          p_schedule_id: string
+        }
+        Returns: Json
+      }
+      paid_events_web: { Args: never; Returns: Json }
+      paid_expire_stale_holds: {
+        Args: { p_schedule_id: string }
+        Returns: undefined
+      }
+      paid_seats_used: { Args: { p_schedule_id: string }; Returns: number }
       purchase_reward_web: {
         Args: { p_reward_id: string; p_user_comment?: string }
         Returns: Json
@@ -4801,6 +5084,7 @@ export type Database = {
         Returns: undefined
       }
       register_for_event_web: { Args: { p_schedule_id: string }; Returns: Json }
+      request_attendance_web: { Args: { p_schedule_id: string }; Returns: Json }
       review_homework_submission: {
         Args: {
           p_admin_comment?: string
