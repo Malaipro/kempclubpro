@@ -140,7 +140,7 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
     case 'paid_report':
     case 'paid_cancel': {
       await currentUserId();
-      const rpc = supabase.rpc as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args?: object) => Promise<{ data: unknown; error: { message: string } | null }>;
       const { data, error } = action === 'paid_hold'
         ? await rpc('paid_booking_create_hold', { p_schedule_id: payload.schedule_id, p_idempotency_key: payload.idempotency_key })
         : await rpc(action === 'paid_report' ? 'paid_booking_report_paid' : 'paid_booking_cancel_own', { p_booking_id: payload.booking_id });
