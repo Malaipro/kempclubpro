@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope } from './IntensiveStreamScope';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckpointPhotos, parsePhotoUrls } from '@/components/checkpoints/CheckpointPhotos';
@@ -141,6 +142,7 @@ const fmtDate = (v?: string | null) =>
   v ? new Date(v).toLocaleDateString('ru-RU') : '—';
 
 export const CaptainDashboard: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const { user } = useAuth();
   const { isAdmin } = useRole();
   const { toast } = useToast();
@@ -185,6 +187,7 @@ export const CaptainDashboard: React.FC = () => {
         .order('name');
       // Админ видит все команды, капитан — только свои
       if (!isAdmin) query = query.eq('captain_user_id', user.id);
+      if (scope) query = query.eq('stream_id', scope.streamId);
       const { data } = await query;
       const rows = (data || []) as TeamRow[];
       setTeams(rows);
@@ -192,7 +195,7 @@ export const CaptainDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, scope?.streamId]);
 
   const loadTeamData = useCallback(async () => {
     if (!selectedTeam) {

@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, scopePeriod } from './IntensiveStreamScope';
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -269,6 +270,7 @@ const EntryViewer: React.FC<{ entryId: string | null; onClose: () => void }> = (
 };
 
 const EntriesSection: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [profiles, setProfiles] = useState<Array<{ user_id: string; display_name: string | null; coaching_type?: 'standard' | 'personal' | null }>>([]);
   const [loading, setLoading] = useState(true);
@@ -284,6 +286,7 @@ const EntriesSection: React.FC = () => {
       .select('id, user_id, entry_date, day_type, created_at')
       .order('entry_date', { ascending: false })
       .limit(200);
+    if (scope) q = scopePeriod(q.in('user_id', scope.userIds), 'entry_date', scope);
     if (userFilter !== 'all') q = q.eq('user_id', userFilter);
     if (dateFilter) q = q.eq('entry_date', dateFilter);
     const { data } = await q;
@@ -310,6 +313,7 @@ const EntriesSection: React.FC = () => {
       const { data } = await supabase
         .from('profiles')
         .select('user_id, display_name, coaching_type')
+        .in('user_id', scope ? scope.userIds : (await supabase.from('profiles').select('user_id')).data?.map(p => p.user_id) ?? [])
         .order('display_name', { ascending: true })
         .limit(500);
       setProfiles((data as any) || []);
@@ -410,6 +414,7 @@ interface SummaryRow {
 }
 
 const SummariesSection: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const { toast } = useToast();
   const { isAdmin, isSuperAdmin, isCaptain } = useRole();
   const canManage = isAdmin || isSuperAdmin;
@@ -425,7 +430,7 @@ const SummariesSection: React.FC = () => {
   useEffect(() => {
     if (!canManage) return;
     (async () => {
-      const { data } = await supabase.from('captain_teams').select('id, name').order('name');
+      const { data } = await supabase.from('captain_teams').select('id, name').in('id', scope ? (await supabase.from('captain_teams').select('id').eq('stream_id', scope.streamId)).data?.map(t => t.id) ?? [] : (await supabase.from('captain_teams').select('id')).data?.map(t => t.id) ?? []).order('name');
       setTeams((data ?? []) as { id: string; name: string }[]);
     })();
   }, [canManage]);
@@ -471,6 +476,7 @@ const SummariesSection: React.FC = () => {
         .select('id, user_id, week_start, summary_text, edited_text, status')
         .order('week_start', { ascending: false });
 
+      if (scope) query = scopePeriod(query.in('user_id', scope.userIds), 'week_start', scope);
       if (statusFilter !== 'all') query = query.eq('status', statusFilter);
       if (allowedUserIds) query = query.in('user_id', allowedUserIds);
 

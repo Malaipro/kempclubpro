@@ -46,7 +46,8 @@ export const ParticipantHomeworkTab: React.FC<Props> = ({ userId, streamId }) =>
         participantService.listHomeworkSubmissions(userId),
         participantService.listHomeworkAssignments(userId, streamId),
       ]);
-      setSubmissions(subs);
+      const assignmentIds = new Set(asg.map(a => a.id));
+      setSubmissions(subs.filter(sub => sub.assignment_id && assignmentIds.has(sub.assignment_id)));
       setAssignments(asg);
     } catch (e: any) {
       toast({ title: 'Ошибка', description: e?.message || 'Не удалось загрузить ДЗ', variant: 'destructive' });

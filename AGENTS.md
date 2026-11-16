@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Admin intensive screens share IntensiveStreamScope; homework follows assignment stream IDs, legacy undated ownership is not inferred from transferred profiles, and records lacking stream IDs are limited by Moscow stream dates without rewriting history.
+
 - Keep /app club booking on an explicit club-calendar read path with club schedule IDs validated before booking; intensive schedule viewing remains read-only and Telegram contracts stay unchanged.
 - Treat local daily check-in storage as an account-scoped UI cache only, with Moscow calendar expiry; server check-ins remain authoritative and cross-device hydration requires an authorized read path.
 - Keep one-off stream setup manifests and regression tests under `sql/stream-<number>`; apply data changes atomically with deterministic IDs and never clone participant activity.

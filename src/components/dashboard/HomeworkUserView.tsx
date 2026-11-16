@@ -1,3 +1,4 @@
+import { assignmentInStream } from '@/lib/intensiveStream';
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,12 +58,16 @@ export const HomeworkUserView: React.FC<HomeworkUserViewProps> = ({ archiveMode 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data: a }, { data: s }] = await Promise.all([
-      supabase.from('homework_assignments').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+    const [{ data: a }, { data: s }, profileResult] = await Promise.all([
+      supabase.from('homework_assignments').select('*').order('created_at', { ascending: false }),
       supabase.from('homework_submissions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('current_stream_id').eq('user_id', user.id).maybeSingle(),
     ]);
-    setAssignments(a || []);
-    setSubmissions(s || []);
+    const streamId = profileResult.data?.current_stream_id;
+    const streamResult = streamId ? await supabase.from('streams').select('id, name, is_active, start_date, end_date').eq('id', streamId).maybeSingle() : null;
+    const visible = archiveMode ? (a || []) : (a || []).filter(ax => ax.is_active && (!ax.target_user_id || ax.target_user_id === user.id) && assignmentInStream(ax, streamResult?.data ?? null));
+    setAssignments(visible);
+    setSubmissions(archiveMode ? (s || []) : (s || []).filter(sub => visible.some(ax => ax.id === sub.assignment_id)));
     setLoading(false);
   };
 

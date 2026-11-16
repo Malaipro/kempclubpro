@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod, scopeUsers } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ interface Profile {
 
 export const CrashTestManagement: React.FC = () => {
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [testType, setTestType] = useState<string>('bjj');
@@ -37,10 +39,11 @@ export const CrashTestManagement: React.FC = () => {
 
   const loadProfiles = async () => {
     try {
-      const { data, error } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('user_id, display_name, first_name, last_name')
         .order('display_name');
+      const { data, error } = await scopeUsers(profileQuery, scope);
 
       if (error) throw error;
       setProfiles(data || []);
@@ -70,7 +73,7 @@ export const CrashTestManagement: React.FC = () => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('Пользователь не авторизован');
       }

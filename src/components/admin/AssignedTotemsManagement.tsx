@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ interface AssignedTotem {
 
 export const AssignedTotemsManagement: React.FC = () => {
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
   const [assignedTotems, setAssignedTotems] = useState<AssignedTotem[]>([]);
   const [filteredTotems, setFilteredTotems] = useState<AssignedTotem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,11 +75,11 @@ export const AssignedTotemsManagement: React.FC = () => {
   useEffect(() => {
     if (searchQuery) {
       const filtered = assignedTotems.filter((at) => {
-        const userName = at.profiles.display_name || 
+        const userName = at.profiles.display_name ||
           `${at.profiles.first_name} ${at.profiles.last_name}`;
         const totemName = at.totems.name;
         const searchLower = searchQuery.toLowerCase();
-        
+
         return userName.toLowerCase().includes(searchLower) ||
                totemName.toLowerCase().includes(searchLower);
       });
@@ -89,7 +91,7 @@ export const AssignedTotemsManagement: React.FC = () => {
 
   const loadAssignedTotems = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_totems')
         .select(`
           *,
@@ -103,6 +105,8 @@ export const AssignedTotemsManagement: React.FC = () => {
           )
         `)
         .order('assigned_at', { ascending: false });
+      if (scope) query = scopePeriod(query.in('user_id', scope.userIds), 'assigned_at', scope);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -120,7 +124,7 @@ export const AssignedTotemsManagement: React.FC = () => {
 
       // Загружаем профили тех, кто присвоил тотемы
       const assignedByIds = [...new Set(data?.map(t => t.assigned_by).filter(Boolean))];
-      
+
       let assignedByProfiles: any = {};
       if (assignedByIds.length > 0) {
         const { data: profilesData } = await supabase
@@ -209,7 +213,7 @@ export const AssignedTotemsManagement: React.FC = () => {
   };
 
   const getUserName = (totem: AssignedTotem) => {
-    return totem.profiles.display_name || 
+    return totem.profiles.display_name ||
       `${totem.profiles.first_name} ${totem.profiles.last_name}`;
   };
 

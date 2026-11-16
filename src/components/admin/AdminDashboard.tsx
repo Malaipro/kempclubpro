@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IntensiveStreamProvider } from './IntensiveStreamScope';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Activity, Users, Layers, Zap, Calendar, Settings, MessageSquare, Camera, FileText, Target, Shield, UserCog, FileSignature, Share2, BookOpen, Gift, Send, Triangle, NotebookPen, Megaphone, Tag, Trophy } from 'lucide-react';
 import { ChallengesManagement } from './ChallengesManagement';
@@ -39,7 +40,8 @@ import { BarChart3 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('applications');
-  return <div className="w-full">
+  const streamSections = ['kamp', 'ascetics', 'activities', 'participants', 'statuses', 'cooper', 'homework', 'intensive-schedule', 'materials', 'pyramid', 'journal', 'stream-dashboard', 'teams', 'captains-rating', 'captain-dashboard'];
+  return <IntensiveStreamProvider showSelector={streamSections.includes(activeTab)}><div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Navigation Tabs */}
         <div className="mb-6 overflow-x-auto">
@@ -53,72 +55,72 @@ export const AdminDashboard: React.FC = () => {
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">КЭМП</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="ascetics" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Target className="w-4 h-4" />
               <span className="whitespace-nowrap">Аскезы</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="activities" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Activity className="w-4 h-4" />
               <span className="whitespace-nowrap">Актив.</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="participants" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Users className="w-4 h-4" />
               <span className="whitespace-nowrap">Участн.</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="statuses" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <UserCog className="w-4 h-4" />
               <span className="whitespace-nowrap">Статусы</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="streams" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Layers className="w-4 h-4" />
               <span className="whitespace-nowrap">Потоки</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="cooper" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Zap className="w-4 h-4" />
               <span className="whitespace-nowrap">Купер</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="homework" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <BookOpen className="w-4 h-4" />
               <span className="whitespace-nowrap">ДЗ</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="rewards" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Gift className="w-4 h-4" />
               <span className="whitespace-nowrap">Награды</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="intensive-schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">Интенсив</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="club-schedule" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">Клуб</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="testimonials" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <MessageSquare className="w-4 h-4" />
               <span className="whitespace-nowrap">Отзывы</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="moments" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Camera className="w-4 h-4" />
               <span className="whitespace-nowrap">Моменты</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="instructions" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Инструкц.</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="content" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileText className="w-4 h-4" />
               <span className="whitespace-nowrap">Контент</span>
@@ -128,7 +130,7 @@ export const AdminDashboard: React.FC = () => {
               <BookOpen className="w-4 h-4" />
               <span className="whitespace-nowrap">Материалы</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="contracts" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <FileSignature className="w-4 h-4" />
               <span className="whitespace-nowrap">Договоры</span>
@@ -138,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
               <Share2 className="w-4 h-4" />
               <span className="whitespace-nowrap">Рефералы</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="security" className="flex flex-col items-center gap-1 text-xs px-4 py-3 min-w-[70px] flex-shrink-0 text-gray-300 hover:text-white data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors">
               <Shield className="w-4 h-4" />
               <span className="whitespace-nowrap">Безопасн.</span>
@@ -213,27 +215,27 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="kamp" className="mt-0">
           <KampSystem />
         </TabsContent>
-        
+
         <TabsContent value="ascetics" className="mt-0">
           <AsceticManagement />
         </TabsContent>
-        
+
         <TabsContent value="activities" className="mt-0">
           <ActivityManagement />
         </TabsContent>
-        
+
         <TabsContent value="participants" className="mt-0">
           <EnhancedParticipantManagement />
         </TabsContent>
-        
+
         <TabsContent value="statuses" className="mt-0">
           <ParticipantStatusManagement />
         </TabsContent>
-        
+
         <TabsContent value="streams" className="mt-0">
           <EnhancedStreamManagement />
         </TabsContent>
-        
+
         <TabsContent value="cooper" className="mt-0">
           <EnhancedCooperTest />
         </TabsContent>
@@ -245,27 +247,27 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="rewards" className="mt-0">
           <RewardsManagement />
         </TabsContent>
-        
+
         <TabsContent value="intensive-schedule" className="mt-0">
           <IntensiveScheduleManagement />
         </TabsContent>
-        
+
         <TabsContent value="club-schedule" className="mt-0">
           <ClubScheduleManagement />
         </TabsContent>
-        
+
         <TabsContent value="testimonials" className="mt-0">
           <TestimonialManagement />
         </TabsContent>
-        
+
         <TabsContent value="moments" className="mt-0">
           <MomentsManagement />
         </TabsContent>
-        
+
         <TabsContent value="instructions" className="mt-0">
           <InstructionsManagement />
         </TabsContent>
-        
+
         <TabsContent value="content" className="mt-0">
           <ContentBlocksManagement />
         </TabsContent>
@@ -273,11 +275,11 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="materials" className="mt-0">
           <MaterialsManagement />
         </TabsContent>
-        
+
         <TabsContent value="cms" className="mt-0">
           <ContentManager />
         </TabsContent>
-        
+
         <TabsContent value="contracts" className="mt-0">
           <ContractManagement />
         </TabsContent>
@@ -285,7 +287,7 @@ export const AdminDashboard: React.FC = () => {
         <TabsContent value="referrals" className="mt-0">
           <ReferralsManagement />
         </TabsContent>
-        
+
         <TabsContent value="security" className="mt-0">
           <SecurityEnhancements />
         </TabsContent>
@@ -337,5 +339,5 @@ export const AdminDashboard: React.FC = () => {
 
 
       </Tabs>
-    </div>;
+    </div></IntensiveStreamProvider>;
 };

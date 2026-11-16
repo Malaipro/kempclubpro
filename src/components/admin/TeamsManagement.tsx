@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -85,6 +86,7 @@ const nameOf = (p?: ProfileRow) => p?.display_name?.trim() || 'Без имени
 
 export const TeamsManagement: React.FC = () => {
   const { user } = useAuth();
+  const streamScope = useIntensiveStreamScope();
   const [loading, setLoading] = useState(true);
   const [streams, setStreams] = useState<StreamRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
@@ -92,8 +94,8 @@ export const TeamsManagement: React.FC = () => {
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
 
-  const [selectedStream, setSelectedStream] = useState<string>('all');
-  const [rosterStream, setRosterStream] = useState<string>('all');
+  const [selectedStream, setSelectedStream] = useScopedStream();
+  const [rosterStream, setRosterStream] = useScopedStream();
   const [rosterFilter, setRosterFilter] = useState<string>('all');
 
   // dialogs
@@ -150,8 +152,8 @@ export const TeamsManagement: React.FC = () => {
   }, [loadAll]);
 
   const captains = useMemo(
-    () => profiles.filter((p) => captainIds.includes(p.user_id)),
-    [profiles, captainIds]
+    () => profiles.filter((p) => captainIds.includes(p.user_id) && (p.current_stream_id === selectedStream || teams.some(t => t.stream_id === selectedStream && t.captain_user_id === p.user_id))),
+    [profiles, captainIds, selectedStream, teams]
   );
 
   const streamTeams = useMemo(
@@ -186,7 +188,7 @@ export const TeamsManagement: React.FC = () => {
 
   const residents = useMemo(
     () => profiles.filter((p) => p.participant_status === 'club_resident' && !captainIds.includes(p.user_id)),
-    [profiles, captainIds]
+    [profiles, captainIds, selectedStream, teams]
   );
 
   // ---- actions ----
@@ -342,8 +344,9 @@ export const TeamsManagement: React.FC = () => {
         <SelectValue placeholder="Выберите поток" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">Все потоки</SelectItem>
-        {streams.map((s) => (
+        {!streamScope && <SelectItem value="all">Все потоки</SelectItem>}
+
+        {streams.filter(s => !streamScope || s.id === selectedStream).map((s) => (
           <SelectItem key={s.id} value={s.id}>
             {s.name}
             {s.is_active ? ' • активный' : ''}

@@ -1,3 +1,5 @@
+import { assignmentInStream, submissionInStream } from '@/lib/intensiveStream';
+import { useIntensiveStreamScope } from './IntensiveStreamScope';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,6 +92,7 @@ const emptyForm = {
 
 export const HomeworkManagement: React.FC = () => {
   const { user } = useAuth();
+  const scope = useIntensiveStreamScope();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
@@ -107,17 +110,18 @@ export const HomeworkManagement: React.FC = () => {
     setLoading(true);
     const [{ data: a }, { data: s }, { data: st }, { data: p }] = await Promise.all([
       supabase.from('homework_assignments').select('*').order('created_at', { ascending: false }),
-      supabase.from('homework_submissions').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('homework_submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('streams').select('id, name, is_active').order('created_at', { ascending: false }),
       supabase.from('profiles').select('user_id, display_name, first_name, last_name, participant_status, current_stream_id, telegram_id').eq('participant_status', 'intensive_active'),
     ]);
-    setAssignments(a || []);
+    const scopedAssignments = scope ? (a || []).filter(ax => assignmentInStream(ax, scope.stream)) : (a || []);
+    setAssignments(scopedAssignments);
     setStreams(st || []);
-    setParticipants(p || []);
+    setParticipants(scope ? (p || []).filter(pr => pr.current_stream_id === scope.streamId) : (p || []));
 
     // Enrich submissions with profile and assignment info
     const profileMap = new Map((p || []).map((pr: any) => [pr.user_id, pr]));
-    const assignMap = new Map((a || []).map((ax: any) => [ax.id, ax]));
+    const assignMap = new Map(scopedAssignments.map((ax: any) => [ax.id, ax]));
     // also load other profiles for submissions made by users not in current list
     const missingIds = Array.from(new Set((s || []).map((x: any) => x.user_id))).filter((id: any) => !profileMap.has(id));
     let extra: any[] = [];
@@ -129,7 +133,8 @@ export const HomeworkManagement: React.FC = () => {
       extra = ex || [];
       extra.forEach((pr) => profileMap.set(pr.user_id, pr));
     }
-    const enriched: Submission[] = (s || []).map((x: any) => ({
+    const scopedSubmissions = scope ? (s || []).filter(sub => submissionInStream(sub, scopedAssignments, scope.stream) && (sub.assignment_id || scope.userIds.includes(sub.user_id))) : (s || []);
+    const enriched: Submission[] = scopedSubmissions.map((x: any) => ({
       ...x,
       profile: profileMap.get(x.user_id),
       assignment: x.assignment_id ? assignMap.get(x.assignment_id) : undefined,
@@ -140,11 +145,11 @@ export const HomeworkManagement: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [scope?.streamId, scope?.userIds]);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ ...emptyForm });
+    setForm({ ...emptyForm, stream_id: scope?.streamId ?? '' });
     setAssignmentFiles([]);
     setDialogOpen(true);
   };
@@ -200,7 +205,7 @@ export const HomeworkManagement: React.FC = () => {
       theme: form.theme.trim() || null,
       content: form.content.trim(),
       deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
-      stream_id: form.stream_id || null,
+      stream_id: scope?.streamId || form.stream_id || null,
       target_user_id: form.target_user_id || null,
       points_reward: Number(form.points_reward) || 10,
       is_active: form.is_active,
@@ -432,7 +437,7 @@ export const HomeworkManagement: React.FC = () => {
                 <SelectTrigger><SelectValue placeholder="Выбрать поток" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— не выбран —</SelectItem>
-                  {streams.map((s) => (
+                  {streams.filter(s => !scope || s.id === scope.streamId).map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}{s.is_active ? ' (активный)' : ''}</SelectItem>
                   ))}
                 </SelectContent>
@@ -440,7 +445,7 @@ export const HomeworkManagement: React.FC = () => {
             </div>
             <div>
               <Label>Или конкретный участник (персональное)</Label>
-              <Select value={form.target_user_id || 'none'} onValueChange={(v) => setForm({ ...form, target_user_id: v === 'none' ? '' : v, stream_id: v !== 'none' ? '' : form.stream_id })}>
+              <Select value={form.target_user_id || 'none'} onValueChange={(v) => setForm({ ...form, target_user_id: v === 'none' ? '' : v, stream_id: scope?.streamId ?? (v !== 'none' ? '' : form.stream_id) })}>
                 <SelectTrigger><SelectValue placeholder="Выбрать участника" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— не выбран —</SelectItem>

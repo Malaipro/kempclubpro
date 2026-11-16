@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,36 +62,42 @@ export const EnhancedCooperTest: React.FC = () => {
   });
 
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
 
   const fetchTestResults = async () => {
     try {
       // Get the active stream
-      const { data: activeStream } = await supabase
+      const { data: fallbackStream } = await supabase
         .from('streams')
         .select('id')
         .eq('is_active', true)
         .single();
 
+      const activeStream = scope?.stream ?? fallbackStream;
       if (!activeStream) {
         setTestResults([]);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('cooper_test_results')
         .select('*')
         .order('test_date', { ascending: false });
+      if (scope) query = scopePeriod(query.in('user_id', scope.userIds), 'test_date', scope);
+      const { data, error } = await query;
 
       if (error) throw error;
-      
+
       // Fetch profiles separately to avoid relationship issues, filtering by active stream
       const userIds = (data || []).map(result => result.user_id);
-      const { data: profilesData } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('user_id, display_name, first_name, last_name, current_stream_id')
         .in('user_id', userIds)
-        .eq('current_stream_id', activeStream.id);
+        .in('user_id', userIds);
+      if (!scope) profileQuery = profileQuery.eq('current_stream_id', activeStream.id);
+      const { data: profilesData } = await profileQuery;
 
       // Merge profiles with results and filter by stream
       const resultsWithProfiles = (data || [])
@@ -116,12 +123,13 @@ export const EnhancedCooperTest: React.FC = () => {
   const fetchParticipants = async () => {
     try {
       // Get the active stream
-      const { data: activeStream } = await supabase
+      const { data: fallbackStream } = await supabase
         .from('streams')
         .select('id')
         .eq('is_active', true)
         .single();
 
+      const activeStream = scope?.stream ?? fallbackStream;
       if (!activeStream) {
         setParticipants([]);
         return;
@@ -147,17 +155,17 @@ export const EnhancedCooperTest: React.FC = () => {
 
   const getFitnessLevel = (totalMinutes: number | null): string => {
     if (!totalMinutes) return 'unknown';
-    
+
     // Based on total time in minutes for all 4 exercises
     if (totalMinutes <= 3) return 'excellent';      // 3 minutes or less
-    if (totalMinutes <= 4) return 'good';           // 4 minutes or less  
+    if (totalMinutes <= 4) return 'good';           // 4 minutes or less
     if (totalMinutes <= 5) return 'satisfactory';   // 5 minutes or less
     return 'poor';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.user_id || !formData.total_minutes || !formData.total_seconds) {
       toast({
         title: 'Ошибка',
@@ -192,14 +200,14 @@ export const EnhancedCooperTest: React.FC = () => {
           .from('cooper_test_results')
           .update(testData)
           .eq('id', editingResult.id);
-        
+
         if (error) throw error;
         toast({ title: 'Успешно', description: 'Результат обновлен' });
       } else {
         const { error } = await supabase
           .from('cooper_test_results')
           .insert([testData]);
-        
+
         if (error) throw error;
         toast({ title: 'Успешно', description: 'Результат добавлен' });
       }
@@ -236,19 +244,19 @@ export const EnhancedCooperTest: React.FC = () => {
     try {
       const { error } = await supabase
         .from('cooper_test_results')
-        .update({ 
+        .update({
           verified,
           verified_by: verified ? (await supabase.auth.getUser()).data.user?.id : null
         })
         .eq('id', resultId);
 
       if (error) throw error;
-      
+
       toast({
         title: verified ? 'Результат подтвержден' : 'Подтверждение отменено',
         description: 'Статус успешно обновлен',
       });
-      
+
       fetchTestResults();
     } catch (error) {
       console.error('Error updating verification:', error);
@@ -313,7 +321,7 @@ export const EnhancedCooperTest: React.FC = () => {
 
   // Group results by test phase for different measurements
   const getTestResults = (phase: string) => {
-    return testResults.filter(result => result.test_phase === phase);  
+    return testResults.filter(result => result.test_phase === phase);
   };
 
   if (loading) {
@@ -334,10 +342,10 @@ export const EnhancedCooperTest: React.FC = () => {
           <h1 className="text-2xl font-bold">Тест Купера</h1>
           <p className="text-muted-foreground">Управление результатами всех участников (общее время за 4 упражнения)</p>
         </div>
-        
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               className="bg-destructive hover:bg-destructive/90 text-white"
               onClick={() => {
                 setEditingResult(null);
@@ -348,14 +356,14 @@ export const EnhancedCooperTest: React.FC = () => {
               Добавить результат
             </Button>
           </DialogTrigger>
-          
+
           <DialogContent className="max-w-md bg-gray-900 border-gray-700">
             <DialogHeader>
               <DialogTitle className="text-white">
                 {editingResult ? 'Редактировать результат' : 'Добавить результат теста'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label className="text-white">Участник *</Label>
@@ -366,7 +374,7 @@ export const EnhancedCooperTest: React.FC = () => {
                   <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
                     {participants.map((participant) => (
                       <SelectItem key={participant.user_id} value={participant.user_id} className="hover:bg-gray-100">
-                        {participant.first_name && participant.last_name 
+                        {participant.first_name && participant.last_name
                           ? `${participant.first_name} ${participant.last_name}`
                           : participant.display_name}
                       </SelectItem>
@@ -539,7 +547,7 @@ export const EnhancedCooperTest: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {result.test_phase === 'during_stream' ? 'Начало потока' : 
+                          {result.test_phase === 'during_stream' ? 'Начало потока' :
                            result.test_phase === 'after_stream' ? 'Конец потока' : 'Неизвестно'}
                         </Badge>
                       </TableCell>
@@ -720,7 +728,7 @@ export const EnhancedCooperTest: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
       </Tabs>
     </div>
   );

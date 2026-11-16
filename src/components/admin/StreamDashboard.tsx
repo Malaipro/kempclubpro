@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,8 @@ const ratingColor = (r: number) => (r >= 70 ? 'text-green-500' : r >= 50 ? 'text
 export const StreamDashboard: React.FC = () => {
   const { toast } = useToast();
   const [streams, setStreams] = useState<Stream[]>([]);
-  const [streamId, setStreamId] = useState<string>('');
+  const [streamId, setStreamId] = useScopedStream();
+  const streamScope = useIntensiveStreamScope();
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
 
@@ -60,7 +62,7 @@ export const StreamDashboard: React.FC = () => {
       const list = (data || []) as Stream[];
       setStreams(list);
       const active = list.find((s) => s.is_active) || list[0];
-      if (active) setStreamId(active.id);
+      if (active && !streamId) setStreamId(active.id);
       else setLoading(false);
     })();
   }, []);
@@ -175,7 +177,7 @@ export const StreamDashboard: React.FC = () => {
             <SelectValue placeholder="Выберите поток" />
           </SelectTrigger>
           <SelectContent>
-            {streams.map((s) => (
+            {streams.filter(s => !streamScope || s.id === streamId).map((s) => (
               <SelectItem key={s.id} value={s.id}>
                 {s.name}
                 {s.is_active ? ' (активный)' : ''}

@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,12 +53,13 @@ interface CaptainStat {
 }
 
 export const CaptainsRatingDashboard: React.FC = () => {
+  const streamScope = useIntensiveStreamScope();
   const [loading, setLoading] = useState(true);
   const [streams, setStreams] = useState<StreamRow[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
-  const [selectedStream, setSelectedStream] = useState<string>('all');
+  const [selectedStream, setSelectedStream] = useScopedStream();
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -157,8 +159,9 @@ export const CaptainsRatingDashboard: React.FC = () => {
               <SelectValue placeholder="Выберите поток" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все потоки</SelectItem>
-              {streams.map((s) => (
+        {!streamScope && <SelectItem value="all">Все потоки</SelectItem>}
+
+              {streams.filter(s => !streamScope || s.id === selectedStream).map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
                   {s.is_active ? ' • активный' : ''}

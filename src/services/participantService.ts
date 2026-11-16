@@ -1,3 +1,4 @@
+import { assignmentInStream } from '@/lib/intensiveStream';
 // Единый сервисный слой карточки участника (CRM КЭМП).
 // Все вкладки используют ТОЛЬКО этот слой — поэтому будущий Telegram Mini App
 // сможет переиспользовать те же запросы/мутации без изменений БД.
@@ -240,7 +241,10 @@ export const participantService = {
     }
     const { data, error } = await query;
     if (error) throw error;
-    return (data as HomeworkAssignment[]) || [];
+    if (!streamId) return [];
+    const { data: stream, error: streamError } = await supabase.from('streams').select('id, name, is_active, start_date, end_date').eq('id', streamId).maybeSingle();
+    if (streamError) throw streamError;
+    return ((data as HomeworkAssignment[]) || []).filter(a => assignmentInStream(a, stream));
   },
 
   async createHomeworkAssignment(payload: {

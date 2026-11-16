@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
-  const [currentStreamId, setCurrentStreamId] = useState<string | null>(null);
+  const [currentStreamId, setCurrentStreamId] = useScopedStream();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -76,14 +77,13 @@ export const IntensiveScheduleManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('streams')
         .select('id, name')
-        .eq('is_active', true)
         .eq('stream_type', 'intensive')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       setStreams(data || []);
-      
+
       // Set first active stream as current
       if (data && data.length > 0 && !currentStreamId) {
         setCurrentStreamId(data[0].id);
@@ -95,7 +95,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
 
   const fetchSchedules = async () => {
     if (!currentStreamId) return;
-    
+
     try {
       const {
         data,
@@ -305,7 +305,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
               <SelectValue placeholder="Выберите поток" />
             </SelectTrigger>
             <SelectContent>
-              {streams.map(stream => (
+              {streams.filter(stream => stream.id === currentStreamId).map(stream => (
                 <SelectItem key={stream.id} value={stream.id}>
                   {stream.name}
                 </SelectItem>
@@ -340,14 +340,14 @@ export const IntensiveScheduleManagement: React.FC = () => {
                 Добавить мероприятие
               </Button>
             </DialogTrigger>
-            
+
             <DialogContent className="max-w-lg bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-white">
                   {editingId ? 'Редактировать мероприятие' : 'Добавить мероприятие'}
                 </DialogTitle>
               </DialogHeader>
-              
+
               <form onSubmit={handleAddEvent} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -460,7 +460,7 @@ export const IntensiveScheduleManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-white">Описание мероприятия</Label>
-                  <Textarea 
+                  <Textarea
                     value={formData.event_description}
                     onChange={e => setFormData(prev => ({
                       ...prev,

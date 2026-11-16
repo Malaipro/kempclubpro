@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Profile {
 
 export const TrainingSessionManagement: React.FC = () => {
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [sessionType, setSessionType] = useState<string>('bjj');
@@ -57,7 +59,9 @@ export const TrainingSessionManagement: React.FC = () => {
         .order('display_name');
 
       // Фильтруем только участников из активных потоков
-      if (activeStreamIds.length > 0) {
+      if (scope) {
+        query = query.in('user_id', scope.userIds);
+      } else if (activeStreamIds.length > 0) {
         query = query.in('current_stream_id', activeStreamIds);
       }
 
@@ -92,7 +96,7 @@ export const TrainingSessionManagement: React.FC = () => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('Пользователь не авторизован');
       }

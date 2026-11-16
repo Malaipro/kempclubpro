@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod, scopeUsers } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,13 +55,14 @@ const activityTypeLabels: Record<string, string> = {
 };
 
 export const TrainingSessionsList: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [editingSession, setEditingSession] = useState<TrainingSession | null>(null);
   const [deletingSession, setDeletingSession] = useState<TrainingSession | null>(null);
-  
+
   // Edit form states
   const [editActivityType, setEditActivityType] = useState<string>('');
   const [editSessionDate, setEditSessionDate] = useState<Date>(new Date());
@@ -76,10 +78,11 @@ export const TrainingSessionsList: React.FC = () => {
     setLoading(true);
     try {
       // Load profiles
-      const { data: profilesData, error: profilesError } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('user_id, display_name, first_name, last_name')
         .order('display_name');
+      const { data: profilesData, error: profilesError } = await scopeUsers(profileQuery, scope);
 
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
@@ -97,6 +100,7 @@ export const TrainingSessionsList: React.FC = () => {
           )
         `)
         .order('session_date', { ascending: false });
+      if (scope) query = scopePeriod(query.in('user_id', scope.userIds), 'session_date', scope);
 
       if (selectedUserId !== 'all') {
         query = query.eq('user_id', selectedUserId);
@@ -231,7 +235,7 @@ export const TrainingSessionsList: React.FC = () => {
                 <SelectItem value="all">Все участники</SelectItem>
                 {profiles.map((profile) => (
                   <SelectItem key={profile.user_id} value={profile.user_id}>
-                    {profile.display_name || 
+                    {profile.display_name ||
                      `${profile.first_name || ''} ${profile.last_name || ''}`.trim() ||
                      'Без имени'}
                   </SelectItem>

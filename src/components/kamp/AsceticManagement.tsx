@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod, scopeUsers } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ export const AsceticManagement: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
   const { isAdmin, isSuperAdmin, loading: roleLoading } = useRole();
 
   const fetchAsceticActivities = async () => {
@@ -76,12 +78,14 @@ export const AsceticManagement: React.FC = () => {
       setLoading(false);
       return;
     }
-    
+
     try {
-      const { data: activities, error } = await supabase
+      let query = supabase
         .from('ascetic_activities')
         .select('*')
         .order('created_at', { ascending: false });
+      if (scope) query = scopePeriod(query.in('user_id', scope.userIds), 'completed_at', scope);
+      const { data: activities, error } = await query;
 
       if (error) throw error;
 
@@ -122,10 +126,11 @@ export const AsceticManagement: React.FC = () => {
 
   const fetchParticipants = async () => {
     try {
-      const { data, error } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('id, user_id, display_name, first_name, last_name')
         .order('display_name', { ascending: true });
+      const { data, error } = await scopeUsers(profileQuery, scope);
 
       if (error) throw error;
       setParticipants(data || []);
@@ -144,7 +149,7 @@ export const AsceticManagement: React.FC = () => {
   const handleCreateAscetic = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
+
     // Validate form data
     try {
       const validatedData = asceticSchema.parse({
@@ -207,7 +212,7 @@ export const AsceticManagement: React.FC = () => {
         setErrors(fieldErrors);
         return;
       }
-      
+
       console.error('Error saving ascetic:', error);
       toast({
         title: 'Ошибка',
@@ -274,19 +279,19 @@ export const AsceticManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('ascetic_activities')
-        .update({ 
+        .update({
           verified,
           verified_by: verified ? (await supabase.auth.getUser()).data.user?.id : null
         })
         .eq('id', activityId);
 
       if (error) throw error;
-      
+
       toast({
         title: verified ? 'Аскеза подтверждена' : 'Подтверждение отменено',
         description: 'Статус успешно обновлен',
       });
-      
+
       fetchAsceticActivities();
     } catch (error) {
       console.error('Error updating verification:', error);
@@ -330,14 +335,14 @@ export const AsceticManagement: React.FC = () => {
   const setupSuperAdmin = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('setup-super-admin');
-      
+
       if (error) throw error;
-      
+
       toast({
         title: 'Успешно',
         description: 'Супер-админ настроен',
       });
-      
+
       // Refresh the page to update role
       window.location.reload();
     } catch (error) {
@@ -382,7 +387,7 @@ export const AsceticManagement: React.FC = () => {
           <Target className="w-5 h-5 text-destructive" />
           <h2 className="text-xl font-semibold text-destructive">Управление аскезами</h2>
         </div>
-        
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="kamp-button-primary">
@@ -491,14 +496,14 @@ export const AsceticManagement: React.FC = () => {
                 <Button type="submit" className="kamp-button-primary flex-1">
                   {editingAscetic ? 'Сохранить изменения' : 'Создать аскезу'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => {
                     setDialogOpen(false);
                     setEditingAscetic(null);
                     resetForm();
-                  }} 
+                  }}
                   className="border-gray-600 text-gray-300"
                 >
                   Отмена

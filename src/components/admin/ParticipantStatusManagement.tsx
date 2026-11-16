@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod, scopeUsers } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,6 +26,7 @@ interface Participant {
 }
 
 export const ParticipantStatusManagement: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -36,10 +38,11 @@ export const ParticipantStatusManagement: React.FC = () => {
   const fetchParticipants = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('id, user_id, first_name, last_name, display_name, participant_status, intensive_completed_at, club_joined_at')
         .order('created_at', { ascending: false });
+      const { data, error } = await scopeUsers(profileQuery, scope);
 
       if (error) throw error;
       setParticipants((data || []) as Participant[]);

@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod, scopeUsers } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ interface Totem {
 
 export const TotemAssignment: React.FC = () => {
   const { toast } = useToast();
+  const scope = useIntensiveStreamScope();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [totems, setTotems] = useState<Totem[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -41,10 +43,11 @@ export const TotemAssignment: React.FC = () => {
   const loadData = async () => {
     try {
       // Загружаем профили
-      const { data: profilesData, error: profilesError } = await supabase
+      let profileQuery = supabase
         .from('profiles')
         .select('id, user_id, display_name, first_name, last_name')
         .order('display_name');
+      const { data: profilesData, error: profilesError } = await scopeUsers(profileQuery, scope);
 
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
@@ -85,7 +88,7 @@ export const TotemAssignment: React.FC = () => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('Пользователь не авторизован');
       }

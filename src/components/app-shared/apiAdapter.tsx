@@ -1,3 +1,4 @@
+import { assignmentInStream } from '@/lib/intensiveStream';
 import React, { createContext, useContext, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { clubCalendarItems, usesClubCalendar } from '@/components/web-app/clubBooking';
@@ -186,10 +187,20 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
       return data as T;
     }
     case 'get_homework': {
-      await currentUserId();
+      const userId = await currentUserId();
       const { data, error } = await supabase.rpc('get_homework_web');
       if (error) throw new Error(error.message);
-      return data as T;
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('current_stream_id').eq('user_id', userId).maybeSingle();
+      if (profileError) throw new Error(profileError.message);
+      if (!profile?.current_stream_id) return { found: true, homework: [] } as T;
+      const [streamResult, assignmentResult] = await Promise.all([
+        supabase.from('streams').select('id, name, is_active, start_date, end_date').eq('id', profile.current_stream_id).maybeSingle(),
+        supabase.from('homework_assignments').select('id, stream_id, target_user_id, created_at').or(`stream_id.eq.${profile.current_stream_id},target_user_id.eq.${userId}`),
+      ]);
+      if (streamResult.error || assignmentResult.error) throw new Error('Не удалось проверить поток заданий');
+      const allowed = new Set((assignmentResult.data ?? []).filter(a => assignmentInStream(a, streamResult.data)).map(a => a.id));
+      const response = data as unknown as { found: boolean; homework?: { id: string }[] };
+      return { ...response, homework: (response.homework ?? []).filter(a => allowed.has(a.id)) } as T;
     }
     case 'submit_homework': {
       await currentUserId();

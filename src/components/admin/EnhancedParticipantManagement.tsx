@@ -1,3 +1,4 @@
+import { useIntensiveStreamScope, useScopedStream, scopePeriod } from '@/components/admin/IntensiveStreamScope';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,7 @@ interface ParticipantDetails {
 export const EnhancedParticipantManagement: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
-  const [activeStreamTab, setActiveStreamTab] = useState<string>('all');
+  const [activeStreamTab, setActiveStreamTab] = useScopedStream();
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -150,12 +151,12 @@ export const EnhancedParticipantManagement: React.FC = () => {
         .from('streams')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       setStreams(data || []);
-      
+
       // Set first stream as active by default
-      if (data && data.length > 0) {
+      if (data && data.length > 0 && !activeStreamTab) {
         setActiveStreamTab(data[0].id);
       }
     } catch (error) {
@@ -168,17 +169,17 @@ export const EnhancedParticipantManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
-          id, 
-          user_id, 
-          display_name, 
-          first_name, 
-          last_name, 
+          id,
+          user_id,
+          display_name,
+          first_name,
+          last_name,
           email,
           phone,
           telegram,
-          total_points, 
-          height_cm, 
-          weight_kg, 
+          total_points,
+          height_cm,
+          weight_kg,
           date_of_birth,
           approved,
           approved_at,
@@ -187,7 +188,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
           participant_status
         `)
         .order('display_name');
-      
+
       if (error) throw error;
 
       // Transform data to match our interface
@@ -288,7 +289,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
         if (error) {
           console.error('Error creating participant:', error);
           let errorMessage = 'Не удалось создать участника';
-          
+
           // Try to extract error message from different possible structures
           if (typeof error === 'object' && error !== null) {
             if ('message' in error) {
@@ -299,7 +300,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
               errorMessage = error.details;
             }
           }
-          
+
           toast({
             title: 'Ошибка',
             description: errorMessage,
@@ -768,14 +769,14 @@ export const EnhancedParticipantManagement: React.FC = () => {
                 Добавить участника
               </Button>
             </DialogTrigger>
-          
+
           <DialogContent className="max-w-md bg-gray-900 border-gray-700">
             <DialogHeader>
               <DialogTitle className="text-white">
                 {editingParticipant ? 'Редактировать участника' : 'Добавить нового участника'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -917,15 +918,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
               )}
 
               <div className="flex gap-2">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="bg-destructive hover:bg-destructive/90 text-white"
                 >
                   {editingParticipant ? 'Сохранить' : 'Создать'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setDialogOpen(false)}
                   className="border-gray-600 text-gray-300 hover:bg-gray-800"
                 >
@@ -1058,7 +1059,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
               Перенести участника в другой поток
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <p className="text-white mb-2">
@@ -1088,15 +1089,15 @@ export const EnhancedParticipantManagement: React.FC = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button 
+              <Button
                 onClick={handleTransferParticipant}
                 className="bg-destructive hover:bg-destructive/90 text-white"
               >
                 Перенести
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setTransferDialogOpen(false);
                   setTransferringParticipant(null);
@@ -1113,9 +1114,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
       {/* Tabs for Streams */}
       <Tabs value={activeStreamTab} onValueChange={setActiveStreamTab} className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${streams.length + 1}, minmax(0, 1fr))` }}>
-          <TabsTrigger value="all">Все участники</TabsTrigger>
-          {streams.map(stream => (
+        <TabsList className="flex w-full">
+          {streams.filter(stream => stream.id === activeStreamTab).map(stream => (
             <TabsTrigger key={stream.id} value={stream.id}>
               {stream.name}
             </TabsTrigger>
@@ -1129,7 +1129,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
           const fullName = formatParticipantName(participant);
           const isExpanded = expandedParticipants.has(participant.user_id);
           const details = participantDetails.get(participant.user_id);
-          
+
           return (
             <Card key={participant.id} className="p-4">
               <CardContent className="p-0">
@@ -1167,16 +1167,16 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => toggleExpand(participant.user_id)}
                       title={isExpanded ? "Скрыть детали" : "Показать детали"}
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setTransferringParticipant(participant);
@@ -1186,24 +1186,24 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     >
                       <ArrowRightLeft className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleToggleApproval(participant)}
                       title={participant.approved ? "Снять утверждение" : "Утвердить участника"}
                     >
                       {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(participant)}
                       title="Редактировать"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedUser(participant);
@@ -1213,8 +1213,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     >
                       <Key className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         // Открыть страницу профиля участника в новой вкладке
@@ -1225,9 +1225,9 @@ export const EnhancedParticipantManagement: React.FC = () => {
                     >
                       <ExternalLink className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-destructive hover:text-destructive"
                       title="Удалить"
                       onClick={() => handleDeleteParticipant(participant)}
@@ -1376,7 +1376,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                       )}
                     </div>
 
-                    {!details.bjj_points && !details.kickboxing_points && !details.ofp_points && 
+                    {!details.bjj_points && !details.kickboxing_points && !details.ofp_points &&
                      !details.theory_points && !details.tactical_points && !details.kamp_pyramid_points && !details.nutrition_points && (
                       <div className="text-center py-4 text-gray-400">
                         <Award className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -1419,7 +1419,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                 const fullName = formatParticipantName(participant);
                 const isExpanded = expandedParticipants.has(participant.user_id);
                 const details = participantDetails.get(participant.user_id);
-                
+
                 return (
                   <Card key={participant.id} className="p-4">
                     <CardContent className="p-0">
@@ -1457,16 +1457,16 @@ export const EnhancedParticipantManagement: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => toggleExpand(participant.user_id)}
                             title={isExpanded ? "Скрыть детали" : "Показать детали"}
                           >
                             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setTransferringParticipant(participant);
@@ -1476,24 +1476,24 @@ export const EnhancedParticipantManagement: React.FC = () => {
                           >
                             <ArrowRightLeft className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleToggleApproval(participant)}
                             title={participant.approved ? "Снять утверждение" : "Утвердить участника"}
                           >
                             {participant.approved ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleEdit(participant)}
                             title="Редактировать"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               setSelectedUser(participant);
@@ -1503,8 +1503,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
                           >
                             <Key className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => {
                               window.open(`/admin/view-participant/${participant.user_id}`, '_blank');
@@ -1514,9 +1514,9 @@ export const EnhancedParticipantManagement: React.FC = () => {
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="text-destructive hover:text-destructive"
                             title="Удалить"
                             onClick={() => handleDeleteParticipant(participant)}
@@ -1677,7 +1677,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
               Изменить пароль для {selectedUser && formatParticipantName(selectedUser)}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <Label className="text-white">Новый пароль</Label>
@@ -1695,8 +1695,8 @@ export const EnhancedParticipantManagement: React.FC = () => {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setResetPasswordDialog(false);
                   setSelectedUser(null);
@@ -1705,7 +1705,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
               >
                 Отмена
               </Button>
-              <Button 
+              <Button
                 className="bg-destructive hover:bg-destructive/90"
                 onClick={handleResetPassword}
                 disabled={!newPassword || newPassword.length < 6}
