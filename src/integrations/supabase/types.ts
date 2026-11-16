@@ -2851,6 +2851,39 @@ export type Database = {
           },
         ]
       }
+      path_game_access: {
+        Row: {
+          created_at: string
+          requested_at: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          requested_at?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          requested_at?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_documents: {
         Row: {
           content: string | null
@@ -4709,6 +4742,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_path_game_access_requests: {
+        Args: never
+        Returns: {
+          access_requested_at: string
+          access_reviewed_at: string
+          access_reviewed_by: string
+          access_status: string
+          access_user_id: string
+          display_name: string
+        }[]
+      }
+      admin_review_path_game_access: {
+        Args: { p_review_note?: string; p_status: string; p_user_id: string }
+        Returns: Json
+      }
       admin_set_approval: {
         Args: { p_approved: boolean; p_user_id: string }
         Returns: undefined
@@ -4876,6 +4924,7 @@ export type Database = {
           payload: Json
         }[]
       }
+      get_path_game_access_state: { Args: never; Returns: Json }
       get_profile_for_user: { Args: { p_telegram_id: string }; Returns: Json }
       get_profile_web: { Args: never; Returns: Json }
       get_public_rating_breakdown: {
@@ -5085,6 +5134,7 @@ export type Database = {
       }
       register_for_event_web: { Args: { p_schedule_id: string }; Returns: Json }
       request_attendance_web: { Args: { p_schedule_id: string }; Returns: Json }
+      request_path_game_access: { Args: never; Returns: Json }
       review_homework_submission: {
         Args: {
           p_admin_comment?: string
