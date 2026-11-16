@@ -168,7 +168,7 @@ const WebAppInner: React.FC = () => {
           ) : activeSection === 'schedule' ? (
             <WebScheduleView status={status} focusEventId={focusEventId} />
           ) : activeSection === 'activities' ? (
-            isResident ? (state.data.profile?.approved === true ? <WebResidentCheckinsView /> : <p className="p-6 text-muted-foreground">Доступ к отметкам ожидает подтверждения основателя.</p>) : <WebActivitiesView />
+            isResident ? (state.data.approved === true ? <WebResidentCheckinsView /> : <p className="p-6 text-muted-foreground">Доступ к отметкам ожидает подтверждения основателя.</p>) : <WebActivitiesView />
           ) : activeSection === 'ascetics' ? (
             <WebAsceticsView />
           ) : activeSection === 'homework' ? (
