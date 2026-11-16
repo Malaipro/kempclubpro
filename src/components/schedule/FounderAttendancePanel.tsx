@@ -19,10 +19,11 @@ const KINDS: [string, string][] = [
   ['mastermind', 'Мастермайнд'], ['crash_test', 'Краш-тест'], ['other', 'Другое'],
 ];
 
-const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+export type AttendanceRpc = (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+const rpc = supabase.rpc.bind(supabase) as unknown as AttendanceRpc;
 const explain = (m: string) => /Could not find the function|schema cache/i.test(m) ? 'Подтверждение посещений ещё не включено на сервере' : m === 'event_not_started' ? 'Нельзя подтвердить присутствие до начала мероприятия' : m === 'forbidden' ? 'Только основатель может отмечать присутствие' : m;
 
-export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ scheduleId }) => {
+export const FounderAttendancePanel: React.FC<{ scheduleId: string; attendanceRpc?: AttendanceRpc }> = ({ scheduleId, attendanceRpc = rpc }) => {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choice, setChoice] = useState<Record<string, Choice>>({});
@@ -31,11 +32,11 @@ export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ sched
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const { data: d, error: e } = await rpc('founder_get_event_attendance', { p_schedule_id: scheduleId });
+    const { data: d, error: e } = await attendanceRpc('founder_get_event_attendance', { p_schedule_id: scheduleId });
     const res = d as Data | null;
     if (e || !res?.ok) { setError(explain(e?.message ?? res?.error ?? 'Ошибка')); return; }
     setError(null); setData(res); setChoice({}); setKind(res.club_kind ?? ''); setAnchor(res.week_anchor ?? '');
-  }, [scheduleId]);
+  }, [scheduleId, attendanceRpc]);
   useEffect(() => { void load(); }, [load]);
 
   if (error) return <p className="text-sm text-muted-foreground">{error}</p>;
@@ -46,12 +47,12 @@ export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ sched
   const marks = Object.entries(choice).filter(([, c]) => c !== 'keep').map(([user_id, c]) => ({ user_id, attended: c === 'present' }));
 
   const saveKind = async () => {
-    const { data: d, error: e } = await rpc('founder_set_event_kind', { p_schedule_id: scheduleId, p_club_kind: kind, p_week_anchor: anchor || data.week_anchor || null });
+    const { data: d, error: e } = await attendanceRpc('founder_set_event_kind', { p_schedule_id: scheduleId, p_club_kind: kind, p_week_anchor: anchor || data.week_anchor || null });
     if (e || !(d as Data)?.ok) toast.error(explain(e?.message ?? (d as Data)?.error ?? 'Ошибка')); else { toast.success('Вид события сохранён'); void load(); }
   };
   const save = async () => {
     setSaving(true);
-    const { data: d, error: e } = await rpc('founder_confirm_attendance', { p_schedule_id: scheduleId, p_marks: marks });
+    const { data: d, error: e } = await attendanceRpc('founder_confirm_attendance', { p_schedule_id: scheduleId, p_marks: marks });
     setSaving(false);
     if (e || !(d as Data)?.ok) { toast.error(explain(e?.message ?? (d as Data)?.error ?? 'Ошибка')); return; }
     toast.success(`Сохранено: ${(d as { updated: number }).updated}`);
@@ -79,8 +80,8 @@ export const FounderAttendancePanel: React.FC<{ scheduleId: string }> = ({ sched
               <p className="font-medium">{p.name}{!p.is_resident && <span className="text-xs text-muted-foreground"> · не резидент</span>}</p>
               <p className="text-xs text-muted-foreground">{p.self_marked_at ? 'Нажал «Я был»' : 'Без самоотметки'}{p.history_count > 1 ? ` · исправлений: ${p.history_count - 1}` : ''}</p>
             </div>
-            <div className="flex items-center gap-1">
-              <Badge variant="outline">{STATUS_LABELS[st]}</Badge>
+            <div className="flex max-w-full flex-wrap items-center gap-1">
+              <Badge className="whitespace-normal" variant="outline">{STATUS_LABELS[st]}</Badge>
               <Button type="button" size="sm" variant={c === 'present' ? 'default' : 'outline'} onClick={() => set(p.user_id, c === 'present' ? 'keep' : 'present')}>Был</Button>
               <Button type="button" size="sm" variant={c === 'absent' ? 'destructive' : 'outline'} onClick={() => set(p.user_id, c === 'absent' ? 'keep' : 'absent')}>Не был</Button>
             </div>

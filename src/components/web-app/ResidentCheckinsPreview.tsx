@@ -1,7 +1,10 @@
-import React, { useCallback, useRef } from 'react';
-import type { CallApi } from '@/components/app-shared/apiAdapter';
+import React, { useState } from 'react';
 import { ResidentCheckinsContent, type ResidentCheckinsPayload } from './WebResidentCheckinsView';
 import type { ResidentEvent } from './residentCheckins';
+import { createCheckinsPreviewStore } from './checkinsPreviewStore';
+import { FounderAttendancePanel } from '@/components/schedule/FounderAttendancePanel';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 // Local fixtures only: no session, Supabase calls, booking or notifications.
 const initial: ResidentCheckinsPayload = {
@@ -20,21 +23,19 @@ const initial: ResidentCheckinsPayload = {
 };
 
 export default function ResidentCheckinsPreview() {
-  const store = useRef(initial);
-  const callApi: CallApi = useCallback(async <T,>(action: string, payload: Record<string, unknown> = {}) => {
-    const data = store.current;
-    if (action === 'get_resident_checkins') return data as T;
-    if (action === 'request_attendance') {
-      const event = data.events.find(e => e.schedule_id === payload.schedule_id);
-      if (!event) return { ok: false, error: 'not_club_event' } as T;
-      store.current = { ...data, events: data.events.map(e => e.schedule_id === event.schedule_id
-        ? { ...e, registered: true, self_marked_at: e.self_marked_at ?? data.now } : e) };
-      return { ok: true, status: 'pending', request_id: event.schedule_id } as T;
-    }
-    return { ok: false, error: 'Тестовая запись недоступна.' } as T;
-  }, []);
+  const [store] = useState(() => createCheckinsPreviewStore(initial));
+  const [role, setRole] = useState('resident');
+  const [eventId, setEventId] = useState<string | null>(null);
   return <div className="web-app-theme min-h-screen bg-background text-foreground">
     <div className="border-b border-border px-4 py-2 text-sm text-muted-foreground">Тестовые данные · 16 ноября 2026 · без отправки заявок</div>
-    <ResidentCheckinsContent callApi={callApi} />
+    <Tabs value={role} onValueChange={setRole} className="px-4 pt-3"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="resident">Резидент</TabsTrigger><TabsTrigger value="founder">Основатель</TabsTrigger></TabsList></Tabs>
+    {role === 'resident' ? <ResidentCheckinsContent callApi={store.callApi} /> : <section className="space-y-4 px-4 py-6">
+      <h1 className="text-xl font-bold">Отметить присутствие</h1>
+      <div className="divide-y divide-border">{initial.events.slice(0, 3).map(event => <div key={event.schedule_id} className="flex items-center justify-between gap-3 py-3">
+        <div className="min-w-0"><h2 className="font-semibold">{event.title}</h2><p className="text-xs text-muted-foreground">{new Date(event.start_time).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</p></div>
+        <Button variant="outline" size="sm" aria-label={`Участники ${event.title}`} onClick={() => setEventId(event.schedule_id)}>Участники</Button>
+      </div>)}</div>
+      {eventId && <div className="border-t border-border pt-4"><h2 className="mb-3 font-semibold">{initial.events.find(e => e.schedule_id === eventId)?.title} · участники</h2><FounderAttendancePanel key={eventId} scheduleId={eventId} attendanceRpc={store.attendanceRpc} /></div>}
+    </section>}
   </div>;
 }

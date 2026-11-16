@@ -1,5 +1,7 @@
 # Tasks
 
+- [x] Verify resident → founder → resident attendance flow using a shared in-memory store on the existing checkins Preview.
+
 - [x] Add a local-only resident Home goal Preview with three mobile states, reward selection/change/removal, and verify no purchases or coin deductions.
 
 - [x] Separate weekly training from booked club events, preserve schedule booking actions, suppress new-booking notifications for attendance-only requests in staging SQL, and verify mobile Preview with a screenshot.
