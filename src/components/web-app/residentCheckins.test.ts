@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { attendanceStatus, canSelfMark, fullWeekStreak, trainingTotals, weekProgress, type ResidentEvent } from './residentCheckins';
+import { attendanceStatus, canSelfMark, fullWeekStreak, trainingTotals, weekProgress, ownClubEvents, clubEventStatus, type ResidentEvent } from './residentCheckins';
 
 const ev = (p: Partial<ResidentEvent>): ResidentEvent => ({
   schedule_id: Math.random().toString(36), title: 'BJJ', theme: null, start_time: '2026-11-02T16:00:00Z',
@@ -80,6 +80,19 @@ describe('цель недели', () => {
 });
 
 describe('серии и итоги', () => {
+  it('в отдельных мероприятиях нет тренировок; только записи и брони', () => {
+    const registered = ev({ schedule_id: 'lecture', club_kind: 'lecture', booking_status: 'registered' });
+    const hold = ev({ schedule_id: 'hold', club_kind: 'excursion', registered: false, booking_id: 'booking', booking_status: 'hold' });
+    assert.deepEqual(ownClubEvents([ev({}), registered, hold, ev({ club_kind: 'lecture', registered: false })]), [registered, hold]);
+    assert.equal(clubEventStatus(registered), 'Вы записаны');
+    assert.equal(clubEventStatus(hold), 'Место удерживается');
+    assert.equal(clubEventStatus({ ...hold, booking_status: 'pending_review' }), 'Оплата на проверке');
+  });
+  it('самоотметка оставляет 0/3, подтверждение основателем даёт 1/3', () => {
+    const pending = ev({ self_marked_at: '2026-11-02T18:00:00Z' });
+    assert.equal(weekProgress([pending], '2026-11-02').done, 0);
+    assert.equal(weekProgress([{ ...pending, ...ok }], '2026-11-02').done, 1);
+  });
   it('серия считает подряд полные недели и рвётся на неполной', () => {
     const events = [...fullWeek('2026-10-12'), ...fullWeek('2026-10-26'), ...fullWeek('2026-11-02')];
     assert.equal(fullWeekStreak(events, '2026-11-09'), 2);

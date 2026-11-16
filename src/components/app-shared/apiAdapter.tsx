@@ -111,9 +111,11 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
         if (!response.found) throw new Error(response.error ?? 'Расписание недоступно');
         if (!usesClubCalendar(response.status)) throw new Error('Расписание клуба доступно только резидентам');
         const { data: clubEvents, error: clubError } = await supabase
-          .from('schedules').select('id').eq('schedule_type', 'club').eq('is_active', true);
+          .from('schedules').select('id, club_kind, booking_mode').eq('schedule_type', 'club').eq('is_active', true);
         if (clubError) throw new Error(clubError.message);
-        return { ...response, schedule: clubCalendarItems(response.schedule ?? [], (clubEvents ?? []).map(event => event.id)) } as T;
+        const metadata = new Map((clubEvents ?? []).map(event => [event.id, event]));
+        return { ...response, schedule: clubCalendarItems(response.schedule ?? [], (clubEvents ?? []).map(event => event.id))
+          .map(event => ({ ...event, ...metadata.get(event.id) })) } as T;
       }
       return data as T;
     }

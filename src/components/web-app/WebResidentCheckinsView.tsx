@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   STATUS_LABELS, TRAINING_KINDS, TRAINING_LABELS, attendanceStatus, canSelfMark,
-  fullWeekStreak, trainingTotals, weekProgress, type ResidentEvent,
+  fullWeekStreak, trainingTotals, weekProgress, ownClubEvents, clubEventStatus, type ResidentEvent,
 } from './residentCheckins';
 
 export type ResidentCheckinsPayload = { error?: string; ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
@@ -47,12 +47,12 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
   }, [callApi]);
   useEffect(load, [load]);
 
-  const mark = async (id: string, book = false) => {
+  const mark = async (id: string) => {
     setBusy(id);
     try {
-      const res = await callApi<{ ok: boolean; error?: string; status?: string }>(book ? 'book_session' : 'request_attendance', { schedule_id: id });
+      const res = await callApi<{ ok: boolean; error?: string; status?: string }>('request_attendance', { schedule_id: id });
       if (!res?.ok) throw new Error(res?.error ?? 'Операция не выполнена');
-      if (!book) setData(previous => previous ? { ...previous, events: previous.events.map(e => e.schedule_id === id ? {
+      setData(previous => previous ? { ...previous, events: previous.events.map(e => e.schedule_id === id ? {
         ...e, registered: true,
         self_marked_at: e.self_marked_at ?? previous.now,
         ...(res.status === 'confirmed' || res.status === 'absent' ? {
@@ -70,7 +70,7 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
   const totals = trainingTotals(events);
   const streak = data ? fullWeekStreak(events, data.current_week) : 0;
   const now = data ? new Date(data.now) : new Date();
-  const own = events;
+  const own = ownClubEvents(events);
   const weeks = [...new Set(events.map(e => e.week_start))].filter(w => w <= (data?.current_week ?? '')).sort().reverse();
 
   return (
@@ -97,7 +97,8 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
                 return (
                   <div key={slot.kind} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2 text-sm">
                     <span className="min-w-0 flex-1">{TRAINING_LABELS[slot.kind]}{e ? <span className="block text-xs text-muted-foreground">{fmt(e.start_time)}</span> : ''}</span>
-                    {e && canSelfMark(e, now) ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id)}>{busy === e.schedule_id ? '...' : 'Я был'}</Button>
+                    {e && !slot.confirmed && canSelfMark(e, now) ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id)}>{busy === e.schedule_id ? '...' : 'Я был'}</Button>
+                      : e && new Date(e.start_time) > now && st === 'none' ? null
                       : st ? <Badge className="whitespace-normal text-right" variant={statusVariant(st)}>{STATUS_LABELS[st]}</Badge>
                       : <span className="text-xs text-muted-foreground">Нет в календаре</span>}
                   </div>
@@ -115,7 +116,7 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
         {data && (
           <div className="space-y-2">
             <h2 className="font-semibold">Мои мероприятия клуба</h2>
-            {!own.length && <p className="text-sm text-muted-foreground">Вы пока не записаны на мероприятия клуба.</p>}
+            {!own.length && <p className="text-sm text-muted-foreground">Нет записей или броней на отдельные мероприятия клуба.</p>}
             {own.map(e => {
               const st = attendanceStatus(e);
               return (
@@ -125,11 +126,7 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
                       <p className="break-words text-sm font-semibold">{e.theme || e.title}</p>
                       <p className="text-xs text-muted-foreground">{e.title} · {fmt(e.start_time)}</p>
                     </div>
-                    {!e.registered && new Date(e.start_time) > now
-                      ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id, true)}>Записаться</Button>
-                      : canSelfMark(e, now)
-                      ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id)}>{busy === e.schedule_id ? '...' : 'Я был'}</Button>
-                      : <Badge variant={statusVariant(st)}>{STATUS_LABELS[st]}</Badge>}
+                    <Badge className="max-w-[50%] whitespace-normal text-right" variant={statusVariant(st)}>{clubEventStatus(e)}</Badge>
                   </CardContent>
                 </Card>
               );

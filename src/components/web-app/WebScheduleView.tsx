@@ -3,7 +3,7 @@ import { CalendarDays, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { usesClubCalendar } from './clubBooking';
+import { usesClubCalendar, isFreeRegularTraining } from './clubBooking';
 import { PAID_BOOKINGS_ENABLED, bookingGate, parsePaidMeta, type PaidMeta } from './paidBooking';
 import { PaidBookingCard } from './PaidBookingCard';
 
@@ -18,6 +18,8 @@ interface ScheduleItem {
   max_participants: number | null;
   booked_count: number;
   booked: boolean;
+  club_kind?: string | null;
+  booking_mode?: string | null;
 }
 
 interface ScheduleResponse {
@@ -68,7 +70,8 @@ export const WebScheduleView: React.FC<{ status: string | null; focusEventId?: s
   }, [focusEventId, data]);
 
   const updateBooking = async (action: 'book_session' | 'cancel_booking', id: string) => {
-    if (!clubCalendar || !data?.schedule.some(item => item.id === id) || bookingGate(id, paidMeta).kind !== 'free') return;
+    const item = data?.schedule.find(item => item.id === id);
+    if (!clubCalendar || !item || isFreeRegularTraining(item) || bookingGate(id, paidMeta).kind !== 'free') return;
     setBusyId(id);
     setError(null);
     try {
@@ -135,7 +138,7 @@ export const WebScheduleView: React.FC<{ status: string | null; focusEventId?: s
                       <CardContent className="space-y-3 px-4 pb-4 pt-0">
                         {item.location && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{item.location}</p>}
                         {item.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.description.replace('|||', '\n')}</p>}
-                        {gate?.kind === 'paid' ? (
+                        {clubCalendar && isFreeRegularTraining(item) ? null : gate?.kind === 'paid' ? (
                           <PaidBookingCard info={gate.info} onChanged={load} />
                         ) : gate?.kind === 'blocked' ? (
                           <p className="rounded-md bg-muted px-3 py-2 text-center text-xs text-muted-foreground">{gate.reason}</p>

@@ -22,6 +22,8 @@ export type ResidentEvent = {
   booking_mode?: 'free' | 'paid';
   schedule_type?: 'club' | 'intensive';
   is_active?: boolean;
+  booking_status?: string | null;
+  booking_id?: string | null;
 };
 
 /** attended=false — значение по умолчанию; без решения основателя это НЕ «Не был». */
@@ -41,7 +43,21 @@ export function canSelfMark(e: ResidentEvent, now: Date): boolean {
 export type WeekSlot = { kind: TrainingKind; planned: ResidentEvent[]; confirmed: boolean };
 export type WeekProgress = { week_start: string; slots: WeekSlot[]; done: number; full: boolean; missing: TrainingKind[] };
 
-const isTraining = (k: string | null): k is TrainingKind => TRAINING_KINDS.includes(k as TrainingKind);
+export const isTraining = (k: string | null): k is TrainingKind => TRAINING_KINDS.includes(k as TrainingKind);
+
+export function ownClubEvents(events: ResidentEvent[]): ResidentEvent[] {
+  return events.filter(e => !isTraining(e.club_kind) && (e.registered || !!e.booking_id));
+}
+
+const BOOKING_LABELS: Record<string, string> = {
+  registered: 'Вы записаны', hold: 'Место удерживается', pending_review: 'Оплата на проверке',
+  confirmed: 'Бронь подтверждена', cancelled: 'Бронь отменена', expired: 'Бронь истекла', rejected: 'Бронь отклонена',
+};
+export function clubEventStatus(e: ResidentEvent): string {
+  const attendance = attendanceStatus(e);
+  if (attendance !== 'none') return STATUS_LABELS[attendance];
+  return e.booking_status ? BOOKING_LABELS[e.booking_status] ?? e.booking_status : e.registered ? 'Вы записаны' : 'Статус недоступен';
+}
 
 /** Цель недели — по конкретным плановым занятиям календаря; отсутствующее занятие не засчитывается и не снимается. */
 export function weekProgress(events: ResidentEvent[], weekStart: string): WeekProgress {

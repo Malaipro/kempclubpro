@@ -11,7 +11,12 @@ const initial: ResidentCheckinsPayload = {
     { schedule_id: '00000000-0000-4000-8000-000000000002', title: 'ОФП', club_kind: 'training_ofp', start_time: '2026-11-18T09:00:00Z' },
     { schedule_id: '00000000-0000-4000-8000-000000000003', title: 'Кикбоксинг', club_kind: 'training_kick', start_time: '2026-11-20T09:00:00Z' },
   ].map(e => ({ ...e, theme: null, week_start: '2026-11-16', registered: false, attended: false,
-    self_marked_at: null, attended_marked_at: null, booking_mode: 'free', schedule_type: 'club', is_active: true } as ResidentEvent)),
+    self_marked_at: null, attended_marked_at: null, booking_mode: 'free', schedule_type: 'club', is_active: true } as ResidentEvent)).concat([{
+      schedule_id: '00000000-0000-4000-8000-000000000004', title: 'Клубная встреча', theme: 'Встреча резидентов',
+      club_kind: 'lecture', start_time: '2026-11-21T15:00:00Z', week_start: '2026-11-16', registered: true,
+      attended: false, self_marked_at: null, attended_marked_at: null, booking_mode: 'free', schedule_type: 'club',
+      is_active: true, booking_status: 'registered',
+    }]),
 };
 
 export default function ResidentCheckinsPreview() {

@@ -1,5 +1,5 @@
 -- PREPARED ONLY: never run against production without separate approval.
--- Requires current attendance + paid-booking schema; replaces two RPCs only.
+-- Requires current attendance + paid-booking schema; replaces two RPCs and notification function.
 BEGIN;
 CREATE OR REPLACE FUNCTION public.request_attendance_web(p_schedule_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
@@ -24,8 +24,8 @@ BEGIN
   IF NOT FOUND THEN
     IF NOT COALESCE(v_free_training,false) THEN RETURN jsonb_build_object('ok',false,'error','not_registered'); END IF;
     -- Attendance after start, not an advance seat reservation. No capacity/payment bypass for other events.
-    INSERT INTO public.schedule_participants(schedule_id,user_id)
-      VALUES(p_schedule_id,v_uid) ON CONFLICT(schedule_id,user_id) DO NOTHING;
+    INSERT INTO public.schedule_participants(schedule_id,user_id,self_marked_at)
+      VALUES(p_schedule_id,v_uid,now()) ON CONFLICT(schedule_id,user_id) DO NOTHING;
     SELECT * INTO v_row FROM public.schedule_participants WHERE schedule_id=p_schedule_id AND user_id=v_uid FOR UPDATE;
   END IF;
   IF v_row.attended_marked_at IS NOT NULL THEN
@@ -67,15 +67,72 @@ BEGIN
         'is_active', s.is_active,
         'attended', COALESCE(sp.attended,false),
         'self_marked_at', sp.self_marked_at,
-        'attended_marked_at', sp.attended_marked_at
+        'attended_marked_at', sp.attended_marked_at,
+        'booking_id', pb.id,
+        'booking_status', CASE WHEN sp.id IS NOT NULL AND pb.id IS NULL THEN 'registered' ELSE pb.booking_status END
       ) ORDER BY s.start_time DESC)
       FROM public.schedules s
       LEFT JOIN public.schedule_participants sp ON sp.schedule_id = s.id AND sp.user_id = v_uid
+      LEFT JOIN LATERAL (
+        SELECT b.id,b.booking_status FROM public.paid_bookings b
+        WHERE b.schedule_id=s.id AND b.user_id=v_uid
+        ORDER BY b.created_at DESC,b.id DESC LIMIT 1
+      ) pb ON true
       WHERE s.schedule_type = 'club' AND s.is_active
         AND s.start_time >= v_from AND s.start_time <= now() + interval '14 days'
-        AND (sp.id IS NOT NULL OR s.club_kind IN ('training_bjj','training_ofp','training_kick'))
+        AND (sp.id IS NOT NULL OR pb.id IS NOT NULL OR s.club_kind IN ('training_bjj','training_ofp','training_kick'))
     ), '[]'::jsonb)
   );
 END $function$;
 
+CREATE OR REPLACE FUNCTION public.notify_booking_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  r record;
+  s record;
+  p record;
+  cnt int;
+  txt text;
+  sec text;
+BEGIN
+  -- Attendance-only insert is distinguishable from a normal advance booking.
+  -- No caller-controlled GUC, trigger disabling or global notification suppression.
+  IF TG_OP = 'INSERT' AND NEW.self_marked_at IS NOT NULL
+     AND NEW.paid_booking_id IS NULL
+     AND EXISTS (SELECT 1 FROM public.schedules training WHERE training.id=NEW.schedule_id
+       AND training.schedule_type='club' AND training.is_active AND training.booking_mode='free'
+       AND training.club_kind IN ('training_bjj','training_ofp','training_kick')
+       AND training.start_time <= NEW.self_marked_at
+       AND training.start_time >= NEW.self_marked_at - interval '7 days') THEN
+    RETURN NULL;
+  END IF;
+  BEGIN
+    r := CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+    SELECT title, start_time, max_participants INTO s FROM schedules WHERE id = r.schedule_id;
+    SELECT first_name, last_name, display_name, phone INTO p FROM profiles WHERE user_id = r.user_id;
+    SELECT count(*) INTO cnt FROM schedule_participants WHERE schedule_id = r.schedule_id;
+    SELECT value INTO sec FROM internal_settings WHERE key = 'notify_booking_secret';
+
+    txt := CASE WHEN TG_OP = 'DELETE' THEN '🔴 Отмена записи' ELSE '🟢 Новая запись' END
+      || E'\n👤 ' || COALESCE(NULLIF(trim(COALESCE(p.first_name,'') || ' ' || COALESCE(p.last_name,'')), ''), p.display_name, 'Участник')
+      || COALESCE(E'\n📞 ' || p.phone, '')
+      || E'\n📅 «' || COALESCE(s.title, 'Мероприятие') || '»'
+      || COALESCE(E'\n🕒 ' || to_char(s.start_time AT TIME ZONE 'Europe/Moscow', 'DD.MM.YYYY HH24:MI') || ' (МСК)', '')
+      || E'\n👥 Записано: ' || cnt || COALESCE('/' || s.max_participants, '');
+
+    PERFORM net.http_post(
+      url := 'https://wfjvjvbjjxcgkaolkgdq.supabase.co/functions/v1/notify-booking',
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-notify-secret', sec),
+      body := jsonb_build_object('text', txt)
+    );
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'notify_booking_change failed: %', SQLERRM;
+  END;
+  RETURN NULL;
+END;
+$$;
 COMMIT;
