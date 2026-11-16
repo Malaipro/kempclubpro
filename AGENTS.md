@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep resident reward-goal prototypes on development-only Preview routes with in-memory selections injected into an optional Home slot; this avoids persistence, purchases and changes to live Home.
+
 - Scope the /app messenger theme through `.web-chat-theme` and semantic chat tokens; this keeps topic Chat and Nutrition consistent without recoloring unrelated pages.
 - Render photo Home through the dedicated web-only `WebHomeView` and scope styles through `.web-home-theme`; this keeps Telegram and other web sections unchanged.
 - Store Home tile imagery as separate imported images mapped by section; this keeps each subject correctly framed without coupling tile layout to a sprite grid.
@@ -7,3 +9,5 @@
 - Process mastermind deadline pushes in a fixed-purpose scheduled Edge Function with service-only reminder claims keyed by task, deadline and reminder kind; this isolates recipient targeting and prevents repeat scheduled deliveries. Deadlines are calendar dates in Europe/Moscow.
 - Scope web mastermind plans, tasks, reports and dashboards by explicitly selected group and track, with a separate unassigned legacy bucket; this prevents mixing two-month outcomes and preserves Telegram contracts.
 - Expose scoped mastermind writes through public SECURITY INVOKER wrappers over protected functions in the unexposed mastermind_private schema; owner and active group membership checks preserve existing table access without exposed elevated functions.
+- Keep attendance test fixtures behind a development-only route and inject their API into the real resident and founder views using a shared in-memory store; this verifies both roles without bypassing production auth or writing live data.
+- Distinguish attendance-only inserts by their immediate self-mark timestamp and explicit free club training metadata in the notification function; this suppresses booking alerts without caller-controlled flags or disabling triggers.

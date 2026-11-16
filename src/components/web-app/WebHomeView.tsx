@@ -50,7 +50,8 @@ export const WebHomeView: React.FC<{
   onCoins: () => void;
   onPoints: () => void;
   tiles: React.ReactNode;
-}> = ({ data, onProfile, onCoins, onPoints, tiles }) => {
+  goalSlot?: React.ReactNode;
+}> = ({ data, onProfile, onCoins, onPoints, tiles, goalSlot }) => {
   const { profile, status } = data;
   const displayName = profile?.display_name || [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Участник';
   const referralCode = profile?.referral_code;
@@ -105,6 +106,8 @@ export const WebHomeView: React.FC<{
             <ChevronRight className="photo-stat-arrow" aria-hidden="true" />
           </Button>
         </div>
+
+        {goalSlot}
 
         {referralCode && <div className="photo-glass photo-home-referral">
           <div className="min-w-0"><p className="photo-stat-caption">Реферальный код</p><p className="photo-referral-code">{referralCode}</p></div>

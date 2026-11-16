@@ -176,6 +176,7 @@ export interface ParticipantFullState {
     referral_code: string | null;
   };
   status?: string | null;
+  approved?: boolean;
   stream?: Record<string, unknown> | null;
   coins_balance?: number;
   total_points?: number;
