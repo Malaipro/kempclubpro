@@ -26,6 +26,8 @@ const AppLogin = lazy(() => import("./pages/AppLogin"));
 const AppResetPassword = lazy(() => import("./pages/AppResetPassword"));
 const ResidentCheckinsPreview = import.meta.env.DEV
   ? lazy(() => import('./components/web-app/ResidentCheckinsPreview')) : null;
+const ResidentGoalPreview = import.meta.env.DEV
+  ? lazy(() => import('./components/web-app/ResidentGoalPreview')) : null;
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,7 @@ const App = () => (
             <Route path="/telegram" element={<TelegramApp />} />
             <Route path="/app" element={<PasswordChangeGuard><WebApp /></PasswordChangeGuard>} />
             {ResidentCheckinsPreview && <Route path="/app/preview/checkins" element={<ResidentCheckinsPreview />} />}
+            {ResidentGoalPreview && <Route path="/app/preview/goal" element={<ResidentGoalPreview />} />}
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/app/login" element={<AppLogin />} />
             <Route path="/app/reset-password" element={<AppResetPassword />} />
