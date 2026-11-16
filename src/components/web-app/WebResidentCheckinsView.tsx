@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Loader2 } from 'lucide-react';
 import { useAppApi } from '@/components/app-shared/apiAdapter';
+import type { CallApi } from '@/components/app-shared/apiAdapter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import {
   fullWeekStreak, trainingTotals, weekProgress, type ResidentEvent,
 } from './residentCheckins';
 
-type Payload = { error?: string; ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
+export type ResidentCheckinsPayload = { error?: string; ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
 
 const ERRORS: Record<string, string> = {
   not_resident: 'Резидентские отметки доступны только подтверждённым резидентам клуба.',
@@ -32,19 +33,34 @@ const statusVariant = (s: string) => (s === 'confirmed' ? 'default' : s === 'pen
 
 export const WebResidentCheckinsView: React.FC = () => {
   const { callApi } = useAppApi();
-  const [data, setData] = useState<Payload | null>(null);
+  return <ResidentCheckinsContent callApi={callApi} />;
+};
+
+export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callApi }) => {
+  const [data, setData] = useState<ResidentCheckinsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setError(null);
-    callApi<Payload>('get_resident_checkins').then(res => { if (!res?.ok) throw new Error(res?.error ?? 'Не удалось загрузить отметки'); setData(res); }).catch((e: Error) => setError(explain(e.message)));
+    callApi<ResidentCheckinsPayload>('get_resident_checkins').then(res => { if (!res?.ok) throw new Error(res?.error ?? 'Не удалось загрузить отметки'); setData(res); }).catch((e: Error) => setError(explain(e.message)));
   }, [callApi]);
   useEffect(load, [load]);
 
   const mark = async (id: string, book = false) => {
     setBusy(id);
-    try { const res = await callApi<{ ok: boolean; error?: string }>(book ? 'book_session' : 'request_attendance', { schedule_id: id }); if (!res?.ok) throw new Error(res?.error ?? 'Операция не выполнена'); load(); }
+    try {
+      const res = await callApi<{ ok: boolean; error?: string; status?: string }>(book ? 'book_session' : 'request_attendance', { schedule_id: id });
+      if (!res?.ok) throw new Error(res?.error ?? 'Операция не выполнена');
+      if (!book) setData(previous => previous ? { ...previous, events: previous.events.map(e => e.schedule_id === id ? {
+        ...e, registered: true,
+        self_marked_at: e.self_marked_at ?? previous.now,
+        ...(res.status === 'confirmed' || res.status === 'absent' ? {
+          attended: res.status === 'confirmed', attended_marked_at: e.attended_marked_at ?? previous.now,
+        } : {}),
+      } : e) } : previous);
+      load();
+    }
     catch (e) { setError(explain((e as Error).message)); }
     finally { setBusy(null); }
   };
@@ -79,9 +95,10 @@ export const WebResidentCheckinsView: React.FC = () => {
                 const e = slot.planned[0];
                 const st = slot.confirmed ? 'confirmed' : e ? attendanceStatus(e) : null;
                 return (
-                  <div key={slot.kind} className="flex items-center justify-between gap-2 text-sm">
-                    <span>{TRAINING_LABELS[slot.kind]}{e ? ` · ${fmt(e.start_time)}` : ''}</span>
-                    {st ? <Badge variant={statusVariant(st)}>{STATUS_LABELS[st]}</Badge>
+                  <div key={slot.kind} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2 text-sm">
+                    <span className="min-w-0 flex-1">{TRAINING_LABELS[slot.kind]}{e ? <span className="block text-xs text-muted-foreground">{fmt(e.start_time)}</span> : ''}</span>
+                    {e && canSelfMark(e, now) ? <Button size="sm" disabled={busy === e.schedule_id} onClick={() => void mark(e.schedule_id)}>{busy === e.schedule_id ? '...' : 'Я был'}</Button>
+                      : st ? <Badge className="whitespace-normal text-right" variant={statusVariant(st)}>{STATUS_LABELS[st]}</Badge>
                       : <span className="text-xs text-muted-foreground">Нет в календаре</span>}
                   </div>
                 );

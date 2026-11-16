@@ -7,3 +7,4 @@
 - Process mastermind deadline pushes in a fixed-purpose scheduled Edge Function with service-only reminder claims keyed by task, deadline and reminder kind; this isolates recipient targeting and prevents repeat scheduled deliveries. Deadlines are calendar dates in Europe/Moscow.
 - Scope web mastermind plans, tasks, reports and dashboards by explicitly selected group and track, with a separate unassigned legacy bucket; this prevents mixing two-month outcomes and preserves Telegram contracts.
 - Expose scoped mastermind writes through public SECURITY INVOKER wrappers over protected functions in the unexposed mastermind_private schema; owner and active group membership checks preserve existing table access without exposed elevated functions.
+- Keep attendance test fixtures behind a development-only route and inject their API into the real view; this verifies the UI without bypassing production auth or writing live data.

@@ -33,6 +33,27 @@ describe('статусы отметки', () => {
     assert.equal(canSelfMark(ev({ start_time: '2026-10-20T10:00:00Z' }), now), false);
     assert.equal(canSelfMark(ev({ self_marked_at: '2026-11-02T18:00:00Z' }), now), false);
   });
+  it('бесплатная активная клубная тренировка — без предварительной записи', () => {
+    const event = ev({ registered: false, booking_mode: 'free', schedule_type: 'club', is_active: true });
+    assert.equal(canSelfMark(event, new Date(event.start_time)), true);
+    assert.equal(canSelfMark(event, new Date('2026-11-09T16:00:00Z')), true);
+    assert.equal(canSelfMark(event, new Date('2026-11-09T16:00:00.001Z')), false);
+    assert.equal(canSelfMark(event, new Date('2026-11-02T15:59:59Z')), false);
+  });
+  it('платные, неактивные, интенсив и прочие события не обходят запись', () => {
+    const base = ev({ registered: false, booking_mode: 'free', schedule_type: 'club', is_active: true });
+    const now = new Date('2026-11-03T10:00:00Z');
+    for (const patch of [{ booking_mode: 'paid' as const }, { is_active: false }, { schedule_type: 'intensive' as const }, { club_kind: 'lecture' }, { booking_mode: undefined }]) {
+      assert.equal(canSelfMark({ ...base, ...patch }, now), false);
+    }
+  });
+  it('заявка и решение основателя скрывают повторную кнопку', () => {
+    const base = ev({ registered: false, booking_mode: 'free', schedule_type: 'club', is_active: true });
+    const now = new Date('2026-11-03T10:00:00Z');
+    assert.equal(canSelfMark({ ...base, self_marked_at: now.toISOString() }, now), false);
+    assert.equal(canSelfMark({ ...base, ...ok }, now), false);
+    assert.equal(canSelfMark({ ...base, attended_marked_at: now.toISOString() }, now), false);
+  });
 });
 
 describe('цель недели', () => {

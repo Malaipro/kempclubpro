@@ -19,6 +19,9 @@ export type ResidentEvent = {
   attended: boolean;
   self_marked_at: string | null;
   attended_marked_at: string | null;
+  booking_mode?: 'free' | 'paid';
+  schedule_type?: 'club' | 'intensive';
+  is_active?: boolean;
 };
 
 /** attended=false — значение по умолчанию; без решения основателя это НЕ «Не был». */
@@ -29,7 +32,10 @@ export function attendanceStatus(e: Pick<ResidentEvent, 'attended' | 'self_marke
 
 export function canSelfMark(e: ResidentEvent, now: Date): boolean {
   const start = new Date(e.start_time).getTime();
-  return e.registered && attendanceStatus(e) === 'none' && start <= now.getTime() && start >= now.getTime() - 7 * 86400000;
+  const freeTraining = e.booking_mode === 'free' && e.schedule_type === 'club'
+    && e.is_active === true && isTraining(e.club_kind);
+  return (e.registered || freeTraining) && attendanceStatus(e) === 'none'
+    && start <= now.getTime() && start >= now.getTime() - 7 * 86400000;
 }
 
 export type WeekSlot = { kind: TrainingKind; planned: ResidentEvent[]; confirmed: boolean };
