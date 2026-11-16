@@ -925,9 +925,9 @@ export const ClubScheduleManagement: React.FC = () => {
 
                           {PAID_BOOKINGS_ENABLED && <div className="mt-6"><PaidBookingsPanel scheduleId={item.id} /></div>}
 
-                          {participants.length > 0 && (
-                            <div className="mt-6"><FounderAttendancePanel scheduleId={item.id} /></div>
-                          )}
+                          <div className="mt-6">
+                            <FounderAttendancePanel scheduleId={item.id} />
+                          </div>
 
                           <div className="mt-6 space-y-4">
                             {participants.length === 0 ? (
