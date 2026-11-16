@@ -130,7 +130,7 @@ const LevelRow: React.FC<{ level: PyramidLevel; onChanged: () => void }> = ({ le
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="text-base">{level.level_number}</Badge>
             <div>
-              <h3 className="font-bold uppercase">{level.title}</h3>
+              <h3 className="text-lg font-bold uppercase text-card-foreground">{level.title}</h3>
               {level.description && (
                 <p className="text-xs text-muted-foreground max-w-md">{level.description}</p>
               )}
