@@ -5,29 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { formatPhoneRu } from '@/lib/phoneFormat';
 
-const formatPhone = (raw: string): string => {
-  let digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('8')) digits = `7${digits.slice(1)}`;
-  if (!digits.startsWith('7')) digits = `7${digits}`;
-  digits = digits.slice(0, 11);
+const normalizeLoginPhone = (value: string): string | null => {
+  if (!/^\+?[\d\s().-]+$/.test(value)) return null;
 
-  const rest = digits.slice(1);
-  let out = '+7';
-  if (rest.length) out += ` (${rest.slice(0, 3)}`;
-  if (rest.length >= 3) out += `) ${rest.slice(3, 6)}`;
-  if (rest.length >= 6) out += `-${rest.slice(6, 8)}`;
-  if (rest.length >= 8) out += `-${rest.slice(8, 10)}`;
-  return out;
+  const digits = value.replace(/\D/g, '');
+  const hasPrefix = /^(?:\+|[78][\s(.-])/.test(value);
+  if (!hasPrefix && digits.length === 10) return `+7${digits}`;
+  if (!/^[78]\d{10}$/.test(digits)) return null;
+  if (value.startsWith('+') && !digits.startsWith('7')) return null;
+
+  return formatPhoneRu(digits);
 };
 
 const AppLogin: React.FC = () => {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [identifierError, setIdentifierError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -59,14 +55,36 @@ const AppLogin: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setIdentifierError(null);
+
+    const fields = new FormData(e.currentTarget);
+    const login = String(fields.get('username') ?? '').trim();
+    const submittedPassword = String(fields.get('password') ?? '');
+    const isEmail = login.includes('@');
+    const normalizedPhone = isEmail ? null : normalizeLoginPhone(login);
+
+    if (!login) {
+      setIdentifierError('Введите телефон или email.');
+      return;
+    }
+    if (isEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login)) {
+      setIdentifierError('Введите email полностью, например name@example.com.');
+      return;
+    }
+    if (!isEmail && !normalizedPhone) {
+      setIdentifierError('Введите номер полностью, например +7 (999) 123-45-67, или укажите email.');
+      return;
+    }
+    if (!submittedPassword) {
+      setError('Введите пароль.');
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const login = phone.trim();
-
       // «Запомнить меня»: если выключено — помечаем сессию как временную,
       // WebApp завершит её при следующем открытии /app
       if (remember) {
@@ -77,10 +95,10 @@ const AppLogin: React.FC = () => {
       sessionStorage.setItem('kamp_tab_active', '1');
 
       // Вход по email — напрямую через Supabase
-      if (login.includes('@')) {
+      if (isEmail) {
         const { error: emailError } = await supabase.auth.signInWithPassword({
           email: login,
-          password,
+          password: submittedPassword,
         });
         if (emailError) {
           setError('Неверный email или пароль');
@@ -91,7 +109,7 @@ const AppLogin: React.FC = () => {
       }
 
       const { data, error: fnError } = await supabase.functions.invoke('phone-signin', {
-        body: { phone: login, password },
+        body: { phone: normalizedPhone, password: submittedPassword },
       });
 
       const result = data as
@@ -162,7 +180,7 @@ const AppLogin: React.FC = () => {
               </div>
 
               {error && (
-                <p className="text-sm text-destructive font-medium text-center">{error}</p>
+                <p role="alert" className="text-sm text-destructive font-medium text-center">{error}</p>
               )}
 
               <Button
@@ -190,16 +208,24 @@ const AppLogin: React.FC = () => {
             </Label>
             <Input
               id="phone"
-              autoComplete="email"
+              name="username"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               placeholder="+7 (999) 123-45-67 или email"
-              value={phone}
-              onChange={(e) => {
-                const v = e.target.value;
-                // Форматируем как телефон, только если нет букв и @
-                setPhone(/[a-zA-Z@]/.test(v) ? v : formatPhone(v));
+              aria-invalid={identifierError ? true : undefined}
+              aria-describedby={identifierError ? 'login-identifier-error' : undefined}
+              onChange={() => {
+                setIdentifierError(null);
+                setError(null);
               }}
               className="h-12 bg-secondary border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
             />
+            {identifierError && (
+              <p id="login-identifier-error" role="alert" className="text-sm text-destructive font-medium">
+                {identifierError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -208,11 +234,11 @@ const AppLogin: React.FC = () => {
             </Label>
             <Input
               id="password"
+              name="password"
               type="password"
               autoComplete="current-password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={() => setError(null)}
               className="h-12 bg-secondary border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
             />
           </div>
@@ -228,12 +254,12 @@ const AppLogin: React.FC = () => {
           </label>
 
           {error && (
-            <p className="text-sm text-destructive font-medium text-center">{error}</p>
+            <p role="alert" className="text-sm text-destructive font-medium text-center">{error}</p>
           )}
 
           <Button
             type="submit"
-            disabled={loading || !phone || !password}
+            disabled={loading}
             className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Войти'}
@@ -241,7 +267,7 @@ const AppLogin: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => { setResetMode(true); setError(null); }}
+            onClick={() => { setResetMode(true); setError(null); setIdentifierError(null); }}
             className="w-full text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
           >
             Забыли пароль?
