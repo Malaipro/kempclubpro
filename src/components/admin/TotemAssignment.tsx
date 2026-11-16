@@ -47,7 +47,7 @@ export const TotemAssignment: React.FC = () => {
         .from('profiles')
         .select('id, user_id, display_name, first_name, last_name')
         .order('display_name');
-      const { data: profilesData, error: profilesError } = await scopeUsers(profileQuery, scope);
+      const { data: profilesData, error: profilesError } = await (scope ? profileQuery.in('user_id', scope.userIds) : profileQuery);
 
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);

@@ -76,7 +76,7 @@ export const StreamDashboard: React.FC = () => {
         supabase.rpc('get_stream_team_ratings', { p_stream_id: id }),
       ]);
 
-      setTotalParticipants(count || 0);
+      setTotalParticipants(streamScope ? streamScope.userIds.length : count || 0);
       const teamList = (teamsRes.data || []) as TeamInfo[];
       setTeams(teamList);
       setRatings(((ratingsRes.data as TeamRating[]) || []).slice().sort((a, b) => Number(b.team_rating) - Number(a.team_rating)));

@@ -40,7 +40,7 @@ import { BarChart3 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('applications');
-  const streamSections = ['kamp', 'ascetics', 'activities', 'participants', 'statuses', 'cooper', 'homework', 'intensive-schedule', 'materials', 'pyramid', 'journal', 'stream-dashboard', 'teams', 'captains-rating', 'captain-dashboard'];
+  const streamSections = ['kamp', 'ascetics', 'activities', 'participants', 'statuses', 'cooper', 'homework', 'intensive-schedule', 'pyramid', 'journal', 'stream-dashboard', 'teams', 'captains-rating', 'captain-dashboard'];
   return <IntensiveStreamProvider showSelector={streamSections.includes(activeTab)}><div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Navigation Tabs */}

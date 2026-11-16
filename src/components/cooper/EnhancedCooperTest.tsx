@@ -94,7 +94,6 @@ export const EnhancedCooperTest: React.FC = () => {
       let profileQuery = supabase
         .from('profiles')
         .select('user_id, display_name, first_name, last_name, current_stream_id')
-        .in('user_id', userIds)
         .in('user_id', userIds);
       if (!scope) profileQuery = profileQuery.eq('current_stream_id', activeStream.id);
       const { data: profilesData } = await profileQuery;

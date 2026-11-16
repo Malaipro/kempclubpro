@@ -1,4 +1,3 @@
-import { useIntensiveStreamScope } from './IntensiveStreamScope';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,7 +52,6 @@ const emptyForm: Partial<Material> = {
 
 export const MaterialsManagement: React.FC = () => {
   const { user } = useAuth();
-  const scope = useIntensiveStreamScope();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,8 +70,7 @@ export const MaterialsManagement: React.FC = () => {
         supabase.from('intensive_streams').select('id, name').order('start_date', { ascending: false }),
       ]);
       if (matRes.error) throw matRes.error;
-      const linkedStream = (streamRes.data || []).find(s => s.name === scope?.stream?.name);
-      setMaterials(((matRes.data || []) as Material[]).filter(m => !scope || !m.stream_id || m.stream_id === linkedStream?.id));
+      setMaterials((matRes.data || []) as Material[]);
       setStreams((streamRes.data || []) as Stream[]);
     } catch (e: any) {
       console.error(e);

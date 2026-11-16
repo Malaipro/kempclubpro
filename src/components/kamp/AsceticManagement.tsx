@@ -130,7 +130,7 @@ export const AsceticManagement: React.FC = () => {
         .from('profiles')
         .select('id, user_id, display_name, first_name, last_name')
         .order('display_name', { ascending: true });
-      const { data, error } = await scopeUsers(profileQuery, scope);
+      const { data, error } = await (scope ? profileQuery.in('user_id', scope.userIds) : profileQuery);
 
       if (error) throw error;
       setParticipants(data || []);

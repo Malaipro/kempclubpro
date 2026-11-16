@@ -83,10 +83,15 @@ export const IntensiveStreamProvider: React.FC<{ children: React.ReactNode; show
 
   const select = (id: string) => {
     if (id === streamId || !streams.some(s => s.id === id)) return;
+    setRosterStreamId('');
+    setError(null);
     setStreamId(id);
     setArchive(!streams.find(s => s.id === id)?.is_active);
   };
   const changeMode = (value: string) => {
+    if ((value === 'archive') === archive) return;
+    setRosterStreamId('');
+    setError(null);
     const archived = value === 'archive';
     setArchive(archived);
     setStreamId(streams.find(s => archived ? !s.is_active : s.is_active)?.id ?? '');

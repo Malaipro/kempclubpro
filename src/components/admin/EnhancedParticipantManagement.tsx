@@ -76,6 +76,7 @@ interface ParticipantDetails {
 }
 
 export const EnhancedParticipantManagement: React.FC = () => {
+  const scope = useIntensiveStreamScope();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
   const [activeStreamTab, setActiveStreamTab] = useScopedStream();
@@ -433,7 +434,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
 
   const streamScoped = activeStreamTab === 'all'
     ? participants
-    : participants.filter(p => p.current_stream_id === activeStreamTab);
+    : participants.filter(p => scope ? scope.userIds.includes(p.user_id) : p.current_stream_id === activeStreamTab);
   const filteredParticipants = applyFilters(streamScoped);
   const activeFiltersCount = (search ? 1 : 0) + filterStatuses.size + filterTagIds.size;
 
@@ -644,6 +645,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
   };
 
   const fetchParticipantDetails = async (userId: string) => {
+    if (scope?.archive) return;
     try {
       const { data, error } = await supabase
         .from('leaderboard')
@@ -1145,7 +1147,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                         {fullName}
                       </h3>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                        <span>{participant.total_points} баллов</span>
+                        <span>{scope?.archive ? 'Исторические баллы не сохранены' : `${participant.total_points} баллов`}</span>
                         {participant.email && (
                           <>
                             <span>•</span>
@@ -1435,7 +1437,7 @@ export const EnhancedParticipantManagement: React.FC = () => {
                               {fullName}
                             </h3>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                              <span>{participant.total_points} баллов</span>
+                              <span>{scope?.archive ? 'Исторические баллы не сохранены' : `${participant.total_points} баллов`}</span>
                               {participant.email && (
                                 <>
                                   <span>•</span>

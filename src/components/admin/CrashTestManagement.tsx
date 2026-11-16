@@ -43,7 +43,7 @@ export const CrashTestManagement: React.FC = () => {
         .from('profiles')
         .select('user_id, display_name, first_name, last_name')
         .order('display_name');
-      const { data, error } = await scopeUsers(profileQuery, scope);
+      const { data, error } = await (scope ? profileQuery.in('user_id', scope.userIds) : profileQuery);
 
       if (error) throw error;
       setProfiles(data || []);

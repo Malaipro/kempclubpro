@@ -321,7 +321,7 @@ export const HomeworkManagement: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {assignments.map((a) => (
-                <Card key={a.id}>
+                <Card key={a.id} className="bg-background text-foreground border-border">
                   <CardContent className="p-4 flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

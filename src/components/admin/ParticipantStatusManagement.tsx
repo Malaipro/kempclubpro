@@ -42,7 +42,7 @@ export const ParticipantStatusManagement: React.FC = () => {
         .from('profiles')
         .select('id, user_id, first_name, last_name, display_name, participant_status, intensive_completed_at, club_joined_at')
         .order('created_at', { ascending: false });
-      const { data, error } = await scopeUsers(profileQuery, scope);
+      const { data, error } = await (scope ? profileQuery.in('user_id', scope.userIds) : profileQuery);
 
       if (error) throw error;
       setParticipants((data || []) as Participant[]);
