@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ClubRecurrenceFields } from './ClubRecurrenceFields';
+import { recurrencePlan, type Frequency, type ClubSchedulePreviewApi } from './clubRecurrence';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -86,7 +88,14 @@ const emptyForm = {
   mastermind_group_id: '',
 };
 
-export const ClubScheduleManagement: React.FC = () => {
+export const ClubScheduleManagement: React.FC<{ previewApi?: ClubSchedulePreviewApi }> = ({ previewApi }) => {
+  const local = import.meta.env.DEV ? previewApi : undefined;
+  const [recurring, setRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>('weekly');
+  const [until, setUntil] = useState('');
+  const [saving, setSaving] = useState(false);
+  const savingLock = useRef(false);
+  const saveKey = useRef(crypto.randomUUID());
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [mastermindGroups, setMastermindGroups] = useState<MastermindGroup[]>([]);
@@ -103,13 +112,13 @@ export const ClubScheduleManagement: React.FC = () => {
   const [paidSettings, setPaidSettings] = useState<PaidSettingsInput>(emptyPaidSettings);
   const [paidLoad, setPaidLoad] = useState<PaidLoadState>('ready');
   const [wasPaid, setWasPaid] = useState(false);
-  const saveRoute = eventSaveRoute(PAID_BOOKINGS_ENABLED, paidSettings.mode, wasPaid, paidLoad);
+  const paidEnabled = !!local || PAID_BOOKINGS_ENABLED;
+  const saveRoute = eventSaveRoute(paidEnabled, paidSettings.mode, wasPaid, paidLoad);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTrainers();
+    if (!local) { fetchTrainers(); fetchMastermindGroups(); }
     fetchSchedules();
-    fetchMastermindGroups();
   }, []);
 
   const fetchMastermindGroups = async () => {
@@ -126,6 +135,10 @@ export const ClubScheduleManagement: React.FC = () => {
   };
 
   const fetchSchedules = async () => {
+    if (local) {
+      setScheduleItems(local.list().filter(e => e.is_active).map(e => ({ id: e.id, date: formatMskDate(e.start_time), dayOfWeek: mskDayOfWeek(e.start_time), time: `${formatMskTime(e.start_time)}-${formatMskTime(e.end_time)}`, activity: e.title, instructor: '-', location: e.location ?? '-', theme: (e.description ?? '').split('|||')[0], participants_count: 0 })));
+      return;
+    }
     
     try {
       const { data, error } = await supabase
@@ -213,6 +226,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingLock.current) return;
     
     if (!formData.date || !formData.activity) {
       toast({
@@ -224,7 +238,7 @@ export const ClubScheduleManagement: React.FC = () => {
     }
 
     const toISO = (date: Date, time: string) => mskToUtcISO(date, time);
-    const paidCheck = PAID_BOOKINGS_ENABLED ? validatePaidSettings(paidSettings) : null;
+    const paidCheck = paidEnabled ? validatePaidSettings(paidSettings) : null;
     if (paidCheck && 'error' in paidCheck) {
       toast({ title: 'Ошибка', description: paidCheck.error, variant: 'destructive' });
       return;
@@ -234,6 +248,9 @@ export const ClubScheduleManagement: React.FC = () => {
       return;
     }
 
+    if (local && recurring && (plan.error || !plan.dates.length)) { toast({ title: 'Ошибка', description: plan.error ?? 'Нет дат', variant: 'destructive' }); return; }
+    if (recurring && !local) return; // Recurrence is isolated until a reviewed server migration is available.
+    savingLock.current = true; setSaving(true);
     try {
       // Combine theme and description with separator
       const combinedDescription = formData.theme && formData.description 
@@ -245,7 +262,13 @@ export const ClubScheduleManagement: React.FC = () => {
           ? formData.mastermind_group_id
           : null;
 
-      if (saveRoute === 'atomic' && paidCheck?.ok) {
+      if (local) {
+        const single = recurrencePlan(format(formData.date, 'yyyy-MM-dd'), format(formData.date, 'yyyy-MM-dd'), 'weekly', formData.start_time, formData.end_time, formData.activity, local.list());
+        if (single.error) throw new Error(single.error);
+        local.save({ id: editingId, title: formData.activity, description: combinedDescription, location: formData.location || null,
+          occurrences: recurring ? plan.dates : single.dates, paid: paidSettings, key: saveKey.current });
+        toast({ title: 'Сохранено', description: 'Тестовый календарь обновлён' });
+      } else if (saveRoute === 'atomic' && paidCheck?.ok) {
         // Одна серверная транзакция: событие и оплата сохраняются вместе или не сохраняются вовсе
         const v = paidCheck.value;
         const paid = v.mode === 'paid' ? v : null;
@@ -306,6 +329,7 @@ export const ClubScheduleManagement: React.FC = () => {
       setFormData(emptyForm);
       setPaidSettings(emptyPaidSettings);
       setWasPaid(false);
+      setRecurring(false);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
@@ -313,14 +337,18 @@ export const ClubScheduleManagement: React.FC = () => {
         description: err instanceof Error && err.message.startsWith('Оплата') ? err.message : 'Не удалось сохранить мероприятие',
         variant: 'destructive',
       });
-    }
+    } finally { savingLock.current = false; setSaving(false); }
   };
+
+  const firstDate = formData.date ? format(formData.date, 'yyyy-MM-dd') : '';
+  const plan = recurrencePlan(firstDate, until, frequency, formData.start_time, formData.end_time, formData.activity, local?.list() ?? []);
 
   const handleEdit = (item: ScheduleItem) => {
     const [startTime, endTime] = item.time.split('-');
     const [day, month, year] = item.date.split('.');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     
+    setRecurring(false);
     setEditingId(item.id);
     setFormData({
       date: date,
@@ -337,7 +365,10 @@ export const ClubScheduleManagement: React.FC = () => {
     });
     setPaidSettings(emptyPaidSettings);
     setWasPaid(false);
-    if (PAID_BOOKINGS_ENABLED) {
+    if (local) {
+      const event = local.list().find(e => e.id === item.id);
+      setPaidSettings(event?.paid ?? emptyPaidSettings); setWasPaid(event?.booking_mode === 'paid'); setPaidLoad('ready');
+    } else if (PAID_BOOKINGS_ENABLED) {
       setPaidLoad('loading');
       void (supabase.from('schedules') as unknown as { select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error?: unknown }> } } })
         .select('booking_mode,price_total_rub,prepay_rub,max_participants,payment_window_minutes,cancellation_terms,payment_qr_url,payment_link')
@@ -357,6 +388,7 @@ export const ClubScheduleManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Вы уверены, что хотите удалить это мероприятие?')) return;
 
+    if (local) { local.cancel(id); await fetchSchedules(); return; }
     try {
       const { error } = await supabase
         .from('schedules')
@@ -422,6 +454,7 @@ export const ClubScheduleManagement: React.FC = () => {
   };
 
   const handleViewParticipants = async (scheduleId: string) => {
+    if (local) { setParticipants([]); return; }
     setViewingParticipants(scheduleId);
     setProfileSearch('');
     setProfileResults([]);
@@ -561,7 +594,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <UsersIcon className="w-6 h-6 text-green-600" />
@@ -570,43 +603,45 @@ export const ClubScheduleManagement: React.FC = () => {
           <p className="text-muted-foreground">Управление расписанием клубных мероприятий</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSubscribeCalendar} variant="outline" size="sm">
+          {!local && <Button onClick={handleSubscribeCalendar} variant="outline" size="sm">
             <CalendarPlus className="w-4 h-4 mr-2" />
             Подписка на календарь
-          </Button>
+          </Button>}
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
+            if (open && !editingId) saveKey.current = crypto.randomUUID();
             if (!open) {
               setEditingId(null);
               setFormData(emptyForm);
               setPaidSettings(emptyPaidSettings);
               setWasPaid(false);
               setPaidLoad('ready');
+              setRecurring(false); setUntil(''); setFrequency('weekly');
             }
           }}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Добавить мероприятие
               </Button>
             </DialogTrigger>
             
-            <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
+            <DialogContent className={cn("max-w-2xl bg-background text-foreground border-border max-h-[90vh] overflow-y-auto", local && "web-app-theme app-glass-dialog")}>
               <DialogHeader>
-                <DialogTitle className="text-white">
+                <DialogTitle className="text-foreground">
                   {editingId ? 'Редактировать мероприятие' : 'Добавить мероприятие'}
                 </DialogTitle>
               </DialogHeader>
               
               <form onSubmit={handleAddEvent} className="space-y-4">
                 <div>
-                  <Label className="text-white">Дата мероприятия *</Label>
-                  <Popover>
+                  <Label className="text-foreground">Дата мероприятия *</Label>
+                  {local ? <Input aria-label="Дата мероприятия" type="date" value={firstDate} onChange={e => { const [y,m,d] = e.target.value.split('-').map(Number); setFormData(prev => ({ ...prev, date: y && m && d ? new Date(y,m-1,d) : undefined })); }} /> : <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal bg-white text-black hover:bg-gray-50",
+                          "w-full justify-start text-left font-normal bg-background text-foreground",
                           !formData.date && "text-muted-foreground"
                         )}
                       >
@@ -623,38 +658,38 @@ export const ClubScheduleManagement: React.FC = () => {
                         className="bg-white pointer-events-auto"
                       />
                     </PopoverContent>
-                  </Popover>
+                  </Popover>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-white">Время начала</Label>
+                    <Label className="text-foreground">Время начала</Label>
                     <Input
                       type="time"
                       value={formData.start_time}
                       onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                      className="bg-white text-black"
+                      className="bg-background text-foreground"
                     />
                   </div>
                   <div>
-                    <Label className="text-white">Время окончания</Label>
+                    <Label className="text-foreground">Время окончания</Label>
                     <Input
                       type="time"
                       value={formData.end_time}
                       onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                      className="bg-white text-black"
+                      className="bg-background text-foreground"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-white">Мероприятие *</Label>
+                  <Label className="text-foreground">Мероприятие *</Label>
                   <Select value={formData.activity} onValueChange={(value) => setFormData(prev => ({ ...prev, activity: value }))}>
-                    <SelectTrigger className="bg-white text-black">
+                    <SelectTrigger className="bg-background text-foreground">
                       <SelectValue placeholder="Выберите тип мероприятия" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
-                      <SelectItem value="BJJ">BJJ</SelectItem>
+                    <SelectContent className="bg-popover text-popover-foreground border-border shadow-lg z-50">
+                      <SelectItem value="BJJ">БЖЖ</SelectItem>
                       <SelectItem value="Кикбоксинг">Кикбоксинг</SelectItem>
                       <SelectItem value="ОФП">ОФП</SelectItem>
                       <SelectItem value="Встреча клуба">Встреча клуба</SelectItem>
@@ -672,15 +707,15 @@ export const ClubScheduleManagement: React.FC = () => {
 
                 {formData.activity === MASTERMIND_ACTIVITY && (
                   <div>
-                    <Label className="text-white">Группа мастермайнда</Label>
+                    <Label className="text-foreground">Группа мастермайнда</Label>
                     <Select
                       value={formData.mastermind_group_id}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, mastermind_group_id: value }))}
                     >
-                      <SelectTrigger className="bg-white text-black">
+                      <SelectTrigger className="bg-background text-foreground">
                         <SelectValue placeholder="Выберите группу" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                      <SelectContent className="bg-popover text-popover-foreground border-border shadow-lg z-50">
                         {mastermindGroups.map(group => (
                           <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                         ))}
@@ -693,17 +728,17 @@ export const ClubScheduleManagement: React.FC = () => {
                 )}
 
                 <div>
-                  <Label className="text-white">Тема мероприятия</Label>
+                  <Label className="text-foreground">Тема мероприятия</Label>
                   <Input
                     value={formData.theme}
                     onChange={(e) => setFormData(prev => ({ ...prev, theme: e.target.value }))}
                     placeholder="Краткая тема мероприятия"
-                    className="bg-white text-black"
+                    className="bg-background text-foreground"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-white">Описание мероприятия</Label>
+                  <Label className="text-foreground">Описание мероприятия</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -713,25 +748,25 @@ export const ClubScheduleManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label className="text-white">Место проведения</Label>
+                  <Label className="text-foreground">Место проведения</Label>
                   <Input
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     placeholder="Укажите место"
-                    className="bg-white text-black"
+                    className="bg-background text-foreground"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-white">Цвет мероприятия</Label>
+                  <Label className="text-foreground">Цвет мероприятия</Label>
                   <Select value={formData.color} onValueChange={(value) => setFormData(prev => ({ ...prev, color: value }))}>
-                    <SelectTrigger className="bg-white text-black">
+                    <SelectTrigger className="bg-background text-foreground">
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded" style={{ backgroundColor: formData.color }}></div>
                         <SelectValue placeholder="Выберите цвет" />
                       </div>
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-300 shadow-lg z-50">
+                    <SelectContent className="bg-popover text-popover-foreground border-border shadow-lg z-50">
                       <SelectItem value="#6366f1">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-[#6366f1]"></div>
@@ -784,7 +819,9 @@ export const ClubScheduleManagement: React.FC = () => {
                   </Select>
                 </div>
 
-                {PAID_BOOKINGS_ENABLED && <PaidEventSettingsFields value={paidSettings} onChange={setPaidSettings} />}
+                {paidEnabled && <PaidEventSettingsFields value={paidSettings} onChange={setPaidSettings} />}
+
+                {local && !editingId && <ClubRecurrenceFields enabled={recurring} onEnabled={setRecurring} frequency={frequency} onFrequency={setFrequency} until={until} onUntil={setUntil} plan={plan} />}
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
@@ -797,8 +834,8 @@ export const ClubScheduleManagement: React.FC = () => {
                   >
                     Отмена
                   </Button>
-                  <Button type="submit" disabled={saveRoute === 'blocked'} className="bg-green-600 hover:bg-green-700">
-                    {editingId ? 'Сохранить' : 'Добавить'}
+                  <Button type="submit" disabled={saving || saveRoute === 'blocked' || (recurring && !!plan.error)}>
+                    {saving ? 'Сохраняем…' : 'Сохранить'}
                   </Button>
                 </div>
               </form>
@@ -807,7 +844,12 @@ export const ClubScheduleManagement: React.FC = () => {
         </div>
       </div>
 
-      <Card>
+      {local ? <section aria-label="Тестовый календарь" className="divide-y divide-border border-y border-border">
+        {scheduleItems.map(item => <div key={item.id} data-testid="club-session" className="flex items-center justify-between gap-3 py-4">
+          <div className="min-w-0"><h2 className="font-semibold">{item.activity === 'BJJ' ? 'БЖЖ' : item.activity}</h2><p className="text-sm">{item.date} · {item.time} МСК</p><p className="text-xs text-muted-foreground">{item.location} · {local.list().find(e => e.id === item.id)?.club_kind ? 'Клубная тренировка' : 'Отдельное мероприятие'}</p></div>
+          <div className="flex shrink-0 gap-1"><Button size="icon" variant="ghost" aria-label={`Редактировать ${item.activity} ${item.date}`} onClick={() => handleEdit(item)}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label={`Отменить ${item.activity} ${item.date}`} onClick={() => handleDelete(item.id)}><Trash2 className="h-4 w-4" /></Button></div>
+        </div>)}
+      </section> : <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
@@ -855,7 +897,7 @@ export const ClubScheduleManagement: React.FC = () => {
                       {item.theme || '-'}
                     </TableCell>
                     <TableCell>
-                      <Sheet open={viewingParticipants === item.id} onOpenChange={(open) => !open && setViewingParticipants(null)}>
+                      {!local && <Sheet open={viewingParticipants === item.id} onOpenChange={(open) => !open && setViewingParticipants(null)}>
                         <SheetTrigger asChild>
                           <Button
                             variant="outline"
@@ -965,13 +1007,14 @@ export const ClubScheduleManagement: React.FC = () => {
                             )}
                           </div>
                         </SheetContent>
-                      </Sheet>
+                      </Sheet>}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label={`Редактировать ${item.activity} ${item.date}`}
                           onClick={() => handleEdit(item)}
                         >
                           <Edit className="w-4 h-4" />
@@ -979,6 +1022,7 @@ export const ClubScheduleManagement: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label={`Отменить ${item.activity} ${item.date}`}
                           onClick={() => handleDelete(item.id)}
                           className="text-destructive hover:text-destructive"
                         >
@@ -992,7 +1036,7 @@ export const ClubScheduleManagement: React.FC = () => {
             </Table>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Details Dialog */}
       <Dialog open={!!viewingDetails} onOpenChange={(open) => !open && setViewingDetails(null)}>
@@ -1019,7 +1063,7 @@ export const ClubScheduleManagement: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-1">Дата</h3>
-                  <p className="text-white">{viewingDetails.date}, {viewingDetails.dayOfWeek}</p>
+                  <p className="text-foreground">{viewingDetails.date}, {viewingDetails.dayOfWeek}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-1">Время</h3>
@@ -1029,7 +1073,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
               <div>
                 <h3 className="text-sm font-medium text-gray-400 mb-1">Место проведения</h3>
-                <p className="text-white">{viewingDetails.location}</p>
+                <p className="text-foreground">{viewingDetails.location}</p>
               </div>
 
               {viewingDetails.theme && (
@@ -1048,7 +1092,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
               <div>
                 <h3 className="text-sm font-medium text-gray-400 mb-1">Участники</h3>
-                <p className="text-white">{viewingDetails.participants_count || 0} человек записано</p>
+                <p className="text-foreground">{viewingDetails.participants_count || 0} человек записано</p>
               </div>
             </div>
           )}

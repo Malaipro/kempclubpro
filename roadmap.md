@@ -1,5 +1,7 @@
 # Tasks
 
+- [x] Add and verify recurring club sessions in isolated Preview: existing occurrence + three new, retry deduplication, monthly day 31, attendance without booking, moved-week preservation, and single paid event. Persistent server recurrence is not activated in this Preview-only phase.
+
 - [x] Verify resident → founder → resident attendance flow using a shared in-memory store on the existing checkins Preview.
 
 - [x] Add a local-only resident Home goal Preview with three mobile states, reward selection/change/removal, and verify no purchases or coin deductions.

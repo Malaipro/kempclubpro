@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep recurring club-event acceptance on a development-only route using an injected in-memory calendar in the existing management form; production recurrence needs a separately reviewed atomic server save, while fixture moves retain immutable credit-week anchors.
+
 - Keep resident reward-goal prototypes on development-only Preview routes with in-memory selections injected into an optional Home slot; this avoids persistence, purchases and changes to live Home.
 
 - Scope the /app messenger theme through `.web-chat-theme` and semantic chat tokens; this keeps topic Chat and Nutrition consistent without recoloring unrelated pages.
