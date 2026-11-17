@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,9 +22,18 @@ import { mskToUtcISO, formatMskDate, formatMskTime, formatMskTimeSec, mskDayOfWe
 import { FounderAttendancePanel } from './FounderAttendancePanel';
 import { PaidBookingsPanel } from './PaidBookingsPanel';
 import { PaidEventSettingsFields } from './PaidEventSettingsFields';
+import { ClubRecurrenceFields } from './ClubRecurrenceFields';
+import {
+  clubRecurrencePlan,
+  clubTrainingKind,
+  parseClubRecurrencePreview,
+  type ClubRecurrenceFrequency,
+  type ClubRecurrencePreview,
+} from './clubRecurrence';
 import { PAID_BOOKINGS_ENABLED, emptyPaidSettings, eventSaveRoute, validatePaidSettings, type PaidLoadState, type PaidSettingsInput } from '@/components/web-app/paidBooking';
 
 const paidRpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+const recurrenceRpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
 
 const MASTERMIND_ACTIVITY = 'Мастермайнд';
 
@@ -87,6 +96,7 @@ const emptyForm = {
 };
 
 export const ClubScheduleManagement: React.FC = () => {
+  const savingLock = useRef(false);
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [mastermindGroups, setMastermindGroups] = useState<MastermindGroup[]>([]);
@@ -103,14 +113,68 @@ export const ClubScheduleManagement: React.FC = () => {
   const [paidSettings, setPaidSettings] = useState<PaidSettingsInput>(emptyPaidSettings);
   const [paidLoad, setPaidLoad] = useState<PaidLoadState>('ready');
   const [wasPaid, setWasPaid] = useState(false);
+  const [recurring, setRecurring] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<ClubRecurrenceFrequency>('weekly');
+  const [recurrenceUntil, setRecurrenceUntil] = useState('');
+  const [recurrencePreview, setRecurrencePreview] = useState<ClubRecurrencePreview | null>(null);
+  const [recurrencePreviewLoading, setRecurrencePreviewLoading] = useState(false);
+  const [recurrencePreviewError, setRecurrencePreviewError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const saveRoute = eventSaveRoute(PAID_BOOKINGS_ENABLED, paidSettings.mode, wasPaid, paidLoad);
   const { toast } = useToast();
+  const firstDate = formData.date ? format(formData.date, 'yyyy-MM-dd') : '';
+  const recurrenceAllowed = !editingId && paidSettings.mode === 'free' && clubTrainingKind(formData.activity) !== null;
+  const localRecurrencePlan = useMemo(
+    () => clubRecurrencePlan(firstDate, recurrenceUntil, recurrenceFrequency, formData.start_time, formData.end_time),
+    [firstDate, recurrenceUntil, recurrenceFrequency, formData.start_time, formData.end_time],
+  );
+  const recurrenceArgs = useMemo(() => ({
+    p_title: formData.activity,
+    p_start_date: firstDate,
+    p_until_date: recurrenceUntil,
+    p_frequency: recurrenceFrequency,
+    p_start_time: formData.start_time,
+    p_end_time: formData.end_time,
+    p_location: formData.location.trim() || null,
+  }), [formData.activity, formData.end_time, formData.location, formData.start_time, firstDate, recurrenceFrequency, recurrenceUntil]);
 
   useEffect(() => {
     fetchTrainers();
     fetchSchedules();
     fetchMastermindGroups();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!recurring || !recurrenceAllowed || localRecurrencePlan.error || localRecurrencePlan.dates.length === 0) {
+      setRecurrencePreview(null);
+      setRecurrencePreviewLoading(false);
+      setRecurrencePreviewError(null);
+      return;
+    }
+
+    setRecurrencePreview(null);
+    setRecurrencePreviewLoading(true);
+    setRecurrencePreviewError(null);
+    const timer = window.setTimeout(() => {
+      void recurrenceRpc('club_recurring_series_preview', recurrenceArgs).then(({ data, error }) => {
+        if (cancelled) return;
+        const preview = parseClubRecurrencePreview(data);
+        if (error || !preview) {
+          setRecurrencePreviewError(error?.message || 'Не удалось сверить серию с календарём');
+          setRecurrencePreviewLoading(false);
+          return;
+        }
+        setRecurrencePreview(preview);
+        setRecurrencePreviewLoading(false);
+      });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [recurring, recurrenceAllowed, localRecurrencePlan, recurrenceArgs]);
 
   const fetchMastermindGroups = async () => {
     try {
@@ -176,7 +240,7 @@ export const ClubScheduleManagement: React.FC = () => {
           description: fullDescription,
           color: schedule.color || '#10b981',
           participants_count: schedule.participants_count,
-          mastermind_group_id: (schedule as any).mastermind_group_id ?? null,
+          mastermind_group_id: schedule.mastermind_group_id ?? null,
         };
       });
 
@@ -213,6 +277,7 @@ export const ClubScheduleManagement: React.FC = () => {
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingLock.current) return;
     
     if (!formData.date || !formData.activity) {
       toast({
@@ -234,6 +299,17 @@ export const ClubScheduleManagement: React.FC = () => {
       return;
     }
 
+    if (recurring && (!recurrenceAllowed || localRecurrencePlan.error || !recurrencePreview || recurrencePreviewLoading || recurrencePreviewError)) {
+      toast({
+        title: 'Не удалось сохранить серию',
+        description: localRecurrencePlan.error || recurrencePreviewError || 'Дождитесь сверки с календарём',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    savingLock.current = true;
+    setSaving(true);
     try {
       // Combine theme and description with separator
       const combinedDescription = formData.theme && formData.description 
@@ -245,7 +321,16 @@ export const ClubScheduleManagement: React.FC = () => {
           ? formData.mastermind_group_id
           : null;
 
-      if (saveRoute === 'atomic' && paidCheck?.ok) {
+      if (recurring) {
+        const { data, error } = await recurrenceRpc('club_recurring_series_save', {
+          ...recurrenceArgs,
+          p_description: combinedDescription,
+          p_color: formData.color,
+        });
+        const result = data as { ok?: boolean; error?: string; created?: number; existing?: number } | null;
+        if (error || !result?.ok) throw new Error(error?.message || result?.error || 'Серия не сохранена');
+        toast({ title: 'Серия сохранена', description: `Создано: ${result.created ?? 0} · Уже было: ${result.existing ?? 0}` });
+      } else if (saveRoute === 'atomic' && paidCheck?.ok) {
         // Одна серверная транзакция: событие и оплата сохраняются вместе или не сохраняются вовсе
         const v = paidCheck.value;
         const paid = v.mode === 'paid' ? v : null;
@@ -306,13 +391,20 @@ export const ClubScheduleManagement: React.FC = () => {
       setFormData(emptyForm);
       setPaidSettings(emptyPaidSettings);
       setWasPaid(false);
+      setRecurring(false);
+      setRecurrenceUntil('');
+      setRecurrenceFrequency('weekly');
+      setRecurrencePreview(null);
     } catch (err) {
       console.error('Error saving schedule:', err);
       toast({
         title: 'Ошибка',
-        description: err instanceof Error && err.message.startsWith('Оплата') ? err.message : 'Не удалось сохранить мероприятие',
+        description: err instanceof Error ? err.message : 'Не удалось сохранить мероприятие',
         variant: 'destructive',
       });
+    } finally {
+      savingLock.current = false;
+      setSaving(false);
     }
   };
 
@@ -321,6 +413,7 @@ export const ClubScheduleManagement: React.FC = () => {
     const [day, month, year] = item.date.split('.');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     
+    setRecurring(false);
     setEditingId(item.id);
     setFormData({
       date: date,
@@ -582,6 +675,10 @@ export const ClubScheduleManagement: React.FC = () => {
               setPaidSettings(emptyPaidSettings);
               setWasPaid(false);
               setPaidLoad('ready');
+              setRecurring(false);
+              setRecurrenceUntil('');
+              setRecurrenceFrequency('weekly');
+              setRecurrencePreview(null);
             }
           }}>
             <DialogTrigger asChild>
@@ -649,7 +746,10 @@ export const ClubScheduleManagement: React.FC = () => {
 
                 <div>
                   <Label className="text-white">Мероприятие *</Label>
-                  <Select value={formData.activity} onValueChange={(value) => setFormData(prev => ({ ...prev, activity: value }))}>
+                  <Select value={formData.activity} onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, activity: value }));
+                    if (!clubTrainingKind(value)) setRecurring(false);
+                  }}>
                     <SelectTrigger className="bg-white text-black">
                       <SelectValue placeholder="Выберите тип мероприятия" />
                     </SelectTrigger>
@@ -784,7 +884,28 @@ export const ClubScheduleManagement: React.FC = () => {
                   </Select>
                 </div>
 
-                {PAID_BOOKINGS_ENABLED && <PaidEventSettingsFields value={paidSettings} onChange={setPaidSettings} />}
+                {PAID_BOOKINGS_ENABLED && <PaidEventSettingsFields value={paidSettings} onChange={(value) => {
+                  setPaidSettings(value);
+                  if (value.mode === 'paid') setRecurring(false);
+                }} />}
+
+                {!editingId && paidSettings.mode === 'free' && clubTrainingKind(formData.activity) && (
+                  <ClubRecurrenceFields
+                    enabled={recurring}
+                    onEnabled={(value) => {
+                      setRecurring(value);
+                      if (value && !recurrenceUntil && firstDate) setRecurrenceUntil(firstDate);
+                    }}
+                    frequency={recurrenceFrequency}
+                    onFrequency={setRecurrenceFrequency}
+                    until={recurrenceUntil}
+                    onUntil={setRecurrenceUntil}
+                    localPlan={localRecurrencePlan}
+                    preview={recurrencePreview}
+                    loading={recurrencePreviewLoading}
+                    serverError={recurrencePreviewError}
+                  />
+                )}
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
@@ -797,8 +918,12 @@ export const ClubScheduleManagement: React.FC = () => {
                   >
                     Отмена
                   </Button>
-                  <Button type="submit" disabled={saveRoute === 'blocked'} className="bg-green-600 hover:bg-green-700">
-                    {editingId ? 'Сохранить' : 'Добавить'}
+                  <Button
+                    type="submit"
+                    disabled={saving || saveRoute === 'blocked' || (recurring && (recurrencePreviewLoading || !recurrencePreview || !!recurrencePreviewError || !!localRecurrencePlan.error))}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {saving ? 'Сохраняем…' : editingId ? 'Сохранить' : 'Добавить'}
                   </Button>
                 </div>
               </form>
