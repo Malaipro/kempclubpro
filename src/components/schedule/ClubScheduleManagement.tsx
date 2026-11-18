@@ -327,9 +327,12 @@ export const ClubScheduleManagement: React.FC = () => {
           p_description: combinedDescription,
           p_color: formData.color,
         });
-        const result = data as { ok?: boolean; error?: string; created?: number; existing?: number } | null;
+        const result = data as { ok?: boolean; error?: string; created?: number; existing?: number; occupied?: number } | null;
         if (error || !result?.ok) throw new Error(error?.message || result?.error || 'Серия не сохранена');
-        toast({ title: 'Серия сохранена', description: `Создано: ${result.created ?? 0} · Уже было: ${result.existing ?? 0}` });
+        toast({
+          title: 'Серия сохранена',
+          description: `Создано: ${result.created ?? 0} · Уже было: ${result.existing ?? 0}${(result.occupied ?? 0) > 0 ? ` · Занято переносом: ${result.occupied}` : ''}`,
+        });
       } else if (saveRoute === 'atomic' && paidCheck?.ok) {
         // Одна серверная транзакция: событие и оплата сохраняются вместе или не сохраняются вовсе
         const v = paidCheck.value;

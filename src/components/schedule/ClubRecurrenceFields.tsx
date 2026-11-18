@@ -9,6 +9,7 @@ const statusLabel: Record<ClubRecurrenceStatus, string> = {
   existing: 'Уже есть — пропустить',
   moved: 'Уже есть — перенесено',
   cancelled: 'Уже есть — отменено',
+  occupied_moved: 'Слот занят перенесённой тренировкой',
 };
 
 function skippedLabel(month: string): string {
@@ -43,6 +44,7 @@ export function ClubRecurrenceFields({
   const occurrences = preview?.occurrences ?? localPlan.dates;
   const skipped = preview?.skipped ?? localPlan.skipped;
   const existing = preview?.existing ?? 0;
+  const occupied = preview?.occupied ?? 0;
   const create = preview?.create ?? localPlan.dates.length;
 
   return (
@@ -82,7 +84,10 @@ export function ClubRecurrenceFields({
             ) : loading ? (
               <p className="text-gray-300">Сверяем с календарём…</p>
             ) : (
-              <p className="font-semibold">Всего тренировок: {occurrences.length} · Уже есть: {existing} · Будет создано: {create}</p>
+              <p className="font-semibold">
+                Всего тренировок: {occurrences.length} · Уже есть: {existing} · Будет создано: {create}
+                {occupied > 0 ? ` · Занято переносом: ${occupied}` : ''}
+              </p>
             )}
             <ul className="max-h-48 divide-y divide-gray-700 overflow-y-auto">
               {occurrences.map((occurrence) => (

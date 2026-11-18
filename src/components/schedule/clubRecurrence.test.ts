@@ -47,21 +47,24 @@ describe('club recurring calendar rules', () => {
     assert.ok(clubRecurrencePlan('2026-01-01', '2040-01-01', 'weekly', '06:00', '07:00').error);
   });
 
-  it('accepts a complete server preview including moved and cancelled occurrences', () => {
+  it('accepts a complete server preview including moved, cancelled and occupied occurrences', () => {
     const raw = {
       ok: true,
-      total: 4,
-      existing: 3,
+      total: 5,
+      existing: 4,
+      occupied: 1,
       create: 1,
       skipped: [],
       occurrences: [
         { date: '2026-11-16', start: '2026-11-16T03:00:00Z', end: '2026-11-16T04:30:00Z', week: '2026-11-16', status: 'existing', schedule_id: 'one' },
         { date: '2026-11-23', start: '2026-11-23T03:00:00Z', end: '2026-11-23T04:30:00Z', week: '2026-11-23', status: 'cancelled', schedule_id: null },
         { date: '2026-11-30', start: '2026-11-30T03:00:00Z', end: '2026-11-30T04:30:00Z', week: '2026-11-30', status: 'moved', schedule_id: 'three' },
-        { date: '2026-12-07', start: '2026-12-07T03:00:00Z', end: '2026-12-07T04:30:00Z', week: '2026-12-07', status: 'new', schedule_id: null },
+        { date: '2026-12-07', start: '2026-12-07T03:00:00Z', end: '2026-12-07T04:30:00Z', week: '2026-12-07', status: 'occupied_moved', schedule_id: 'four' },
+        { date: '2026-12-14', start: '2026-12-14T03:00:00Z', end: '2026-12-14T04:30:00Z', week: '2026-12-14', status: 'new', schedule_id: null },
       ],
     };
     assert.deepEqual(parseClubRecurrencePreview(raw), raw);
+    assert.equal(parseClubRecurrencePreview({ ...raw, occupied: 5 }), null);
     assert.equal(parseClubRecurrencePreview({ ...raw, create: 2 }), null);
   });
 

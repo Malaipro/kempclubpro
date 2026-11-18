@@ -1,5 +1,5 @@
 export type ClubRecurrenceFrequency = 'weekly' | 'monthly';
-export type ClubRecurrenceStatus = 'new' | 'existing' | 'moved' | 'cancelled';
+export type ClubRecurrenceStatus = 'new' | 'existing' | 'moved' | 'cancelled' | 'occupied_moved';
 
 export type ClubRecurrenceOccurrence = {
   date: string;
@@ -20,6 +20,7 @@ export type ClubRecurrencePreview = {
   ok: true;
   total: number;
   existing: number;
+  occupied: number;
   create: number;
   occurrences: ClubRecurrenceOccurrence[];
   skipped: string[];
@@ -125,7 +126,7 @@ export function clubRecurrencePlan(
 export function parseClubRecurrencePreview(raw: unknown): ClubRecurrencePreview | null {
   const value = raw as Partial<ClubRecurrencePreview> | null;
   if (!value || value.ok !== true || !Array.isArray(value.occurrences) || !Array.isArray(value.skipped)) return null;
-  const validStatuses: ClubRecurrenceStatus[] = ['new', 'existing', 'moved', 'cancelled'];
+  const validStatuses: ClubRecurrenceStatus[] = ['new', 'existing', 'moved', 'cancelled', 'occupied_moved'];
   const occurrences = value.occurrences.filter((item): item is ClubRecurrenceOccurrence =>
     !!item && typeof item.date === 'string' && typeof item.start === 'string' && typeof item.end === 'string'
       && typeof item.week === 'string' && validStatuses.includes(item.status),
@@ -133,8 +134,11 @@ export function parseClubRecurrencePreview(raw: unknown): ClubRecurrencePreview 
   if (occurrences.length !== value.occurrences.length) return null;
   const total = Number(value.total);
   const existing = Number(value.existing);
+  const occupied = Number(value.occupied);
   const create = Number(value.create);
-  if (![total, existing, create].every(Number.isInteger) || total !== occurrences.length || existing + create !== total) return null;
-  return { ok: true, total, existing, create, occurrences, skipped: value.skipped.filter((item): item is string => typeof item === 'string') };
+  if (![total, existing, occupied, create].every(Number.isInteger)
+    || occupied < 0 || occupied > existing
+    || total !== occurrences.length || existing + create !== total) return null;
+  return { ok: true, total, existing, occupied, create, occurrences, skipped: value.skipped.filter((item): item is string => typeof item === 'string') };
 }
 

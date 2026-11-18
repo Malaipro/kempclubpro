@@ -26,6 +26,7 @@ PSQL=("$PSQL_BIN" -X -h "$PG_ROOT" -p "$PG_PORT" -U postgres -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -d recurring_compat -f sql/resident-checkins-request/up.sql >/dev/null
 "${PSQL[@]}" -d recurring_compat -f sql/club-recurring/up.sql >/dev/null
 "${PSQL[@]}" -d recurring_compat -f sql/club-recurring/isolated-test.sql
+"${PSQL[@]}" -d recurring_compat -f sql/club-recurring/review-regression-test.sql
 
 "${PSQL[@]}" -d recurring_compat -f sql/club-recurring/concurrency-test.sql >"$PG_ROOT/concurrency-1.out" &
 PID_ONE=$!

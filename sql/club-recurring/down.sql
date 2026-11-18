@@ -15,7 +15,9 @@ DROP FUNCTION public.club_recurring_series_preview(text, date, date, text, time 
 DROP FUNCTION public.club_recurring_plan_dates(date, date, text);
 DROP FUNCTION public.club_recurring_can_manage(uuid);
 DROP FUNCTION public.club_recurring_training_kind(text);
+DROP FUNCTION public.club_recurring_occurrence_key(text, timestamptz, timestamptz, text);
 DROP FUNCTION public.club_recurring_normalize_location(text);
+DROP FUNCTION public.club_recurring_clean_location(text);
 DROP INDEX public.club_recurring_schedule_match_idx;
 DROP TABLE public.club_recurring_occurrences;
 DROP TABLE public.club_recurring_series;

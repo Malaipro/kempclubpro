@@ -35,7 +35,7 @@ CREATE TABLE public.club_recurring_occurrences (
   UNIQUE (series_id, occurrence_date)
 );
 
-CREATE INDEX club_recurring_occurrences_schedule_idx
+CREATE UNIQUE INDEX club_recurring_occurrences_schedule_unique_idx
   ON public.club_recurring_occurrences(schedule_id)
   WHERE schedule_id IS NOT NULL;
 CREATE INDEX club_recurring_schedule_match_idx
@@ -46,6 +46,15 @@ ALTER TABLE public.club_recurring_series ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.club_recurring_occurrences ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.club_recurring_series, public.club_recurring_occurrences FROM PUBLIC, anon, authenticated;
 
+CREATE FUNCTION public.club_recurring_clean_location(p_location text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT btrim(regexp_replace(COALESCE(p_location, ''), '[[:space:]]+', ' ', 'g'))
+$$;
+
 CREATE FUNCTION public.club_recurring_normalize_location(p_location text)
 RETURNS text
 LANGUAGE sql
@@ -53,10 +62,29 @@ IMMUTABLE
 SET search_path = ''
 AS $$
   SELECT lower(translate(
-    regexp_replace(trim(COALESCE(p_location, '')), '\s+', ' ', 'g'),
+    public.club_recurring_clean_location(p_location),
     'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
     'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
   ))
+$$;
+
+CREATE FUNCTION public.club_recurring_occurrence_key(
+  p_kind text,
+  p_start timestamptz,
+  p_end timestamptz,
+  p_location text
+)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT jsonb_build_array(
+    p_kind,
+    extract(epoch FROM p_start),
+    extract(epoch FROM p_end),
+    public.club_recurring_normalize_location(p_location)
+  )::text
 $$;
 
 CREATE FUNCTION public.club_recurring_training_kind(p_title text)
@@ -166,6 +194,7 @@ LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
+SET TimeZone = 'Europe/Moscow'
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
@@ -182,10 +211,12 @@ DECLARE
   v_schedule_start timestamptz;
   v_schedule_end timestamptz;
   v_schedule_location text;
+  v_schedule_occurrence_key text;
   v_occurrences jsonb := '[]'::jsonb;
   v_skipped jsonb := '[]'::jsonb;
   v_total integer := 0;
   v_existing integer := 0;
+  v_occupied integer := 0;
 BEGIN
   IF v_uid IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'not_authenticated'); END IF;
   IF NOT public.club_recurring_can_manage(v_uid) THEN RETURN jsonb_build_object('ok', false, 'error', 'forbidden'); END IF;
@@ -203,12 +234,13 @@ BEGIN
     v_start := (v_plan.occurrence_date + p_start_time) AT TIME ZONE 'Europe/Moscow';
     v_end := (v_plan.occurrence_date + p_end_time) AT TIME ZONE 'Europe/Moscow';
     v_week := date_trunc('week', v_plan.occurrence_date::timestamp)::date;
-    v_key := jsonb_build_array(v_kind, v_start, v_end, v_location)::text;
+    v_key := public.club_recurring_occurrence_key(v_kind, v_start, v_end, v_location);
     v_schedule_id := NULL;
     v_schedule_active := NULL;
     v_schedule_start := NULL;
     v_schedule_end := NULL;
     v_schedule_location := NULL;
+    v_schedule_occurrence_key := NULL;
 
     SELECT occurrence.schedule_id, schedule.is_active, schedule.start_time, schedule.end_time,
            public.club_recurring_normalize_location(schedule.location)
@@ -240,11 +272,25 @@ BEGIN
         AND public.club_recurring_normalize_location(schedule.location) = v_location
       ORDER BY schedule.is_active DESC, schedule.created_at, schedule.id
       LIMIT 1;
-      v_status := CASE WHEN v_schedule_id IS NULL THEN 'new' WHEN v_schedule_active IS TRUE THEN 'existing' ELSE 'cancelled' END;
+      IF v_schedule_id IS NULL THEN
+        v_status := 'new';
+      ELSE
+        SELECT occurrence.occurrence_key
+          INTO v_schedule_occurrence_key
+        FROM public.club_recurring_occurrences occurrence
+        WHERE occurrence.schedule_id = v_schedule_id;
+
+        v_status := CASE
+          WHEN v_schedule_occurrence_key IS NOT NULL AND v_schedule_occurrence_key <> v_key THEN 'occupied_moved'
+          WHEN v_schedule_active IS TRUE THEN 'existing'
+          ELSE 'cancelled'
+        END;
+      END IF;
     END IF;
 
     v_total := v_total + 1;
     IF v_status <> 'new' THEN v_existing := v_existing + 1; END IF;
+    IF v_status = 'occupied_moved' THEN v_occupied := v_occupied + 1; END IF;
     v_occurrences := v_occurrences || jsonb_build_array(jsonb_build_object(
       'date', v_plan.occurrence_date,
       'start', v_start,
@@ -259,6 +305,7 @@ BEGIN
     'ok', true,
     'total', v_total,
     'existing', v_existing,
+    'occupied', v_occupied,
     'create', v_total - v_existing,
     'occurrences', v_occurrences,
     'skipped', v_skipped
@@ -281,6 +328,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
+SET TimeZone = 'Europe/Moscow'
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
@@ -295,8 +343,18 @@ DECLARE
   v_occurrence_key text;
   v_claimed text;
   v_schedule_id uuid;
+  v_schedule_active boolean;
+  v_schedule_start timestamptz;
+  v_schedule_end timestamptz;
+  v_schedule_location text;
+  v_schedule_occurrence_key text;
+  v_status text;
   v_created integer := 0;
   v_existing integer := 0;
+  v_cancelled integer := 0;
+  v_moved integer := 0;
+  v_occupied integer := 0;
+  v_occurrences jsonb := '[]'::jsonb;
   v_skipped jsonb := '[]'::jsonb;
 BEGIN
   IF v_uid IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'not_authenticated'); END IF;
@@ -315,7 +373,7 @@ BEGIN
     title, club_kind, description, location, normalized_location, color
   ) VALUES (
     v_identity_key, v_uid, p_frequency, p_start_date, p_until_date, p_start_time, p_end_time,
-    p_title, v_kind, p_description, NULLIF(trim(p_location), ''), v_location, p_color
+    p_title, v_kind, p_description, NULLIF(public.club_recurring_clean_location(p_location), ''), v_location, p_color
   )
   ON CONFLICT (identity_key) DO UPDATE SET
     until_date = GREATEST(public.club_recurring_series.until_date, EXCLUDED.until_date),
@@ -334,25 +392,42 @@ BEGIN
     v_start := (v_plan.occurrence_date + p_start_time) AT TIME ZONE 'Europe/Moscow';
     v_end := (v_plan.occurrence_date + p_end_time) AT TIME ZONE 'Europe/Moscow';
     v_week := date_trunc('week', v_plan.occurrence_date::timestamp)::date;
-    v_occurrence_key := jsonb_build_array(v_kind, v_start, v_end, v_location)::text;
+    v_occurrence_key := public.club_recurring_occurrence_key(v_kind, v_start, v_end, v_location);
     v_claimed := NULL;
+    v_schedule_id := NULL;
+    v_schedule_active := NULL;
+    v_schedule_start := NULL;
+    v_schedule_end := NULL;
+    v_schedule_location := NULL;
+    v_schedule_occurrence_key := NULL;
 
-    INSERT INTO public.club_recurring_occurrences(
-      occurrence_key, series_id, occurrence_date, original_start, original_end,
-      original_location, original_week_anchor
-    ) VALUES (
-      v_occurrence_key, v_series_id, v_plan.occurrence_date, v_start, v_end, v_location, v_week
-    )
-    ON CONFLICT DO NOTHING
-    RETURNING occurrence_key INTO v_claimed;
+    SELECT occurrence.schedule_id, schedule.is_active, schedule.start_time, schedule.end_time,
+           public.club_recurring_normalize_location(schedule.location)
+      INTO v_schedule_id, v_schedule_active, v_schedule_start, v_schedule_end, v_schedule_location
+    FROM public.club_recurring_occurrences occurrence
+    LEFT JOIN public.schedules schedule ON schedule.id = occurrence.schedule_id
+    WHERE occurrence.occurrence_key = v_occurrence_key;
 
-    IF v_claimed IS NULL THEN
+    IF FOUND THEN
+      v_status := CASE
+        WHEN v_schedule_id IS NULL OR v_schedule_active IS DISTINCT FROM true THEN 'cancelled'
+        WHEN v_schedule_start IS DISTINCT FROM v_start OR v_schedule_end IS DISTINCT FROM v_end OR v_schedule_location IS DISTINCT FROM v_location THEN 'moved'
+        ELSE 'existing'
+      END;
       v_existing := v_existing + 1;
+      IF v_status = 'cancelled' THEN v_cancelled := v_cancelled + 1; END IF;
+      IF v_status = 'moved' THEN v_moved := v_moved + 1; END IF;
+      v_occurrences := v_occurrences || jsonb_build_array(jsonb_build_object(
+        'date', v_plan.occurrence_date,
+        'status', v_status,
+        'schedule_id', v_schedule_id
+      ));
       CONTINUE;
     END IF;
 
-    v_schedule_id := NULL;
-    SELECT schedule.id INTO v_schedule_id
+    SELECT schedule.id, schedule.is_active, schedule.start_time, schedule.end_time,
+           public.club_recurring_normalize_location(schedule.location)
+      INTO v_schedule_id, v_schedule_active, v_schedule_start, v_schedule_end, v_schedule_location
     FROM public.schedules schedule
     WHERE schedule.schedule_type::text = 'club'
       AND COALESCE(schedule.booking_mode, 'free') = 'free'
@@ -369,11 +444,67 @@ BEGIN
     FOR UPDATE;
 
     IF v_schedule_id IS NOT NULL THEN
+      SELECT occurrence.occurrence_key
+        INTO v_schedule_occurrence_key
+      FROM public.club_recurring_occurrences occurrence
+      WHERE occurrence.schedule_id = v_schedule_id;
+
+      IF v_schedule_occurrence_key IS NOT NULL AND v_schedule_occurrence_key <> v_occurrence_key THEN
+        v_existing := v_existing + 1;
+        v_occupied := v_occupied + 1;
+        v_occurrences := v_occurrences || jsonb_build_array(jsonb_build_object(
+          'date', v_plan.occurrence_date,
+          'status', 'occupied_moved',
+          'schedule_id', v_schedule_id
+        ));
+        CONTINUE;
+      END IF;
+    END IF;
+
+    INSERT INTO public.club_recurring_occurrences(
+      occurrence_key, series_id, occurrence_date, original_start, original_end,
+      original_location, original_week_anchor
+    ) VALUES (
+      v_occurrence_key, v_series_id, v_plan.occurrence_date, v_start, v_end, v_location, v_week
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING occurrence_key INTO v_claimed;
+
+    IF v_claimed IS NULL THEN
+      SELECT occurrence.schedule_id, schedule.is_active, schedule.start_time, schedule.end_time,
+             public.club_recurring_normalize_location(schedule.location)
+        INTO v_schedule_id, v_schedule_active, v_schedule_start, v_schedule_end, v_schedule_location
+      FROM public.club_recurring_occurrences occurrence
+      LEFT JOIN public.schedules schedule ON schedule.id = occurrence.schedule_id
+      WHERE occurrence.occurrence_key = v_occurrence_key
+         OR (occurrence.series_id = v_series_id AND occurrence.occurrence_date = v_plan.occurrence_date)
+      ORDER BY (occurrence.occurrence_key = v_occurrence_key) DESC
+      LIMIT 1;
+
+      v_status := CASE
+        WHEN v_schedule_id IS NULL OR v_schedule_active IS DISTINCT FROM true THEN 'cancelled'
+        WHEN v_schedule_start IS DISTINCT FROM v_start OR v_schedule_end IS DISTINCT FROM v_end OR v_schedule_location IS DISTINCT FROM v_location THEN 'moved'
+        ELSE 'existing'
+      END;
+      v_existing := v_existing + 1;
+      IF v_status = 'cancelled' THEN v_cancelled := v_cancelled + 1; END IF;
+      IF v_status = 'moved' THEN v_moved := v_moved + 1; END IF;
+      v_occurrences := v_occurrences || jsonb_build_array(jsonb_build_object(
+        'date', v_plan.occurrence_date,
+        'status', v_status,
+        'schedule_id', v_schedule_id
+      ));
+      CONTINUE;
+    END IF;
+
+    IF v_schedule_id IS NOT NULL THEN
       UPDATE public.schedules
       SET club_kind = COALESCE(club_kind, v_kind),
           week_anchor = COALESCE(week_anchor, v_week)
       WHERE id = v_schedule_id;
+      v_status := CASE WHEN v_schedule_active IS TRUE THEN 'existing' ELSE 'cancelled' END;
       v_existing := v_existing + 1;
+      IF v_status = 'cancelled' THEN v_cancelled := v_cancelled + 1; END IF;
     ELSE
       INSERT INTO public.schedules(
         title, description, activity_type, start_time, end_time, instructor_id,
@@ -381,16 +512,23 @@ BEGIN
         mastermind_group_id, club_kind, week_anchor, booking_mode
       ) VALUES (
         p_title, p_description, p_title, v_start, v_end, NULL,
-        NULL, NULLIF(trim(p_location), ''), true, p_color, 'club', NULL,
+        NULL, NULLIF(public.club_recurring_clean_location(p_location), ''), true, p_color, 'club', NULL,
         NULL, v_kind, v_week, 'free'
       )
       RETURNING id INTO v_schedule_id;
+      v_status := 'created';
       v_created := v_created + 1;
     END IF;
 
     UPDATE public.club_recurring_occurrences
     SET schedule_id = v_schedule_id
     WHERE occurrence_key = v_occurrence_key;
+
+    v_occurrences := v_occurrences || jsonb_build_array(jsonb_build_object(
+      'date', v_plan.occurrence_date,
+      'status', v_status,
+      'schedule_id', v_schedule_id
+    ));
   END LOOP;
 
   RETURN jsonb_build_object(
@@ -398,13 +536,19 @@ BEGIN
     'series_id', v_series_id,
     'created', v_created,
     'existing', v_existing,
+    'cancelled', v_cancelled,
+    'moved', v_moved,
+    'occupied', v_occupied,
     'total', v_created + v_existing,
+    'occurrences', v_occurrences,
     'skipped', v_skipped
   );
 END
 $$;
 
+REVOKE ALL ON FUNCTION public.club_recurring_clean_location(text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.club_recurring_normalize_location(text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.club_recurring_occurrence_key(text, timestamptz, timestamptz, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.club_recurring_training_kind(text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.club_recurring_can_manage(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.club_recurring_plan_dates(date, date, text) FROM PUBLIC, anon, authenticated;
