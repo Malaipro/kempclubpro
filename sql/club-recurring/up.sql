@@ -256,6 +256,7 @@ BEGIN
         ELSE 'existing'
       END;
     ELSE
+      -- An inactive move is historical for its own key and must not occupy another target slot.
       SELECT schedule.id, schedule.is_active, schedule.start_time, schedule.end_time,
              public.club_recurring_normalize_location(schedule.location)
         INTO v_schedule_id, v_schedule_active, v_schedule_start, v_schedule_end, v_schedule_location
@@ -270,6 +271,15 @@ BEGIN
         AND schedule.start_time = v_start
         AND schedule.end_time = v_end
         AND public.club_recurring_normalize_location(schedule.location) = v_location
+        AND (
+          schedule.is_active IS TRUE
+          OR NOT EXISTS (
+            SELECT 1
+            FROM public.club_recurring_occurrences linked_occurrence
+            WHERE linked_occurrence.schedule_id = schedule.id
+              AND linked_occurrence.occurrence_key <> v_key
+          )
+        )
       ORDER BY schedule.is_active DESC, schedule.created_at, schedule.id
       LIMIT 1;
       IF v_schedule_id IS NULL THEN
@@ -425,6 +435,7 @@ BEGIN
       CONTINUE;
     END IF;
 
+    -- An inactive move is historical for its own key and must not occupy another target slot.
     SELECT schedule.id, schedule.is_active, schedule.start_time, schedule.end_time,
            public.club_recurring_normalize_location(schedule.location)
       INTO v_schedule_id, v_schedule_active, v_schedule_start, v_schedule_end, v_schedule_location
@@ -439,6 +450,15 @@ BEGIN
       AND schedule.start_time = v_start
       AND schedule.end_time = v_end
       AND public.club_recurring_normalize_location(schedule.location) = v_location
+      AND (
+        schedule.is_active IS TRUE
+        OR NOT EXISTS (
+          SELECT 1
+          FROM public.club_recurring_occurrences linked_occurrence
+          WHERE linked_occurrence.schedule_id = schedule.id
+            AND linked_occurrence.occurrence_key <> v_occurrence_key
+        )
+      )
     ORDER BY schedule.is_active DESC, schedule.created_at, schedule.id
     LIMIT 1
     FOR UPDATE;

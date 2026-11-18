@@ -62,18 +62,18 @@ SELECT public.test_expect(
   'review 1 moved training keeps the 23 November credit week'
 );
 
--- Once the moved training leaves the target slot, a retry may create 30 November.
+-- Review scenario 1b: an inactive moved row preserves the 23 November cancellation,
+-- but no longer blocks a new active occurrence on 30 November.
 SET ROLE authenticated;
 SET test.uid='00000000-0000-0000-0000-000000000005';
 UPDATE public.schedules
-SET start_time='2026-12-07 06:00 Europe/Moscow',
-    end_time='2026-12-07 07:30 Europe/Moscow'
+SET is_active=false
 WHERE id=(SELECT schedule_id FROM review_moved);
-CREATE TEMP TABLE review_freed_preview AS
+CREATE TEMP TABLE review_inactive_preview AS
 SELECT public.club_recurring_series_preview(
   'BJJ','2026-11-23','2026-11-30','weekly','06:00','07:30','Зал перенос review'
 ) AS payload;
-CREATE TEMP TABLE review_freed_save AS
+CREATE TEMP TABLE review_inactive_save AS
 SELECT public.club_recurring_series_save(
   'BJJ',NULL,'#10b981','2026-11-23','2026-11-30','weekly','06:00','07:30','Зал перенос review'
 ) AS payload;
@@ -81,22 +81,63 @@ RESET ROLE;
 SELECT public.test_expect(
   (SELECT payload->>'occupied'='0' AND payload->>'create'='1'
       AND (SELECT count(*)=1 FROM jsonb_array_elements(payload->'occurrences') item
+           WHERE item->>'date'='2026-11-23' AND item->>'status'='cancelled')
+      AND (SELECT count(*)=1 FROM jsonb_array_elements(payload->'occurrences') item
            WHERE item->>'date'='2026-11-30' AND item->>'status'='new')
-   FROM review_freed_preview),
-  'review 1 preview makes the freed 30 November slot creatable'
+   FROM review_inactive_preview),
+  'review 1b preview keeps 23 November cancelled and makes inactive-moved 30 November creatable'
 );
 SELECT public.test_expect(
-  (SELECT payload->>'occupied'='0' AND payload->>'created'='1'
+  (SELECT payload->>'occupied'='0' AND payload->>'created'='1' AND payload->>'cancelled'='1'
       AND (SELECT count(*)=1 FROM jsonb_array_elements(payload->'occurrences') item
            WHERE item->>'date'='2026-11-30' AND item->>'status'='created')
-   FROM review_freed_save),
-  'review 1 retry creates a distinct training after the slot is freed'
+   FROM review_inactive_save),
+  'review 1b save creates a distinct active training beside the inactive moved row'
 );
 SELECT public.test_expect(
   (SELECT count(*)=2 AND count(DISTINCT schedule_id)=2
    FROM public.club_recurring_occurrences
-   WHERE original_location='зал перенос review'),
-  'review 1 ledger has distinct schedule links for 23 and 30 November'
+   WHERE original_location='зал перенос review')
+  AND (SELECT count(*)=1 FROM public.schedules
+       WHERE is_active
+         AND start_time='2026-11-30 06:00 Europe/Moscow'
+         AND public.club_recurring_normalize_location(location)='зал перенос review')
+  AND (SELECT count(*)=1 FROM public.schedules
+       WHERE NOT is_active
+         AND start_time='2026-11-30 06:00 Europe/Moscow'
+         AND week_anchor='2026-11-23'
+         AND public.club_recurring_normalize_location(location)='зал перенос review'),
+  'review 1b calendar and ledger separate the cancelled 23 November history from active 30 November'
+);
+
+SET ROLE authenticated;
+SET test.uid='00000000-0000-0000-0000-000000000005';
+CREATE TEMP TABLE review_inactive_retry_preview AS
+SELECT public.club_recurring_series_preview(
+  'BJJ','2026-11-23','2026-11-30','weekly','06:00','07:30','Зал перенос review'
+) AS payload;
+CREATE TEMP TABLE review_inactive_retry_save AS
+SELECT public.club_recurring_series_save(
+  'BJJ',NULL,'#10b981','2026-11-23','2026-11-30','weekly','06:00','07:30','Зал перенос review'
+) AS payload;
+RESET ROLE;
+SELECT public.test_expect(
+  (SELECT payload->>'create'='0' AND payload->>'occupied'='0'
+      AND (SELECT count(*)=1 FROM jsonb_array_elements(payload->'occurrences') item
+           WHERE item->>'date'='2026-11-23' AND item->>'status'='cancelled')
+      AND (SELECT count(*)=1 FROM jsonb_array_elements(payload->'occurrences') item
+           WHERE item->>'date'='2026-11-30' AND item->>'status'='existing')
+   FROM review_inactive_retry_preview),
+  'review 1b retry preview preserves cancellation and finds the new active occurrence'
+);
+SELECT public.test_expect(
+  (SELECT payload->>'created'='0' AND payload->>'occupied'='0'
+   FROM review_inactive_retry_save)
+  AND (SELECT count(*)=1 FROM public.schedules
+       WHERE is_active
+         AND start_time='2026-11-30 06:00 Europe/Moscow'
+         AND public.club_recurring_normalize_location(location)='зал перенос review'),
+  'review 1b retry save leaves exactly one active 30 November training'
 );
 
 -- Review scenario 2: occurrence keys must not depend on the SQL session TimeZone.
