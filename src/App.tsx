@@ -28,6 +28,8 @@ const ResidentCheckinsPreview = import.meta.env.DEV
   ? lazy(() => import('./components/web-app/ResidentCheckinsPreview')) : null;
 const ResidentGoalPreview = import.meta.env.DEV
   ? lazy(() => import('./components/web-app/ResidentGoalPreview')) : null;
+const BroadcastPushPreview = import.meta.env.DEV
+  ? lazy(() => import('./components/web-app/BroadcastPushPreview')) : null;
 const ClubRecurringPreview = import.meta.env.DEV
   ? lazy(() => import('./components/schedule/ClubRecurringPreview')) : null;
 
@@ -60,6 +62,7 @@ const App = () => (
             <Route path="/app" element={<PasswordChangeGuard><WebApp /></PasswordChangeGuard>} />
             {ResidentCheckinsPreview && <Route path="/app/preview/checkins" element={<ResidentCheckinsPreview />} />}
             {ResidentGoalPreview && <Route path="/app/preview/goal" element={<ResidentGoalPreview />} />}
+            {BroadcastPushPreview && <Route path="/app/preview/broadcast-push" element={<BroadcastPushPreview />} />}
             {ClubRecurringPreview && <Route path="/app/preview/club-recurring" element={<ClubRecurringPreview />} />}
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/app/login" element={<AppLogin />} />
