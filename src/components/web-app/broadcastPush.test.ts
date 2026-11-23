@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import { pushRecipients, pushTargetUrl } from './broadcastPush';
 
 const people = [
@@ -10,18 +11,18 @@ const people = [
 
 describe('broadcast push', () => {
   it('residents audience gets push only for subscribed residents', () => {
-    expect(pushRecipients(people, 'resident').subscribed.map(p => p.user_id)).toEqual(['r1']);
+    assert.deepEqual(pushRecipients(people, 'resident').subscribed.map(p => p.user_id), ['r1']);
   });
   it('intensive audience excludes residents', () => {
-    expect(pushRecipients(people, 'intensive').subscribed.map(p => p.user_id)).toEqual(['i1']);
+    assert.deepEqual(pushRecipients(people, 'intensive').subscribed.map(p => p.user_id), ['i1']);
   });
   it('all audience excludes inactive users', () => {
-    expect(pushRecipients(people, 'all').subscribed.map(p => p.user_id)).toEqual(['r1', 'i1']);
+    assert.deepEqual(pushRecipients(people, 'all').subscribed.map(p => p.user_id), ['r1', 'i1']);
   });
   it('book button opens the event card', () => {
-    expect(pushTargetUrl([{ type: 'book_event', target_id: 'ev1' }])).toBe('/app/schedule?event=ev1');
+    assert.equal(pushTargetUrl([{ type: 'book_event', target_id: 'ev1' }]), '/app/schedule?event=ev1');
   });
   it('no buttons opens app home', () => {
-    expect(pushTargetUrl([])).toBe('/app');
+    assert.equal(pushTargetUrl([]), '/app');
   });
 });
