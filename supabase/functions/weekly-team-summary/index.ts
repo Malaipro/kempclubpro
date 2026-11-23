@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { taynikComplete, taynikConfigured } from '../_shared/taynik.ts'
 
-const ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 const TRAINING_TARGET = 3
 const JOURNAL_TARGET = 7
 const LEADER_TELEGRAM_ID = '777972440'
@@ -107,10 +107,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!anthropicKey) {
+  const anthropicKey = 'taynik'
+  if (!taynikConfigured()) {
     return new Response(
-      JSON.stringify({ ok: false, error: 'ANTHROPIC_API_KEY is not configured' }),
+      JSON.stringify({ ok: false, error: 'Taynik connector is not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -429,35 +429,12 @@ serve(async (req) => {
 })
 
 async function requestSummary(
-  anthropicKey: string,
+  _key: string,
   systemPrompt: string,
   prompt: string,
   maxTokens = 800
 ): Promise<string | null> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': anthropicKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-      system: systemPrompt,
-    }),
-  })
-
-  if (!response.ok) {
-    console.error(`Anthropic API error: ${response.status} ${await response.text()}`)
-    return null
-  }
-
-  const data = await response.json()
-  const text = data?.content?.find((block: { type: string }) => block.type === 'text')?.text
-
-  return typeof text === 'string' ? text.trim() : null
+  return taynikComplete(systemPrompt, prompt, maxTokens)
 }
 
 // Telegram ограничивает сообщение 4096 символами; ошибка отправки не должна валить прогон

@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
 import { notifyUser } from "../_shared/appNotify.ts"
+import { taynikComplete, taynikConfigured } from '../_shared/taynik.ts'
 
-const ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 
 const STANDARD_PROMPT =
   'Ты куратор мужского клуба КЭМП. Сделай краткую (3-5 предложений) ' +
@@ -38,11 +38,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-
-  if (!anthropicKey) {
+  const anthropicKey = 'taynik'
+  if (!taynikConfigured()) {
     return new Response(
-      JSON.stringify({ error: 'ANTHROPIC_API_KEY is not configured' }),
+      JSON.stringify({ error: 'Taynik connector is not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -218,35 +217,11 @@ serve(async (req) => {
 })
 
 async function requestSummary(
-  anthropicKey: string,
+  _key: string,
   systemPrompt: string,
   fullName: string | null,
   journalText: string
 ): Promise<string | null> {
   const userMessage = `Участник: ${fullName ?? 'Без имени'}\n\nЗаписи ежедневника за неделю:\n\n${journalText}`
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': anthropicKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  })
-
-  if (!res.ok) {
-    console.error(`Anthropic API error: ${res.status} ${await res.text()}`)
-    return null
-  }
-
-  const data = await res.json()
-  const text = data?.content?.find((block: { type: string }) => block.type === 'text')?.text
-
-  return typeof text === 'string' ? text.trim() : null
+  return taynikComplete(systemPrompt, userMessage, 1024)
 }
