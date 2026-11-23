@@ -324,7 +324,9 @@ export const BroadcastManagement: React.FC = () => {
           audience,
           buttons: validButtons,
           file_url: fileUrl,
-          status: 'draft',
+          // App channel skips Telegram entirely; broadcast-push stores bell entries and sends push.
+          status: sendPush ? 'sent' : 'draft',
+          channel: sendPush ? 'app' : 'telegram',
           recipients_count: 0,
           created_by: userData?.user?.id ?? null,
         })
@@ -335,17 +337,19 @@ export const BroadcastManagement: React.FC = () => {
       const broadcastId = inserted?.id;
       if (!broadcastId) throw new Error('Не удалось получить id рассылки');
 
-      const { data: sendData, error: sendError } = await supabase.functions.invoke(
-        'send-broadcast',
-        { body: { broadcastId } }
-      );
-      if (sendError) throw sendError;
-      if (sendData && (sendData as any).ok === false) {
-        throw new Error((sendData as any).error || 'Ошибка отправки');
-      }
+      if (!sendPush) {
+        const { data: sendData, error: sendError } = await supabase.functions.invoke(
+          'send-broadcast',
+          { body: { broadcastId } }
+        );
+        if (sendError) throw sendError;
+        if (sendData && (sendData as any).ok === false) {
+          throw new Error((sendData as any).error || 'Ошибка отправки');
+        }
 
-      const sent = (sendData as any)?.data?.sent ?? (sendData as any)?.sent ?? 0;
-      toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
+        const sent = (sendData as any)?.data?.sent ?? (sendData as any)?.sent ?? 0;
+        toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
+      }
       if (sendPush) {
         try {
           const { data: pushData, error: pushError } = await supabase.functions.invoke('broadcast-push', {
@@ -357,7 +361,7 @@ export const BroadcastManagement: React.FC = () => {
           }
           if (!pushData?.ok) throw new Error(pushData?.error ?? 'Пуш не отправлен');
           const pushed = (pushData as any)?.sent ?? (pushData as any)?.data?.sent ?? 0;
-          toast({ title: 'Пуш-уведомления', description: `Пуш: отправлено ${pushed} из ${pushData.subscribed ?? 0} подписанных` });
+          toast({ title: 'Отправлено в приложение', description: `Пуш: отправлено ${pushed} из ${pushData.subscribed ?? 0} подписанных` });
         } catch (pe: any) {
           toast({ title: 'Пуш не отправлен', description: pe?.message || 'Ошибка отправки пуша', variant: 'destructive' });
         }
@@ -550,11 +554,12 @@ export const BroadcastManagement: React.FC = () => {
           {!sendToGroup && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Switch id="broadcast-push" checked={sendPush} onCheckedChange={setSendPush} />
-                <Label htmlFor="broadcast-push">Отправить пуш-уведомление</Label>
+                <Label>Куда отправить</Label>
+                <Button type="button" size="sm" variant={sendPush ? 'outline' : 'default'} aria-pressed={!sendPush} onClick={() => setSendPush(false)}>Telegram-чат</Button>
+                <Button type="button" size="sm" variant={sendPush ? 'default' : 'outline'} aria-pressed={sendPush} onClick={() => setSendPush(true)}>Приложение</Button>
               </div>
               {sendPush && <p className="text-sm text-muted-foreground" role="status">
-                {pushEstimateError ?? (pushEstimate ? `Пуш получат: ${pushEstimate.subscribed} из ${pushEstimate.total}${pushEstimate.enabled ? '' : ' · ожидает пробной доставки'}` : 'Проверяем получателей пуша…')}
+                {pushEstimateError ?? (pushEstimate ? `В колокольчик: ${pushEstimate.total}, пуш получат: ${pushEstimate.subscribed} из ${pushEstimate.total}${pushEstimate.enabled ? '' : ' · ожидает пробной доставки'}` : 'Проверяем получателей пуша…')}
               </p>}
             </div>
           )}

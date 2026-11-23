@@ -10,6 +10,9 @@ type Subscription = { id: string; endpoint: string; p256dh: string; auth: string
 
 // Returns 'delivered' | 'none' | 'failed'; deletes expired subscriptions as a side effect.
 async function deliver(db: ReturnType<typeof createClient>, userId: string, pushPayload: unknown): Promise<{ result: 'delivered' | 'none' | 'failed'; expired: number }> {
+  // Every participant reminder is also kept in the /app bell.
+  const n = pushPayload as { title?: string; body?: string; url?: string };
+  await db.from('notifications').insert({ user_id: userId, title: n.title ?? 'Мастермайнд', message: n.body ?? '', notification_type: 'mastermind', action_url: n.url ?? '/app', is_read: false });
   const { data: subscriptions, error } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth').eq('user_id', userId);
   if (error) return { result: 'failed', expired: 0 };
   let delivered = false;

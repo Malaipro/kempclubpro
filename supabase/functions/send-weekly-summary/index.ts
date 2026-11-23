@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { notifyUser } from "../_shared/appNotify.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -8,8 +9,6 @@ serve(async (req) => {
   }
 
   try {
-    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
-    if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN is not configured");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -63,33 +62,10 @@ serve(async (req) => {
       .single();
     if (sErr || !summary) throw sErr ?? new Error("Summary not found");
 
-    const { data: profile, error: pErr } = await admin
-      .from("profiles")
-      .select("telegram_id")
-      .eq("user_id", summary.user_id)
-      .single();
-    if (pErr || !profile?.telegram_id) {
-      throw new Error("У участника не привязан Telegram");
-    }
-
     const text = summary.edited_text ?? summary.summary_text;
-
-    const tgRes = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: profile.telegram_id,
-          text: `📋 Сводка недели\n\n${text}`,
-        }),
-      },
-    );
-
-    if (!tgRes.ok) {
-      const errBody = await tgRes.text();
-      throw new Error(`Telegram error ${tgRes.status}: ${errBody}`);
-    }
+    // Personal summaries are delivered in the app (bell + push), not Telegram.
+    const r = await notifyUser(admin, summary.user_id, { title: "Сводка недели", body: text, url: "/app?section=journal", type: "weekly_summary" });
+    if (!r.stored) throw new Error("Не удалось сохранить уведомление");
 
     const { error: uErr } = await admin
       .from("weekly_summaries")

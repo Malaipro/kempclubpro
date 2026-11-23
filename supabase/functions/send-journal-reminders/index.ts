@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { notifyUser } from "../_shared/appNotify.ts"
 
 type ReminderType = 'morning' | 'evening'
 
@@ -24,16 +25,6 @@ serve(async (req) => {
     )
   }
 
-  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
-  const miniAppUrl = Deno.env.get('MINI_APP_URL')
-
-  if (!botToken || !miniAppUrl) {
-    return new Response(
-      JSON.stringify({ error: 'TELEGRAM_BOT_TOKEN or MINI_APP_URL is not configured' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -42,9 +33,9 @@ serve(async (req) => {
   try {
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, telegram_id')
+      .select('user_id')
+      .eq('approved', true)
       .in('participant_status', ['intensive_active', 'club_resident'])
-      .not('telegram_id', 'is', null)
 
     if (profilesError) {
       console.error('Failed to load profiles:', profilesError)
@@ -54,7 +45,7 @@ serve(async (req) => {
       )
     }
 
-    let recipients = (profiles ?? []).filter((p) => p.telegram_id)
+    let recipients = profiles ?? []
 
     if (type === 'evening' && recipients.length > 0) {
       const today = new Date().toISOString().slice(0, 10)
@@ -82,26 +73,10 @@ serve(async (req) => {
     let failed = 0
 
     for (const recipient of recipients) {
-      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: recipient.telegram_id,
-          text,
-          reply_markup: {
-            inline_keyboard: [[
-              { text: 'Открыть ежедневник', web_app: { url: miniAppUrl } },
-            ]],
-          },
-        }),
-      })
-
-      if (res.ok) {
-        sent++
-      } else {
-        failed++
-        console.error(`Failed to send to telegram_id ${recipient.telegram_id}: ${res.status} ${await res.text()}`)
-      }
+      // Standard reminders go to the app only (bell + push), never to Telegram.
+      const r = await notifyUser(supabaseAdmin, recipient.user_id, { title: 'Ежедневник', body: text, url: '/app?section=journal', type: 'journal_reminder' })
+      if (r.stored) sent++
+      else failed++
     }
 
     return new Response(

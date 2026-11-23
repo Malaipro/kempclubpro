@@ -447,6 +447,7 @@ export type Database = {
         Row: {
           audience: string
           buttons: Json
+          channel: string
           created_at: string
           created_by: string | null
           file_url: string | null
@@ -465,6 +466,7 @@ export type Database = {
         Insert: {
           audience?: string
           buttons?: Json
+          channel?: string
           created_at?: string
           created_by?: string | null
           file_url?: string | null
@@ -483,6 +485,7 @@ export type Database = {
         Update: {
           audience?: string
           buttons?: Json
+          channel?: string
           created_at?: string
           created_by?: string | null
           file_url?: string | null

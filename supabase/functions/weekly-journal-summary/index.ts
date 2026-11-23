@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from "../_shared/cors.ts"
+import { notifyUser } from "../_shared/appNotify.ts"
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 
@@ -38,11 +39,10 @@ serve(async (req) => {
   }
 
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
 
-  if (!anthropicKey || !botToken) {
+  if (!anthropicKey) {
     return new Response(
-      JSON.stringify({ error: 'ANTHROPIC_API_KEY or TELEGRAM_BOT_TOKEN is not configured' }),
+      JSON.stringify({ error: 'ANTHROPIC_API_KEY is not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -66,7 +66,6 @@ serve(async (req) => {
     let profilesQuery = supabaseAdmin
       .from('profiles')
       .select('user_id, display_name, first_name, last_name, telegram_id, coaching_type')
-      .not('telegram_id', 'is', null)
 
     if (targetUserId) {
       profilesQuery = profilesQuery.eq('user_id', targetUserId)
@@ -86,7 +85,7 @@ serve(async (req) => {
       )
     }
 
-    const recipients = ((profiles ?? []) as Profile[]).filter((p) => p.telegram_id)
+    const recipients = (profiles ?? []) as Profile[]
 
     const weekEnd = new Date()
     const weekStart = new Date(weekEnd)
@@ -180,19 +179,10 @@ serve(async (req) => {
 
           draftsSaved++
         } else {
-          const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: profile.telegram_id,
-              text: `📋 Сводка недели\n\n${summaryText}`,
-            }),
-          })
-
-          if (res.ok) {
+          const r = await notifyUser(supabaseAdmin, profile.user_id, { title: 'Сводка недели', body: summaryText, url: '/app?section=journal', type: 'weekly_summary' })
+          if (r.stored) {
             sentTelegram++
           } else {
-            console.error(`Failed to send telegram to ${profile.telegram_id}: ${res.status} ${await res.text()}`)
             failed++
             continue
           }

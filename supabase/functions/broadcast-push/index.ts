@@ -44,6 +44,7 @@ Deno.serve(async req => {
     let payload: unknown;
     let ids: string[];
     let broadcastId: string | null = null;
+    let fullText = '';
     if ('test' in input) {
       // Fixed recipient and harmless content; this path never sends Telegram or books an event.
       ids = [TEST_USER_ID];
@@ -61,7 +62,7 @@ Deno.serve(async req => {
         const a = audienceSchema.safeParse(broadcast.audience);
         const b = z.array(buttonSchema).max(20).safeParse((broadcast.buttons ?? []).map((button: Record<string, unknown>) => ({ type: button.type, ...(button.target_id ? { target_id: button.target_id } : {}), ...(button.url ? { url: button.url } : {}) })));
         if (!a.success || !b.success) return reply({ error: 'Некорректные параметры рассылки' }, 400);
-        audience = a.data; buttons = b.data; targets = broadcast.target_user_ids; text = broadcast.text;
+        audience = a.data; buttons = b.data; targets = broadcast.target_user_ids; text = broadcast.text; fullText = broadcast.text.trim().slice(0, 4000);
         if (!input.dry_run && broadcast.status !== 'sent') return reply({ error: 'Сначала отправьте основную рассылку' }, 409);
         if (!input.dry_run && broadcast.push_started_at) return reply({ ok: true, duplicate: true, sent: broadcast.push_sent ?? 0, subscribed: broadcast.push_subscribed ?? 0, failed: broadcast.push_failed ?? 0 });
       }
@@ -99,6 +100,15 @@ Deno.serve(async req => {
       const { data: claim, error } = await db.from('broadcast_messages').update({ push_started_at: new Date().toISOString(), push_subscribed: subscribed }).eq('id', broadcastId).is('push_started_at', null).select('id');
       if (error) throw new Error('Cannot claim broadcast');
       if (!claim?.length) return reply({ ok: true, duplicate: true, in_progress: true });
+    }
+    // App-channel broadcasts are kept in each recipient's /app bell, including people without push enabled.
+    if (payload) {
+      const n = payload as { title: string; body: string; url: string };
+      const message = 'broadcastId' in input ? fullText : n.body;
+      for (let i = 0; i < ids.length; i += 500) {
+        const { error } = await db.from('notifications').insert(ids.slice(i, i + 500).map(user_id => ({ user_id, title: n.title, message, notification_type: 'broadcast', action_url: n.url, is_read: false })));
+        if (error) throw new Error('Cannot store notifications');
+      }
     }
     const result = await deliver(subscriptions, payload,
       async (s, body) => {
