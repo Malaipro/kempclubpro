@@ -28,6 +28,10 @@ const ResidentCheckinsPreview = import.meta.env.DEV
   ? lazy(() => import('./components/web-app/ResidentCheckinsPreview')) : null;
 const ResidentGoalPreview = import.meta.env.DEV
   ? lazy(() => import('./components/web-app/ResidentGoalPreview')) : null;
+// Предпросмотр игры «Путь Мужчины» (только в DEV)
+const MenPathPreview = import.meta.env.DEV
+  ? lazy(() => import('./components/men-path/MenPathPreview'))
+  : null;
 
 const queryClient = new QueryClient();
 
@@ -58,6 +62,7 @@ const App = () => (
             <Route path="/app" element={<PasswordChangeGuard><WebApp /></PasswordChangeGuard>} />
             {ResidentCheckinsPreview && <Route path="/app/preview/checkins" element={<ResidentCheckinsPreview />} />}
             {ResidentGoalPreview && <Route path="/app/preview/goal" element={<ResidentGoalPreview />} />}
+            {MenPathPreview && <Route path="/app/preview/men-path" element={<MenPathPreview />} />}
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/app/login" element={<AppLogin />} />
             <Route path="/app/reset-password" element={<AppResetPassword />} />
