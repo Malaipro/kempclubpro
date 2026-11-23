@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import webpush from 'npm:web-push@3.6.7';
+import { encryptPayload } from '../_shared/webPushEncrypt.ts';
 import { moscowDate, parseKind, payload } from './policy.ts';
 
 const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -15,7 +16,12 @@ async function deliver(db: ReturnType<typeof createClient>, userId: string, push
   let expired = 0;
   for (const sub of (subscriptions ?? []) as Subscription[]) {
     try {
-      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(pushPayload), { TTL: 3600, timeout: 10000 });
+      // WebCrypto aes128gcm: npm:web-push encryption under Deno was not decryptable on iPhones.
+      const vapid = webpush.getVapidHeaders(new URL(sub.endpoint).origin, 'https://kemp-app.ru', Deno.env.get('VAPID_PUBLIC_KEY')!, Deno.env.get('VAPID_PRIVATE_KEY')!, 'aes128gcm');
+      const res = await fetch(sub.endpoint, { method: 'POST', signal: AbortSignal.timeout(10000), body: await encryptPayload(sub.p256dh, sub.auth, JSON.stringify(pushPayload)),
+        headers: { Authorization: vapid.Authorization, TTL: '3600', Urgency: 'high', 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream' } });
+      await res.body?.cancel();
+      if (!res.ok) throw Object.assign(new Error('Push rejected'), { statusCode: res.status });
       delivered = true;
     } catch (err) {
       const status = (err as { statusCode?: number }).statusCode;

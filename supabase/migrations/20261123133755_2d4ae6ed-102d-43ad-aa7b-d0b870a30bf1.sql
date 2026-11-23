@@ -1,0 +1,1 @@
+UPDATE public.internal_settings SET value = 'true' WHERE key = 'broadcast_push_enabled' AND value = 'false';
