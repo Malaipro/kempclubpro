@@ -10,7 +10,7 @@ const buttonSchema = z.object({ type: z.string().max(50), target_id: z.string().
 const requestSchema = z.union([
   z.object({ broadcastId: z.string().uuid(), dry_run: z.boolean().optional() }).strict(),
   z.object({ preview: z.literal(true), audience: audienceSchema, buttons: z.array(buttonSchema).max(20).default([]) }).strict(),
-  z.object({ test: z.literal(true), dry_run: z.boolean().optional() }).strict(),
+  z.object({ test: z.literal(true), empty: z.boolean().optional(), dry_run: z.boolean().optional() }).strict(),
 ]);
 
 Deno.serve(async req => {
@@ -46,7 +46,8 @@ Deno.serve(async req => {
     if ('test' in input) {
       // Fixed recipient and harmless content; this path never sends Telegram or books an event.
       ids = [TEST_USER_ID];
-      payload = notification('Тест пуш-уведомлений КЭМП. Запись и оплата не выполняются.', []);
+      // Payload-less test isolates encryption problems: the worker then shows the default «КЭМП» title.
+      payload = input.empty ? null : notification('Тест пуш-уведомлений КЭМП. Запись и оплата не выполняются.', []);
     } else {
       let audience = 'preview' in input ? input.audience : 'all' as z.infer<typeof audienceSchema>;
       let buttons = 'preview' in input ? input.buttons : [];
@@ -99,7 +100,7 @@ Deno.serve(async req => {
       if (!claim?.length) return reply({ ok: true, duplicate: true, in_progress: true });
     }
     const result = await deliver(subscriptions, payload,
-      (s, body) => webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(body), { TTL: 3600, timeout: 10000 }),
+      (s, body) => webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body === null ? null : JSON.stringify(body), { TTL: 3600, timeout: 10000, urgency: 'high' }),
       async id => { const { error } = await db.from('push_subscriptions').delete().eq('id', id); if (error) throw new Error('Cannot remove expired subscription'); });
     if (broadcastId) {
       const { error } = await db.from('broadcast_messages').update({ push_sent: result.sent, push_subscribed: result.subscribed, push_failed: result.failed }).eq('id', broadcastId);
