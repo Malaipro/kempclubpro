@@ -9,13 +9,14 @@ User approved `APPROVE BREAKING broadcast-push`. Target: KEMP `wfjvjvbjjxcgkaolk
 - Use existing Supabase VAPID secrets. Expired 404/410 subscriptions are removed; other errors leave subscriptions intact. Counts represent unique users, not devices.
 - `push_started_at` is an atomic claim: concurrent/repeated calls cannot redeliver this broadcast. Interrupted dispatch is not auto-retried (at-most-once attempt), avoiding duplicate notifications; inspect logs and stored results before any manual recovery.
 - Event URL uses the already implemented `/app?section=schedule&event=<uuid>`, not the nonexistent `/app/schedule` route. App-shell worker is untouched; this is messaging only.
-- Production switch must remain false until the single-account provider acceptance test succeeds. Provider acceptance is not proof that a phone displayed/opened the notification; confirm that separately with the recipient.
+- Production switch must remain false until the single-account provider acceptance test succeeds AND the recipient confirms device display/opening. Provider acceptance alone is not sufficient.
 - No Telegram, intensive summaries, payment changes or publication.
 
 ## Verification on 2026-11-23
 - Deployed only `broadcast-push` through the connected KEMP tool; MIRA config unchanged.
 - Existing administrator signed in through `/app/login`; server confirmed `is_admin` before sending.
 - Fixed-account dry run: configured true, total 1, subscribed 1, enabled false. Test dispatch: sent 1, subscribed 1, failed 0, expired 0. Only after that result was the switch enabled through a second migration.
+- User subsequently reported no visible test push. General dispatch was disabled again through a third migration; no repeat message sent. Stored subscription reports iPhone/Safari and was created October 13. Device installation, OS notification permissions and app origin still need confirmation.
 - Authenticated `/dashboard` → Рассылки: real preview returned «Пуш получат: 11 из 52»; event selector showed themes, Moscow times and «Без темы». No broad dispatch or bookings performed.
 - Eight Deno policy tests and eleven frontend tests passed. Mobile mock flow ends with «Вы записаны», no overflow or page errors. Physical-phone receipt/opening and live participant booking remain unverified; no publication performed.
 - Migration reported 239 pre-existing security findings and no new findings. They were not changed in this task.
