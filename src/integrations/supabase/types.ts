@@ -452,6 +452,10 @@ export type Database = {
           file_url: string | null
           filter_snapshot: Json | null
           id: string
+          push_failed: number | null
+          push_sent: number | null
+          push_started_at: string | null
+          push_subscribed: number | null
           recipients_count: number
           sent_at: string | null
           status: string
@@ -466,6 +470,10 @@ export type Database = {
           file_url?: string | null
           filter_snapshot?: Json | null
           id?: string
+          push_failed?: number | null
+          push_sent?: number | null
+          push_started_at?: string | null
+          push_subscribed?: number | null
           recipients_count?: number
           sent_at?: string | null
           status?: string
@@ -480,6 +488,10 @@ export type Database = {
           file_url?: string | null
           filter_snapshot?: Json | null
           id?: string
+          push_failed?: number | null
+          push_sent?: number | null
+          push_started_at?: string | null
+          push_subscribed?: number | null
           recipients_count?: number
           sent_at?: string | null
           status?: string

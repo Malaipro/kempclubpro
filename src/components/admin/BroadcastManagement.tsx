@@ -18,6 +18,7 @@ import { Send, Plus, Trash2, Loader2, Megaphone, Paperclip, ChevronDown, Chevron
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { proxyStorageUrl } from '@/lib/storageUrl';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 type Audience = 'intensive' | 'resident' | 'alumni' | 'all';
 
@@ -60,7 +61,7 @@ const buttonTypeLabels: Record<ButtonType, string> = {
   request_reward: 'Заказ награды',
 };
 
-interface ScheduleOption { id: string; title: string; start_time: string }
+interface ScheduleOption { id: string; title: string; description: string | null; start_time: string }
 interface RewardOption { id: string; title: string; cost_coins: number }
 
 interface BroadcastResponse {
@@ -87,6 +88,10 @@ interface BroadcastMessage {
   sent_at: string | null;
   target_user_ids?: string[] | null;
   filter_snapshot?: Record<string, any> | null;
+  push_sent?: number | null;
+  push_subscribed?: number | null;
+  push_failed?: number | null;
+  push_started_at?: string | null;
 }
 
 const audienceLabels: Record<Audience, string> = {
@@ -177,7 +182,7 @@ export const BroadcastManagement: React.FC = () => {
       const [{ data: sch }, { data: rw }] = await Promise.all([
         (supabase as any)
           .from('schedules')
-          .select('id, title, start_time')
+          .select('id, title, description, start_time')
           .eq('is_active', true)
           .gte('start_time', new Date().toISOString())
           .order('start_time', { ascending: true })
@@ -219,6 +224,32 @@ export const BroadcastManagement: React.FC = () => {
   };
 
   const [sendPush, setSendPush] = useState(false);
+  const [pushEstimate, setPushEstimate] = useState<{ subscribed: number; total: number; enabled: boolean } | null>(null);
+  const [pushEstimateError, setPushEstimateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sendPush || sendToGroup) { setPushEstimate(null); setPushEstimateError(null); return; }
+    let active = true;
+    setPushEstimate(null);
+    setPushEstimateError(null);
+    const pushButtons = buttons.filter(isButtonValid).map(b => ({ type: b.type,
+      ...(b.target_id ? { target_id: b.target_id } : {}), ...(b.type === 'url' && b.url ? { url: b.url.trim() } : {}) }));
+    const timer = setTimeout(() => {
+      void supabase.functions.invoke('broadcast-push', { body: { preview: true, audience, buttons: pushButtons } }).then(async ({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          let message = 'Не удалось проверить получателей пуша';
+          if (error instanceof FunctionsHttpError) {
+            const details = await error.context.json().catch(() => null);
+            message = details?.error ?? message;
+          }
+          if (active) setPushEstimateError(message);
+        } else if (data?.ok) setPushEstimate(data);
+        else setPushEstimateError(data?.error ?? 'Не удалось проверить получателей пуша');
+      });
+    }, 300);
+    return () => { active = false; clearTimeout(timer); };
+  }, [sendPush, sendToGroup, audience, buttons]);
 
   const handleSend = async () => {
     if (!text.trim()) {
@@ -268,6 +299,12 @@ export const BroadcastManagement: React.FC = () => {
 
     setSending(true);
     try {
+      if (sendPush) {
+        const pushButtons = validButtons.map(b => ({ type: b.type,
+          ...(b.target_id ? { target_id: b.target_id } : {}), ...(b.url ? { url: b.url } : {}) }));
+        const { data, error } = await supabase.functions.invoke('broadcast-push', { body: { preview: true, audience, buttons: pushButtons } });
+        if (error || !data?.ok || !data.enabled) throw new Error('Пуш-рассылка ещё не готова: требуется успешная пробная доставка');
+      }
       let fileUrl: string | null = null;
       if (file) {
         const path = `${Date.now()}-${file.name}`;
@@ -311,12 +348,16 @@ export const BroadcastManagement: React.FC = () => {
       toast({ title: 'Рассылка отправлена', description: `Отправлено ${sent} участникам` });
       if (sendPush) {
         try {
-          const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
-            body: { title: 'КЭМП', body: text.trim().slice(0, 100) },
+          const { data: pushData, error: pushError } = await supabase.functions.invoke('broadcast-push', {
+            body: { broadcastId },
           });
-          if (pushError) throw pushError;
+          if (pushError) {
+            const details = pushError instanceof FunctionsHttpError ? await pushError.context.json().catch(() => null) : null;
+            throw new Error(details?.error ?? pushError.message);
+          }
+          if (!pushData?.ok) throw new Error(pushData?.error ?? 'Пуш не отправлен');
           const pushed = (pushData as any)?.sent ?? (pushData as any)?.data?.sent ?? 0;
-          toast({ title: 'Пуш-уведомления', description: `Пуш: отправлено ${pushed}` });
+          toast({ title: 'Пуш-уведомления', description: `Пуш: отправлено ${pushed} из ${pushData.subscribed ?? 0} подписанных` });
         } catch (pe: any) {
           toast({ title: 'Пуш не отправлен', description: pe?.message || 'Ошибка отправки пуша', variant: 'destructive' });
         }
@@ -458,7 +499,7 @@ export const BroadcastManagement: React.FC = () => {
                         )}
                         {schedules.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            {s.title} — {fmtMoscow(s.start_time)}
+                            {s.description?.split('|||')[0]?.trim() || 'Без темы'} — {fmtMoscow(s.start_time)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -507,12 +548,17 @@ export const BroadcastManagement: React.FC = () => {
           </div>
 
           {!sendToGroup && (
-            <div className="flex items-center gap-2">
-              <Switch id="broadcast-push" checked={sendPush} onCheckedChange={setSendPush} />
-              <Label htmlFor="broadcast-push">Отправить пуш-уведомление</Label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Switch id="broadcast-push" checked={sendPush} onCheckedChange={setSendPush} />
+                <Label htmlFor="broadcast-push">Отправить пуш-уведомление</Label>
+              </div>
+              {sendPush && <p className="text-sm text-muted-foreground" role="status">
+                {pushEstimateError ?? (pushEstimate ? `Пуш получат: ${pushEstimate.subscribed} из ${pushEstimate.total}${pushEstimate.enabled ? '' : ' · ожидает пробной доставки'}` : 'Проверяем получателей пуша…')}
+              </p>}
             </div>
           )}
-          <Button onClick={handleSend} disabled={sending} className="w-full sm:w-auto">
+          <Button onClick={handleSend} disabled={sending || (sendPush && !sendToGroup && (!pushEstimate || !pushEstimate.enabled))} className="w-full sm:w-auto">
             {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
             {sendToGroup ? 'Отправить в группу' : 'Отправить рассылку'}
           </Button>
@@ -571,7 +617,13 @@ export const BroadcastManagement: React.FC = () => {
                               {m.status === 'sent' ? 'Отправлено' : 'Черновик'}
                             </Badge>
                           </TableCell>
-                          <TableCell>{m.recipients_count}</TableCell>
+                          <TableCell>
+                            {m.recipients_count}
+                            {m.push_started_at && <p className="text-xs text-muted-foreground">
+                              {m.push_sent == null ? 'Пуш: обработка начата' : `Пуш: отправлено ${m.push_sent} из ${m.push_subscribed ?? 0} подписанных`}
+                              {!!m.push_failed && ` · ошибок: ${m.push_failed}`}
+                            </p>}
+                          </TableCell>
                         </TableRow>
                         {isOpen && (
                           <TableRow className="bg-muted/30">
@@ -672,7 +724,7 @@ export const BroadcastManagement: React.FC = () => {
                                 {m.file_url && (
                                   <div>
                                     <div className="font-semibold mb-1">Файл:</div>
-                                    <Button variant="outline" size="sm" onClick={() => openFile(m.file_url!)}>
+                                    <Button variant="outline" size="sm" onClick={() => { if (m.file_url) void openFile(m.file_url); }}>
                                       <Paperclip className="w-4 h-4 mr-2" /> Открыть вложение
                                     </Button>
                                   </div>

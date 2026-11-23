@@ -5,7 +5,7 @@ export interface PushRecipient { user_id: string; name: string; status: string; 
 const audienceStatuses: Record<Exclude<PushAudience, 'all'>, string[]> = {
   intensive: ['intensive_active'],
   resident: ['club_resident'],
-  alumni: ['alumni', 'intensive_completed'],
+  alumni: ['alumni'],
 };
 
 export function inAudience(status: string, audience: PushAudience) {
@@ -18,8 +18,9 @@ export function pushRecipients(people: PushRecipient[], audience: PushAudience) 
 }
 
 export function pushTargetUrl(buttons: PushButton[]) {
+  // Match the existing /app section router rather than adding a new route.
   const book = buttons.find(b => b.type === 'book_event' && b.target_id);
-  if (book) return `/app/schedule?event=${encodeURIComponent(book.target_id!)}`;
+  if (book?.target_id) return `/app?section=schedule&event=${encodeURIComponent(book.target_id)}`;
   const link = buttons.find(b => b.type === 'url' && b.url && /^https:\/\//.test(b.url));
   return link?.url ?? '/app';
 }

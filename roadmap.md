@@ -1,5 +1,9 @@
 # Tasks
 
+- [x] Launch approved broadcast push in KEMP: audience targeting, existing VAPID secrets, history counts, event deep links; authenticated fixed-account test accepted 1/1 with no errors, then enabled dispatch. No publication or Telegram changes.
+- [x] Show event theme (or «Без темы») and Moscow time in the broadcast event selector, verified in the authenticated admin UI.
+- [ ] Confirm phone display/opening of the delivered test push — waits for the user on «Дмитрий 116»; provider accepted 1/1, but physical-device display cannot be observed here.
+
 - [x] Add and verify recurring club sessions in isolated Preview: existing occurrence + three new, retry deduplication, monthly day 31, attendance without booking, moved-week preservation, and single paid event. Persistent server recurrence is not activated in this Preview-only phase.
 
 - [x] Verify resident → founder → resident attendance flow using a shared in-memory store on the existing checkins Preview.

@@ -20,7 +20,7 @@ describe('broadcast push', () => {
     assert.deepEqual(pushRecipients(people, 'all').subscribed.map(p => p.user_id), ['r1', 'i1']);
   });
   it('book button opens the event card', () => {
-    assert.equal(pushTargetUrl([{ type: 'book_event', target_id: 'ev1' }]), '/app/schedule?event=ev1');
+    assert.equal(pushTargetUrl([{ type: 'book_event', target_id: 'ev1' }]), '/app?section=schedule&event=ev1');
   });
   it('no buttons opens app home', () => {
     assert.equal(pushTargetUrl([]), '/app');

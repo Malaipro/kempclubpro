@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Dispatch broadcast Web Push through a dedicated admin-authenticated KEMP-only Edge Function using stored audience/event access checks and atomic per-broadcast claims; a server-side switch stays off until a fixed-account delivery test passes, preventing accidental wide sends and retries.
+
 - Keep recurring club-event acceptance on a development-only route using an injected in-memory calendar in the existing management form; production recurrence needs a separately reviewed atomic server save, while fixture moves retain immutable credit-week anchors.
 
 - Keep resident reward-goal prototypes on development-only Preview routes with in-memory selections injected into an optional Home slot; this avoids persistence, purchases and changes to live Home.

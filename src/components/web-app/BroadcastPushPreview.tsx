@@ -15,7 +15,7 @@ const people: PushRecipient[] = [
   { user_id: 'i1', name: 'Игорь (интенсив)', status: 'intensive_active', subscribed: true },
   { user_id: 'a1', name: 'Анна (выпускник)', status: 'alumni', subscribed: false },
 ];
-const event = { id: 'ev-bjj', title: 'Открытая тренировка БЖЖ', when: 'Сб, 28 ноября · 11:00 МСК', free: true };
+const event = { id: '00000000-0000-4000-8000-000000000001', title: 'Открытая тренировка БЖЖ', when: 'Сб, 28 ноября · 11:00 МСК', free: true };
 const labels: Record<PushAudience, string> = { resident: 'Резиденты', intensive: 'Интенсив', alumni: 'Выпускники', all: 'Все' };
 
 export default function BroadcastPushPreview() {
@@ -41,9 +41,9 @@ export default function BroadcastPushPreview() {
         </div>
         <Button className="w-full" disabled={!subscribed.length} onClick={() => setStep('push')}>Показать пуш (тест)</Button>
       </CardContent></Card>}
-      {step === 'push' && <button className="flex w-full gap-3 rounded-lg border border-border bg-card p-3 text-left" onClick={() => setStep(payload.url === '/app' ? 'form' : 'card')}>
+      {step === 'push' && <Button variant="outline" className="flex h-auto w-full justify-start gap-3 whitespace-normal rounded-lg border border-border bg-card p-3 text-left" onClick={() => setStep(payload.url === '/app' ? 'form' : 'card')}>
         <Bell className="mt-1 h-5 w-5 shrink-0" /><span><span className="block font-semibold">{payload.title}</span><span className="block text-sm">{payload.body}</span><span className="block text-xs text-muted-foreground">Откроется: {payload.url}</span></span>
-      </button>}
+      </Button>}
       {(step === 'card' || step === 'booked') && <Card><CardContent className="space-y-3 p-4">
         <p className="text-lg font-bold">{event.title}</p><p className="text-sm text-muted-foreground">{event.when}</p>
         {step === 'card' ? <Button className="w-full" onClick={() => setStep('booked')}>{event.free ? 'Записаться' : 'Забронировать'}</Button> : <p className="font-semibold">Вы записаны</p>}
