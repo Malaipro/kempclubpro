@@ -1,0 +1,21 @@
+import { assertEquals } from 'jsr:@std/assert@1';
+import { deriveKeys, encryptPayload } from '../_shared/webPushEncrypt.ts';
+const b64u = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+Deno.test('browser-side decrypt recovers the exact push text', async () => {
+  const ua = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']) as CryptoKeyPair;
+  const uaPublic = new Uint8Array(await crypto.subtle.exportKey('raw', ua.publicKey));
+  const auth = crypto.getRandomValues(new Uint8Array(16));
+  const text = JSON.stringify({ title: 'КЭМП', body: 'Тест пуш-уведомлений КЭМП', url: '/app' });
+  const body = await encryptPayload(b64u(uaPublic), b64u(auth), text);
+  const salt = body.slice(0, 16);
+  assertEquals(new DataView(body.buffer).getUint32(16), 4096);
+  assertEquals(body[20], 65);
+  const asPublic = body.slice(21, 86);
+  const as = await crypto.subtle.importKey('raw', asPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: as }, ua.privateKey, 256));
+  const { cek, nonce } = await deriveKeys(shared, auth, uaPublic, asPublic, salt);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['decrypt']);
+  const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, body.slice(86)));
+  assertEquals(plain[plain.length - 1], 2);
+  assertEquals(new TextDecoder().decode(plain.slice(0, -1)), text);
+});

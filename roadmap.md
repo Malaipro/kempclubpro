@@ -2,7 +2,8 @@
 
 - [x] Implement approved broadcast push in KEMP: audience targeting, existing VAPID secrets, history counts, event deep links; authenticated fixed-account provider test accepted 1/1. No publication or Telegram changes.
 - [x] Show event theme (or «Без темы») and Moscow time in the broadcast event selector, verified in the authenticated admin UI.
-- [ ] Diagnose missing test push on Dmitriy 116 iPhone and confirm display/opening — user reports not visible; general dispatch disabled again through migration. Waits for device/app installation and notification-permission confirmation; no repeat push sent.
+- [ ] Confirm text push displays on Dmitriy 116 iPhone after WebCrypto encryption fix (payload-less test displayed; text test accepted 1/1) — waits for user confirmation.
+- [ ] Apply the same encryption fix to mastermind-push — waits for user approval (production reminder function).
 
 - [x] Add and verify recurring club sessions in isolated Preview: existing occurrence + three new, retry deduplication, monthly day 31, attendance without booking, moved-week preservation, and single paid event. Persistent server recurrence is not activated in this Preview-only phase.
 

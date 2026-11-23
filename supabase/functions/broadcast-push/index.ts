@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@4';
 import webpush from 'npm:web-push@3.6.7';
+import { encryptPayload } from '../_shared/webPushEncrypt.ts';
 import { deliver, eligible, eventTarget, notification, TEST_USER_ID, type Profile, type Subscription } from './policy.ts';
 
 const reply = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -100,7 +101,15 @@ Deno.serve(async req => {
       if (!claim?.length) return reply({ ok: true, duplicate: true, in_progress: true });
     }
     const result = await deliver(subscriptions, payload,
-      (s, body) => webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body === null ? null : JSON.stringify(body), { TTL: 3600, timeout: 10000, urgency: 'high' }),
+      async (s, body) => {
+        if (body === null) return webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, null, { TTL: 3600, timeout: 10000, urgency: 'high' });
+        // Encrypt with WebCrypto; VAPID signing from web-push is proven by the payload-less test.
+        const vapid = webpush.getVapidHeaders(new URL(s.endpoint).origin, 'https://kempclub.pro', publicKey, privateKey, 'aes128gcm');
+        const res = await fetch(s.endpoint, { method: 'POST', signal: AbortSignal.timeout(10000), body: await encryptPayload(s.p256dh, s.auth, JSON.stringify(body)),
+          headers: { Authorization: vapid.Authorization, TTL: '3600', Urgency: 'high', 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream' } });
+        await res.body?.cancel();
+        if (!res.ok) throw Object.assign(new Error('Push rejected'), { statusCode: res.status });
+      },
       async id => { const { error } = await db.from('push_subscriptions').delete().eq('id', id); if (error) throw new Error('Cannot remove expired subscription'); });
     if (broadcastId) {
       const { error } = await db.from('broadcast_messages').update({ push_sent: result.sent, push_subscribed: result.subscribed, push_failed: result.failed }).eq('id', broadcastId);
