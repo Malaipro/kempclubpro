@@ -56,9 +56,9 @@ export const NotificationBell: React.FC = () => {
 
   return (
     <>
-      <Button variant="ghost" size="icon" aria-label={`Уведомления${unread.length ? `: ${unread.length} новых` : ''}`} className="relative" onClick={() => setOpen(true)}>
-        <Bell className="h-5 w-5" />
-        {unread.length > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-bold text-primary-foreground">{unread.length > 99 ? '99+' : unread.length}</span>}
+      <Button variant="ghost" size="icon" aria-label={`Уведомления${unread.length ? `: ${unread.length} новых` : ''}`} className="relative h-12 w-12" onClick={() => setOpen(true)}>
+        <Bell className="h-7 w-7" />
+        {unread.length > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">{unread.length > 99 ? '99+' : unread.length}</span>}
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="web-app-theme w-full overflow-y-auto bg-background text-foreground sm:max-w-md">
