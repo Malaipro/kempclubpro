@@ -941,6 +941,114 @@ export type Database = {
         }
         Relationships: []
       }
+      club_recurring_occurrences: {
+        Row: {
+          created_at: string
+          occurrence_date: string
+          occurrence_key: string
+          original_end: string
+          original_location: string
+          original_start: string
+          original_week_anchor: string
+          schedule_id: string | null
+          series_id: string
+        }
+        Insert: {
+          created_at?: string
+          occurrence_date: string
+          occurrence_key: string
+          original_end: string
+          original_location: string
+          original_start: string
+          original_week_anchor: string
+          schedule_id?: string | null
+          series_id: string
+        }
+        Update: {
+          created_at?: string
+          occurrence_date?: string
+          occurrence_key?: string
+          original_end?: string
+          original_location?: string
+          original_start?: string
+          original_week_anchor?: string
+          schedule_id?: string | null
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_recurring_occurrences_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_recurring_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "club_recurring_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_recurring_series: {
+        Row: {
+          club_kind: string
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          first_date: string
+          frequency: string
+          id: string
+          identity_key: string
+          local_end_time: string
+          local_start_time: string
+          location: string | null
+          normalized_location: string
+          title: string
+          until_date: string
+          updated_at: string
+        }
+        Insert: {
+          club_kind: string
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          first_date: string
+          frequency: string
+          id?: string
+          identity_key: string
+          local_end_time: string
+          local_start_time: string
+          location?: string | null
+          normalized_location: string
+          title: string
+          until_date: string
+          updated_at?: string
+        }
+        Update: {
+          club_kind?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          first_date?: string
+          frequency?: string
+          id?: string
+          identity_key?: string
+          local_end_time?: string
+          local_start_time?: string
+          location?: string | null
+          normalized_location?: string
+          title?: string
+          until_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coin_rules: {
         Row: {
           code: string
@@ -4831,6 +4939,68 @@ export type Database = {
       }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      club_recurring_can_manage: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      club_recurring_clean_location: {
+        Args: { p_location: string }
+        Returns: string
+      }
+      club_recurring_normalize_location: {
+        Args: { p_location: string }
+        Returns: string
+      }
+      club_recurring_occurrence_key: {
+        Args: {
+          p_end: string
+          p_kind: string
+          p_location: string
+          p_start: string
+        }
+        Returns: string
+      }
+      club_recurring_plan_dates: {
+        Args: {
+          p_first_date: string
+          p_frequency: string
+          p_until_date: string
+        }
+        Returns: {
+          occurrence_date: string
+          skipped_month: string
+        }[]
+      }
+      club_recurring_series_preview: {
+        Args: {
+          p_end_time: string
+          p_frequency: string
+          p_location: string
+          p_start_date: string
+          p_start_time: string
+          p_title: string
+          p_until_date: string
+        }
+        Returns: Json
+      }
+      club_recurring_series_save: {
+        Args: {
+          p_color: string
+          p_description: string
+          p_end_time: string
+          p_frequency: string
+          p_location: string
+          p_start_date: string
+          p_start_time: string
+          p_title: string
+          p_until_date: string
+        }
+        Returns: Json
+      }
+      club_recurring_training_kind: {
+        Args: { p_title: string }
+        Returns: string
+      }
       club_week_start: {
         Args: { p_anchor: string; p_start: string }
         Returns: string
