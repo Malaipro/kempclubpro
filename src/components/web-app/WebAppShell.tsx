@@ -26,6 +26,7 @@ import { WebChatView } from './WebChatView';
 import { WebHistoryView, WebResidentRatingView } from './WebResidentViews';
 import { WebCodexView, CodexAcceptModal } from './WebCodexView';
 import { WebPushPrompt } from './WebPushControls';
+import { NotificationBell } from './NotificationBell';
 
 export type Section = TgSection | 'chat' | 'history' | 'codex';
 
@@ -136,6 +137,7 @@ const WebAppInner: React.FC = () => {
   return (
     <div className={`min-h-screen bg-background ${activeSection === 'home' ? 'web-home-theme text-foreground' : 'web-app-theme text-foreground'}`}>
       <div className="mx-auto max-w-lg pb-20">
+        <div className="sticky top-0 z-30 flex justify-end px-3 pt-2 -mb-12 pointer-events-none"><div className="pointer-events-auto rounded-full bg-background/70 backdrop-blur"><NotificationBell /></div></div>
         <SectionErrorBoundary key={activeSection} onHome={() => setActiveSection('home')}>
           {activeSection === 'home' ? (
             <WebHomeView
