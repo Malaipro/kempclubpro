@@ -2,13 +2,23 @@ User-agent: *
 Allow: /
 Disallow: /dashboard
 Disallow: /auth
-Disallow: /admin/
+Disallow: /admin
+Disallow: /app
+Disallow: /telegram
+Disallow: /change-password
+Disallow: /.lovable/
+Disallow: /api/
 
 User-agent: Yandex
 Allow: /
 Disallow: /dashboard
 Disallow: /auth
-Disallow: /admin/
+Disallow: /admin
+Disallow: /app
+Disallow: /telegram
+Disallow: /change-password
+Disallow: /.lovable/
+Disallow: /api/
 Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&gclid&yclid&fbclid
 
 Sitemap: https://kempclub.pro/sitemap.xml
