@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -31,13 +32,23 @@ const ResidentGoalPreview = import.meta.env.DEV
 
 const queryClient = new QueryClient();
 
-// На домене kemp-app.ru корень ведёт сразу в кабинет; на kempclub.pro — лендинг.
-const RootRoute = () => {
+const isAppHost = () => {
   const host = window.location.hostname;
-  if (host === 'kemp-app.ru' || host === 'www.kemp-app.ru') {
-    return <Navigate to="/app" replace />;
-  }
-  return <Index />;
+  return host === 'kemp-app.ru' || host === 'www.kemp-app.ru';
+};
+
+// На домене kemp-app.ru корень ведёт сразу в кабинет; на kempclub.pro — лендинг.
+const RootRoute = () => isAppHost() ? <Navigate to="/app" replace /> : <Index />;
+
+const NonHomeHead = () => {
+  const { pathname } = useLocation();
+  if (pathname === '/' && !isAppHost()) return null;
+
+  return (
+    <Helmet defaultTitle="КЭМП" defer={false}>
+      <meta name="robots" content="noindex,follow" />
+    </Helmet>
+  );
 };
 
 const App = () => (
@@ -46,6 +57,7 @@ const App = () => (
       <Toaster />
       <Sonner position="top-right" />
       <BrowserRouter>
+        <NonHomeHead />
         <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Загрузка...</div>}>
           <Routes>
             <Route path="/" element={<RootRoute />} />

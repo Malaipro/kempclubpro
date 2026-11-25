@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Users, Book, Dumbbell, Award } from 'lucide-react';
+import { pyramidLevels } from '../seo/homeContent';
 export const AboutUs: React.FC = () => {
   const isMobile = useIsMobile();
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
@@ -33,37 +34,37 @@ export const AboutUs: React.FC = () => {
 
   // Пирамида КЭМПа — серьёзная тёмная гамма: красная вершина, ниже — графит
   const diltsLevels = [{
-    level: "Миссия",
+    level: pyramidLevels[5],
     description: "Зачем живу",
     color: "bg-kamp-primary",
     border: "border-kamp-primary/60",
     info: "Высшая цель и смысл существования"
   }, {
-    level: "Идентичность",
+    level: pyramidLevels[4],
     description: "Кто я такой",
     color: "bg-[#3a1a1a]",
     border: "border-kamp-primary/40",
     info: "Самоопределение и понимание своей роли"
   }, {
-    level: "Убеждения",
+    level: pyramidLevels[3],
     description: "Во что я верю",
     color: "bg-[#2e2e32]",
     border: "border-gray-600/50",
     info: "Ценности и принципы, которые направляют жизнь"
   }, {
-    level: "Способности",
+    level: pyramidLevels[2],
     description: "Как я выбираю",
     color: "bg-[#29292d]",
     border: "border-gray-600/40",
     info: "Навыки принятия решений и стратегического мышления"
   }, {
-    level: "Поведение",
+    level: pyramidLevels[1],
     description: "Что я делаю",
     color: "bg-[#242428]",
     border: "border-gray-700/40",
     info: "Конкретные действия и привычки для достижения целей"
   }, {
-    level: "Окружение",
+    level: pyramidLevels[0],
     description: "Что я имею",
     color: "bg-[#1f1f23]",
     border: "border-gray-700/30",
@@ -126,7 +127,7 @@ export const AboutUs: React.FC = () => {
             
             <div className="flex justify-center order-1 md:order-2">
               <div className="relative w-full max-w-[400px]">
-                <h4 className="text-center text-white font-bold mb-6 text-lg md:text-xl">Пирамида КЭМПа</h4>
+                <h3 className="text-center text-white font-bold mb-6 text-lg md:text-xl">Пирамида КЭМП</h3>
                 <div className="space-y-2">
                   {diltsLevels.map((level, index) => <div key={index} className={`${level.color} border ${level.border} text-white p-3 md:p-4 rounded-sm shadow-lg transform transition-all duration-300 hover:border-kamp-primary/70 cursor-pointer ${activeLevel === index ? 'ring-1 ring-kamp-primary' : ''}`} style={{
                   marginLeft: `${(diltsLevels.length - 1 - index) * (isMobile ? 8 : 16)}px`,
