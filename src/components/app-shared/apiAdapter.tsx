@@ -215,6 +215,7 @@ const webApi: CallApi = async <T,>(action: string, payload: Record<string, unkno
     }
     case 'get_rating': return await rpc('get_rating_web') as T;
     case 'get_resident_rating': return await rpc('get_resident_rating_web') as T;
+    case 'get_resident_rewards': return await rpc('get_resident_rewards_web') as T;
     case 'get_intensive_history': return await rpc('get_intensive_history_web') as T;
     case 'get_profile': return await rpc('get_profile_web') as T;
     case 'update_profile': return await rpc('update_profile_web', {

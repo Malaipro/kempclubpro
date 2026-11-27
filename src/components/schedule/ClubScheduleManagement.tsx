@@ -490,21 +490,46 @@ export const ClubScheduleManagement: React.FC<{ previewApi?: ClubSchedulePreview
 
     if (local) { local.cancel(id); await fetchSchedules(); return; }
     try {
-      const { error } = await supabase
-        .from('schedules')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast({ title: 'Успех', description: 'Мероприятие удалено' });
+      // Безопасная отмена: событие с историей посещений/броней деактивируется
+      // (is_active=false, история и награды сохраняются), без истории — удаляется.
+      const { data, error } = await recurrenceRpc('founder_cancel_event_web', { p_schedule_id: id });
+      const res = data as { ok?: boolean; action?: string; error?: string } | null;
+      if (error || !res?.ok) throw new Error(error?.message ?? res?.error ?? 'error');
+      toast({
+        title: 'Успех',
+        description: res.action === 'deactivated'
+          ? 'Мероприятие отменено, история посещений сохранена'
+          : 'Мероприятие удалено',
+      });
       await fetchSchedules();
     } catch (err) {
-      console.error('Error deleting schedule:', err);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось удалить мероприятие',
-        variant: 'destructive',
-      });
+      // Если RPC ещё не применён на сервере — прежнее поведение (прямое удаление).
+      if (!/Could not find the function|schema cache/i.test((err as Error).message)) {
+        console.error('Error deleting schedule:', err);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось удалить мероприятие',
+          variant: 'destructive',
+        });
+        return;
+      }
+      try {
+        const { error } = await supabase
+          .from('schedules')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        toast({ title: 'Успех', description: 'Мероприятие удалено' });
+        await fetchSchedules();
+      } catch (fallbackErr) {
+        console.error('Error deleting schedule:', fallbackErr);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось удалить мероприятие',
+          variant: 'destructive',
+        });
+      }
     }
   };
 

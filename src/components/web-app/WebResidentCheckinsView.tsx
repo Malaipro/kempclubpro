@@ -9,6 +9,7 @@ import {
   STATUS_LABELS, TRAINING_KINDS, TRAINING_LABELS, attendanceStatus, canSelfMark,
   fullWeekStreak, trainingTotals, weekProgress, ownClubEvents, clubEventStatus, type ResidentEvent,
 } from './residentCheckins';
+import type { ResidentRewardsPayload } from './residentRewards';
 
 export type ResidentCheckinsPayload = { error?: string; ok: boolean; now: string; current_week: string; events: ResidentEvent[] };
 
@@ -38,12 +39,15 @@ export const WebResidentCheckinsView: React.FC = () => {
 
 export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callApi }) => {
   const [data, setData] = useState<ResidentCheckinsPayload | null>(null);
+  const [rewards, setRewards] = useState<ResidentRewardsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setError(null);
     callApi<ResidentCheckinsPayload>('get_resident_checkins').then(res => { if (!res?.ok) throw new Error(res?.error ?? 'Не удалось загрузить отметки'); setData(res); }).catch((e: Error) => setError(explain(e.message)));
+    // Награды: серверный источник истины; если RPC ещё не применён — блок просто скрыт.
+    callApi<ResidentRewardsPayload>('get_resident_rewards').then(res => { if (res?.ok) setRewards(res); }).catch(() => undefined);
   }, [callApi]);
   useEffect(load, [load]);
 
@@ -109,6 +113,14 @@ export const ResidentCheckinsContent: React.FC<{ callApi: CallApi }> = ({ callAp
                 <span>Всего тренировок: <b className="text-foreground">{totals.total}</b></span>
                 {TRAINING_KINDS.map(k => <span key={k}>{TRAINING_LABELS[k].split(' · ')[1]}: <b className="text-foreground">{totals[k]}</b></span>)}
               </div>
+              {rewards && (
+                <div className="grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+                  <span>Баллы резидента: <b className="text-foreground">{rewards.points_total}</b></span>
+                  <span>Бонусы за полную неделю: <b className="text-foreground">{rewards.week_bonuses}</b></span>
+                  <span>Коины за тренировки: <b className="text-foreground">{rewards.coins_from_awards}</b></span>
+                  <span>Подтверждено тренировок: <b className="text-foreground">{rewards.trainings_confirmed}</b></span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
