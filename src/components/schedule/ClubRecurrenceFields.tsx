@@ -1,25 +1,106 @@
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Frequency, Occurrence } from './clubRecurrence';
+import { Switch } from '@/components/ui/switch';
+import type { ClubRecurrenceFrequency, ClubRecurrencePlan, ClubRecurrencePreview, ClubRecurrenceStatus } from './clubRecurrence';
 
-export function ClubRecurrenceFields({ enabled, onEnabled, frequency, onFrequency, until, onUntil, plan }: {
-  enabled: boolean; onEnabled(v: boolean): void; frequency: Frequency; onFrequency(v: Frequency): void;
-  until: string; onUntil(v: string): void; plan: { dates: Occurrence[]; skipped: string[]; error: string | null };
+const statusLabel: Record<ClubRecurrenceStatus, string> = {
+  new: 'Создать',
+  existing: 'Уже есть — пропустить',
+  moved: 'Уже есть — перенесено',
+  cancelled: 'Уже есть — отменено',
+  occupied_moved: 'Слот занят перенесённой тренировкой',
+};
+
+function skippedLabel(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+}
+
+export function ClubRecurrenceFields({
+  enabled,
+  onEnabled,
+  frequency,
+  onFrequency,
+  until,
+  onUntil,
+  localPlan,
+  preview,
+  loading,
+  serverError,
+}: {
+  enabled: boolean;
+  onEnabled(value: boolean): void;
+  frequency: ClubRecurrenceFrequency;
+  onFrequency(value: ClubRecurrenceFrequency): void;
+  until: string;
+  onUntil(value: string): void;
+  localPlan: ClubRecurrencePlan;
+  preview: ClubRecurrencePreview | null;
+  loading: boolean;
+  serverError: string | null;
 }) {
-  return <section className="space-y-3 border-t border-border pt-4 text-foreground">
-    <div className="flex items-center gap-2"><Checkbox id="recurring" checked={enabled} onCheckedChange={v => onEnabled(v === true)} /><Label htmlFor="recurring">Повторяющееся событие</Label></div>
-    {enabled && <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div><Label htmlFor="frequency">Как часто</Label><Select value={frequency} onValueChange={v => onFrequency(v as Frequency)}><SelectTrigger id="frequency"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="weekly">Раз в неделю</SelectItem><SelectItem value="monthly">Раз в месяц</SelectItem></SelectContent></Select></div>
-        <div><Label htmlFor="repeat-until">Повторять до</Label><Input id="repeat-until" type="date" value={until} onChange={e => onUntil(e.target.value)} /></div>
+  const occurrences = preview?.occurrences ?? localPlan.dates;
+  const skipped = preview?.skipped ?? localPlan.skipped;
+  const existing = preview?.existing ?? 0;
+  const occupied = preview?.occupied ?? 0;
+  const create = preview?.create ?? localPlan.dates.length;
+
+  return (
+    <section className="space-y-3 border-t border-border pt-4 text-foreground">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <Label htmlFor="club-recurring">Повторяющееся событие</Label>
+          <p className="text-xs text-muted-foreground">Только для бесплатных клубных тренировок</p>
+        </div>
+        <Switch id="club-recurring" checked={enabled} onCheckedChange={onEnabled} />
       </div>
-      <div aria-label="Предпросмотр серии" className="space-y-2 text-sm">
-        {plan.error ? <p className="text-destructive">{plan.error}</p> : <p className="font-semibold">Всего занятий: {plan.dates.length} · Уже есть: {plan.dates.filter(d => d.exists).length} · Будут созданы: {plan.dates.filter(d => !d.exists).length}</p>}
-        <ul className="max-h-48 overflow-y-auto divide-y divide-border">{plan.dates.map(d => <li key={d.date} className="flex flex-wrap justify-between gap-2 py-2"><span>{d.date.split('-').reverse().join('.')} · {new Date(d.start).toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit' })} МСК</span><span className="text-muted-foreground">{d.exists ? 'Уже есть — пропустить' : 'Создать'}</span></li>)}</ul>
-        {plan.skipped.map(m => <p key={m} className="text-muted-foreground">{m} — такого числа нет, месяц пропущен</p>)}
-      </div>
-    </>}
-  </section>;
+
+      {enabled && (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="club-recurring-frequency">Как часто</Label>
+              <Select value={frequency} onValueChange={(value) => onFrequency(value as ClubRecurrenceFrequency)}>
+                <SelectTrigger id="club-recurring-frequency" className="bg-background text-foreground"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Каждую неделю</SelectItem>
+                  <SelectItem value="monthly">Каждый месяц</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="club-recurring-until">Повторять до включительно</Label>
+              <Input id="club-recurring-until" type="date" value={until} onChange={(event) => onUntil(event.target.value)} className="bg-background text-foreground" />
+            </div>
+          </div>
+
+          <div aria-label="Предпросмотр серии" className="space-y-2 text-sm">
+            {localPlan.error ? (
+              <p className="text-destructive">{localPlan.error}</p>
+            ) : serverError ? (
+              <p className="text-destructive">{serverError}</p>
+            ) : loading ? (
+              <p className="text-muted-foreground">Сверяем с календарём…</p>
+            ) : (
+              <p className="font-semibold">
+                Всего тренировок: {occurrences.length} · Уже есть: {existing} · Будет создано: {create}
+                {occupied > 0 ? ` · Занято переносом: ${occupied}` : ''}
+              </p>
+            )}
+            <ul className="max-h-48 divide-y divide-border overflow-y-auto">
+              {occurrences.map((occurrence) => (
+                <li key={occurrence.date} className="flex flex-wrap justify-between gap-2 py-2">
+                  <span>{occurrence.date.split('-').reverse().join('.')} · {new Date(occurrence.start).toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit' })} МСК</span>
+                  <span className="text-muted-foreground">{statusLabel[occurrence.status]}</span>
+                </li>
+              ))}
+            </ul>
+            {skipped.map((month) => <p key={month} className="text-muted-foreground">{skippedLabel(month)} — такого числа нет, месяц пропущен</p>)}
+          </div>
+        </>
+      )}
+    </section>
+  );
 }
