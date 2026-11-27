@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { STATUS_LABELS, attendanceStatus } from '@/components/web-app/residentCheckins';
+import { awardToastSuffix, type AwardDelta } from '@/components/web-app/residentRewards';
 
 type Row = { user_id: string; name: string; is_resident: boolean; attended: boolean; self_marked_at: string | null; attended_marked_at: string | null; history_count: number };
 type Data = { ok: boolean; error?: string; club_kind: string | null; week_anchor: string | null; participants: Row[] };
@@ -55,7 +56,8 @@ export const FounderAttendancePanel: React.FC<{ scheduleId: string; attendanceRp
     const { data: d, error: e } = await attendanceRpc('founder_confirm_attendance', { p_schedule_id: scheduleId, p_marks: marks });
     setSaving(false);
     if (e || !(d as Data)?.ok) { toast.error(explain(e?.message ?? (d as Data)?.error ?? 'Ошибка')); return; }
-    toast.success(`Сохранено: ${(d as { updated: number }).updated}`);
+    const res = d as { updated: number; awards?: AwardDelta[] };
+    toast.success(`Сохранено: ${res.updated}${awardToastSuffix(res.awards)}`);
     void load();
   };
 
